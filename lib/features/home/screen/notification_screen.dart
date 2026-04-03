@@ -1,0 +1,462 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/theme/app_theme.dart';
+
+// ─── 데이터 모델 ──────────────────────────────────────────────────────────
+
+enum NotiType { follow, like, overlap, system }
+
+class NotiItem {
+  final NotiType type;
+  final String title;
+  final String body;
+  final String time;
+  final bool isRead;
+
+  const NotiItem({
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.time,
+    this.isRead = false,
+  });
+
+  NotiItem copyWith({bool? isRead}) => NotiItem(
+        type: type,
+        title: title,
+        body: body,
+        time: time,
+        isRead: isRead ?? this.isRead,
+      );
+}
+
+const _kNotifications = [
+  NotiItem(
+    type: NotiType.follow,
+    title: 'reader_jin님이 팔로우를 신청했어요',
+    body: '프로필을 확인하고 수락해보세요',
+    time: '방금',
+    isRead: false,
+  ),
+  NotiItem(
+    type: NotiType.like,
+    title: 'seoulreader님이 내 문장을 좋아해요',
+    body: '"나는 채식주의자가 되기로 했다. 꿈 때문에."',
+    time: '5분 전',
+    isRead: false,
+  ),
+  NotiItem(
+    type: NotiType.overlap,
+    title: '내 문장을 3명이 함께 기록했어요',
+    body: '"사람이 사람을 사랑한다는 것은..."',
+    time: '12분 전',
+    isRead: false,
+  ),
+  NotiItem(
+    type: NotiType.follow,
+    title: 'bookworm_su님이 팔로우를 신청했어요',
+    body: '프로필을 확인하고 수락해보세요',
+    time: '1시간 전',
+    isRead: true,
+  ),
+  NotiItem(
+    type: NotiType.like,
+    title: 'minjae_reads님이 내 문장을 좋아해요',
+    body: '"나는 괴물이 아니에요. 그냥 달라요."',
+    time: '2시간 전',
+    isRead: true,
+  ),
+  NotiItem(
+    type: NotiType.system,
+    title: '오늘 독서 목표까지 8분 남았어요',
+    body: '조금만 더 읽으면 목표 달성이에요 🌿',
+    time: '3시간 전',
+    isRead: true,
+  ),
+];
+
+// ─── 알림 화면 ────────────────────────────────────────────────────────────
+
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  final _notifications = List<NotiItem>.from(_kNotifications);
+
+  IconData _iconFor(NotiType type) => switch (type) {
+        NotiType.follow   => Icons.person_add_rounded,
+        NotiType.like     => Icons.favorite_rounded,
+        NotiType.overlap  => Icons.format_quote_rounded,
+        NotiType.system   => Icons.notifications_rounded,
+      };
+
+  Color _colorFor(NotiType type) => switch (type) {
+        NotiType.follow  => AppTheme.accent,
+        NotiType.like    => const Color(0xFFFF6B6B),
+        NotiType.overlap => AppTheme.primaryLight,
+        NotiType.system  => AppTheme.textSecondary,
+      };
+
+  void _markAllRead() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _notifications.setAll(
+        0,
+        _notifications.map((n) => n.copyWith(isRead: true)),
+      );
+    });
+  }
+
+  void _markRead(int index) {
+    setState(() {
+      _notifications[index] = _notifications[index].copyWith(isRead: true);
+    });
+  }
+
+  void _onNotiTap(BuildContext context, int index) {
+    HapticFeedback.selectionClick();
+    _markRead(index);
+    final n = _notifications[index];
+    switch (n.type) {
+      case NotiType.follow:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '프로필 페이지는 곧 지원돼요 🌿',
+              style: AppTheme.bodySmall.copyWith(color: AppTheme.textPrimary),
+            ),
+            backgroundColor: AppTheme.darkCardElevated,
+            behavior: SnackBarBehavior.floating,
+            shape: AppTheme.smoothShape(
+              radius: 12,
+              side: const BorderSide(color: AppTheme.darkBorder),
+            ),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      case NotiType.like:
+      case NotiType.overlap:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '문장 상세 페이지는 곧 지원돼요 🌿',
+              style: AppTheme.bodySmall.copyWith(color: AppTheme.textPrimary),
+            ),
+            backgroundColor: AppTheme.darkCardElevated,
+            behavior: SnackBarBehavior.floating,
+            shape: AppTheme.smoothShape(
+              radius: 12,
+              side: const BorderSide(color: AppTheme.darkBorder),
+            ),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      case NotiType.system:
+        // 시스템 알림은 읽음 처리만
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unread = _notifications.where((n) => !n.isRead).length;
+
+    return Scaffold(
+      backgroundColor: AppTheme.darkSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ─── 앱바 ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
+              child: Row(
+                children: [
+                  // 뒤로가기
+                  Semantics(
+                    label: '뒤로가기',
+                    button: true,
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.of(context).pop();
+                        },
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.textPrimary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 타이틀
+                  Text(
+                    '알림',
+                    style: AppTheme.headingLarge.copyWith(
+                      fontFamily: 'Pretendard',
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (unread > 0) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: AppTheme.smoothBox(
+                        color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                        radius: 10,
+                      ),
+                      child: Text(
+                        '$unread 새로운',
+                        style: AppTheme.captionSmall.copyWith(
+                          fontFamily: 'Pretendard',
+                          color: AppTheme.primaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  // 모두 읽음
+                  if (unread > 0)
+                    TextButton(
+                      onPressed: _markAllRead,
+                      child: Text(
+                        '모두 읽음',
+                        style: AppTheme.captionLarge.copyWith(
+                          fontFamily: 'Pretendard',
+                          color: AppTheme.textTertiary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: AppTheme.darkBorder),
+
+            // ─── 알림 목록 (새로운 / 이전 그룹) ────────────────
+            Expanded(
+              child: Builder(builder: (context) {
+                final newItems = _notifications
+                    .asMap()
+                    .entries
+                    .where((e) => !e.value.isRead)
+                    .toList();
+                final oldItems = _notifications
+                    .asMap()
+                    .entries
+                    .where((e) => e.value.isRead)
+                    .toList();
+
+                return CustomScrollView(
+                  slivers: [
+                    // 새로운 알림
+                    if (newItems.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                          child: Text(
+                            '새로운',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: AppTheme.primaryLight,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) {
+                            final entry = newItems[i];
+                            final n = entry.value;
+                            return Column(
+                              children: [
+                                _NotiTile(
+                                  item: n,
+                                  icon: _iconFor(n.type),
+                                  color: _colorFor(n.type),
+                                  onTap: () =>
+                                      _onNotiTap(context, entry.key),
+                                ),
+                                if (i < newItems.length - 1)
+                                  const Divider(
+                                      height: 1,
+                                      color: AppTheme.darkBorder),
+                              ],
+                            );
+                          },
+                          childCount: newItems.length,
+                        ),
+                      ),
+                    ],
+
+                    // 이전 알림
+                    if (oldItems.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                          child: Text(
+                            '이전',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: AppTheme.textTertiary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) {
+                            final entry = oldItems[i];
+                            final n = entry.value;
+                            return Column(
+                              children: [
+                                _NotiTile(
+                                  item: n,
+                                  icon: _iconFor(n.type),
+                                  color: _colorFor(n.type),
+                                  onTap: () =>
+                                      _onNotiTap(context, entry.key),
+                                ),
+                                if (i < oldItems.length - 1)
+                                  const Divider(
+                                      height: 1,
+                                      color: AppTheme.darkBorder),
+                              ],
+                            );
+                          },
+                          childCount: oldItems.length,
+                        ),
+                      ),
+                    ],
+
+                    // 알림 없음
+                    if (newItems.isEmpty && oldItems.isEmpty)
+                      const SliverFillRemaining(
+                        child: Center(
+                          child: Text('알림이 없어요',
+                              style: TextStyle(color: AppTheme.textTertiary)),
+                        ),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 알림 타일 ────────────────────────────────────────────────────────────
+
+class _NotiTile extends StatelessWidget {
+  final NotiItem item;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _NotiTile({
+    required this.item,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        color: item.isRead
+            ? Colors.transparent
+            : AppTheme.primaryLight.withValues(alpha: 0.04),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 아이콘 배지
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 20, color: color),
+            ),
+            const SizedBox(width: 12),
+            // 텍스트
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: AppTheme.bodySmall.copyWith(
+                      fontFamily: 'Pretendard',
+                      color: AppTheme.textPrimary,
+                      fontWeight:
+                          item.isRead ? FontWeight.w400 : FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.captionLarge.copyWith(
+                      fontFamily: 'Pretendard',
+                      color: AppTheme.textTertiary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.time,
+                    style: AppTheme.captionSmall.copyWith(
+                      fontFamily: 'Pretendard',
+                      color: AppTheme.textTertiary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 미읽음 dot
+            if (!item.isRead)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, left: 8),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryLight,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

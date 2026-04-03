@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "초록 앱 (Flutter)",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run"],
+      "port": 8080
+    },
+    {
+      "name": "초록 앱 - Web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"],
+      "port": 8080
+    }
+  ]
+}
