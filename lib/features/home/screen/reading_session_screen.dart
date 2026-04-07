@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/session_goal.dart';
 // import '../../../core/services/db_service.dart'; // 로그인 활성화 후 주석 해제
 import '../../timer/controller/timer_controller.dart';
 import '../widget/chosu_sheet.dart';
@@ -15,7 +16,9 @@ const _kGreen = Color(0xFF00FF00);
 
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
-  const ReadingSessionScreen({super.key});
+  final SessionGoal? goal;
+
+  const ReadingSessionScreen({super.key, this.goal});
 
   @override
   ConsumerState<ReadingSessionScreen> createState() =>
@@ -48,7 +51,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final timer = ref.read(timerProvider);
-      if (timer.isIdle) ref.read(timerProvider.notifier).start();
+      if (timer.isIdle) {
+        ref.read(timerProvider.notifier).start(goal: widget.goal);
+      }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     });
   }
@@ -311,8 +316,12 @@ class _TopBar extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // 진행 바
-          _GradientProgressBar(value: (timer.seconds % (45 * 60)) / (45 * 60)),
+          // 진행 바 — 목표가 있으면 목표 대비, 없으면 45분 기본
+          _GradientProgressBar(
+            value: timer.goal?.type == SessionGoalType.time
+                ? (timer.seconds / timer.goal!.targetSeconds).clamp(0.0, 1.0)
+                : (timer.seconds % (45 * 60)) / (45 * 60),
+          ),
           const SizedBox(height: 5),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -327,10 +336,14 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               Text(
-                '목표 45분',
+                timer.goal != null && timer.goal!.type != SessionGoalType.free
+                    ? '목표 ${timer.goal!.label}'
+                    : '자유 독서',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white.withValues(alpha: 0.25),
+                  color: timer.goalReached
+                      ? _kGreen.withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.25),
                 ),
               ),
             ],
@@ -411,9 +424,8 @@ class _BottomArea extends StatelessWidget {
                     horizontal: 10,
                     vertical: 5,
                   ),
-                  decoration: AppTheme.smoothBox(
+                  decoration: AppTheme.smoothPill(
                     color: _kGreen.withValues(alpha: 0.08),
-                    radius: 20,
                     side: BorderSide(color: _kGreen.withValues(alpha: 0.2)),
                   ),
                   child: Row(

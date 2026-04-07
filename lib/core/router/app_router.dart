@@ -7,6 +7,8 @@ import '../../features/analytics/screen/analytics_screen.dart';
 import '../../features/auth/screen/auth_screen.dart';
 import '../../features/explore/screen/explore_screen.dart';
 import '../../features/feed/screen/feed_screen.dart';
+import '../../shared/models/session_goal.dart';
+import '../../features/home/screen/book_detail_screen.dart';
 import '../../features/home/screen/home_screen.dart';
 import '../../features/home/screen/notification_screen.dart';
 import '../../features/home/screen/reading_session_screen.dart';
@@ -50,10 +52,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ExploreScreen(),
       ),
 
+      // 책 상세 — 쉘 밖에서 전체 화면으로 표시
+      GoRoute(
+        path: AppConstants.routeBookDetail,
+        builder: (context, state) {
+          final data = state.extra as BookDetailExtra;
+          return BookDetailScreen(book: data);
+        },
+      ),
+
       // 독서 세션 — 쉘 밖에서 전체 화면으로 표시
       GoRoute(
         path: AppConstants.routeSession,
-        builder: (context, state) => const ReadingSessionScreen(),
+        builder: (context, state) {
+          final goal = state.extra as SessionGoal?;
+          return ReadingSessionScreen(goal: goal);
+        },
       ),
 
       // 독서 리캡 — 세션 종료 후 전체 화면으로 표시

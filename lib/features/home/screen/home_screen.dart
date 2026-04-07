@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/session_goal.dart';
+import '../../../shared/utils/reading_insight_engine.dart';
+import '../widget/session_goal_sheet.dart';
+import 'book_detail_screen.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
@@ -83,6 +87,37 @@ const List<_BookData> _kReadingBooks = [
     totalPages: 304,
     lastRead: '3일 전',
     gradientIndex: 2,
+  ),
+];
+
+// ─── 책별 독서 통계 (목업) ──────────────────────────────────────────────────
+const List<BookReadingStats> _kBookStats = [
+  BookReadingStats(
+    title: '채식주의자',
+    currentPage: 186,
+    totalPages: 300,
+    avgPagesPerHour: 25.0,
+    savedSentences: 7,
+    streakDays: 5,
+    totalReadingHours: 12.4,
+  ),
+  BookReadingStats(
+    title: '파친코',
+    currentPage: 234,
+    totalPages: 688,
+    avgPagesPerHour: 18.0,
+    savedSentences: 12,
+    streakDays: 3,
+    totalReadingHours: 8.2,
+  ),
+  BookReadingStats(
+    title: '지구 끝의 온실',
+    currentPage: 88,
+    totalPages: 304,
+    avgPagesPerHour: 30.0,
+    savedSentences: 3,
+    streakDays: 1,
+    totalReadingHours: 4.6,
   ),
 ];
 
@@ -456,9 +491,25 @@ class _WeeklyStatusCard extends ConsumerWidget {
             label: isInSession ? '세션으로 돌아가기' : '독서 시작',
             button: true,
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
                 HapticFeedback.mediumImpact();
-                context.push(AppConstants.routeSession);
+                if (isInSession) {
+                  context.push(AppConstants.routeSession);
+                  return;
+                }
+                final goal = await showModalBottomSheet<SessionGoal>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const SessionGoalSheet(
+                    currentPage: 186,
+                    totalPages: 300,
+                    bookTitle: '채식주의자',
+                  ),
+                );
+                if (goal != null && context.mounted) {
+                  context.push(AppConstants.routeSession, extra: goal);
+                }
               },
               child: Container(
                 width: 64,
@@ -588,7 +639,17 @@ class _ReadingBooksSection extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+
+        // ── 인사이트 메시지 ────────────────────────────────────────
+        if (_kBookStats.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppTheme.screenPadding, 8, AppTheme.screenPadding, 12),
+            child: _InsightChip(
+              insight: ReadingInsightEngine.generateForBook(_kBookStats.first),
+            ),
+          ),
+
         // 가로 스크롤 카드
         SizedBox(
           height: 240,
@@ -612,6 +673,54 @@ class _ReadingBooksSection extends StatelessWidget {
   }
 }
 
+// ─── 인사이트 칩 ─────────────────────────────────────────────────────────
+
+class _InsightChip extends StatelessWidget {
+  final ReadingInsight insight;
+
+  const _InsightChip({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.primary.withValues(alpha: 0.2),
+        radius: AppTheme.radiusMD,
+        side: BorderSide(
+          color: AppTheme.primaryLight.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(insight.icon, size: 16, color: AppTheme.primaryLight),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              insight.message,
+              style: AppTheme.captionLarge.copyWith(
+                color: AppTheme.primaryLight,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (insight.subMessage != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              insight.subMessage!,
+              style: AppTheme.captionSmall.copyWith(
+                color: AppTheme.textTertiary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ReadingBookCard extends StatefulWidget {
   final _BookData book;
   const _ReadingBookCard({required this.book});
@@ -631,6 +740,19 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
         AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
 
     return GestureDetector(
+      onTap: () {
+        context.push(
+          AppConstants.routeBookDetail,
+          extra: BookDetailExtra(
+            title: b.title,
+            author: b.author,
+            currentPage: b.currentPage,
+            totalPages: b.totalPages,
+            lastRead: b.lastRead,
+            gradientIndex: b.gradientIndex,
+          ),
+        );
+      },
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);
@@ -745,9 +867,21 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                   label: '${b.title} 이어 읽기',
                   button: true,
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       HapticFeedback.mediumImpact();
-                      context.push(AppConstants.routeSession);
+                      final goal = await showModalBottomSheet<SessionGoal>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => SessionGoalSheet(
+                          currentPage: b.currentPage,
+                          totalPages: b.totalPages,
+                          bookTitle: b.title,
+                        ),
+                      );
+                      if (goal != null && context.mounted) {
+                        context.push(AppConstants.routeSession, extra: goal);
+                      }
                     },
                     child: Container(
                       height: 36,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/utils/overlap_detector.dart';
 
 /// 피드 스크린: 소식(소셜 활동) & 발견(문장 탐색)
 class FeedScreen extends StatefulWidget {
@@ -18,7 +20,7 @@ class _FeedScreenState extends State<FeedScreen> {
   _FeedFilter _filter = _FeedFilter.latest;
   bool _isRefreshing = false;
 
-  // getter로 선언해 매번 현재 시각 기준으로 상대시간이 계산되도록 함
+  // ── 목업 데이터: 겹문장 알고리즘 테스트를 위해 유사한 문장 포함 ────────
   List<FeedSentence> get _sentences => [
     FeedSentence(
       id: '1',
@@ -28,7 +30,24 @@ class _FeedScreenState extends State<FeedScreen> {
       username: 'reader_jin',
       savedAt: DateTime.now().subtract(const Duration(minutes: 23)),
       empathyCount: 42,
-      isOverlap: true,
+    ),
+    FeedSentence(
+      id: '6',
+      content: '나는 채식주의자가 되기로 했다. 꿈 때문에. 어떤 꿈이었을까.',
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      username: 'leafy_reader',
+      savedAt: DateTime.now().subtract(const Duration(minutes: 45)),
+      empathyCount: 28,
+    ),
+    FeedSentence(
+      id: '7',
+      content: '채식주의자가 되기로 했다... 꿈 때문에',
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      username: 'green_pages',
+      savedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      empathyCount: 15,
     ),
     FeedSentence(
       id: '2',
@@ -48,7 +67,15 @@ class _FeedScreenState extends State<FeedScreen> {
       username: 'seoulreader',
       savedAt: DateTime.now().subtract(const Duration(hours: 3)),
       empathyCount: 156,
-      isOverlap: true,
+    ),
+    FeedSentence(
+      id: '8',
+      content: '나는 괴물이 아니에요. 그냥 달라요. 그뿐이에요.',
+      bookTitle: '아몬드',
+      bookAuthor: '손원평',
+      username: 'midnight_books',
+      savedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      empathyCount: 34,
     ),
     FeedSentence(
       id: '4',
@@ -70,22 +97,46 @@ class _FeedScreenState extends State<FeedScreen> {
     ),
   ];
 
+  // ── 겹문장 그룹 (OverlapDetector 알고리즘으로 동적 계산) ────────────
+  List<OverlapGroup> get _overlapGroups {
+    final entries = _sentences
+        .map((s) => SentenceEntry(
+              id: s.id,
+              content: s.content,
+              username: s.username,
+              bookTitle: s.bookTitle,
+            ))
+        .toList();
+    return OverlapDetector.findGroups(entries);
+  }
+
+  // ── 겹문장에 속한 문장 ID (개별 카드에서 겹문장 표시용) ────────────
+  Set<String> get _overlapSentenceIds {
+    final ids = <String>{};
+    for (final group in _overlapGroups) {
+      for (final m in group.members) {
+        ids.add(m.sentenceId);
+      }
+    }
+    return ids;
+  }
+
   List<FeedSentence> get _filteredSentences {
     final all = _sentences;
     switch (_filter) {
       case _FeedFilter.latest:
         return all;
       case _FeedFilter.popular:
-        return [...all]..sort((a, b) => b.empathyCount.compareTo(a.empathyCount));
+        return [...all]..sort(
+            (a, b) => b.empathyCount.compareTo(a.empathyCount));
       case _FeedFilter.overlap:
-        return all.where((s) => s.isOverlap).toList();
+        return []; // 겹문장 탭은 그룹 뷰 사용
     }
   }
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
     setState(() => _isRefreshing = true);
-    // 향후 API 호출 위치
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) setState(() => _isRefreshing = false);
   }
@@ -93,6 +144,9 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredSentences;
+    final groups = _overlapGroups;
+    final overlapIds = _overlapSentenceIds;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -143,43 +197,77 @@ class _FeedScreenState extends State<FeedScreen> {
                   _FeedFilterChip(
                     label: '인기순',
                     isSelected: _filter == _FeedFilter.popular,
-                    onTap: () => setState(() => _filter = _FeedFilter.popular),
+                    onTap: () =>
+                        setState(() => _filter = _FeedFilter.popular),
                   ),
                   const SizedBox(width: 8),
                   _FeedFilterChip(
-                    label: '겹문장',
+                    label: '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
                     isSelected: _filter == _FeedFilter.overlap,
-                    onTap: () => setState(() => _filter = _FeedFilter.overlap),
+                    onTap: () =>
+                        setState(() => _filter = _FeedFilter.overlap),
                   ),
                 ],
               ),
             ),
 
-            // ─── 문장 목록 ────────────────────────────────────
+            // ─── 콘텐츠 ──────────────────────────────────────
             Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.format_quote_rounded,
-                              size: 48, color: AppTheme.textTertiary),
-                          const SizedBox(height: 12),
-                          Text('겹문장이 아직 없어요',
-                              style: AppTheme.bodyMedium.copyWith(
-                                  color: AppTheme.textSecondary)),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: AppTheme.primaryLight,
-                      backgroundColor: AppTheme.darkCard,
-                      onRefresh: _onRefresh,
-                      child: _SentenceList(sentences: filtered),
-                    ),
+              child: _filter == _FeedFilter.overlap
+                  ? _buildOverlapView(groups)
+                  : filtered.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          color: AppTheme.primaryLight,
+                          backgroundColor: AppTheme.darkCard,
+                          onRefresh: _onRefresh,
+                          child: _SentenceList(
+                            sentences: filtered,
+                            overlapIds: overlapIds,
+                          ),
+                        ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOverlapView(List<OverlapGroup> groups) {
+    if (groups.isEmpty) return _buildEmptyState();
+
+    return RefreshIndicator(
+      color: AppTheme.primaryLight,
+      backgroundColor: AppTheme.darkCard,
+      onRefresh: _onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.screenPadding,
+          vertical: AppTheme.spaceMD,
+        ),
+        itemCount: groups.length,
+        separatorBuilder: (_, _) =>
+            const SizedBox(height: AppTheme.spaceMD),
+        itemBuilder: (_, i) => _OverlapGroupCard(group: groups[i]),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.format_quote_rounded,
+              size: 48, color: AppTheme.textTertiary),
+          const SizedBox(height: 12),
+          Text(
+            '겹문장이 아직 없어요',
+            style: AppTheme.bodyMedium
+                .copyWith(color: AppTheme.textSecondary),
+          ),
+        ],
       ),
     );
   }
@@ -209,9 +297,8 @@ class _FeedFilterChip extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(
+        decoration: AppTheme.smoothPill(
           color: isSelected ? AppTheme.accent : AppTheme.darkCard,
-          radius: 20,
           side: BorderSide(
             color: isSelected ? AppTheme.accent : AppTheme.darkBorder,
           ),
@@ -219,7 +306,8 @@ class _FeedFilterChip extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.captionLarge.copyWith(
-            color: isSelected ? AppTheme.darkSurface : AppTheme.textSecondary,
+            color:
+                isSelected ? AppTheme.darkSurface : AppTheme.textSecondary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -228,10 +316,15 @@ class _FeedFilterChip extends StatelessWidget {
   }
 }
 
-// ─── 문장 목록 ────────────────────────────────────────────────────────
+// ─── 문장 목록 (최신/인기 필터용) ─────────────────────────────────────────
 class _SentenceList extends StatelessWidget {
   final List<FeedSentence> sentences;
-  const _SentenceList({required this.sentences});
+  final Set<String> overlapIds;
+
+  const _SentenceList({
+    required this.sentences,
+    required this.overlapIds,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -242,15 +335,24 @@ class _SentenceList extends StatelessWidget {
         vertical: AppTheme.spaceMD,
       ),
       itemCount: sentences.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
-      itemBuilder: (_, i) => _SentenceCard(sentence: sentences[i]),
+      separatorBuilder: (_, _) =>
+          const SizedBox(height: AppTheme.spaceMD),
+      itemBuilder: (_, i) => _SentenceCard(
+        sentence: sentences[i],
+        isOverlap: overlapIds.contains(sentences[i].id),
+      ),
     );
   }
 }
 
 class _SentenceCard extends StatefulWidget {
   final FeedSentence sentence;
-  const _SentenceCard({required this.sentence});
+  final bool isOverlap;
+
+  const _SentenceCard({
+    required this.sentence,
+    required this.isOverlap,
+  });
 
   @override
   State<_SentenceCard> createState() => _SentenceCardState();
@@ -268,9 +370,9 @@ class _SentenceCardState extends State<_SentenceCard> {
   }
 
   void _toggleLike() => setState(() {
-    _isLiked = !_isLiked;
-    _empathyCount += _isLiked ? 1 : -1;
-  });
+        _isLiked = !_isLiked;
+        _empathyCount += _isLiked ? 1 : -1;
+      });
 
   String _formatTime(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -282,13 +384,14 @@ class _SentenceCardState extends State<_SentenceCard> {
   @override
   Widget build(BuildContext context) {
     final s = widget.sentence;
+    final overlap = widget.isOverlap;
 
     return Container(
       decoration: AppTheme.smoothBox(
         color: AppTheme.darkCard,
         radius: 16,
         side: BorderSide(
-          color: s.isOverlap
+          color: overlap
               ? AppTheme.primaryLight.withValues(alpha: 0.35)
               : AppTheme.darkBorder,
         ),
@@ -296,11 +399,12 @@ class _SentenceCardState extends State<_SentenceCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 겹문장 배너
-          if (s.isOverlap)
+          // 겹문장 배너 (동적 감지)
+          if (overlap)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: AppTheme.primary.withValues(alpha: 0.2),
                 borderRadius: const BorderRadius.vertical(
@@ -309,17 +413,13 @@ class _SentenceCardState extends State<_SentenceCard> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.join_inner_rounded,
-                    size: 16,
-                    color: AppTheme.accent,
-                  ),
+                  const Icon(Icons.join_inner_rounded,
+                      size: 16, color: AppTheme.accent),
                   const SizedBox(width: 6),
                   Text(
-                    '겹문장 · 3명이 같이 수집했어요',
-                    style: AppTheme.captionLarge.copyWith(
-                      color: AppTheme.accent,
-                    ),
+                    '겹문장 감지됨',
+                    style: AppTheme.captionLarge
+                        .copyWith(color: AppTheme.accent),
                   ),
                 ],
               ),
@@ -340,11 +440,8 @@ class _SentenceCardState extends State<_SentenceCard> {
                         color: AppTheme.primary.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Icon(
-                        Icons.menu_book_rounded,
-                        size: 14,
-                        color: AppTheme.primaryLight,
-                      ),
+                      child: const Icon(Icons.menu_book_rounded,
+                          size: 14, color: AppTheme.primaryLight),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Expanded(
@@ -369,9 +466,8 @@ class _SentenceCardState extends State<_SentenceCard> {
                     ),
                     Text(
                       _formatTime(s.savedAt),
-                      style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.textTertiary,
-                      ),
+                      style: AppTheme.captionSmall
+                          .copyWith(color: AppTheme.textTertiary),
                     ),
                   ],
                 ),
@@ -385,7 +481,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border(
                       left: BorderSide(
-                        color: s.isOverlap
+                        color: overlap
                             ? AppTheme.primaryLight
                             : AppTheme.darkBorder,
                         width: 3,
@@ -408,20 +504,19 @@ class _SentenceCardState extends State<_SentenceCard> {
                   children: [
                     CircleAvatar(
                       radius: 12,
-                      backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                      backgroundColor:
+                          AppTheme.primary.withValues(alpha: 0.3),
                       child: Text(
                         s.username[0].toUpperCase(),
-                        style: AppTheme.captionSmall.copyWith(
-                          color: AppTheme.primaryLight,
-                        ),
+                        style: AppTheme.captionSmall
+                            .copyWith(color: AppTheme.primaryLight),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       s.username,
-                      style: AppTheme.captionLarge.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: AppTheme.captionLarge
+                          .copyWith(color: AppTheme.textSecondary),
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -454,22 +549,21 @@ class _SentenceCardState extends State<_SentenceCard> {
                       onTap: () {
                         HapticFeedback.selectionClick();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('공유 기능은 곧 지원돼요 🌿'),
+                          SnackBar(
+                            content: const Text('공유 기능은 곧 지원돼요'),
                             backgroundColor: AppTheme.primary,
                             behavior: SnackBarBehavior.floating,
-                            duration: Duration(seconds: 2),
+                            shape: AppTheme.smoothShape(
+                                radius: AppTheme.radiusMD),
+                            duration: const Duration(seconds: 2),
                           ),
                         );
                       },
                       child: const SizedBox(
                         width: 36,
                         height: 36,
-                        child: Icon(
-                          Icons.share_outlined,
-                          size: 16,
-                          color: AppTheme.textTertiary,
-                        ),
+                        child: Icon(Icons.share_outlined,
+                            size: 16, color: AppTheme.textTertiary),
                       ),
                     ),
                   ],
@@ -479,6 +573,388 @@ class _SentenceCardState extends State<_SentenceCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── 겹문장 그룹 카드 (핵심 UI) ──────────────────────────────────────────
+
+class _OverlapGroupCard extends StatefulWidget {
+  final OverlapGroup group;
+
+  const _OverlapGroupCard({required this.group});
+
+  @override
+  State<_OverlapGroupCard> createState() => _OverlapGroupCardState();
+}
+
+class _OverlapGroupCardState extends State<_OverlapGroupCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = widget.group;
+    final base = g.baseMember;
+
+    return Container(
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.darkCard,
+        radius: AppTheme.radiusLG,
+        side: BorderSide(
+          color: AppTheme.primaryLight.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── 겹문장 헤더 배너 ──────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.2),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(15),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.join_inner_rounded,
+                    size: 16, color: AppTheme.accent),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '겹문장 · ${g.memberCount}명이 같은 문장을 수집했어요',
+                    style: AppTheme.captionLarge
+                        .copyWith(color: AppTheme.accent),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── 책 정보 ──────────────────────────────────────
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(Icons.menu_book_rounded,
+                          size: 14, color: AppTheme.primaryLight),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Expanded(
+                      child: Text(
+                        base.bookTitle,
+                        style: AppTheme.bodySmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryLight,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+
+                // ── 공통 문구 (하이라이트) ───────────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCardElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: const Border(
+                      left: BorderSide(
+                        color: AppTheme.primaryLight,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '공통 문구',
+                        style: AppTheme.captionSmall.copyWith(
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '"${g.commonPhrase}"',
+                        style: AppTheme.bodyMedium.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: AppTheme.textPrimary,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+
+                // ── 수집자 목록 토글 ─────────────────────────────
+                Semantics(
+                  label:
+                      '수집자 목록 ${_isExpanded ? "접기" : "펼치기"}',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _isExpanded = !_isExpanded);
+                    },
+                    child: SizedBox(
+                      height: 48,
+                      child: Row(
+                        children: [
+                          // 수집자 아바타 겹침 표시
+                          SizedBox(
+                            width: 24.0 + (g.memberCount - 1) * 16.0,
+                            height: 24,
+                            child: Stack(
+                              children: [
+                                for (int i = 0;
+                                    i < g.memberCount && i < 4;
+                                    i++)
+                                  Positioned(
+                                    left: i * 16.0,
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: AppTheme.primary
+                                          .withValues(alpha: 0.4),
+                                      child: Text(
+                                        g.members[i].username[0]
+                                            .toUpperCase(),
+                                        style:
+                                            AppTheme.captionSmall.copyWith(
+                                          color: AppTheme.primaryLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${g.memberCount}명의 기록',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          AnimatedRotation(
+                            turns: _isExpanded ? 0.5 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
+                            child: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 18,
+                              color: AppTheme.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── 확장된 멤버 목록 (하이라이트 포함) ─────────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            child: _isExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.cardPaddingMD,
+                      0,
+                      AppTheme.cardPaddingMD,
+                      AppTheme.cardPaddingMD,
+                    ),
+                    child: Column(
+                      children: [
+                        const Divider(
+                            height: 1, color: AppTheme.darkBorder),
+                        const SizedBox(height: 12),
+                        ...g.members.map((m) => Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: AppTheme.spaceSM),
+                              child: _OverlapMemberTile(
+                                member: m,
+                                commonPhrase: g.commonPhrase,
+                              ),
+                            )),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 겹문장 그룹 내 개별 멤버 타일 ──────────────────────────────────────
+
+class _OverlapMemberTile extends StatelessWidget {
+  final OverlapMember member;
+  final String commonPhrase;
+
+  const _OverlapMemberTile({
+    required this.member,
+    required this.commonPhrase,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.darkCardElevated,
+        radius: AppTheme.radiusMD,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 유저 정보
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                child: Text(
+                  member.username[0].toUpperCase(),
+                  style: AppTheme.captionSmall
+                      .copyWith(color: AppTheme.primaryLight),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  member.username,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: AppTheme.smoothPill(
+                  color: AppTheme.primaryLight.withValues(alpha: 0.12),
+                ),
+                child: Text(
+                  '${(member.overlapRatio * 100).round()}% 일치',
+                  style: AppTheme.captionSmall.copyWith(
+                    color: AppTheme.primaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 하이라이트된 문장
+          _HighlightedText(
+            text: member.content,
+            highlights: member.highlights,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 하이라이트 텍스트 위젯 ──────────────────────────────────────────────
+/// 겹문장의 공통 구간을 시각적으로 강조하는 RichText 위젯
+class _HighlightedText extends StatelessWidget {
+  final String text;
+  final List<HighlightRange> highlights;
+
+  const _HighlightedText({
+    required this.text,
+    required this.highlights,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (highlights.isEmpty || text.isEmpty) {
+      return Text(
+        '"$text"',
+        style: AppTheme.bodySmall.copyWith(
+          fontStyle: FontStyle.italic,
+          color: AppTheme.textPrimary,
+          height: 1.5,
+        ),
+      );
+    }
+
+    // 하이라이트 구간을 정렬하고 텍스트 범위 내로 클램프
+    final sorted = highlights
+        .map((h) => HighlightRange(
+              h.start.clamp(0, text.length),
+              h.end.clamp(0, text.length),
+            ))
+        .where((h) => h.start < h.end)
+        .toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+
+    final spans = <InlineSpan>[];
+    spans.add(const TextSpan(text: '"'));
+
+    int lastEnd = 0;
+    final baseStyle = AppTheme.bodySmall.copyWith(
+      fontStyle: FontStyle.italic,
+      color: AppTheme.textPrimary,
+      height: 1.5,
+    );
+    final highlightStyle = baseStyle.copyWith(
+      backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.15),
+      color: AppTheme.primaryLight,
+      fontWeight: FontWeight.w600,
+    );
+
+    for (final hl in sorted) {
+      if (hl.start > lastEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastEnd, hl.start),
+          style: baseStyle,
+        ));
+      }
+      spans.add(TextSpan(
+        text: text.substring(hl.start, hl.end),
+        style: highlightStyle,
+      ));
+      lastEnd = hl.end;
+    }
+
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastEnd),
+        style: baseStyle,
+      ));
+    }
+    spans.add(TextSpan(text: '"', style: baseStyle));
+
+    return RichText(
+      text: TextSpan(children: spans, style: baseStyle),
     );
   }
 }
