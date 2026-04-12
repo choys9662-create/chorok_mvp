@@ -1,20 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/isar/isar_book.dart';
+import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/session_goal.dart';
+import '../../../shared/repositories/book_repository.dart';
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
   final int seconds;
   final String bookTitle;
   final String bookAuthor;
-  final List<String> sentences;
+  final List<CollectedSentence> sentences;
+
+  /// 페이지 진행 기록용 — 없으면 DB 저장 생략
+  final String? bookId;
+  final int startPage;
+  final int totalPages;
+  final DateTime? sessionStartedAt;
 
   const RecapData({
     required this.seconds,
     required this.bookTitle,
     required this.bookAuthor,
     required this.sentences,
+    this.bookId,
+    this.startPage = 0,
+    this.totalPages = 0,
+    this.sessionStartedAt,
   });
 }
 
@@ -61,25 +78,34 @@ String _evalText(int score, int sentenceCount) {
 }
 
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
-class SessionRecapScreen extends StatefulWidget {
+class SessionRecapScreen extends ConsumerStatefulWidget {
   final RecapData data;
   const SessionRecapScreen({super.key, required this.data});
 
   @override
-  State<SessionRecapScreen> createState() => _SessionRecapScreenState();
+  ConsumerState<SessionRecapScreen> createState() =>
+      _SessionRecapScreenState();
 }
 
-class _SessionRecapScreenState extends State<SessionRecapScreen>
+class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _enterCtrl;
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
   late final int _score;
 
+  // 페이지 기록 상태
+  late final TextEditingController _pageCtrl;
+  bool _pageRecorded = false;
+  bool _isSavingPage = false;
+
   @override
   void initState() {
     super.initState();
     _score = _calcScore(widget.data.seconds, widget.data.sentences.length);
+    _pageCtrl = TextEditingController(
+      text: widget.data.startPage > 0 ? '${widget.data.startPage}' : '',
+    );
 
     _enterCtrl = AnimationController(
       vsync: this,
@@ -100,7 +126,89 @@ class _SessionRecapScreenState extends State<SessionRecapScreen>
   @override
   void dispose() {
     _enterCtrl.dispose();
+    _pageCtrl.dispose();
     super.dispose();
+  }
+
+  // ─── 페이지 기록 저장 ───────────────────────────────────────────────
+  Future<void> _savePage() async {
+    final bookId = widget.data.bookId;
+    if (bookId == null) return;
+
+    final pageText = _pageCtrl.text.trim();
+    final newPage = int.tryParse(pageText);
+    if (newPage == null || newPage < 0) return;
+
+    setState(() => _isSavingPage = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      final repo = ref.read(bookRepositoryProvider);
+      if (repo == null) return;
+      final result = await repo.updateProgress(
+        bookId: bookId,
+        newCurrentPage: newPage,
+        durationSeconds: widget.data.seconds,
+        choseoCount: widget.data.sentences.length,
+        startedAt: widget.data.sessionStartedAt,
+      );
+
+      // 초서 문장 개별 저장
+      for (final entry in widget.data.sentences) {
+        if (entry.content.isNotEmpty) {
+          await repo.saveChoseo(
+            bookId: bookId,
+            bookTitle: widget.data.bookTitle,
+            bookAuthor: widget.data.bookAuthor,
+            content: entry.content,
+            myThought: entry.thought.isEmpty ? null : entry.thought,
+          );
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isSavingPage = false;
+        _pageRecorded = true;
+      });
+
+      if (result.justCompleted) {
+        await _showCompletionDialog(result.book);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSavingPage = false);
+    }
+  }
+
+  Future<void> _showCompletionDialog(IsarBook? book) async {
+    HapticFeedback.heavyImpact();
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _CompletionDialog(
+        bookTitle: widget.data.bookTitle,
+        onReflect: () {
+          Navigator.of(context).pop();
+          context.pushReplacement(
+            AppConstants.routeReflection,
+            extra: Book(
+              id: widget.data.bookId ?? '',
+              title: widget.data.bookTitle,
+              author: widget.data.bookAuthor,
+              totalPages: widget.data.totalPages,
+              currentPage: widget.data.totalPages,
+              status: ReadingStatus.completed,
+            ),
+          );
+        },
+        onLater: () {
+          Navigator.of(context).pop();
+          context.go('/home');
+        },
+      ),
+    );
   }
 
   String get _timeText {
@@ -140,6 +248,29 @@ class _SessionRecapScreenState extends State<SessionRecapScreen>
                         ],
                       ),
                       const Spacer(),
+                      // 건너뛰기
+                      Semantics(
+                        label: '건너뛰고 홈으로',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.go('/home');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            child: Text(
+                              '건너뛰기',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: AppTheme.textTertiary,
+                                fontFamily: 'Pretendard',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                       // 닫기
                       GestureDetector(
                         onTap: () {
@@ -191,6 +322,10 @@ class _SessionRecapScreenState extends State<SessionRecapScreen>
                         if (widget.data.sentences.isNotEmpty) ...[
                           _SentencesSection(
                               sentences: widget.data.sentences),
+                          const SizedBox(height: 12),
+                          // 겹문장 힌트 카드
+                          _OverlapHintCard(
+                              sentenceCount: widget.data.sentences.length),
                           const SizedBox(height: 16),
                         ] else ...[
                           _EmptySentenceCard(),
@@ -202,6 +337,17 @@ class _SessionRecapScreenState extends State<SessionRecapScreen>
                           seconds: widget.data.seconds,
                           sentenceCount: widget.data.sentences.length,
                         ),
+                        const SizedBox(height: 16),
+
+                        // 페이지 기록 카드 (bookId 있을 때만)
+                        if (widget.data.bookId != null)
+                          _PageRecordCard(
+                            controller: _pageCtrl,
+                            totalPages: widget.data.totalPages,
+                            isRecorded: _pageRecorded,
+                            isSaving: _isSavingPage,
+                            onSave: _savePage,
+                          ),
                         const SizedBox(height: 24),
                       ],
                     ),
@@ -463,7 +609,7 @@ class _ScoreCardState extends State<_ScoreCard>
 
 // ─── 수집 문장 섹션 ───────────────────────────────────────────────────
 class _SentencesSection extends StatelessWidget {
-  final List<String> sentences;
+  final List<CollectedSentence> sentences;
   const _SentencesSection({required this.sentences});
 
   @override
@@ -495,7 +641,7 @@ class _SentencesSection extends StatelessWidget {
         ...sentences.asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _SentenceAnalysisCard(
-                sentence: e.value,
+                entry: e.value,
                 index: e.key,
               ),
             )),
@@ -505,14 +651,13 @@ class _SentencesSection extends StatelessWidget {
 }
 
 class _SentenceAnalysisCard extends StatelessWidget {
-  final String sentence;
+  final CollectedSentence entry;
   final int index;
-  const _SentenceAnalysisCard(
-      {required this.sentence, required this.index});
+  const _SentenceAnalysisCard({required this.entry, required this.index});
 
   @override
   Widget build(BuildContext context) {
-    final tag = _analyzeTag(sentence);
+    final tag = _analyzeTag(entry.content);
 
     final (String tagLabel, Color tagColor, IconData tagIcon,
         String tagDesc) = switch (tag) {
@@ -520,13 +665,13 @@ class _SentenceAnalysisCard extends StatelessWidget {
           '겹문장',
           AppTheme.primaryLight,
           Icons.join_inner_rounded,
-          '${_overlapCount(sentence)}명이 함께 수집한 문장이에요',
+          '${_overlapCount(entry.content)}명이 함께 수집한 문장이에요',
         ),
       _SentenceTag.popular => (
           '인기 문장',
           AppTheme.accent,
           Icons.local_fire_department_rounded,
-          '공감 ${_empathyCount(sentence)}개를 받은 유명한 문장이에요',
+          '공감 ${_empathyCount(entry.content)}개를 받은 유명한 문장이에요',
         ),
       _SentenceTag.unique => (
           '유니크',
@@ -566,19 +711,23 @@ class _SentenceAnalysisCard extends StatelessWidget {
                     style: AppTheme.captionLarge.copyWith(
                         color: tagColor, fontWeight: FontWeight.w600)),
                 const SizedBox(width: 4),
-                Text('·  $tagDesc',
-                    style: AppTheme.captionSmall
-                        .copyWith(color: tagColor.withValues(alpha: 0.7))),
+                Expanded(
+                  child: Text('·  $tagDesc',
+                      style: AppTheme.captionSmall
+                          .copyWith(color: tagColor.withValues(alpha: 0.7)),
+                      overflow: TextOverflow.ellipsis),
+                ),
               ],
             ),
           ),
 
-          // 문장 내용
+          // 문장 + 내 생각
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 수집한 문장
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -589,13 +738,33 @@ class _SentenceAnalysisCard extends StatelessWidget {
                       left: BorderSide(color: tagColor, width: 3),
                     ),
                   ),
-                  child: Text('"$sentence"',
+                  child: Text('"${entry.content}"',
                       style: AppTheme.bodyMedium.copyWith(
                         fontStyle: FontStyle.italic,
                         color: AppTheme.textPrimary,
                         height: 1.6,
                       )),
                 ),
+                // 내 생각 (있을 때만)
+                if (entry.thought.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.edit_note_rounded,
+                          size: 14,
+                          color: AppTheme.accent.withValues(alpha: 0.8)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(entry.thought,
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.textSecondary,
+                              height: 1.5,
+                            )),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -632,7 +801,7 @@ class _EmptySentenceCard extends StatelessWidget {
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
-                    '초서 버튼으로 마음에 드는 문장을\n기록하면 겹문장 분석을 볼 수 있어요',
+                    '문장 기록 버튼으로 마음에 드는 문장을\n저장하면 겹문장 분석을 볼 수 있어요',
                     style: AppTheme.captionLarge
                         .copyWith(color: AppTheme.textTertiary)),
               ],
@@ -752,7 +921,7 @@ class _Divider extends StatelessWidget {
 
 // ─── 하단 액션 버튼 ───────────────────────────────────────────────────
 class _RecapActions extends StatelessWidget {
-  final List<String> sentences;
+  final List<CollectedSentence> sentences;
   const _RecapActions({required this.sentences});
 
   @override
@@ -807,6 +976,396 @@ class _RecapActions extends StatelessWidget {
                 side: BorderSide(
                     color: AppTheme.primaryLight.withValues(alpha: 0.3)),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+// ─── 페이지 기록 카드 ─────────────────────────────────────────────────
+class _PageRecordCard extends StatelessWidget {
+  final TextEditingController controller;
+  final int totalPages;
+  final bool isRecorded;
+  final bool isSaving;
+  final VoidCallback onSave;
+
+  const _PageRecordCard({
+    required this.controller,
+    required this.totalPages,
+    required this.isRecorded,
+    required this.isSaving,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isRecorded) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: AppTheme.smoothBox(
+          color: AppTheme.darkCard,
+          radius: AppTheme.radiusLG,
+          side: BorderSide(
+              color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded,
+                color: AppTheme.primaryLight, size: 20),
+            SizedBox(width: 12),
+            Text(
+              '페이지 기록이 저장됐어요',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.primaryLight,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.darkCard,
+        radius: AppTheme.radiusLG,
+        side: const BorderSide(color: AppTheme.darkBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bookmark_rounded,
+                  color: AppTheme.primaryLight, size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                '오늘 몇 쪽까지 읽었나요?',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                  height: 1.4,
+                ),
+              ),
+              const Spacer(),
+              if (totalPages > 0)
+                Text(
+                  '/ $totalPages쪽',
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppTheme.textTertiary,
+                    height: 1.5,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 48,
+                  decoration: AppTheme.smoothBox(
+                    color: AppTheme.darkCardElevated,
+                    radius: AppTheme.radiusSM,
+                    side: const BorderSide(color: AppTheme.darkBorder),
+                  ),
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                      height: 1.4,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: '현재 페이지',
+                      hintStyle: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppTheme.textTertiary,
+                        height: 1.4,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      suffixText: '쪽',
+                      suffixStyle: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    cursorColor: AppTheme.primaryLight,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Semantics(
+                button: true,
+                label: '페이지 기록 저장',
+                child: GestureDetector(
+                  onTap: isSaving ? null : onSave,
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: AppTheme.smoothBox(
+                      gradient: AppTheme.greenGradient,
+                      radius: AppTheme.radiusSM,
+                    ),
+                    alignment: Alignment.center,
+                    child: isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.darkBg,
+                            ),
+                          )
+                        : const Text(
+                            '기록',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.darkBg,
+                              height: 1.4,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 완독 축하 다이얼로그 ─────────────────────────────────────────────
+class _CompletionDialog extends StatelessWidget {
+  final String bookTitle;
+  final VoidCallback onReflect;
+  final VoidCallback onLater;
+
+  const _CompletionDialog({
+    required this.bookTitle,
+    required this.onReflect,
+    required this.onLater,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: AppTheme.smoothBox(
+          color: AppTheme.darkCard,
+          radius: AppTheme.radiusXL,
+          side: BorderSide(
+              color: AppTheme.primaryLight.withValues(alpha: 0.25)),
+          shadows: [
+            BoxShadow(
+              color: AppTheme.primaryLight.withValues(alpha: 0.08),
+              blurRadius: 40,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 아이콘
+            Container(
+              width: 72,
+              height: 72,
+              decoration: AppTheme.smoothBox(
+                gradient: AppTheme.greenGradient,
+                radius: AppTheme.radiusLG,
+              ),
+              child: const Icon(
+                Icons.auto_stories_rounded,
+                color: AppTheme.darkBg,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            const Text(
+              '완독을 축하해요! 🎉',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: AppTheme.textSecondary,
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // 감상 남기기
+            Semantics(
+              button: true,
+              label: '감상 남기기',
+              child: GestureDetector(
+                onTap: onReflect,
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: AppTheme.smoothBox(
+                    gradient: AppTheme.greenGradient,
+                    radius: AppTheme.radiusMD,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '감상 남기기',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.darkBg,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 나중에
+            Semantics(
+              button: true,
+              label: '나중에',
+              child: GestureDetector(
+                onTap: onLater,
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '나중에',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.textTertiary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 겹문장 힌트 카드 ─────────────────────────────────────────────────────────
+class _OverlapHintCard extends StatelessWidget {
+  final int sentenceCount;
+  const _OverlapHintCard({required this.sentenceCount});
+
+  @override
+  Widget build(BuildContext context) {
+    // 모의 겹침 수: 문장 수 × 랜덤 계수 (실제 연동 전 UI 확인용)
+    final overlapCount = (sentenceCount * 1.8).ceil().clamp(1, 99);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.primary.withValues(alpha: 0.15),
+        radius: 16,
+        side: BorderSide(
+          color: AppTheme.primaryLight.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text('✨', style: TextStyle(fontSize: 18)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 13,
+                      color: AppTheme.textPrimary,
+                      height: 1.5,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '이 중 $overlapCount개',
+                        style: const TextStyle(
+                          color: AppTheme.primaryLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: '의 문장을 다른 독자도 기록했어요',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  '피드에서 같은 문장을 찾아보세요',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 11,
+                    color: AppTheme.textTertiary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -5,8 +5,9 @@ import '../../../core/theme/app_theme.dart';
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
 class ProfileHeader extends StatefulWidget {
   final VoidCallback? onSettingsTap;
+  final int streak;
 
-  const ProfileHeader({super.key, this.onSettingsTap});
+  const ProfileHeader({super.key, this.onSettingsTap, this.streak = 0});
 
   @override
   State<ProfileHeader> createState() => _ProfileHeaderState();
@@ -117,11 +118,11 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                     label: '프로필 편집',
                     button: true,
                     child: SizedBox(
-                      width: 36,
-                      height: 36,
+                      width: 40,
+                      height: 40,
                       child: IconButton(
                         onPressed: () => _showEditProfileSheet(context),
-                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
                         style: IconButton.styleFrom(
                           foregroundColor: AppTheme.accent,
                           backgroundColor:
@@ -137,14 +138,14 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       label: '설정',
                       button: true,
                       child: SizedBox(
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         child: IconButton(
                           onPressed: widget.onSettingsTap,
                           icon: const Icon(
-                              Icons.settings_outlined, size: 16),
+                              Icons.settings_outlined, size: 18),
                           style: IconButton.styleFrom(
-                            foregroundColor: AppTheme.textTertiary,
+                            foregroundColor: AppTheme.textSecondary,
                             backgroundColor:
                                 AppTheme.darkCardElevated,
                             padding: EdgeInsets.zero,
@@ -174,6 +175,42 @@ class _ProfileHeaderState extends State<ProfileHeader> {
               ),
             ),
           ),
+
+          // ─── 스트릭 배지 ───────────────────────────────────────
+          if (widget.streak > 0) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: AppTheme.smoothPill(
+                    color: AppTheme.primary.withValues(alpha: 0.3),
+                    side: BorderSide(
+                      color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 12)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${widget.streak}일 연속 독서 중',
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryLight,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -338,8 +375,8 @@ class _StatItem extends StatelessWidget {
                 label,
                 style: const TextStyle(
                   fontFamily: 'Pretendard',
-                  fontSize: 11,
-                  color: AppTheme.textTertiary,
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
                   height: 1.4,
                 ),
               ),

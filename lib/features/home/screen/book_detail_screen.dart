@@ -287,15 +287,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             ),
           ),
 
-          // ── 초서 헤더 ──────────────────────────────────────────
+          // ── 수집 문장 헤더 ────────────────────────────────────
           SliverToBoxAdapter(
             child: _SectionHeader(
-              title: '초서한 문장',
+              title: '수집한 문장',
               count: _sentences.length,
             ),
           ),
 
-          // ── 초서 목록 ──────────────────────────────────────────
+          // ── 수집 문장 목록 ────────────────────────────────────
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => Padding(
@@ -360,10 +360,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         ],
       ),
 
-      // ── 하단 고정 버튼 ─────────────────────────────────────────
-      bottomNavigationBar: _BottomActionBar(
-        onStartSession: _startSession,
-      ),
     );
   }
 }
@@ -721,7 +717,7 @@ class _StatsRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _StatCard(value: '$sentenceCount', label: '초서'),
+            child: _StatCard(value: '$sentenceCount', label: '문장'),
           ),
         ],
       ),
@@ -854,7 +850,7 @@ class _AddMemoButton extends StatelessWidget {
   }
 }
 
-// ─── 초서 문장 카드 ──────────────────────────────────────────────────────
+// ─── 수집 문장 카드 ──────────────────────────────────────────────────────
 
 class _SentenceCard extends StatelessWidget {
   final _CollectedSentence sentence;
@@ -1189,67 +1185,6 @@ class _MemoCard extends StatelessWidget {
   }
 }
 
-// ─── 하단 액션 바 ────────────────────────────────────────────────────────
-
-class _BottomActionBar extends StatelessWidget {
-  final VoidCallback onStartSession;
-
-  const _BottomActionBar({required this.onStartSession});
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        12,
-        AppTheme.screenPadding,
-        bottomPad + 12,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.darkBg,
-        border: const Border(
-          top: BorderSide(color: AppTheme.darkBorder),
-        ),
-      ),
-      child: Semantics(
-        label: '이어 읽기',
-        button: true,
-        child: GestureDetector(
-          onTap: onStartSession,
-          child: Container(
-            height: 52,
-            alignment: Alignment.center,
-            decoration: AppTheme.smoothBox(
-              gradient: AppTheme.greenGradient,
-              radius: AppTheme.radiusMD,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.menu_book_rounded,
-                  size: 20,
-                  color: AppTheme.darkBg,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '이어 읽기',
-                  style: AppTheme.bodyLarge.copyWith(
-                    color: AppTheme.darkBg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ─── 메뉴 시트 ───────────────────────────────────────────────────────────
 
 class _MenuSheet extends StatelessWidget {
@@ -1301,10 +1236,24 @@ class _MenuSheet extends StatelessWidget {
               HapticFeedback.selectionClick();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('공유 기능은 곧 지원돼요'),
-                  backgroundColor: AppTheme.primary,
+                  content: const Text(
+                    '공유 기능은 곧 지원돼요',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                  backgroundColor: AppTheme.darkCardElevated,
                   behavior: SnackBarBehavior.floating,
-                  shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                    side: BorderSide(
+                      color: AppTheme.primaryLight.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                   duration: const Duration(seconds: 2),
                 ),
               );

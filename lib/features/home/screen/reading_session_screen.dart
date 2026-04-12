@@ -18,7 +18,22 @@ const _kGreen = Color(0xFF00FF00);
 class ReadingSessionScreen extends ConsumerStatefulWidget {
   final SessionGoal? goal;
 
-  const ReadingSessionScreen({super.key, this.goal});
+  /// 페이지 기록용 — 없으면 RecapData.bookId가 null이어서 DB 저장 생략
+  final String? bookId;
+  final String bookTitle;
+  final String bookAuthor;
+  final int startPage;
+  final int totalPages;
+
+  const ReadingSessionScreen({
+    super.key,
+    this.goal,
+    this.bookId,
+    this.bookTitle = '채식주의자',
+    this.bookAuthor = '한강',
+    this.startPage = 0,
+    this.totalPages = 0,
+  });
 
   @override
   ConsumerState<ReadingSessionScreen> createState() =>
@@ -31,11 +46,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final Animation<double> _pulseAnim;
   late final AnimationController _moveCtrl;
   bool _showControls = false;
-  final List<String> _collectedSentences = [];
+  final List<CollectedSentence> _collectedSentences = [];
+  late final DateTime _sessionStartedAt;
 
   @override
   void initState() {
     super.initState();
+    _sessionStartedAt = DateTime.now();
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -72,7 +89,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final timer = ref.read(timerProvider);
     if (timer.isRunning) ref.read(timerProvider.notifier).pause();
 
-    final result = await showModalBottomSheet<String>(
+    final result = await showModalBottomSheet<CollectedSentence>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -80,8 +97,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     );
 
     if (!mounted) return;
-    if (result != null && result.trim().isNotEmpty) {
-      setState(() => _collectedSentences.add(result.trim()));
+    if (result != null && result.content.isNotEmpty) {
+      setState(() => _collectedSentences.add(result));
     }
     ref.read(timerProvider.notifier).resume();
   }
@@ -104,9 +121,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       AppConstants.routeRecap,
       extra: RecapData(
         seconds: seconds,
-        bookTitle: '채식주의자',
-        bookAuthor: '한강',
+        bookTitle: widget.bookTitle,
+        bookAuthor: widget.bookAuthor,
         sentences: List.from(_collectedSentences),
+        bookId: widget.bookId,
+        startPage: widget.startPage,
+        totalPages: widget.totalPages,
+        sessionStartedAt: _sessionStartedAt,
       ),
     );
   }
@@ -222,10 +243,10 @@ class _TopBar extends StatelessWidget {
               Text(
                 timer.isPaused ? '일시정지' : '독서 중',
                 style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 2.2,
-                  color: _kGreen.withValues(alpha: 0.7),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.6,
+                  color: _kGreen.withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(width: 10),
@@ -234,14 +255,14 @@ class _TopBar extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withValues(alpha: 0.25),
                 ),
               ),
               const SizedBox(width: 10),
               // 숲벗 카운트 (인라인)
               Container(
-                width: 5,
-                height: 5,
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(
                   color: _kGreen,
                   shape: BoxShape.circle,
@@ -253,12 +274,12 @@ class _TopBar extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 6),
               Text(
                 '42명 함께 읽는 중',
                 style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.35),
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               ),
               const Spacer(),
@@ -266,12 +287,12 @@ class _TopBar extends StatelessWidget {
               GestureDetector(
                 onTap: onMenuTap,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: AppTheme.smoothBox(
-                    color: Colors.white.withValues(alpha: 0.07),
+                    color: Colors.white.withValues(alpha: 0.09),
                     radius: 10,
                     side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.white.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Row(
@@ -281,15 +302,15 @@ class _TopBar extends StatelessWidget {
                         timer.isPaused
                             ? Icons.play_arrow_rounded
                             : Icons.pause_rounded,
-                        color: Colors.white.withValues(alpha: 0.45),
-                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.65),
+                        size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         timer.isPaused ? '재개' : '일시정지',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.35),
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -331,8 +352,8 @@ class _TopBar extends StatelessWidget {
                     ? '${timer.seconds}초 경과'
                     : '${timer.seconds ~/ 60}분 경과',
                 style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white.withValues(alpha: 0.25),
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.4),
                 ),
               ),
               Text(
@@ -340,10 +361,10 @@ class _TopBar extends StatelessWidget {
                     ? '목표 ${timer.goal!.label}'
                     : '자유 독서',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: timer.goalReached
-                      ? _kGreen.withValues(alpha: 0.7)
-                      : Colors.white.withValues(alpha: 0.25),
+                      ? _kGreen.withValues(alpha: 0.85)
+                      : Colors.white.withValues(alpha: 0.4),
                 ),
               ),
             ],
@@ -411,8 +432,8 @@ class _BottomArea extends StatelessWidget {
                   Text(
                     '한강 · 창비 · 2007',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.3),
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.45),
                     ),
                   ),
                 ],
@@ -433,15 +454,15 @@ class _BottomArea extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.format_quote_rounded,
-                        size: 11,
-                        color: _kGreen.withValues(alpha: 0.7),
+                        size: 12,
+                        color: _kGreen.withValues(alpha: 0.85),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '$chosuCount문장',
                         style: TextStyle(
-                          fontSize: 11,
-                          color: _kGreen.withValues(alpha: 0.7),
+                          fontSize: 12,
+                          color: _kGreen.withValues(alpha: 0.85),
                         ),
                       ),
                     ],
@@ -534,20 +555,19 @@ class _QuickBtn extends StatelessWidget {
       child: Container(
         width: 52,
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: AppTheme.smoothBox(
+        decoration: AppTheme.smoothPill(
           color: Colors.white.withValues(alpha: 0.07),
-          radius: 12,
           side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.45)),
+            Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.6)),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 9,
-                color: Colors.white.withValues(alpha: 0.3),
+                fontSize: 11,
+                color: Colors.white.withValues(alpha: 0.5),
               ),
             ),
           ],

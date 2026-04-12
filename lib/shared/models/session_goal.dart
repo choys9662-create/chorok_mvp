@@ -65,3 +65,33 @@ class SessionGoal {
     }
   }
 }
+
+
+/// 세션 중 수집한 문장 — 원문과 내 생각을 함께 보관
+class CollectedSentence {
+  final String content;
+  final String thought;
+
+  const CollectedSentence({required this.content, this.thought = ''});
+}
+
+/// 독서 세션 진입 시 라우터에 전달하는 통합 extra
+///
+/// goal + 책 메타데이터를 하나로 묶어 ReadingSessionScreen에 전달한다.
+class SessionExtra {
+  final SessionGoal? goal;
+  final String? bookId;
+  final String bookTitle;
+  final String bookAuthor;
+  final int startPage;
+  final int totalPages;
+
+  const SessionExtra({
+    this.goal,
+    this.bookId,
+    this.bookTitle = '',
+    this.bookAuthor = '',
+    this.startPage = 0,
+    this.totalPages = 0,
+  });
+}

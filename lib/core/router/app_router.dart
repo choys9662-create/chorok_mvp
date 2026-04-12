@@ -7,13 +7,18 @@ import '../../features/analytics/screen/analytics_screen.dart';
 import '../../features/auth/screen/auth_screen.dart';
 import '../../features/explore/screen/explore_screen.dart';
 import '../../features/feed/screen/feed_screen.dart';
+import '../../features/search/screen/search_screen.dart';
 import '../../shared/models/session_goal.dart';
 import '../../features/home/screen/book_detail_screen.dart';
 import '../../features/home/screen/home_screen.dart';
 import '../../features/home/screen/notification_screen.dart';
 import '../../features/home/screen/reading_session_screen.dart';
 import '../../features/home/screen/session_recap_screen.dart';
+import '../../features/library/book_reflection_screen.dart';
 import '../../features/library/screen/library_screen.dart';
+import '../../features/search/barcode_scanner_screen.dart';
+import '../../features/library/choseo_list_screen.dart';
+import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
 
@@ -52,6 +57,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ExploreScreen(),
       ),
 
+      // 책 검색 (알라딘 API)
+      GoRoute(
+        path: AppConstants.routeSearch,
+        builder: (context, state) => const SearchScreen(),
+      ),
+
       // 책 상세 — 쉘 밖에서 전체 화면으로 표시
       GoRoute(
         path: AppConstants.routeBookDetail,
@@ -65,8 +76,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeSession,
         builder: (context, state) {
-          final goal = state.extra as SessionGoal?;
-          return ReadingSessionScreen(goal: goal);
+          final extra = state.extra;
+          // SessionExtra (신규) 또는 SessionGoal? (레거시 호환)
+          if (extra is SessionExtra) {
+            return ReadingSessionScreen(
+              goal: extra.goal,
+              bookId: extra.bookId,
+              bookTitle: extra.bookTitle,
+              bookAuthor: extra.bookAuthor,
+              startPage: extra.startPage,
+              totalPages: extra.totalPages,
+            );
+          }
+          return ReadingSessionScreen(goal: extra as SessionGoal?);
         },
       ),
 
@@ -77,6 +99,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final data = state.extra as RecapData;
           return SessionRecapScreen(data: data);
         },
+      ),
+
+      // 완독 감상 — 완독 감지 후 이동 (3단계 PageView)
+      GoRoute(
+        path: AppConstants.routeReflection,
+        builder: (context, state) {
+          final extra = state.extra as Book;
+          return BookReflectionScreen(book: extra);
+        },
+      ),
+
+      // ISBN 바코드 스캐너
+      GoRoute(
+        path: AppConstants.routeBarcode,
+        builder: (context, state) => const BarcodeScannerScreen(),
+      ),
+
+      // 수집한 문장 전체 보기
+      GoRoute(
+        path: AppConstants.routeChoseoList,
+        builder: (context, state) => const ChoseoListScreen(),
       ),
 
       StatefulShellRoute.indexedStack(

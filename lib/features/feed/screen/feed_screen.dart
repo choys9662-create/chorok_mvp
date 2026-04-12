@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
 
 /// 피드 스크린: 소식(소셜 활동) & 발견(문장 탐색)
-class FeedScreen extends StatefulWidget {
+class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
 
   @override
-  State<FeedScreen> createState() => _FeedScreenState();
+  ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
 enum _FeedFilter { latest, popular, overlap }
 
 // ─── 상태 ──────────────────────────────────────────────────────────────
-class _FeedScreenState extends State<FeedScreen> {
+class _FeedScreenState extends ConsumerState<FeedScreen> {
   _FeedFilter _filter = _FeedFilter.latest;
   bool _isRefreshing = false;
 
@@ -146,6 +149,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final filtered = _filteredSentences;
     final groups = _overlapGroups;
     final overlapIds = _overlapSentenceIds;
+    final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
 
     return Scaffold(
       body: SafeArea(
@@ -159,6 +163,33 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
               child: Row(
                 children: [
+                  if (context.canPop()) ...[
+                    Semantics(
+                      label: '뒤로 가기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.pop();
+                        },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkCard,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppTheme.darkBorder),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 16,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   Text(
                     '피드',
                     style: AppTheme.headingLarge.copyWith(
@@ -214,7 +245,7 @@ class _FeedScreenState extends State<FeedScreen> {
             // ─── 콘텐츠 ──────────────────────────────────────
             Expanded(
               child: _filter == _FeedFilter.overlap
-                  ? _buildOverlapView(groups)
+                  ? _buildOverlapView(groups, scrollCtrl)
                   : filtered.isEmpty
                       ? _buildEmptyState()
                       : RefreshIndicator(
@@ -224,6 +255,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           child: _SentenceList(
                             sentences: filtered,
                             overlapIds: overlapIds,
+                            controller: scrollCtrl,
                           ),
                         ),
             ),
@@ -233,7 +265,7 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  Widget _buildOverlapView(List<OverlapGroup> groups) {
+  Widget _buildOverlapView(List<OverlapGroup> groups, ScrollController ctrl) {
     if (groups.isEmpty) return _buildEmptyState();
 
     return RefreshIndicator(
@@ -241,6 +273,7 @@ class _FeedScreenState extends State<FeedScreen> {
       backgroundColor: AppTheme.darkCard,
       onRefresh: _onRefresh,
       child: ListView.separated(
+        controller: ctrl,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(
           horizontal: AppTheme.screenPadding,
@@ -320,15 +353,18 @@ class _FeedFilterChip extends StatelessWidget {
 class _SentenceList extends StatelessWidget {
   final List<FeedSentence> sentences;
   final Set<String> overlapIds;
+  final ScrollController? controller;
 
   const _SentenceList({
     required this.sentences,
     required this.overlapIds,
+    this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
+      controller: controller,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.screenPadding,
@@ -550,11 +586,24 @@ class _SentenceCardState extends State<_SentenceCard> {
                         HapticFeedback.selectionClick();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('공유 기능은 곧 지원돼요'),
-                            backgroundColor: AppTheme.primary,
+                            content: const Text(
+                              '공유 기능은 곧 지원돼요',
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                            backgroundColor: AppTheme.darkCardElevated,
                             behavior: SnackBarBehavior.floating,
-                            shape: AppTheme.smoothShape(
-                                radius: AppTheme.radiusMD),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                              side: BorderSide(
+                                color: AppTheme.primaryLight.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                             duration: const Duration(seconds: 2),
                           ),
                         );

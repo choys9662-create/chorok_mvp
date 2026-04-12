@@ -277,9 +277,8 @@ class _TabButton extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(
+        decoration: AppTheme.smoothPill(
           color: isSelected ? AppTheme.primary : Colors.transparent,
-          radius: AppTheme.radiusSM,
         ),
         child: Text(
           label,

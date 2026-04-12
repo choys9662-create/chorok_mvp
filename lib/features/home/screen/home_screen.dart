@@ -12,6 +12,7 @@ import 'book_detail_screen.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
+import '../../../shared/providers/tab_scroll_controllers.dart';
 
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
@@ -121,25 +122,25 @@ const List<BookReadingStats> _kBookStats = [
   ),
 ];
 
-
-
 // ─── 홈 스크린 ────────────────────────────────────────────────────────────
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scrollCtrl = ref.read(tabScrollControllersProvider)[0];
     return Scaffold(
       backgroundColor: AppTheme.darkSurface,
-      body: const SafeArea(
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _HomeAppBar(),
+            const _HomeAppBar(),
             Expanded(
               child: CustomScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
+                controller: scrollCtrl,
+                physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // ① 이번 주 독서 현황
                   SliverToBoxAdapter(
@@ -150,14 +151,13 @@ class HomeScreen extends StatelessWidget {
                   ),
                   // ② 지금 읽는 책
                   SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: _ReadingBooksSection(),
-                  ),
+                  SliverToBoxAdapter(child: _ReadingBooksSection()),
                   // ③ 문장 기반 추천
                   SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(
-                    child: _RecommendedBooksSection(),
-                  ),
+                  SliverToBoxAdapter(child: _RecommendedBooksSection()),
+                  // ④ 피드 하이라이트
+                  SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  SliverToBoxAdapter(child: _FeedHighlightSection()),
                   SliverToBoxAdapter(child: SizedBox(height: 32)),
                 ],
               ),
@@ -195,7 +195,7 @@ class _HomeAppBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 12, 0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -205,15 +205,15 @@ class _HomeAppBar extends ConsumerWidget {
             children: [
               Text(
                 _greeting,
-                style: AppTheme.captionLarge.copyWith(
-                  color: AppTheme.textTertiary,
+                style: AppTheme.bodySmall.copyWith(
+                  color: AppTheme.textSecondary,
                   letterSpacing: 0.2,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 _subtext(timer),
-                style: AppTheme.headingMedium.copyWith(
+                style: AppTheme.headingLarge.copyWith(
                   color: AppTheme.textPrimary,
                 ),
               ),
@@ -234,8 +234,8 @@ class _HomeAppBar extends ConsumerWidget {
                 },
                 child: const Icon(
                   Icons.search_rounded,
-                  color: AppTheme.textTertiary,
-                  size: 22,
+                  color: AppTheme.textSecondary,
+                  size: 24,
                 ),
               ),
             ),
@@ -255,8 +255,11 @@ class _HomeAppBar extends ConsumerWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.notifications_none_rounded,
-                        color: AppTheme.textTertiary, size: 22),
+                    const Icon(
+                      Icons.notifications_none_rounded,
+                      color: AppTheme.textSecondary,
+                      size: 24,
+                    ),
                     Positioned(
                       top: 6,
                       right: 6,
@@ -268,7 +271,9 @@ class _HomeAppBar extends ConsumerWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryLight.withValues(alpha: 0.6),
+                              color: AppTheme.primaryLight.withValues(
+                                alpha: 0.6,
+                              ),
                               blurRadius: 4,
                             ),
                           ],
@@ -306,17 +311,19 @@ class _WeeklyStatusCard extends ConsumerWidget {
     final todayMin = timer.seconds ~/ 60;
 
     const goalMin = 30;
-    final weekTotal = _kWeeklyMinutes
-            .sublist(0, todayIndex)
-            .fold<int>(0, (a, b) => a + b) +
+    final weekTotal =
+        _kWeeklyMinutes.sublist(0, todayIndex).fold<int>(0, (a, b) => a + b) +
         todayMin;
-    final daysAchieved = _kWeeklyMinutes
+    final daysAchieved =
+        _kWeeklyMinutes
             .sublist(0, todayIndex)
             .where((m) => m >= goalMin)
             .length +
         (todayMin >= goalMin ? 1 : 0);
-    final maxMin = [..._kWeeklyMinutes.sublist(0, todayIndex), todayMin]
-        .fold<int>(goalMin, (a, b) => a > b ? a : b);
+    final maxMin = [
+      ..._kWeeklyMinutes.sublist(0, todayIndex),
+      todayMin,
+    ].fold<int>(goalMin, (a, b) => a > b ? a : b);
 
     final weekTotalText = weekTotal >= 60
         ? '${weekTotal ~/ 60}시간 ${weekTotal % 60}분'
@@ -326,7 +333,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
       borderColor: AppTheme.darkBorder,
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // ── 왼쪽: 주간 통계 ────────────────────────────────
           Expanded(
@@ -338,16 +345,18 @@ class _WeeklyStatusCard extends ConsumerWidget {
                   children: [
                     Text(
                       '이번 주',
-                      style: AppTheme.captionLarge
-                          .copyWith(color: AppTheme.textTertiary),
+                      style: AppTheme.captionLarge.copyWith(
+                        color: AppTheme.textTertiary,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -378,16 +387,16 @@ class _WeeklyStatusCard extends ConsumerWidget {
                       final min = i == todayIndex
                           ? todayMin
                           : (i < todayIndex ? _kWeeklyMinutes[i] : 0);
-                      final ratio =
-                          maxMin > 0 ? (min / maxMin).clamp(0.0, 1.0) : 0.0;
+                      final ratio = maxMin > 0
+                          ? (min / maxMin).clamp(0.0, 1.0)
+                          : 0.0;
                       final isToday = i == todayIndex;
                       final isFuture = i > todayIndex;
                       final achieved = min >= goalMin;
 
                       return Expanded(
                         child: Padding(
-                          padding: EdgeInsets.only(
-                              right: i < 6 ? 4 : 0),
+                          padding: EdgeInsets.only(right: i < 6 ? 4 : 0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -396,34 +405,34 @@ class _WeeklyStatusCard extends ConsumerWidget {
                                 child: Align(
                                   alignment: Alignment.bottomCenter,
                                   child: FractionallySizedBox(
-                                    heightFactor:
-                                        isFuture ? 0.08 : (ratio < 0.08 ? 0.08 : ratio),
+                                    heightFactor: isFuture
+                                        ? 0.08
+                                        : (ratio < 0.08 ? 0.08 : ratio),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(4),
                                         color: isFuture
                                             ? AppTheme.darkBorder
                                             : null,
                                         gradient: isFuture
                                             ? null
                                             : LinearGradient(
-                                                begin:
-                                                    Alignment.bottomCenter,
+                                                begin: Alignment.bottomCenter,
                                                 end: Alignment.topCenter,
                                                 colors: achieved
                                                     ? [
                                                         AppTheme.primary,
-                                                        AppTheme
-                                                            .primaryLight,
+                                                        AppTheme.primaryLight,
                                                       ]
                                                     : [
                                                         AppTheme.primary
                                                             .withValues(
-                                                                alpha: 0.5),
+                                                              alpha: 0.5,
+                                                            ),
                                                         AppTheme.primary
                                                             .withValues(
-                                                                alpha: 0.3),
+                                                              alpha: 0.3,
+                                                            ),
                                                       ],
                                               ),
                                       ),
@@ -437,7 +446,6 @@ class _WeeklyStatusCard extends ConsumerWidget {
                                 _kWeekLabels[i],
                                 style: AppTheme.captionSmall.copyWith(
                                   fontFamily: 'Pretendard',
-                                  fontSize: 10,
                                   color: isToday
                                       ? AppTheme.primaryLight
                                       : AppTheme.textTertiary,
@@ -508,25 +516,31 @@ class _WeeklyStatusCard extends ConsumerWidget {
                   ),
                 );
                 if (goal != null && context.mounted) {
-                  context.push(AppConstants.routeSession, extra: goal);
+                  context.push(
+                    AppConstants.routeSession,
+                    extra: SessionExtra(
+                      goal: goal,
+                      bookId: '1',
+                      bookTitle: '채식주의자',
+                      bookAuthor: '한강',
+                      startPage: 186,
+                      totalPages: 300,
+                    ),
+                  );
                 }
               },
               child: Container(
-                width: 64,
-                height: 148,
+                width: 96,
+                height: 96,
                 decoration: AppTheme.smoothBox(
                   gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppTheme.primary,
-                      Color(0xFF0A5C3A),
-                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppTheme.primary, Color(0xFF0A5C3A)],
                   ),
-                  radius: 16,
+                  radius: 28,
                   side: BorderSide(
-                    color:
-                        AppTheme.primaryLight.withValues(alpha: 0.25),
+                    color: AppTheme.primaryLight.withValues(alpha: 0.25),
                   ),
                   shadows: [
                     BoxShadow(
@@ -548,48 +562,38 @@ class _WeeklyStatusCard extends ConsumerWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryLight
-                                  .withValues(alpha: 0.7),
+                              color: AppTheme.primaryLight.withValues(
+                                alpha: 0.7,
+                              ),
                               blurRadius: 8,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
-                        '이어\n하기',
+                        '이어하기',
                         textAlign: TextAlign.center,
-                        style: AppTheme.captionLarge.copyWith(
+                        style: AppTheme.captionSmall.copyWith(
                           fontFamily: 'Pretendard',
                           color: AppTheme.primaryLight,
                           fontWeight: FontWeight.w700,
-                          height: 1.4,
                         ),
                       ),
                     ] else ...[
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight
-                              .withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          size: 24,
-                          color: AppTheme.primaryLight,
-                        ),
+                      const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 28,
+                        color: AppTheme.primaryLight,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Text(
-                        '독서\n시작',
+                        '독서 시작',
                         textAlign: TextAlign.center,
-                        style: AppTheme.captionLarge.copyWith(
+                        style: AppTheme.captionSmall.copyWith(
                           fontFamily: 'Pretendard',
                           color: AppTheme.primaryLight,
                           fontWeight: FontWeight.w700,
-                          height: 1.4,
                         ),
                       ),
                     ],
@@ -617,7 +621,8 @@ class _ReadingBooksSection extends StatelessWidget {
         // 섹션 헤더
         Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding),
+            horizontal: AppTheme.screenPadding,
+          ),
           child: Row(
             children: [
               Text(
@@ -644,7 +649,11 @@ class _ReadingBooksSection extends StatelessWidget {
         if (_kBookStats.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding, 8, AppTheme.screenPadding, 12),
+              AppTheme.screenPadding,
+              8,
+              AppTheme.screenPadding,
+              12,
+            ),
             child: _InsightChip(
               insight: ReadingInsightEngine.generateForBook(_kBookStats.first),
             ),
@@ -657,12 +666,14 @@ class _ReadingBooksSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding),
+              horizontal: AppTheme.screenPadding,
+            ),
             itemCount: _kReadingBooks.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                    right: index < _kReadingBooks.length - 1 ? 12 : 0),
+                  right: index < _kReadingBooks.length - 1 ? 12 : 0,
+                ),
                 child: _ReadingBookCard(book: _kReadingBooks[index]),
               );
             },
@@ -687,9 +698,7 @@ class _InsightChip extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: AppTheme.primary.withValues(alpha: 0.2),
         radius: AppTheme.radiusMD,
-        side: BorderSide(
-          color: AppTheme.primaryLight.withValues(alpha: 0.12),
-        ),
+        side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.12)),
       ),
       child: Row(
         children: [
@@ -736,8 +745,8 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
   Widget build(BuildContext context) {
     final b = widget.book;
     final progress = b.currentPage / b.totalPages;
-    final gradColors =
-        AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final gradColors = AppTheme
+        .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
 
     return GestureDetector(
       onTap: () {
@@ -765,6 +774,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
         curve: Curves.easeOutCubic,
         child: Container(
           width: 160,
+          clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: AppTheme.darkCard,
             radius: 16,
@@ -777,8 +787,6 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
               Container(
                 height: 110,
                 decoration: BoxDecoration(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(15)),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -793,8 +801,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 64,
-                        color:
-                            AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
                       ),
                     ),
                     // 진행률 배지
@@ -803,10 +810,11 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                       right: 10,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color:
-                              AppTheme.darkSurface.withValues(alpha: 0.75),
+                          color: AppTheme.darkSurface.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -880,7 +888,17 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         ),
                       );
                       if (goal != null && context.mounted) {
-                        context.push(AppConstants.routeSession, extra: goal);
+                        context.push(
+                          AppConstants.routeSession,
+                          extra: SessionExtra(
+                            goal: goal,
+                            bookId: b.title.hashCode.toString(),
+                            bookTitle: b.title,
+                            bookAuthor: b.author,
+                            startPage: b.currentPage,
+                            totalPages: b.totalPages,
+                          ),
+                        );
                       }
                     },
                     child: Container(
@@ -890,8 +908,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         color: AppTheme.primary.withValues(alpha: 0.5),
                         radius: 10,
                         side: BorderSide(
-                          color:
-                              AppTheme.primaryLight.withValues(alpha: 0.3),
+                          color: AppTheme.primaryLight.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
@@ -927,7 +944,8 @@ class _RecommendedBooksSection extends StatelessWidget {
         // 헤더
         Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding),
+            horizontal: AppTheme.screenPadding,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -955,8 +973,7 @@ class _RecommendedBooksSection extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryLight.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
@@ -967,8 +984,11 @@ class _RecommendedBooksSection extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.auto_awesome_rounded,
-                        size: 12, color: AppTheme.primaryLight),
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 12,
+                      color: AppTheme.primaryLight,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'AI',
@@ -992,15 +1012,15 @@ class _RecommendedBooksSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding),
+              horizontal: AppTheme.screenPadding,
+            ),
             itemCount: _kRecommendedBooks.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                    right:
-                        index < _kRecommendedBooks.length - 1 ? 12 : 0),
-                child: _RecommendedBookCard(
-                    book: _kRecommendedBooks[index]),
+                  right: index < _kRecommendedBooks.length - 1 ? 12 : 0,
+                ),
+                child: _RecommendedBookCard(book: _kRecommendedBooks[index]),
               );
             },
           ),
@@ -1049,6 +1069,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
         curve: Curves.easeOutCubic,
         child: Container(
           width: 240,
+          clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: AppTheme.darkCard,
             radius: 16,
@@ -1060,8 +1081,6 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
               Container(
                 width: 88,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(15)),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -1076,8 +1095,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 48,
-                        color:
-                            AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
                       ),
                     ),
                     // 매칭 점수
@@ -1086,10 +1104,11 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppTheme.darkSurface
-                              .withValues(alpha: 0.8),
+                          color: AppTheme.darkSurface.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -1098,7 +1117,6 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             fontFamily: 'Pretendard',
                             color: AppTheme.primaryLight,
                             fontWeight: FontWeight.w700,
-                            fontSize: 10,
                           ),
                         ),
                       ),
@@ -1139,8 +1157,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                           color: AppTheme.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppTheme.primary
-                                .withValues(alpha: 0.2),
+                            color: AppTheme.primary.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -1180,8 +1197,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             HapticFeedback.mediumImpact();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content:
-                                    Text('${b.title}을(를) 읽고 싶은 책에 추가했어요'),
+                                content: Text('${b.title}을(를) 읽고 싶은 책에 추가했어요'),
                                 backgroundColor: AppTheme.primary,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -1191,20 +1207,22 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color:
-                                  AppTheme.primary.withValues(alpha: 0.4),
+                              color: AppTheme.primary.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: AppTheme.primaryLight
-                                    .withValues(alpha: 0.2),
+                                color: AppTheme.primaryLight.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add_rounded,
-                                    size: 14,
-                                    color: AppTheme.primaryLight),
+                                const Icon(
+                                  Icons.add_rounded,
+                                  size: 14,
+                                  color: AppTheme.primaryLight,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '서재에 추가',
@@ -1224,6 +1242,279 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── ④ 피드 하이라이트 ───────────────────────────────────────────────────
+
+class _HighlightSentence {
+  final String content;
+  final String bookTitle;
+  final String author;
+  final int recordCount;
+  final int empathyCount;
+  final bool isOverlap;
+  final int gradientIndex;
+
+  const _HighlightSentence({
+    required this.content,
+    required this.bookTitle,
+    required this.author,
+    required this.recordCount,
+    required this.empathyCount,
+    this.isOverlap = false,
+    this.gradientIndex = 0,
+  });
+}
+
+const _kHighlightSentences = [
+  _HighlightSentence(
+    content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
+    bookTitle: '채식주의자',
+    author: '한강',
+    recordCount: 142,
+    empathyCount: 384,
+    isOverlap: true,
+    gradientIndex: 0,
+  ),
+  _HighlightSentence(
+    content: '우리는 모두 누군가의 이민자다. 다만 시간이 다를 뿐.',
+    bookTitle: '파친코',
+    author: '이민진',
+    recordCount: 98,
+    empathyCount: 271,
+    isOverlap: false,
+    gradientIndex: 2,
+  ),
+  _HighlightSentence(
+    content: '사랑한다는 것은 서로의 고독을 인정하는 것이다.',
+    bookTitle: '노르웨이의 숲',
+    author: '무라카미 하루키',
+    recordCount: 214,
+    empathyCount: 512,
+    isOverlap: true,
+    gradientIndex: 4,
+  ),
+];
+
+class _FeedHighlightSection extends StatelessWidget {
+  const _FeedHighlightSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 헤더
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '지금 많이 기록된 문장',
+                      style: AppTheme.headingSmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '독자들이 가장 많이 수집한 문장이에요',
+                      style: AppTheme.captionLarge.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: AppTheme.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.push('/feed'),
+                child: Text(
+                  '피드 보기 ›',
+                  style: AppTheme.captionLarge.copyWith(
+                    fontFamily: 'Pretendard',
+                    color: AppTheme.textTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 문장 카드 리스트
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: Column(
+            children: _kHighlightSentences
+                .asMap()
+                .entries
+                .map(
+                  (e) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: e.key < _kHighlightSentences.length - 1 ? 10 : 0,
+                    ),
+                    child: _HighlightCard(sentence: e.value),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HighlightCard extends StatelessWidget {
+  final _HighlightSentence sentence;
+  const _HighlightCard({required this.sentence});
+
+  @override
+  Widget build(BuildContext context) {
+    final gradColors =
+        AppTheme.coverGradients[sentence.gradientIndex %
+            AppTheme.coverGradients.length];
+
+    return Semantics(
+      label: '${sentence.bookTitle} 문장 보기',
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          context.push('/feed');
+        },
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: AppTheme.smoothBox(
+            color: AppTheme.darkCard,
+            radius: AppTheme.radiusLG,
+            side: BorderSide(color: AppTheme.darkBorder),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 책 표지 컬러 바 — stretch로 카드 전체 높이 채움
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: gradColors,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // 문장 + 메타
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 겹문장 배지
+                        if (sentence.isOverlap)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryLight.withValues(
+                                  alpha: 0.08,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppTheme.primaryLight.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.join_inner_rounded,
+                                    size: 11,
+                                    color: AppTheme.primaryLight,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '겹문장 · ${sentence.recordCount}명 수집',
+                                    style: AppTheme.captionSmall.copyWith(
+                                      fontFamily: 'Pretendard',
+                                      color: AppTheme.primaryLight,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        // 문장 본문
+                        Text(
+                          '"${sentence.content}"',
+                          style: AppTheme.bodySmall.copyWith(
+                            fontFamily: 'Pretendard',
+                            color: AppTheme.textPrimary,
+                            fontStyle: FontStyle.italic,
+                            height: 1.6,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 10),
+                        // 책 정보 + 공감
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${sentence.bookTitle} · ${sentence.author}',
+                                style: AppTheme.captionSmall.copyWith(
+                                  fontFamily: 'Pretendard',
+                                  color: AppTheme.textTertiary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.favorite_rounded,
+                              size: 12,
+                              color: AppTheme.accent.withValues(alpha: 0.8),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${sentence.empathyCount}',
+                              style: AppTheme.captionSmall.copyWith(
+                                fontFamily: 'Pretendard',
+                                color: AppTheme.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1260,4 +1551,3 @@ class _ProgressBar extends StatelessWidget {
     );
   }
 }
-

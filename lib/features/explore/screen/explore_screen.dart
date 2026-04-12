@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 
@@ -375,7 +377,10 @@ class _MainContentView extends StatelessWidget {
             onSelected: onCategorySelected,
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        // 알라딘 책 검색 배너
+        const SliverToBoxAdapter(child: _AladinSearchBanner()),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
         // 카테고리 필터 중이고 결과 없을 때
         if (isCategoryFiltered && !hasBooks) ...[
@@ -414,11 +419,11 @@ class _MainContentView extends StatelessWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(
             child: _TrendingBooksSection(books: filteredBooks),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
@@ -428,7 +433,7 @@ class _MainContentView extends StatelessWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -441,7 +446,7 @@ class _MainContentView extends StatelessWidget {
               childCount: filteredBooks.length,
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
@@ -451,7 +456,7 @@ class _MainContentView extends StatelessWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -578,9 +583,8 @@ class _CategoryChip extends StatelessWidget {
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
-          decoration: AppTheme.smoothBox(
+          decoration: AppTheme.smoothPill(
             color: isSelected ? AppTheme.accent : AppTheme.darkCard,
-            radius: 20,
             side: BorderSide(
               color: isSelected ? AppTheme.accent : AppTheme.darkBorder,
             ),
@@ -1150,4 +1154,105 @@ String _formatCount(int count) {
     RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
     (match) => '${match[1]},',
   );
+}
+
+// ─── 알라딘 책 검색 배너 ─────────────────────────────────────────────────────
+
+class _AladinSearchBanner extends StatefulWidget {
+  const _AladinSearchBanner();
+
+  @override
+  State<_AladinSearchBanner> createState() => _AladinSearchBannerState();
+}
+
+class _AladinSearchBannerState extends State<_AladinSearchBanner> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Semantics(
+        button: true,
+        label: '알라딘에서 책 검색하고 서재에 추가하기',
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) {
+            setState(() => _pressed = false);
+            HapticFeedback.mediumImpact();
+            context.push(AppConstants.routeSearch);
+          },
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            scale: _pressed ? 0.97 : 1.0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            child: Container(
+              height: 72,
+              decoration: AppTheme.smoothBox(
+                gradient: AppTheme.greenCardGradient,
+                radius: AppTheme.radiusLG,
+                side: BorderSide(
+                  color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: AppTheme.smoothBox(
+                      gradient: AppTheme.greenGradient,
+                      radius: AppTheme.radiusSM,
+                    ),
+                    child: const Icon(
+                      Icons.search_rounded,
+                      color: AppTheme.darkBg,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '책 검색하고 서재에 추가',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                            height: 1.4,
+                          ),
+                        ),
+                        Text(
+                          '알라딘 데이터베이스에서 책을 찾아보세요',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppTheme.textTertiary,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

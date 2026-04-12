@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Edit(**)",
+      "Write(**)",
+      "MultiEdit(**)",
       "Bash(for dir:*)",
       "Bash(do echo:*)",
       "Read(//Users/joyongseong/Documents/dev/chorok_app/lib/**)",
@@ -44,7 +47,38 @@
       "Bash(git remote:*)",
       "Bash(git branch:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(ssh-keygen -t ed25519 -C \"chorok_app\" -f ~/.ssh/id_ed25519 -N \"\")",
+      "Bash(pbcopy)",
+      "Read(//Users/joyongseong/development/flutter/bin/**)",
+      "Read(//Users/joyongseong/fvm/default/bin/**)",
+      "Read(//opt/homebrew/share/flutter/bin/**)",
+      "Read(//Users/joyongseong/**)",
+      "Bash(/opt/homebrew/bin/flutter analyze:*)",
+      "Bash(grep -E \"\\\\.\\(dart|freezed\\)$\")",
+      "Bash(ssh -T git@github.com -o StrictHostKeyChecking=no)",
+      "Bash(brew install:*)",
+      "Bash(/opt/homebrew/bin/brew install:*)",
+      "Bash(/opt/homebrew/bin/gh auth:*)",
+      "Bash(ls ~/.ssh/*.pub)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Read(//Users/joyongseong/Documents/dev/**)",
+      "Bash(export PATH=\"$PATH:/Users/joyongseong/flutter/bin\")",
+      "Bash(/opt/homebrew/bin/flutter pub:*)",
+      "Bash(export PATH=$PATH:$HOME/fvm/default/bin:$HOME/.pub-cache/bin:/usr/local/bin)",
+      "Bash(grep -r 'CREATE TABLE.*sentence' /Users/joyongseong/Documents/dev/chorok_app --include=*.dart --include=*.sql)",
+      "Bash(/Users/joyongseong/flutter/bin/flutter analyze:*)",
+      "Bash(find /Users/joyongseong -path */flutter_riverpod/src/consumer.dart)",
+      "Bash(find ~/.pub-cache -path */flutter_riverpod*/consumer.dart)",
+      "mcp__claude_ai_Figma__whoami",
+      "mcp__claude_ai_Figma__get_metadata",
+      "mcp__claude_ai_Figma__use_figma",
+      "Bash(flutter --version)",
+      "Bash(flutter doctor:*)"
     ]
   }
 }

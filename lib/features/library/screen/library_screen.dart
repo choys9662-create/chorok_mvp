@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
+import '../controller/choseo_list_controller.dart';
+import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
 
 // ─── 독서 기록 목업 (캘린더용) ────────────────────────────────────────────
@@ -18,23 +25,125 @@ typedef _ReadingLog = ({
 List<_ReadingLog> get _kReadingLogs {
   final now = DateTime.now();
   return [
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18),
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '파친코', bookAuthor: '이민진', minutes: 25, pages: 12),
-    (date: now.subtract(const Duration(days: 1)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 55, pages: 24),
-    (date: now.subtract(const Duration(days: 2)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 38, pages: 16),
-    (date: now.subtract(const Duration(days: 3)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 20, pages: 8),
-    (date: now.subtract(const Duration(days: 5)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 65, pages: 30),
-    (date: now.subtract(const Duration(days: 6)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 30, pages: 14),
-    (date: now.subtract(const Duration(days: 8)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 48, pages: 22),
-    (date: now.subtract(const Duration(days: 10)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 35, pages: 15),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 52, pages: 25),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 18, pages: 7),
-    (date: now.subtract(const Duration(days: 14)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 40, pages: 19),
-    (date: now.subtract(const Duration(days: 15)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 28, pages: 13),
-    (date: now.subtract(const Duration(days: 18)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 60, pages: 28),
-    (date: now.subtract(const Duration(days: 20)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 33, pages: 16),
-    (date: now.subtract(const Duration(days: 22)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 45, pages: 20),
-    (date: now.subtract(const Duration(days: 25)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 50, pages: 24),
+    (
+      date: DateTime(now.year, now.month, now.day),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 42,
+      pages: 18,
+    ),
+    (
+      date: DateTime(now.year, now.month, now.day),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 25,
+      pages: 12,
+    ),
+    (
+      date: now.subtract(const Duration(days: 1)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 55,
+      pages: 24,
+    ),
+    (
+      date: now.subtract(const Duration(days: 2)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 38,
+      pages: 16,
+    ),
+    (
+      date: now.subtract(const Duration(days: 3)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 20,
+      pages: 8,
+    ),
+    (
+      date: now.subtract(const Duration(days: 5)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 65,
+      pages: 30,
+    ),
+    (
+      date: now.subtract(const Duration(days: 6)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 30,
+      pages: 14,
+    ),
+    (
+      date: now.subtract(const Duration(days: 8)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 48,
+      pages: 22,
+    ),
+    (
+      date: now.subtract(const Duration(days: 10)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 35,
+      pages: 15,
+    ),
+    (
+      date: now.subtract(const Duration(days: 12)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 52,
+      pages: 25,
+    ),
+    (
+      date: now.subtract(const Duration(days: 12)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 18,
+      pages: 7,
+    ),
+    (
+      date: now.subtract(const Duration(days: 14)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 40,
+      pages: 19,
+    ),
+    (
+      date: now.subtract(const Duration(days: 15)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 28,
+      pages: 13,
+    ),
+    (
+      date: now.subtract(const Duration(days: 18)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 60,
+      pages: 28,
+    ),
+    (
+      date: now.subtract(const Duration(days: 20)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 33,
+      pages: 16,
+    ),
+    (
+      date: now.subtract(const Duration(days: 22)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 45,
+      pages: 20,
+    ),
+    (
+      date: now.subtract(const Duration(days: 25)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 50,
+      pages: 24,
+    ),
   ];
 }
 
@@ -46,34 +155,70 @@ IconData _statusIcon(ReadingStatus s) => switch (s) {
 
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 final _kBooks = [
-  Book(id: '1', title: '채식주의자', author: '한강',
-      status: ReadingStatus.reading, totalPages: 300, currentPage: 186,
-      totalReadingHours: 5.2,
-      savedSentences: const ['나는 채식주의자가 되기로 했다.', '꿈 때문에.']),
-  Book(id: '2', title: '82년생 김지영', author: '조남주',
-      status: ReadingStatus.completed, totalPages: 190, currentPage: 190,
-      totalReadingHours: 4.1),
-  Book(id: '3', title: '아몬드', author: '손원평',
-      status: ReadingStatus.completed, totalPages: 264, currentPage: 264,
-      totalReadingHours: 6.3),
-  Book(id: '4', title: '흰', author: '한강',
-      status: ReadingStatus.wantToRead, totalPages: 160, currentPage: 0),
-  Book(id: '5', title: '지구 끝의 온실', author: '김초엽',
-      status: ReadingStatus.wantToRead, totalPages: 304, currentPage: 0),
-  Book(id: '6', title: '파친코', author: '이민진',
-      status: ReadingStatus.reading, totalPages: 688, currentPage: 234,
-      totalReadingHours: 8.7),
+  Book(
+    id: '1',
+    title: '채식주의자',
+    author: '한강',
+    status: ReadingStatus.reading,
+    totalPages: 300,
+    currentPage: 186,
+    totalReadingHours: 5.2,
+    savedSentences: const ['나는 채식주의자가 되기로 했다.', '꿈 때문에.'],
+  ),
+  Book(
+    id: '2',
+    title: '82년생 김지영',
+    author: '조남주',
+    status: ReadingStatus.completed,
+    totalPages: 190,
+    currentPage: 190,
+    totalReadingHours: 4.1,
+  ),
+  Book(
+    id: '3',
+    title: '아몬드',
+    author: '손원평',
+    status: ReadingStatus.completed,
+    totalPages: 264,
+    currentPage: 264,
+    totalReadingHours: 6.3,
+  ),
+  Book(
+    id: '4',
+    title: '흰',
+    author: '한강',
+    status: ReadingStatus.wantToRead,
+    totalPages: 160,
+    currentPage: 0,
+  ),
+  Book(
+    id: '5',
+    title: '지구 끝의 온실',
+    author: '김초엽',
+    status: ReadingStatus.wantToRead,
+    totalPages: 304,
+    currentPage: 0,
+  ),
+  Book(
+    id: '6',
+    title: '파친코',
+    author: '이민진',
+    status: ReadingStatus.reading,
+    totalPages: 688,
+    currentPage: 234,
+    totalReadingHours: 8.7,
+  ),
 ];
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
-class LibraryScreen extends StatefulWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> {
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   int _viewIndex = 0; // 0: 서재, 1: 캘린더
 
   @override
@@ -84,10 +229,94 @@ class _LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           children: [
             // ── 프로필 + 설정 ─────────────────────────────────────
-            ProfileHeader(
-              onSettingsTap: () {
-                HapticFeedback.selectionClick();
-                _showSettingsSheet(context);
+            Consumer(
+              builder: (context, ref, _) {
+                final streak =
+                    ref
+                        .watch(readingStreakProvider)
+                        .whenOrNull(data: (v) => v) ??
+                    0;
+                return ProfileHeader(
+                  onSettingsTap: () {
+                    HapticFeedback.selectionClick();
+                    _showSettingsSheet(context);
+                  },
+                  streak: streak,
+                );
+              },
+            ),
+
+            // ── 수집한 문장 전체 보기 버튼 ──────────────────────
+            Consumer(
+              builder: (context, ref, _) {
+                final choseoCount = ref.watch(choseoCountProvider);
+                final label = choseoCount.when(
+                  data: (n) => '수집한 문장 전체 보기 ($n개)',
+                  loading: () => '수집한 문장 전체 보기',
+                  error: (_, _) => '수집한 문장 전체 보기',
+                );
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.screenPadding,
+                    8,
+                    AppTheme.screenPadding,
+                    0,
+                  ),
+                  child: Semantics(
+                    label: label,
+                    button: true,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.push(AppConstants.routeChoseoList);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.accent.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.format_quote_rounded,
+                                color: AppTheme.accent,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  label,
+                                  style: const TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.textPrimary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppTheme.textTertiary,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 12),
@@ -95,7 +324,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
             // ── 세그먼트 토글 ─────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.screenPadding),
+                horizontal: AppTheme.screenPadding,
+              ),
               child: _SegmentToggle(
                 labels: const ['서재', '캘린더'],
                 selectedIndex: _viewIndex,
@@ -115,8 +345,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   _LibraryTab(
                     books: _kBooks,
                     onAddBook: () => _showAddBookSheet(context),
+                    scrollController: ref.read(tabScrollControllersProvider)[3],
                   ),
-                  _CalendarView(logs: _kReadingLogs),
+                  _CalendarView(
+                    logs: _kReadingLogs,
+                    scrollController: ref.read(tabScrollControllersProvider)[4],
+                  ),
                 ],
               ),
             ),
@@ -139,18 +373,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 }
 
-
 // ════════════════════════════════════════════════════════════════════════════
 // 서재 탭
 // ════════════════════════════════════════════════════════════════════════════
 class _LibraryTab extends StatefulWidget {
   final List<Book> books;
   final VoidCallback onAddBook;
+  final ScrollController? scrollController;
 
-  const _LibraryTab({
-    required this.books,
-    required this.onAddBook,
-  });
+  const _LibraryTab({required this.books, required this.onAddBook, this.scrollController});
 
   @override
   State<_LibraryTab> createState() => _LibraryTabState();
@@ -170,20 +401,19 @@ class _LibraryTabState extends State<_LibraryTab> {
         // 헤더
         Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding),
+            horizontal: AppTheme.screenPadding,
+          ),
           child: ChorokSectionHeader(
             title: '서재',
             trailing: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: AppTheme.smoothBox(
                 color: AppTheme.primary.withValues(alpha: 0.2),
                 radius: 10,
               ),
               child: Text(
                 '${widget.books.length}권',
-                style:
-                    AppTheme.captionSmall.copyWith(color: AppTheme.accent),
+                style: AppTheme.captionSmall.copyWith(color: AppTheme.accent),
               ),
             ),
           ),
@@ -197,13 +427,15 @@ class _LibraryTabState extends State<_LibraryTab> {
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding),
+              horizontal: AppTheme.screenPadding,
+            ),
             itemCount: ReadingStatus.values.length,
             separatorBuilder: (_, i) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final status = ReadingStatus.values[i];
-              final count =
-                  widget.books.where((b) => b.status == status).length;
+              final count = widget.books
+                  .where((b) => b.status == status)
+                  .length;
               final isSelected = status == _selectedStatus;
               return GestureDetector(
                 onTap: () {
@@ -213,17 +445,12 @@ class _LibraryTabState extends State<_LibraryTab> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOutCubic,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: AppTheme.smoothBox(
-                    color: isSelected
-                        ? AppTheme.primary
-                        : AppTheme.darkCard,
-                    radius: 12,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: AppTheme.smoothPill(
+                    color: isSelected ? AppTheme.primary : AppTheme.darkCard,
                     side: BorderSide(
                       color: isSelected
-                          ? AppTheme.primaryLight
-                              .withValues(alpha: 0.3)
+                          ? AppTheme.primaryLight.withValues(alpha: 0.3)
                           : AppTheme.darkBorder,
                     ),
                   ),
@@ -266,6 +493,7 @@ class _LibraryTabState extends State<_LibraryTab> {
               key: ValueKey(_selectedStatus),
               books: _filteredBooks,
               status: _selectedStatus,
+              scrollController: widget.scrollController,
             ),
           ),
         ),
@@ -273,12 +501,14 @@ class _LibraryTabState extends State<_LibraryTab> {
         // 하단 추가 버튼
         Container(
           padding: const EdgeInsets.fromLTRB(
-              AppTheme.screenPadding, AppTheme.spaceMD,
-              AppTheme.screenPadding, AppTheme.spaceLG),
+            AppTheme.screenPadding,
+            AppTheme.spaceMD,
+            AppTheme.screenPadding,
+            AppTheme.spaceLG,
+          ),
           decoration: const BoxDecoration(
             color: AppTheme.darkSurface,
-            border:
-                Border(top: BorderSide(color: AppTheme.darkBorder)),
+            border: Border(top: BorderSide(color: AppTheme.darkBorder)),
           ),
           child: SizedBox(
             width: double.infinity,
@@ -303,21 +533,48 @@ class _LibraryTabState extends State<_LibraryTab> {
   }
 }
 
+// ─── 커버 플레이스홀더 ────────────────────────────────────────────────────
+class _CoverPlaceholder extends StatelessWidget {
+  final String bookId;
+  const _CoverPlaceholder({required this.bookId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppTheme.primary.withValues(
+        alpha: 0.15 + (bookId.hashCode % 5) * 0.04,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.menu_book_rounded,
+          size: 40,
+          color: AppTheme.primaryLight.withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── 도서 그리드 ──────────────────────────────────────────────────────────
 class _BookGrid extends StatelessWidget {
   final List<Book> books;
   final ReadingStatus status;
+  final ScrollController? scrollController;
 
-  const _BookGrid({super.key, required this.books, required this.status});
+  const _BookGrid({super.key, required this.books, required this.status, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
     if (books.isEmpty) return _EmptyShelf(status: status);
 
     return GridView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.fromLTRB(
-          AppTheme.screenPadding, AppTheme.spaceLG,
-          AppTheme.screenPadding, AppTheme.spaceLG),
+        AppTheme.screenPadding,
+        AppTheme.spaceLG,
+        AppTheme.screenPadding,
+        AppTheme.spaceLG,
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.72,
@@ -346,35 +603,49 @@ class _BookCard extends StatelessWidget {
       child: Container(
         decoration: AppTheme.smoothBox(
           color: AppTheme.darkCard,
-          radius: 14,
+          radius: 22,
           side: const BorderSide(color: AppTheme.darkBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(
-                    alpha: 0.15 + (book.id.hashCode % 5) * 0.04,
-                  ),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(21),
                 ),
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Center(
-                      child: Icon(Icons.menu_book_rounded, size: 40,
-                          color: AppTheme.primaryLight.withValues(alpha: 0.4)),
-                    ),
+                    // ── 배경 (커버 or 그라디언트 플레이스홀더) ─────
+                    if (book.coverUrl != null && book.coverUrl!.isNotEmpty)
+                      Image.network(
+                        book.coverUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            _CoverPlaceholder(bookId: book.id),
+                        loadingBuilder: (_, child, progress) => progress == null
+                            ? child
+                            : _CoverPlaceholder(bookId: book.id),
+                      )
+                    else
+                      _CoverPlaceholder(bookId: book.id),
+                    // ── 완독 배지 ──────────────────────────────────
                     if (isCompleted)
                       Positioned(
-                        top: 8, right: 8,
+                        top: 8,
+                        right: 8,
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(
-                            color: AppTheme.primary, shape: BoxShape.circle),
-                          child: const Icon(Icons.check_rounded, size: 12, color: Colors.white),
+                            color: AppTheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                   ],
@@ -386,13 +657,22 @@ class _BookCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(book.title,
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: AppTheme.headingSmall.copyWith(
-                          color: AppTheme.textPrimary, fontSize: 14)),
+                  Text(
+                    book.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(book.author,
-                      style: AppTheme.captionLarge.copyWith(color: AppTheme.textSecondary)),
+                  Text(
+                    book.author,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
                   if (book.status == ReadingStatus.reading) ...[
                     const SizedBox(height: AppTheme.spaceSM),
                     ClipRRect(
@@ -400,35 +680,109 @@ class _BookCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: book.readingProgress,
                         backgroundColor: AppTheme.darkBorder,
-                        valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+                        valueColor: const AlwaysStoppedAnimation(
+                          AppTheme.primaryLight,
+                        ),
                         minHeight: 3,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(children: [
-                      Text('${(book.readingProgress * 100).toInt()}%',
+                    Row(
+                      children: [
+                        Text(
+                          '${(book.readingProgress * 100).toInt()}%',
                           style: AppTheme.captionSmall.copyWith(
-                              color: AppTheme.primaryLight, fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 4),
-                      Text('${book.currentPage}/${book.totalPages}쪽',
-                          style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
-                    ]),
-                  ],
-                  if (book.status == ReadingStatus.completed && book.totalReadingHours > 0) ...[
-                    const SizedBox(height: 6),
-                    Row(children: [
-                      const Icon(Icons.schedule_rounded, size: 11, color: AppTheme.textTertiary),
-                      const SizedBox(width: 3),
-                      Text('${book.totalReadingHours.toStringAsFixed(1)}시간',
-                          style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
-                      if (book.savedSentences.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        const Icon(Icons.format_quote_rounded, size: 11, color: AppTheme.textTertiary),
-                        const SizedBox(width: 3),
-                        Text('${book.savedSentences.length}',
-                            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
+                            color: AppTheme.primaryLight,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${book.currentPage}/${book.totalPages}쪽',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
                       ],
-                    ]),
+                    ),
+                    const SizedBox(height: 8),
+                    // ── 바로 읽기 버튼 ──────────────────────────────
+                    Semantics(
+                      label: '${book.title} 이어 읽기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          final outerCtx = context;
+                          outerCtx.push(
+                            AppConstants.routeSession,
+                            extra: SessionExtra(
+                              bookId: book.id,
+                              bookTitle: book.title,
+                              bookAuthor: book.author,
+                              startPage: book.currentPage,
+                              totalPages: book.totalPages,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: AppTheme.smoothPill(
+                            color: AppTheme.primary.withValues(alpha: 0.5),
+                            side: BorderSide(
+                              color: AppTheme.primaryLight.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
+                          ),
+                          child: const Text(
+                            '이어 읽기',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryLight,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (book.status == ReadingStatus.completed &&
+                      book.totalReadingHours > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.schedule_rounded,
+                          size: 11,
+                          color: AppTheme.textTertiary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${book.totalReadingHours.toStringAsFixed(1)}시간',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
+                        if (book.savedSentences.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.format_quote_rounded,
+                            size: 11,
+                            color: AppTheme.textTertiary,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${book.savedSentences.length}',
+                            style: AppTheme.captionSmall.copyWith(
+                              color: AppTheme.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -448,7 +802,7 @@ class _EmptyShelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (message, sub) = switch (status) {
-      ReadingStatus.reading   => ('읽는 중인 책이 없어요', '+ 책 추가 버튼으로 시작해보세요'),
+      ReadingStatus.reading => ('읽는 중인 책이 없어요', '+ 책 추가 버튼으로 시작해보세요'),
       ReadingStatus.completed => ('아직 완독한 책이 없어요', '첫 번째 책을 완독해보세요 🌿'),
       ReadingStatus.wantToRead => ('읽고 싶은 책을 추가해보세요', '+ 책 추가 버튼을 눌러보세요'),
     };
@@ -456,11 +810,21 @@ class _EmptyShelf extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.menu_book_outlined, size: 52, color: AppTheme.textTertiary),
+          Icon(
+            Icons.menu_book_outlined,
+            size: 52,
+            color: AppTheme.textTertiary,
+          ),
           const SizedBox(height: AppTheme.spaceMD),
-          Text(message, style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+          Text(
+            message,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary),
+          ),
           const SizedBox(height: AppTheme.spaceSM),
-          Text(sub, style: AppTheme.captionLarge.copyWith(color: AppTheme.textTertiary)),
+          Text(
+            sub,
+            style: AppTheme.captionLarge.copyWith(color: AppTheme.textTertiary),
+          ),
         ],
       ),
     );
@@ -487,18 +851,32 @@ class _AddBookSheetState extends State<_AddBookSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.all(AppTheme.space2XL),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 36, height: 4,
-                decoration: BoxDecoration(color: AppTheme.darkBorder,
-                    borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.darkBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             const SizedBox(height: AppTheme.spaceXL),
-            Text('책 추가', style: AppTheme.headingMedium.copyWith(color: AppTheme.textPrimary)),
+            Text(
+              '책 추가',
+              style: AppTheme.headingMedium.copyWith(
+                color: AppTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: AppTheme.spaceLG),
             TextField(
               controller: _searchController,
@@ -506,31 +884,50 @@ class _AddBookSheetState extends State<_AddBookSheet> {
               style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
               decoration: InputDecoration(
                 hintText: '책 제목, 저자, ISBN으로 검색',
-                hintStyle: AppTheme.bodyMedium.copyWith(color: AppTheme.textTertiary),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textTertiary),
+                hintStyle: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.textTertiary,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppTheme.textTertiary,
+                ),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.accent),
+                  icon: const Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: AppTheme.accent,
+                  ),
                   onPressed: () {
                     HapticFeedback.selectionClick();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('바코드 스캔 기능은 출시 예정이에요'),
-                      backgroundColor: AppTheme.primary,
-                      behavior: SnackBarBehavior.floating,
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('바코드 스캔 기능은 출시 예정이에요'),
+                        backgroundColor: AppTheme.primary,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   },
                 ),
                 filled: true,
                 fillColor: AppTheme.darkCardElevated,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppTheme.primaryLight)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppTheme.primaryLight),
+                ),
               ),
             ),
             const SizedBox(height: AppTheme.spaceMD),
-            Center(child: Text('알라딘 · 네이버 도서 검색 연동 (출시 예정)',
-                style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary))),
+            Center(
+              child: Text(
+                '알라딘 · 네이버 도서 검색 연동 (출시 예정)',
+                style: AppTheme.captionSmall.copyWith(
+                  color: AppTheme.textTertiary,
+                ),
+              ),
+            ),
             const SizedBox(height: AppTheme.spaceXL),
           ],
         ),
@@ -546,14 +943,16 @@ void _showBookDetail(BuildContext context, Book book) {
     isScrollControlled: true,
     backgroundColor: AppTheme.darkCard,
     shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _BookDetailSheet(book: book),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => _BookDetailSheet(book: book, outerContext: context),
   );
 }
 
 class _BookDetailSheet extends StatelessWidget {
   final Book book;
-  const _BookDetailSheet({required this.book});
+  final BuildContext outerContext;
+  const _BookDetailSheet({required this.book, required this.outerContext});
 
   @override
   Widget build(BuildContext context) {
@@ -565,131 +964,233 @@ class _BookDetailSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(child: Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: AppTheme.darkBorder,
-                  borderRadius: BorderRadius.circular(2)))),
-          const SizedBox(height: 24),
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              width: 64, height: 88,
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8)),
-              child: Icon(Icons.menu_book_rounded,
-                  color: AppTheme.primaryLight.withValues(alpha: 0.5), size: 28),
+                color: AppTheme.darkBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const SizedBox(width: 16),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(book.title, style: AppTheme.headingMedium.copyWith(color: AppTheme.textPrimary)),
-              const SizedBox(height: 4),
-              Text(book.author, style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
-              const SizedBox(height: 8),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                width: 64,
+                height: 88,
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppTheme.primaryLight.withValues(alpha: 0.12)
-                      : isReading
-                          ? AppTheme.accent.withValues(alpha: 0.12)
-                          : AppTheme.darkCardElevated,
+                  color: AppTheme.primary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(book.status.label,
-                    style: AppTheme.captionSmall.copyWith(
-                      color: isCompleted ? AppTheme.primaryLight
-                          : isReading ? AppTheme.accent : AppTheme.textTertiary,
-                      fontWeight: FontWeight.w600,
-                    )),
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                  size: 28,
+                ),
               ),
-            ])),
-          ]),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      style: AppTheme.headingMedium.copyWith(
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      book.author,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? AppTheme.primaryLight.withValues(alpha: 0.12)
+                            : isReading
+                            ? AppTheme.accent.withValues(alpha: 0.12)
+                            : AppTheme.darkCardElevated,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        book.status.label,
+                        style: AppTheme.captionSmall.copyWith(
+                          color: isCompleted
+                              ? AppTheme.primaryLight
+                              : isReading
+                              ? AppTheme.accent
+                              : AppTheme.textTertiary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: AppTheme.smoothBox(
-                color: AppTheme.darkCardElevated, radius: 12),
-            child: Row(children: [
-              _DetailStat(label: '진행률', value: '${(book.readingProgress * 100).toInt()}%'),
-              _DetailStat(label: '페이지', value: '${book.currentPage}/${book.totalPages}'),
-              if (book.totalReadingHours > 0)
-                _DetailStat(label: '독서 시간', value: '${book.totalReadingHours.toStringAsFixed(1)}h'),
-              if (book.savedSentences.isNotEmpty)
-                _DetailStat(label: '수집 문장', value: '${book.savedSentences.length}개'),
-            ]),
+              color: AppTheme.darkCardElevated,
+              radius: 12,
+            ),
+            child: Row(
+              children: [
+                _DetailStat(
+                  label: '진행률',
+                  value: '${(book.readingProgress * 100).toInt()}%',
+                ),
+                _DetailStat(
+                  label: '페이지',
+                  value: '${book.currentPage}/${book.totalPages}',
+                ),
+                if (book.totalReadingHours > 0)
+                  _DetailStat(
+                    label: '독서 시간',
+                    value: '${book.totalReadingHours.toStringAsFixed(1)}h',
+                  ),
+                if (book.savedSentences.isNotEmpty)
+                  _DetailStat(
+                    label: '수집 문장',
+                    value: '${book.savedSentences.length}개',
+                  ),
+              ],
+            ),
           ),
           if (book.savedSentences.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text('수집한 문장', style: AppTheme.headingSmall.copyWith(color: AppTheme.textPrimary)),
-            const SizedBox(height: 12),
-            ...book.savedSentences.take(3).map((s) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCardElevated,
-                  borderRadius: BorderRadius.circular(10),
-                  border: const Border(left: BorderSide(color: AppTheme.primaryLight, width: 3)),
-                ),
-                child: Text('"$s"', style: AppTheme.bodySmall.copyWith(
-                    fontStyle: FontStyle.italic, color: AppTheme.textPrimary, height: 1.5)),
+            Text(
+              '수집한 문장',
+              style: AppTheme.headingSmall.copyWith(
+                color: AppTheme.textPrimary,
               ),
-            )),
+            ),
+            const SizedBox(height: 12),
+            ...book.savedSentences
+                .take(3)
+                .map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCardElevated,
+                        borderRadius: BorderRadius.circular(10),
+                        border: const Border(
+                          left: BorderSide(
+                            color: AppTheme.primaryLight,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        '"$s"',
+                        style: AppTheme.bodySmall.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: AppTheme.textPrimary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
           ],
           if (isReading) ...[
             const SizedBox(height: 20),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: book.readingProgress, backgroundColor: AppTheme.darkBorder,
-                valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight), minHeight: 6,
+                value: book.readingProgress,
+                backgroundColor: AppTheme.darkBorder,
+                valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+                minHeight: 6,
               ),
             ),
           ],
           const SizedBox(height: 24),
-          Row(children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  Navigator.pop(context);
-                  if (isReading) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('${book.title} 독서 세션을 시작해요'),
-                      backgroundColor: AppTheme.primary, behavior: SnackBarBehavior.floating,
-                    ));
-                  }
-                },
-                icon: Icon(isReading ? Icons.play_arrow_rounded
-                    : isCompleted ? Icons.replay_rounded : Icons.add_rounded),
-                label: Text(isReading ? '이어 읽기' : isCompleted ? '다시 읽기' : '읽기 시작'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: AppTheme.primaryLight,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: AppTheme.smoothShape(radius: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () {
+                    HapticFeedback.mediumImpact();
+                    Navigator.pop(context); // 시트 닫기
+                    if (isReading || isCompleted) {
+                      outerContext.push(
+                        AppConstants.routeSession,
+                        extra: SessionExtra(
+                          bookId: book.id,
+                          bookTitle: book.title,
+                          bookAuthor: book.author,
+                          startPage: book.currentPage,
+                          totalPages: book.totalPages,
+                        ),
+                      );
+                    }
+                  },
+                  icon: Icon(
+                    isReading
+                        ? Icons.play_arrow_rounded
+                        : isCompleted
+                        ? Icons.replay_rounded
+                        : Icons.add_rounded,
+                  ),
+                  label: Text(
+                    isReading
+                        ? '이어 읽기'
+                        : isCompleted
+                        ? '다시 읽기'
+                        : '읽기 시작',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: AppTheme.primaryLight,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: AppTheme.smoothShape(radius: 12),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            IconButton(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('${book.title}을(를) 삭제했어요'),
-                  backgroundColor: AppTheme.primary, behavior: SnackBarBehavior.floating,
-                  action: SnackBarAction(label: '취소', textColor: AppTheme.primaryLight, onPressed: () {}),
-                ));
-              },
-              icon: const Icon(Icons.delete_outline_rounded),
-              style: IconButton.styleFrom(
-                foregroundColor: AppTheme.textTertiary,
-                backgroundColor: AppTheme.darkCardElevated,
-                padding: const EdgeInsets.all(14),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${book.title}을(를) 삭제했어요'),
+                      backgroundColor: AppTheme.primary,
+                      behavior: SnackBarBehavior.floating,
+                      action: SnackBarAction(
+                        label: '취소',
+                        textColor: AppTheme.primaryLight,
+                        onPressed: () {},
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.delete_outline_rounded),
+                style: IconButton.styleFrom(
+                  foregroundColor: AppTheme.textTertiary,
+                  backgroundColor: AppTheme.darkCardElevated,
+                  padding: const EdgeInsets.all(14),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -704,12 +1205,22 @@ class _DetailStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(children: [
-        Text(value, style: AppTheme.bodyLarge.copyWith(
-            color: AppTheme.primaryLight, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 2),
-        Text(label, style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
-      ]),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: AppTheme.bodyLarge.copyWith(
+              color: AppTheme.primaryLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -759,8 +1270,7 @@ class _SegmentToggle extends StatelessWidget {
                     color: isSelected
                         ? AppTheme.primaryLight
                         : AppTheme.textTertiary,
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
               ),
@@ -778,7 +1288,8 @@ class _SegmentToggle extends StatelessWidget {
 
 class _CalendarView extends StatefulWidget {
   final List<_ReadingLog> logs;
-  const _CalendarView({required this.logs});
+  final ScrollController? scrollController;
+  const _CalendarView({required this.logs, this.scrollController});
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -798,18 +1309,24 @@ class _CalendarViewState extends State<_CalendarView> {
 
   // 해당 날짜의 로그 목록
   List<_ReadingLog> _logsFor(DateTime date) {
-    return widget.logs.where((l) =>
-        l.date.year == date.year &&
-        l.date.month == date.month &&
-        l.date.day == date.day).toList();
+    return widget.logs
+        .where(
+          (l) =>
+              l.date.year == date.year &&
+              l.date.month == date.month &&
+              l.date.day == date.day,
+        )
+        .toList();
   }
 
   // 해당 월에 독서한 날짜 set
   Set<int> get _activeDays {
     return widget.logs
-        .where((l) =>
-            l.date.year == _focusedMonth.year &&
-            l.date.month == _focusedMonth.month)
+        .where(
+          (l) =>
+              l.date.year == _focusedMonth.year &&
+              l.date.month == _focusedMonth.month,
+        )
         .map((l) => l.date.day)
         .toSet();
   }
@@ -817,10 +1334,7 @@ class _CalendarViewState extends State<_CalendarView> {
   void _prevMonth() {
     HapticFeedback.selectionClick();
     setState(() {
-      _focusedMonth = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month - 1,
-      );
+      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1);
       _selectedDate = null;
     });
   }
@@ -838,18 +1352,24 @@ class _CalendarViewState extends State<_CalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedLogs =
-        _selectedDate != null ? _logsFor(_selectedDate!) : <_ReadingLog>[];
+    final selectedLogs = _selectedDate != null
+        ? _logsFor(_selectedDate!)
+        : <_ReadingLog>[];
     final totalMin = selectedLogs.fold<int>(0, (a, l) => a + l.minutes);
 
     return CustomScrollView(
+      controller: widget.scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         // ── 월 네비게이션 ─────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding, 16, AppTheme.screenPadding, 12),
+              AppTheme.screenPadding,
+              16,
+              AppTheme.screenPadding,
+              12,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -861,8 +1381,11 @@ class _CalendarViewState extends State<_CalendarView> {
                     child: const SizedBox(
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.chevron_left_rounded,
-                          color: AppTheme.textSecondary, size: 24),
+                      child: Icon(
+                        Icons.chevron_left_rounded,
+                        color: AppTheme.textSecondary,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -882,8 +1405,11 @@ class _CalendarViewState extends State<_CalendarView> {
                     child: const SizedBox(
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.chevron_right_rounded,
-                          color: AppTheme.textSecondary, size: 24),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppTheme.textSecondary,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -896,21 +1422,24 @@ class _CalendarViewState extends State<_CalendarView> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding),
+              horizontal: AppTheme.screenPadding,
+            ),
             child: Row(
               children: ['일', '월', '화', '수', '목', '금', '토']
-                  .map((d) => Expanded(
-                        child: Center(
-                          child: Text(
-                            d,
-                            style: AppTheme.captionSmall.copyWith(
-                              fontFamily: 'Pretendard',
-                              color: AppTheme.textTertiary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  .map(
+                    (d) => Expanded(
+                      child: Center(
+                        child: Text(
+                          d,
+                          style: AppTheme.captionSmall.copyWith(
+                            fontFamily: 'Pretendard',
+                            color: AppTheme.textTertiary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -921,7 +1450,8 @@ class _CalendarViewState extends State<_CalendarView> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding),
+              horizontal: AppTheme.screenPadding,
+            ),
             child: _CalendarGrid(
               month: _focusedMonth,
               activeDays: _activeDays,
@@ -940,7 +1470,8 @@ class _CalendarViewState extends State<_CalendarView> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.screenPadding),
+                horizontal: AppTheme.screenPadding,
+              ),
               child: Row(
                 children: [
                   Text(
@@ -955,10 +1486,11 @@ class _CalendarViewState extends State<_CalendarView> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -982,7 +1514,9 @@ class _CalendarViewState extends State<_CalendarView> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.screenPadding, vertical: 24),
+                  horizontal: AppTheme.screenPadding,
+                  vertical: 24,
+                ),
                 child: Center(
                   child: Text(
                     '이 날은 독서 기록이 없어요',
@@ -1032,8 +1566,7 @@ class _CalendarGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstDay = DateTime(month.year, month.month, 1);
-    final daysInMonth =
-        DateTime(month.year, month.month + 1, 0).day;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final startWeekday = firstDay.weekday % 7; // 일=0
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -1047,7 +1580,8 @@ class _CalendarGrid extends StatelessWidget {
     for (var d = 1; d <= daysInMonth; d++) {
       final date = DateTime(month.year, month.month, d);
       final isToday = date == today;
-      final isSelected = selectedDate != null &&
+      final isSelected =
+          selectedDate != null &&
           date.year == selectedDate!.year &&
           date.month == selectedDate!.month &&
           date.day == selectedDate!.day;
@@ -1062,13 +1596,13 @@ class _CalendarGrid extends StatelessWidget {
               color: isSelected
                   ? AppTheme.primary
                   : isToday
-                      ? AppTheme.primary.withValues(alpha: 0.15)
-                      : null,
+                  ? AppTheme.primary.withValues(alpha: 0.15)
+                  : null,
               radius: 10,
               side: isToday && !isSelected
                   ? BorderSide(
-                      color: AppTheme.primaryLight
-                          .withValues(alpha: 0.3))
+                      color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                    )
                   : BorderSide.none,
             ),
             child: Column(
@@ -1079,15 +1613,14 @@ class _CalendarGrid extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 13,
-                    fontWeight:
-                        isToday ? FontWeight.w700 : FontWeight.w400,
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                     color: isFuture
                         ? AppTheme.textTertiary.withValues(alpha: 0.3)
                         : isSelected
-                            ? AppTheme.primaryLight
-                            : isToday
-                                ? AppTheme.primaryLight
-                                : AppTheme.textPrimary,
+                        ? AppTheme.primaryLight
+                        : isToday
+                        ? AppTheme.primaryLight
+                        : AppTheme.textPrimary,
                     height: 1.4,
                   ),
                 ),
@@ -1100,9 +1633,8 @@ class _CalendarGrid extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: hasLog
                         ? (isSelected
-                            ? AppTheme.primaryLight
-                            : AppTheme.primaryLight
-                                .withValues(alpha: 0.7))
+                              ? AppTheme.primaryLight
+                              : AppTheme.primaryLight.withValues(alpha: 0.7))
                         : Colors.transparent,
                   ),
                 ),
@@ -1185,8 +1717,11 @@ class _ReadingLogCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.schedule_rounded,
-                      size: 12, color: AppTheme.primaryLight),
+                  const Icon(
+                    Icons.schedule_rounded,
+                    size: 12,
+                    color: AppTheme.primaryLight,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     log.minutes >= 60
@@ -1256,7 +1791,8 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           const SizedBox(height: 12),
           Center(
             child: Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: AppTheme.darkBorder,
                 borderRadius: BorderRadius.circular(2),
@@ -1265,127 +1801,168 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(children: [
-              Text('설정',
-                  style: AppTheme.headingMedium
-                      .copyWith(color: AppTheme.textPrimary)),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: AppTheme.textTertiary, size: 20),
-                onPressed: () => Navigator.pop(context),
-                visualDensity: VisualDensity.compact,
-              ),
-            ]),
+            child: Row(
+              children: [
+                Text(
+                  '설정',
+                  style: AppTheme.headingMedium.copyWith(
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppTheme.textTertiary,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: ListView(
               controller: scrollCtrl,
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               children: [
-                _SettingsSection(title: '독서 목표', children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Text('하루 목표',
-                              style: AppTheme.bodyMedium
-                                  .copyWith(color: AppTheme.textPrimary)),
-                          const Spacer(),
-                          Text('$_dailyGoalMinutes분',
-                              style: AppTheme.bodyMedium.copyWith(
+                _SettingsSection(
+                  title: '독서 목표',
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '하루 목표',
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '$_dailyGoalMinutes분',
+                                style: AppTheme.bodyMedium.copyWith(
                                   color: AppTheme.primaryLight,
-                                  fontWeight: FontWeight.w700)),
-                        ]),
-                        const SizedBox(height: 12),
-                        SliderTheme(
-                          data: SliderThemeData(
-                            activeTrackColor: AppTheme.primaryLight,
-                            inactiveTrackColor: AppTheme.darkBorder,
-                            thumbColor: AppTheme.primaryLight,
-                            overlayColor: AppTheme.primaryLight.withValues(alpha: 0.12),
-                            trackHeight: 3,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Slider(
-                            value: _dailyGoalMinutes.toDouble(),
-                            min: 10, max: 120, divisions: 11,
-                            onChanged: (v) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _dailyGoalMinutes = v.toInt());
-                            },
+                          const SizedBox(height: 12),
+                          SliderTheme(
+                            data: SliderThemeData(
+                              activeTrackColor: AppTheme.primaryLight,
+                              inactiveTrackColor: AppTheme.darkBorder,
+                              thumbColor: AppTheme.primaryLight,
+                              overlayColor: AppTheme.primaryLight.withValues(
+                                alpha: 0.12,
+                              ),
+                              trackHeight: 3,
+                            ),
+                            child: Slider(
+                              value: _dailyGoalMinutes.toDouble(),
+                              min: 10,
+                              max: 120,
+                              divisions: 11,
+                              onChanged: (v) {
+                                HapticFeedback.selectionClick();
+                                setState(() => _dailyGoalMinutes = v.toInt());
+                              },
+                            ),
                           ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: ['10분', '30분', '60분', '120분'].map((l) =>
-                            Text(l, style: AppTheme.captionSmall
-                                .copyWith(color: AppTheme.textTertiary)),
-                          ).toList(),
-                        ),
-                      ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: ['10분', '30분', '60분', '120분']
+                                .map(
+                                  (l) => Text(
+                                    l,
+                                    style: AppTheme.captionSmall.copyWith(
+                                      color: AppTheme.textTertiary,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
                 const SizedBox(height: 20),
-                _SettingsSection(title: '알림', children: [
-                  _ToggleTile(
-                    label: '팔로우 신청',
-                    description: '누군가 나를 팔로우할 때',
-                    value: _notiFollow,
-                    onChanged: (v) => setState(() => _notiFollow = v),
-                  ),
-                  _ToggleTile(
-                    label: '좋아요',
-                    description: '내 문장에 좋아요가 달릴 때',
-                    value: _notiLike,
-                    onChanged: (v) => setState(() => _notiLike = v),
-                  ),
-                  _ToggleTile(
-                    label: '목표 달성 알림',
-                    description: '하루 독서 목표 달성 시',
-                    value: _notiGoal,
-                    onChanged: (v) => setState(() => _notiGoal = v),
-                  ),
-                  _ToggleTile(
-                    label: '겹문장 알림',
-                    description: '내 문장을 다른 사람도 기록할 때',
-                    value: _notiOverlap,
-                    onChanged: (v) => setState(() => _notiOverlap = v),
-                    showDivider: false,
-                  ),
-                ]),
+                _SettingsSection(
+                  title: '알림',
+                  children: [
+                    _ToggleTile(
+                      label: '팔로우 신청',
+                      description: '누군가 나를 팔로우할 때',
+                      value: _notiFollow,
+                      onChanged: (v) => setState(() => _notiFollow = v),
+                    ),
+                    _ToggleTile(
+                      label: '좋아요',
+                      description: '내 문장에 좋아요가 달릴 때',
+                      value: _notiLike,
+                      onChanged: (v) => setState(() => _notiLike = v),
+                    ),
+                    _ToggleTile(
+                      label: '목표 달성 알림',
+                      description: '하루 독서 목표 달성 시',
+                      value: _notiGoal,
+                      onChanged: (v) => setState(() => _notiGoal = v),
+                    ),
+                    _ToggleTile(
+                      label: '겹문장 알림',
+                      description: '내 문장을 다른 사람도 기록할 때',
+                      value: _notiOverlap,
+                      onChanged: (v) => setState(() => _notiOverlap = v),
+                      showDivider: false,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
-                _SettingsSection(title: '앱 정보', children: [
-                  _SettingsMenuTile(
-                    label: '버전 정보',
-                    trailing: Text('1.0.0',
-                        style: AppTheme.captionLarge
-                            .copyWith(color: AppTheme.textTertiary)),
-                  ),
-                  const _SettingsMenuTile(label: '개인정보 처리방침'),
-                  const _SettingsMenuTile(label: '이용약관', showDivider: false),
-                ]),
-                const SizedBox(height: 20),
-                _SettingsSection(title: '계정', children: [
-                  _SettingsMenuTile(
-                    label: '로그아웃',
-                    labelColor: AppTheme.textSecondary,
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('로그인 기능 활성화 후 사용 가능해요'),
-                          backgroundColor: AppTheme.primary,
-                          behavior: SnackBarBehavior.floating,
+                _SettingsSection(
+                  title: '앱 정보',
+                  children: [
+                    _SettingsMenuTile(
+                      label: '버전 정보',
+                      trailing: Text(
+                        '1.0.0',
+                        style: AppTheme.captionLarge.copyWith(
+                          color: AppTheme.textTertiary,
                         ),
-                      );
-                    },
-                    showDivider: false,
-                  ),
-                ]),
+                      ),
+                    ),
+                    const _SettingsMenuTile(label: '개인정보 처리방침'),
+                    const _SettingsMenuTile(label: '이용약관', showDivider: false),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _SettingsSection(
+                  title: '계정',
+                  children: [
+                    _SettingsMenuTile(
+                      label: '로그아웃',
+                      labelColor: AppTheme.textSecondary,
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('로그인 기능 활성화 후 사용 가능해요'),
+                            backgroundColor: AppTheme.primary,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      showDivider: false,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1407,11 +1984,14 @@ class _SettingsSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Text(title,
-              style: AppTheme.captionLarge.copyWith(
-                  color: AppTheme.textTertiary,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5)),
+          child: Text(
+            title,
+            style: AppTheme.captionLarge.copyWith(
+              color: AppTheme.textTertiary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
         Container(
           decoration: AppTheme.smoothBox(
@@ -1453,13 +2033,19 @@ class _ToggleTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label,
-                        style: AppTheme.bodyMedium
-                            .copyWith(color: AppTheme.textPrimary)),
+                    Text(
+                      label,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(description,
-                        style: AppTheme.captionSmall
-                            .copyWith(color: AppTheme.textTertiary)),
+                    Text(
+                      description,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: AppTheme.textTertiary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1504,24 +2090,32 @@ class _SettingsMenuTile extends StatelessWidget {
     return Column(
       children: [
         InkWell(
-          onTap: onTap != null ? () {
-            HapticFeedback.selectionClick();
-            onTap!();
-          } : null,
+          onTap: onTap != null
+              ? () {
+                  HapticFeedback.selectionClick();
+                  onTap!();
+                }
+              : null,
           borderRadius: BorderRadius.circular(14),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Expanded(
-                  child: Text(label,
-                      style: AppTheme.bodyMedium.copyWith(
-                          color: labelColor ?? AppTheme.textPrimary)),
+                  child: Text(
+                    label,
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: labelColor ?? AppTheme.textPrimary,
+                    ),
+                  ),
                 ),
                 trailing ??
                     (onTap != null
-                        ? const Icon(Icons.chevron_right_rounded,
-                            size: 18, color: AppTheme.textTertiary)
+                        ? const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppTheme.textTertiary,
+                          )
                         : const SizedBox.shrink()),
               ],
             ),

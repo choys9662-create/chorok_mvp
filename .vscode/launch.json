@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "chorok_app (iPhone 17)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart",
+            "deviceId": "25E52103-8DC5-41AC-A92F-9928ED06AD8E"
+        }
+    ]
+}
