@@ -1,445 +1,261 @@
-# DESIGN.md — Chorok App (Airbnb-Inspired Design System)
-
-> AI 에이전트용 디자인 시스템 문서. Flutter 코드 생성 시 이 파일을 반드시 참조하십시오.
-> Airbnb의 핵심 원칙인 **따뜻함(Warmth)**, **명확성(Clarity)**, **소속감(Belonging)** 을 다크 테마 독서 앱에 적용합니다.
-
----
-
-## 1. 디자인 철학 (Design Philosophy)
-
-Airbnb 디자인의 4가지 핵심 원칙을 이 앱에 다음과 같이 번역합니다.
-
-| Airbnb 원칙 | 이 앱에서의 표현 |
-|---|---|
-| **Unified** (일관된) | 모든 화면에서 동일한 토큰·컴포넌트 사용 |
-| **Universal** (보편적) | 48×48px 최소 터치 영역, Semantics 필수 |
-| **Iconic** (상징적) | 라임 그린(#00FF00)을 신뢰의 색으로 사용 |
-| **Conversational** (대화하는) | 인터랙션마다 HapticFeedback + 애니메이션 |
-
----
-
-## 2. 색상 시스템 (Color Tokens)
-
-**절대 하드코딩 금지.** 모든 색상은 `AppTheme.*` 또는 `Theme.of(context).colorScheme.*` 을 통해서만 참조합니다.
-
-### 브랜드 색상
-
-```dart
-// 핵심 브랜드 색 — Airbnb의 Rausch(산호색)에 대응하는 라임 그린
-AppTheme.primaryLight   // #00FF00 — CTA 버튼, 선택 상태, 진행 인디케이터
-AppTheme.accent         // #00CC6A — 보조 강조, 그라디언트 끝값
-AppTheme.primary        // #1A3D2B — 깊은 숲 초록, 대형 배경 영역
-```
-
-### 배경 계층 (Airbnb의 표면 깊이 원칙 적용)
-
-```
-darkBg (#060B07)          ← 최하위 — 스캐폴드 배경
-  └─ darkSurface (#0D1410)    ← 1단계 — 내비게이션 바, 앱바
-       └─ darkCard (#131C16)      ← 2단계 — 일반 카드
-            └─ darkCardElevated (#192319) ← 3단계 — 팝업, 바텀시트
-```
-
-```dart
-AppTheme.darkBg             // 스캐폴드 배경
-AppTheme.darkSurface        // 내비게이션, 앱바
-AppTheme.darkCard           // 카드, 리스트 아이템
-AppTheme.darkCardElevated   // 모달, 바텀시트 내부 요소
-AppTheme.darkBorder         // 카드 테두리 (#1E3024)
-```
-
-### 텍스트 색상 (대비비 기준 준수)
-
-```dart
-AppTheme.textPrimary    // #E8F5EE — 제목, 본문 (대비비 ≥ 7:1)
-AppTheme.textSecondary  // #9BC9A8 — 서브 텍스트 (대비비 ~4.6:1)
-AppTheme.textTertiary   // #6A9E7A — 메타 정보, 플레이스홀더 (대비비 ~3.2:1)
-```
-
-### 상태 색상
-
-```dart
-AppTheme.warningColor   // #FF8C42 — 경고, 연속 독서 알림
-Color(0xFFCF6679)       // 에러 상태
-AppTheme.primaryLight   // 성공, 완료 상태
-```
-
----
-
-## 3. 타이포그래피 (Typography)
-
-**서체:** `fontFamily: 'Pretendard'` 고정 (Airbnb Cereal의 인간적 가독성을 한글에서 구현)
-
-**원칙:** 모든 `Text` 위젯에 `fontFamily: 'Pretendard'` 명시. `AppTheme.*` 스타일을 베이스로 `.copyWith()`로 변형.
-
-### 타입 스케일
-
-```dart
-// Display — 숫자 통계, 히어로 헤드라인
-AppTheme.displayLarge   // 48px Bold, height 1.0
-AppTheme.displayMedium  // 28px Bold, height 1.1
-AppTheme.displaySmall   // 22px Bold, height 1.1
-
-// Heading — 섹션 제목
-AppTheme.headingLarge   // 22px Bold,   height 1.2
-AppTheme.headingMedium  // 18px Bold,   height 1.3
-AppTheme.headingSmall   // 15px w600,   height 1.3
-
-// Body — 본문
-AppTheme.bodyLarge      // 15px Regular, height 1.5
-AppTheme.bodyMedium     // 14px Regular, height 1.5
-AppTheme.bodySmall      // 13px Regular, height 1.4
-
-// Caption / Label
-AppTheme.captionLarge   // 12px Regular, height 1.4
-AppTheme.captionSmall   // 12px Regular, height 1.3
-AppTheme.labelStyle     // 12px w600,    letterSpacing 0.5
-```
-
-### 타이포그래피 사용 예시
-
-```dart
-// 섹션 제목
-Text(
-  '지금 많이 기록된 문장',
-  style: AppTheme.headingSmall.copyWith(
-    fontFamily: 'Pretendard',
-    color: AppTheme.textPrimary,
-    fontWeight: FontWeight.w700,
-  ),
-)
-
-// 메타 정보
-Text(
-  '채식주의자 · 한강',
-  style: AppTheme.captionSmall.copyWith(
-    fontFamily: 'Pretendard',
-    color: AppTheme.textTertiary,
-  ),
-)
-```
-
----
-
-## 4. 스페이싱 시스템 (Spacing — 4px Grid)
-
-Airbnb의 8px 그리드를 4px 배수로 세분화합니다. **4의 배수가 아닌 값(10, 15, 18 등) 사용 금지.**
-
-```dart
-AppTheme.spaceXS  =  4.0   // 아이콘–텍스트 간격, 배지 내부
-AppTheme.spaceSM  =  8.0   // 관련 요소 간격
-AppTheme.spaceMD  = 12.0   // 카드 내부 세부 간격
-AppTheme.spaceLG  = 16.0   // 섹션 내 표준 간격
-AppTheme.spaceXL  = 20.0   // 카드 패딩, 화면 여백
-AppTheme.space2XL = 24.0   // 섹션 간 간격
-AppTheme.space3XL = 32.0   // 대형 섹션 분리
-
-AppTheme.screenPadding  = 20.0  // 좌우 화면 패딩 — 항상 이 값 사용
-AppTheme.cardPaddingLG  = 20.0  // 히어로 카드 내부 패딩
-AppTheme.cardPaddingMD  = 16.0  // 일반 카드 내부 패딩
-AppTheme.sectionGap     =  8.0  // 동일 섹션 내 요소 간격
-```
-
----
-
-## 5. 형태 시스템 (Shape — Smooth Corners)
-
-Airbnb의 부드럽고 친근한 모서리. `BorderRadius.circular()` 대신 **반드시 `AppTheme.smooth*()` 사용.**
-
-```dart
-// 반경 기준
-AppTheme.radiusSM =  8   // 배지, 소형 태그
-AppTheme.radiusMD = 12   // 칩, 버튼, 인풋
-AppTheme.radiusLG = 16   // 카드 (기본값)
-AppTheme.radiusXL = 20   // 히어로 카드, 대형 컨테이너
-
-// 사용법
-AppTheme.smoothBox(color: AppTheme.darkCard, radius: AppTheme.radiusLG)
-AppTheme.smoothPill(color: AppTheme.primary) // 알약형
-AppTheme.smoothShape(radius: AppTheme.radiusMD) // ShapeBorder 필요 시
-```
-
----
-
-## 6. 컴포넌트 패턴 (Component Patterns)
-
-### 6-1. 카드 (Card)
-
-Airbnb 리스팅 카드 원칙: **표면 깊이 + 미묘한 테두리 + 부드러운 모서리**.
-
-```dart
-Container(
-  clipBehavior: Clip.antiAlias,
-  decoration: AppTheme.smoothBox(
-    color: AppTheme.darkCard,
-    radius: AppTheme.radiusLG,
-    side: BorderSide(color: AppTheme.darkBorder),
-  ),
-  child: ...,
-)
-```
-
-- 그림자는 쓰지 않거나, 쓸 경우 `blurRadius ≥ 12`, `opacity ≤ 0.15`
-- 카드 내부 패딩: `AppTheme.cardPaddingMD` (16) 또는 `AppTheme.cardPaddingLG` (20)
-- 카드 간 간격: `AppTheme.spaceSM` (8) 또는 `AppTheme.spaceMD` (12)
-
-### 6-2. 버튼 (Button)
-
-```dart
-// 주요 CTA — Airbnb의 Rausch 버튼에 대응
-SizedBox(
-  height: 52, // 최소 48px
-  child: ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppTheme.primaryLight,
-      foregroundColor: Colors.black,
-      shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-      textStyle: AppTheme.bodyMedium.copyWith(
-        fontFamily: 'Pretendard',
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-    onPressed: () {
-      HapticFeedback.mediumImpact();
-      // ...
-    },
-    child: const Text('시작하기'),
-  ),
-)
-
-// 보조 버튼 — 아웃라인
-OutlinedButton(
-  style: OutlinedButton.styleFrom(
-    side: BorderSide(color: AppTheme.darkBorder),
-    shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-    foregroundColor: AppTheme.textPrimary,
-  ),
-  ...
-)
-```
-
-### 6-3. 배지 / 태그 (Badge)
-
-```dart
-Container(
-  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-  decoration: BoxDecoration(
-    color: AppTheme.primaryLight.withValues(alpha: 0.08),
-    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-    border: Border.all(
-      color: AppTheme.primaryLight.withValues(alpha: 0.2),
-    ),
-  ),
-  child: Text(
-    '라벨',
-    style: AppTheme.captionSmall.copyWith(
-      fontFamily: 'Pretendard',
-      color: AppTheme.primaryLight,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-)
-```
-
-### 6-4. 바텀시트 (Bottom Sheet)
-
-Airbnb의 모달: 상단 핸들 + 부드러운 모서리 + 배경 블러 없음(성능).
-
-```dart
-showModalBottomSheet(
-  context: context,
-  backgroundColor: AppTheme.darkCardElevated,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(
-      top: Radius.circular(AppTheme.radiusXL),
-    ),
-  ),
-  builder: (ctx) => Column(
-    children: [
-      const SizedBox(height: 12),
-      // 핸들
-      Container(
-        width: 36, height: 4,
-        decoration: BoxDecoration(
-          color: AppTheme.darkBorder,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ),
-      const SizedBox(height: 20),
-      // 콘텐츠
-    ],
-  ),
-)
-```
-
-### 6-5. 리스트 아이템 (List Item)
-
-반드시 `ListView.builder` 사용. 정적 Column 렌더링 금지.
-
-```dart
-ListView.builder(
-  padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-  itemCount: items.length,
-  itemBuilder: (context, index) => Padding(
-    padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-    child: _ItemCard(item: items[index]),
-  ),
-)
-```
-
-### 6-6. 왼쪽 컬러 바 (Left Accent Bar)
-
-문장 카드 등에서 책 색상을 표현할 때. **고정 height 사용 금지 — Row를 stretch로 설정.**
-
-```dart
-Row(
-  crossAxisAlignment: CrossAxisAlignment.stretch, // ← 필수
-  children: [
-    Container(
-      width: 4,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: gradColors,
-        ),
-      ),
-    ),
-    const SizedBox(width: 12),
-    Expanded(child: ...),
-  ],
-)
-```
-
----
-
-## 7. 애니메이션 & 마이크로인터랙션
-
-Airbnb의 원칙: **기능적이고 절제된 애니메이션** — 존재를 드러내지 않고 경험을 부드럽게 함.
-
-### 기본 규칙
-
-```dart
-// 표준 진입/전환 — 200~300ms
-const Duration kAnimFast   = Duration(milliseconds: 200);
-const Duration kAnimNormal = Duration(milliseconds: 250);
-const Duration kAnimSlow   = Duration(milliseconds: 300);
-
-// 곡선 — 물리 기반 (선형 사용 금지)
-Curves.easeOutCubic   // 등장 (감속)
-Curves.easeInCubic    // 퇴장 (가속)
-Curves.easeInOutCubic // 상태 전환
-```
-
-### Haptic 기준
-
-```dart
-HapticFeedback.selectionClick()  // 탭, 토글, 선택
-HapticFeedback.mediumImpact()    // CTA 버튼 확인, 세션 시작
-HapticFeedback.lightImpact()     // 스와이프, 드래그
-HapticFeedback.heavyImpact()     // 완료, 달성, 중요 이벤트
-```
-
-### 로딩 상태 — Shimmer (스켈레톤)
-
-빈 화면 또는 스피너 금지. 항상 내용 구조와 동일한 스켈레톤 사용.
-
-```dart
-AnimatedContainer(
-  duration: kAnimNormal,
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: [AppTheme.darkCard, AppTheme.darkCardElevated, AppTheme.darkCard],
-    ),
-  ),
-)
-```
-
----
-
-## 8. 접근성 (Accessibility)
-
-Airbnb의 Universal 원칙: 모든 사람이 사용할 수 있는 UI.
-
-```dart
-// 모든 인터랙티브 요소에 필수
-Semantics(
-  label: '소년이 온다 책 상세 보기',
-  button: true,
-  child: GestureDetector(...),
-)
-
-// 최소 터치 영역 — 48×48px 보장
-SizedBox(
-  width: 48, height: 48,
-  child: IconButton(icon: Icon(Icons.search), onPressed: ...),
-)
-```
-
----
-
-## 9. 이미지 & 미디어
-
-### 책 표지 그라디언트
-
-이미지 없을 때 `AppTheme.coverGradients`에서 인덱스 기반으로 선택.
-
-```dart
-final gradColors = AppTheme.coverGradients[index % AppTheme.coverGradients.length];
-
-Container(
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: gradColors,
-    ),
-  ),
-)
-```
-
----
-
-## 10. 상태 처리 (State Handling)
-
-Airbnb의 모든 화면은 4가지 상태를 디자인합니다. **성공 상태만 구현하지 마십시오.**
-
-| 상태 | 처리 방법 |
-|---|---|
-| **로딩** | Shimmer 스켈레톤 (스피너 금지) |
-| **성공** | 데이터 표시 |
-| **빈 상태** | 아이콘 + 안내 문구 + CTA 버튼 |
-| **에러** | 에러 메시지 + 재시도 버튼 |
-
-```dart
-return switch (state) {
-  Loading() => const _ShimmerSkeleton(),
-  Success(:final data) => _DataView(data: data),
-  Empty() => const _EmptyState(),
-  Error(:final message) => _ErrorState(message: message),
-};
-```
-
----
-
-## 11. 금지 사항 (Anti-Patterns)
-
-Airbnb의 Unified 원칙 위반 목록.
-
-```
-❌ 하드코딩 색상 — Colors.red, Color(0xFF...) 직접 사용
-❌ 4의 배수 아닌 스페이싱 — 10, 15, 18, 25 등
-❌ fontFamily 누락 — Pretendard 명시 없는 Text 위젯
-❌ 고정 height 왼쪽 바 — height: 80처럼 고정값 지정
-❌ 정적 위젯에 const 누락
-❌ BorderRadius.circular() 직접 사용 — AppTheme.smooth*() 대신
-❌ 48px 미만 터치 영역
-❌ Semantics 래핑 없는 버튼/인터랙티브 요소
-❌ 로딩 상태 누락 (스피너 + 빈 화면)
-❌ ListView 대신 Column + map() 으로 긴 리스트 렌더링
-```
-
----
-
-*이 파일은 `AppTheme` 클래스(`lib/core/theme/app_theme.dart`) 기반으로 작성되었습니다.*
-*디자인 토큰 변경 시 이 파일도 함께 업데이트하십시오.*
+# Design System Inspired by Replicate
+
+## 1. Visual Theme & Atmosphere
+
+Replicate's interface is a developer playground crackling with creative energy — a bold, high-contrast design that feels more like a music festival poster than a typical API platform. The hero section explodes with a vibrant orange-red-magenta gradient that immediately signals "this is where AI models come alive," while the body of the page grounds itself in a clean white canvas where code snippets and model galleries take center stage.
+
+The design personality is defined by two extreme choices: **massive display typography** (up to 128px) using the custom rb-freigeist-neue face, and **exclusively pill-shaped geometry** (9999px radius on everything). The display font is thick, bold, and confident — its heavy weight at enormous sizes creates text that feels like it's shouting with joy rather than whispering authority. Combined with basier-square for body text (a clean geometric sans) and JetBrains Mono for code, the system serves developers who want power and playfulness in equal measure.
+
+What makes Replicate distinctive is its community-powered energy. The model gallery with AI-generated images, the dotted-underline links, the green status badges, and the "Imagine what you can build" closing manifesto all create a space that feels alive and participatory — not a corporate product page but a launchpad for creative developers.
+
+**Key Characteristics:**
+- Explosive orange-red-magenta gradient hero (#ea2804 brand anchor)
+- Massive display typography (128px) in heavy rb-freigeist-neue
+- Exclusively pill-shaped geometry: 9999px radius on EVERYTHING
+- High-contrast black (#202020) and white palette with red brand accent
+- Developer-community energy: model galleries, code examples, dotted-underline links
+- Green status badges (#2b9a66) for live/operational indicators
+- Bold/heavy font weights (600-700) creating maximum typographic impact
+- Playful closing manifesto: "Imagine what you can build."
+
+## 2. Color Palette & Roles
+
+### Primary
+- **Replicate Dark** (`#202020`): The primary text color and dark surface — a near-black that's the anchor of all text and borders. Slightly warmer than pure #000.
+- **Replicate Red** (`#ea2804`): The core brand color — a vivid, saturated orange-red used in the hero gradient, accent borders, and high-signal moments.
+- **Secondary Red** (`#dd4425`): A slightly warmer variant for button borders and link hover states.
+
+### Secondary & Accent
+- **Status Green** (`#2b9a66`): Badge/pill background for "running" or operational status indicators.
+- **GitHub Dark** (`#24292e`): A blue-tinted dark used for code block backgrounds and developer contexts.
+
+### Surface & Background
+- **Pure White** (`#ffffff`): The primary page body background.
+- **Near White** (`#fcfcfc`): Button text on dark surfaces and the lightest content.
+- **Hero Gradient**: A dramatic orange → red → magenta → pink gradient for the hero section. Transitions from warm (#ea2804 family) through hot pink.
+
+### Neutrals & Text
+- **Medium Gray** (`#646464`): Secondary body text and de-emphasized content.
+- **Warm Gray** (`#4e4e4e`): Emphasized secondary text.
+- **Mid Silver** (`#8d8d8d`): Tertiary text, footnotes.
+- **Light Silver** (`#bbbbbb`): Dotted-underline link decoration color, muted metadata.
+- **Pure Black** (`#000000`): Maximum-emphasis borders and occasional text.
+
+### Gradient System
+- **Hero Blaze**: A dramatic multi-stop gradient flowing through orange (`#ea2804`) → red → magenta → hot pink. This gradient occupies the full hero section and is the most visually dominant element on the page.
+- **Dark Sections**: Deep dark (#202020) sections with white/near-white text provide contrast against the white body.
+
+## 3. Typography Rules
+
+### Font Family
+- **Display**: `rb-freigeist-neue`, with fallbacks: `ui-sans-serif, system-ui`
+- **Body / UI**: `basier-square`, with fallbacks: `ui-sans-serif, system-ui`
+- **Code**: `jetbrains-mono`, with fallbacks: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New`
+
+### Hierarchy
+
+| Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
+|------|------|------|--------|-------------|----------------|-------|
+| Display Mega | rb-freigeist-neue | 128px (8rem) | 700 | 1.00 (tight) | normal | The maximum: closing manifesto |
+| Display / Hero | rb-freigeist-neue | 72px (4.5rem) | 700 | 1.00 (tight) | -1.8px | Hero section headline |
+| Section Heading | rb-freigeist-neue | 48px (3rem) | 400–700 | 1.00 (tight) | normal | Feature section titles |
+| Sub-heading | rb-freigeist-neue | 30px (1.88rem) | 600 | 1.20 (tight) | normal | Card headings |
+| Sub-heading Sans | basier-square | 38.4px (2.4rem) | 400 | 0.83 (ultra-tight) | normal | Large body headings |
+| Feature Title | basier-square / rb-freigeist-neue | 18px (1.13rem) | 600 | 1.56 | normal | Small section titles, labels |
+| Body Large | basier-square | 20px (1.25rem) | 400 | 1.40 | normal | Intro paragraphs |
+| Body / Button | basier-square | 16–18px (1–1.13rem) | 400–600 | 1.50–1.56 | normal | Standard text, buttons |
+| Caption | basier-square | 14px (0.88rem) | 400–600 | 1.43 | -0.35px to normal | Metadata, descriptions |
+| Small / Tag | basier-square | 12px (0.75rem) | 400 | 1.33 | normal | Tags (lowercase transform) |
+| Code | jetbrains-mono | 14px (0.88rem) | 400 | 1.43 | normal | Code snippets, API examples |
+| Code Small | jetbrains-mono | 11px (0.69rem) | 400 | 1.50 | normal | Tiny code references |
+
+### Principles
+- **Heavy display, light body**: rb-freigeist-neue at 700 weight creates thundering headlines, while basier-square at 400 handles body text with quiet efficiency. The contrast is extreme and intentional.
+- **128px is a real size**: The closing manifesto "Imagine what you can build." uses 128px — bigger than most mobile screens. This is the design equivalent of shouting from a rooftop.
+- **Negative tracking on hero**: -1.8px letter-spacing at 72px creates dense, impactful hero text.
+- **Lowercase tags**: 12px basier-square uses `text-transform: lowercase` — an unusual choice that creates a casual, developer-friendly vibe.
+- **Weight 600 as emphasis**: When basier-square needs emphasis, it uses 600 (semibold) — never bold (700), which is reserved for rb-freigeist-neue display text.
+
+## 4. Component Stylings
+
+### Buttons
+
+**Dark Solid**
+- Background: Replicate Dark (`#202020`)
+- Text: Near White (`#fcfcfc`)
+- Padding: 0px 4px (extremely compact)
+- Outline: Replicate Dark 4px solid
+- Radius: pill-shaped (implied by system)
+- Maximum emphasis — dark pill on light surface
+
+**White Outlined**
+- Background: Pure White (`#ffffff`)
+- Text: Replicate Dark (`#202020`)
+- Border: `1px solid #202020`
+- Radius: pill-shaped
+- Clean outlined pill for secondary actions
+
+**Transparent Glass**
+- Background: `rgba(255, 255, 255, 0.1)` (frosted glass)
+- Text: Replicate Dark (`#202020`)
+- Padding: 6px 56px 6px 28px (asymmetric — icon/search layout)
+- Border: transparent
+- Outline: Light Silver (`#bbbbbb`) 1px solid
+- Used for search/input-like buttons
+
+### Cards & Containers
+- Background: Pure White or subtle gray
+- Border: `1px solid #202020` for prominent containment
+- Radius: pill-shaped (9999px) for badges, labels, images
+- Shadow: minimal standard shadows
+- Model gallery: grid of AI-generated image thumbnails
+- Accent border: `1px solid #ea2804` for highlighted/featured items
+
+### Inputs & Forms
+- Background: `rgba(255, 255, 255, 0.1)` (frosted glass)
+- Text: Replicate Dark (`#202020`)
+- Border: transparent with outline
+- Padding: 6px 56px 6px 28px (search-bar style)
+
+### Navigation
+- Clean horizontal nav on white
+- Logo: Replicate wordmark in dark
+- Links: dark text with dotted underline on hover
+- CTA: Dark pill button
+- GitHub link and sign-in
+
+### Image Treatment
+- AI-generated model output images in a gallery grid
+- Pill-shaped image containers (9999px)
+- Full-width gradient hero section
+- Product screenshots with dark backgrounds
+
+### Distinctive Components
+
+**Model Gallery Grid**
+- Horizontal scrolling or grid of AI-generated images
+- Each image in a pill-shaped container
+- Model names and run counts displayed
+- The visual heart of the community platform
+
+**Dotted Underline Links**
+- Links use `text-decoration: underline dotted #bbbbbb`
+- A distinctive, developer-notebook aesthetic
+- Lighter and more casual than solid underlines
+
+**Status Badges**
+- Status Green (`#2b9a66`) background with white text
+- Pill-shaped (9999px)
+- 14px font size
+- Indicates model availability/operational status
+
+**Manifesto Section**
+- "Imagine what you can build." at 128px
+- Dark background with white text
+- Images embedded between words
+- The emotional climax of the page
+
+## 5. Layout Principles
+
+### Spacing System
+- Base unit: 8px
+- Scale: 1px, 2px, 4px, 6px, 8px, 10px, 12px, 16px, 24px, 32px, 48px, 64px, 96px, 160px, 192px
+- Button padding: varies widely (0px 4px to 6px 56px)
+- Section vertical spacing: very generous (96–192px)
+
+### Grid & Container
+- Fluid width with responsive constraints
+- Hero: full-width gradient with centered content
+- Model gallery: multi-column responsive grid
+- Feature sections: mixed layouts
+- Code examples: contained dark blocks
+
+### Whitespace Philosophy
+- **Bold and generous**: Massive spacing between sections (up to 192px) creates distinct zones.
+- **Dense within galleries**: Model images are tightly packed in the grid for browsable density.
+- **The gradient IS the whitespace**: The hero gradient section occupies significant vertical space as a colored void.
+
+### Border Radius Scale
+- **Pill (9999px)**: The ONLY radius in the system. Everything interactive, every image, every badge, every label, every container uses 9999px. This is the most extreme pill-radius commitment in any major tech brand.
+
+## 6. Depth & Elevation
+
+| Level | Treatment | Use |
+|-------|-----------|-----|
+| Flat (Level 0) | No shadow | White body, text blocks |
+| Bordered (Level 1) | `1px solid #202020` | Cards, buttons, containers |
+| Accent Border (Level 2) | `1px solid #ea2804` | Featured/highlighted items |
+| Gradient Hero (Level 3) | Full-width blaze gradient | Hero section, maximum visual impact |
+| Dark Section (Level 4) | Dark bg (#202020) with light text | Manifesto, footer, feature sections |
+
+**Shadow Philosophy**: Replicate relies on **borders and background color** for depth rather than shadows. The `1px solid #202020` border is the primary containment mechanism. The dramatic gradient hero and dark/light section alternation provide all the depth the design needs.
+
+## 7. Do's and Don'ts
+
+### Do
+- Use pill-shaped (9999px) radius on EVERYTHING — buttons, images, badges, containers
+- Use rb-freigeist-neue at weight 700 for display text — go big (72px+) or go home
+- Use the orange-red brand gradient for hero sections
+- Use Replicate Dark (#202020) as the primary dark — not pure black
+- Apply dotted underline decoration on text links (#bbbbbb)
+- Use Status Green (#2b9a66) for operational/success badges
+- Keep body text in basier-square at 400–600 weight
+- Use JetBrains Mono for all code content
+- Create a "manifesto" section with 128px type for emotional impact
+
+### Don't
+- Don't use any border-radius other than 9999px — the pill system is absolute
+- Don't use the brand red (#ea2804) as a surface/background color — it's for gradients and accent borders
+- Don't reduce display text below 48px on desktop — the heavy display font needs size to breathe
+- Don't use light/thin font weights on rb-freigeist-neue — 600–700 is the range
+- Don't use solid underlines on links — dotted is the signature
+- Don't add drop shadows — depth comes from borders and background color
+- Don't use warm neutrals — the gray scale is purely neutral (#202020 → #bbbbbb)
+- Don't skip the code examples — they're primary content, not decoration
+- Don't make the hero gradient subtle — it should be BOLD and vibrant
+
+## 8. Responsive Behavior
+
+### Breakpoints
+*No explicit breakpoints detected — likely using fluid/container-query responsive system.*
+
+### Touch Targets
+- Pill buttons with generous padding
+- Gallery images as large touch targets
+- Navigation adequately spaced
+
+### Collapsing Strategy
+- **Hero text**: 128px → 72px → 48px progressive scaling
+- **Model gallery**: Grid reduces columns
+- **Navigation**: Collapses to hamburger
+- **Manifesto**: Scales down but maintains impact
+
+### Image Behavior
+- AI-generated images scale within pill containers
+- Gallery reflows to fewer columns on narrow screens
+- Hero gradient maintained at all sizes
+
+## 9. Agent Prompt Guide
+
+### Quick Color Reference
+- Primary Text: "Replicate Dark (#202020)"
+- Page Background: "Pure White (#ffffff)"
+- Brand Accent: "Replicate Red (#ea2804)"
+- Secondary Text: "Medium Gray (#646464)"
+- Muted/Decoration: "Light Silver (#bbbbbb)"
+- Status: "Status Green (#2b9a66)"
+- Dark Surface: "Replicate Dark (#202020)"
+
+### Example Component Prompts
+- "Create a hero section with a vibrant orange-red-magenta gradient background. Headline at 72px rb-freigeist-neue weight 700, white text, -1.8px letter-spacing. Include a dark pill CTA button and a white outlined pill button."
+- "Design a model card with pill-shaped (9999px) image container, model name at 16px basier-square weight 600, run count at 14px in Medium Gray. Border: 1px solid #202020."
+- "Build a status badge: pill-shaped (9999px), Status Green (#2b9a66) background, white text at 14px basier-square."
+- "Create a manifesto section on Replicate Dark (#202020) with 'Imagine what you can build.' at 128px rb-freigeist-neue weight 700, white text. Embed small AI-generated images between the words."
+- "Design a code block: dark background (#24292e), JetBrains Mono at 14px, white text. Pill-shaped container."
+
+### Iteration Guide
+1. Everything is pill-shaped — never specify any other border-radius
+2. Display text is HEAVY — weight 700, sizes 48px+
+3. Links use dotted underline (#bbbbbb) — never solid
+4. The gradient hero is the visual anchor — make it bold
+5. Use basier-square for body, rb-freigeist-neue for display, JetBrains Mono for code
