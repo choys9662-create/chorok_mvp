@@ -82,6 +82,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
+        const ChorokSectionHeader(title: '요일별 독서 리듬'),
+        const SizedBox(height: AppTheme.spaceMD),
+        _WeekBubbleChart(
+          labels: const ['월', '화', '수', '목', '금', '토', '일'],
+          values: const [85, 42, 120, 65, 30, 153, 83],
+          highlightIndex: DateTime.now().weekday - 1,
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
         const ChorokSectionHeader(title: '시간대별 독서 패턴'),
         const SizedBox(height: AppTheme.spaceMD),
         const _TimeOfDayChart(
@@ -138,16 +147,36 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ]),
         const SizedBox(height: AppTheme.spaceXL),
 
+        const ChorokSectionHeader(title: '내 문장에 온 반응'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _SentenceReactionsCard(sentences: [
+          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 34, isTop: true),
+          (text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.', book: '아몬드 — 손원평', reactions: 21, isTop: false),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _CommunityHighlightsCard(highlights: [
+          (text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.', book: '파친코 — 이민진', reactions: 128),
+          (text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.', book: '소년이 온다 — 한강', reactions: 97),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '이번 주 독서 성향'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _ReadingPersonaCard(
+          persona: '저녁형 독서가',
+          icon: Icons.nights_stay_rounded,
+          description: '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
         const ChorokSectionHeader(title: '이번 주 인사이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const _RichInsightCard(
-          deltas: [
-            (label: 'vs 지난주', value: '+23%', isPositive: true),
-            (label: '독서일', value: '+1일', isPositive: true),
-            (label: '수집 문장', value: '+9개', isPositive: true),
-          ],
-          icon: Icons.nights_stay_rounded,
-          message: '저녁 독서 비중(61%)이 지난주와 비슷하게 유지됐어요. 규칙적인 루틴 덕분에 집중도도 83점으로 올랐어요!',
+        const _QualitativeInsightCard(
+          icon: Icons.auto_awesome_rounded,
+          message: '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
         ),
       ];
 
@@ -169,17 +198,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '주차별 독서 시간'),
-        const SizedBox(height: AppTheme.spaceMD),
-        ChorokCard(
-          child: _BarChart(
-            labels: const ['1주', '2주', '3주', '4주', '5주'],
-            values: const [320, 480, 560, 410, 390],
-            highlightIndex: 3,
-          ),
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-
         const ChorokSectionHeader(title: '독서 캘린더'),
         const SizedBox(height: AppTheme.spaceMD),
         const _CalendarHeatmap(
@@ -191,6 +209,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             20: 45, 21: 180, 22: 60, 24: 90, 26: 240,
             27: 150, 29: 75, 31: 120,
           },
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '독서 밀도'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _ReadingDensityCard(
+          readDays: 18,
+          totalDays: 31,
+          maxStreak: 5,
+          streakDescription: '이틀에 한 번 이상 책을 펼쳤어요. 독서가 삶의 자연스러운 리듬으로 스며들고 있어요.',
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
@@ -219,17 +247,29 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ]),
         const SizedBox(height: AppTheme.spaceXL),
 
+        const ChorokSectionHeader(title: '이번 달 베스트 문장'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _SentenceReactionsCard(sentences: [
+          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 89, isTop: true),
+          (text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.', book: '아몬드 — 손원평', reactions: 54, isTop: false),
+          (text: '역사는 우리가 어떻게 살았는지를 기억한다.', book: '파친코 — 이민진', reactions: 31, isTop: false),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _CommunityHighlightsCard(highlights: [
+          (text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.', book: '채식주의자 — 한강', reactions: 312),
+          (text: '누군가를 사랑한다는 것은 그 사람의 이야기를 끝까지 듣는 것이다.', book: '아몬드 — 손원평', reactions: 241),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
         const ChorokSectionHeader(title: '이번 달 인사이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const _RichInsightCard(
-          deltas: [
-            (label: '독서 시간', value: '+8%', isPositive: true),
-            (label: '독서일', value: '+3일', isPositive: true),
-            (label: '페이지/분', value: '+0.4p', isPositive: true),
-          ],
+        const _QualitativeInsightCard(
           icon: Icons.auto_awesome_rounded,
-          message: '같은 시간에 더 많은 페이지를 읽었어요. 지난달보다 집중도가 높아진 것 같아요!',
-          qualitative: _ReadingQuality.moreEfficient,
+          message: '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
+          subMessage: '같은 시간에 더 많은 페이지를 읽었다는 건, 집중력이 자라고 있다는 신호예요.',
         ),
       ];
 
@@ -265,6 +305,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             highlightIndex: DateTime.now().month - 1,
             labelSuffix: '월',
           ),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '월별 활동 다이얼'),
+        const SizedBox(height: AppTheme.spaceMD),
+        _YearMonthDials(
+          values: const [620, 480, 560, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          highlightIndex: DateTime.now().month - 1,
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
@@ -306,16 +354,39 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
+        const ChorokSectionHeader(title: '올해의 독서 정체성'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _ReaderIdentityCard(
+          identity: '소설 탐험가',
+          icon: Icons.explore_rounded,
+          description: '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _SentenceReactionsCard(sentences: [
+          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 341, isTop: true),
+          (text: '역사는 우리가 어떻게 살았는지를 기억한다.', book: '파친코 — 이민진', reactions: 189, isTop: false),
+          (text: '나는 살아있다고 느끼는 순간이 거의 없었어.', book: '아몬드 — 손원평', reactions: 124, isTop: false),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const _CommunityHighlightsCard(highlights: [
+          (text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.', book: '채식주의자 — 한강', reactions: 2841),
+          (text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.', book: '파친코 — 이민진', reactions: 1932),
+          (text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.', book: '소년이 온다 — 한강', reactions: 1547),
+        ]),
+        const SizedBox(height: AppTheme.spaceXL),
+
         const ChorokSectionHeader(title: '올해 인사이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const _RichInsightCard(
-          deltas: [
-            (label: '총 독서 시간', value: '142h', isPositive: true),
-            (label: '완독', value: '9권', isPositive: true),
-            (label: '목표 달성률', value: '45%', isPositive: true),
-          ],
+        const _QualitativeInsightCard(
           icon: Icons.emoji_events_rounded,
-          message: '올해 142시간을 독서에 투자했어요. 매달 꾸준히 완독하며 연간 목표의 45%를 달성했어요!',
+          message: '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
+          subMessage: '연간 목표의 45%를 3개월 만에 달성했어요. 이 속도라면 연말엔 목표를 훌쩍 넘어설 거예요.',
         ),
       ];
 
@@ -376,7 +447,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: allSessions.length,
-                separatorBuilder: (_, _) => Divider(
+                separatorBuilder: (_, i) => const Divider(
                     color: AppTheme.darkBorder, height: 1, indent: 64),
                 itemBuilder: (_, i) {
                   final s = allSessions[i];
@@ -493,16 +564,18 @@ class _SummaryCard extends StatelessWidget {
           const Divider(color: AppTheme.darkBorder, height: 1),
           const SizedBox(height: AppTheme.spaceMD),
           Row(
-            children: stats.expand((s) => [
-              ChorokStatCell(
-                label: s.label,
-                value: s.value,
-                icon: s.icon,
-                valueColor: s.color,
+            children: stats.asMap().entries.expand((e) => [
+              Expanded(
+                child: ChorokStatCell(
+                  label: e.value.label,
+                  value: e.value.value,
+                  icon: e.value.icon,
+                  valueColor: e.value.color,
+                ),
               ),
-              const SizedBox(width: AppTheme.space3XL),
-            ]).toList()
-              ..removeLast(),
+              if (e.key < stats.length - 1)
+                const SizedBox(width: AppTheme.spaceMD),
+            ]).toList(),
           ),
         ],
       ),
@@ -815,69 +888,25 @@ class _TimeOfDayChart extends StatelessWidget {
   }
 }
 
-// ─── 독서 효율 평가 (정성 피드백용) ──────────────────────────────────────
-enum _ReadingQuality {
-  moreEfficient,  // 같은 시간에 더 많은 페이지
-  lessEfficient,  // 같은 시간에 더 적은 페이지 → "어려운 책이었나봐요"
-  moreTime,       // 더 많은 시간 투자
-  lessTime,       // 더 적은 시간 투자
-}
-
-// ─── 인사이트 카드 (수치 델타 + 정성 피드백) ──────────────────────────────
-class _RichInsightCard extends StatelessWidget {
+// ─── 정성적 인사이트 카드 ─────────────────────────────────────────────
+class _QualitativeInsightCard extends StatelessWidget {
   final IconData icon;
   final String message;
-  final List<({String label, String value, bool isPositive})> deltas;
-  final _ReadingQuality? qualitative;
+  final String? subMessage;
 
-  const _RichInsightCard({
+  const _QualitativeInsightCard({
     required this.icon,
     required this.message,
-    required this.deltas,
-    this.qualitative,
+    this.subMessage,
   });
-
-  String? get _qualitativeMessage => switch (qualitative) {
-    _ReadingQuality.moreEfficient => '같은 시간에 더 많은 페이지를 읽었어요. 집중도가 올라간 것 같아요!',
-    _ReadingQuality.lessEfficient => '시간 대비 페이지 수가 줄었어요. 어려운 책이었나봐요.',
-    _ReadingQuality.moreTime      => '지난 기간보다 더 많은 시간을 독서에 쏟았어요. 대단해요!',
-    _ReadingQuality.lessTime      => '읽는 시간이 조금 줄었어요. 다음엔 더 여유를 만들어봐요.',
-    null => null,
-  };
 
   @override
   Widget build(BuildContext context) {
-    final qualMsg = _qualitativeMessage;
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 델타 수치 행
-          Row(
-            children: deltas.expand((d) => [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      d.value,
-                      style: AppTheme.headingSmall.copyWith(
-                        color: d.isPositive ? AppTheme.primaryLight : AppTheme.warningColor,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(d.label,
-                        style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
-                  ],
-                ),
-              ),
-            ]).toList(),
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
-          const Divider(color: AppTheme.darkBorder, height: 1),
-          const SizedBox(height: AppTheme.spaceMD),
-          // 아이콘 + 메시지
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -895,39 +924,30 @@ class _RichInsightCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     message,
-                    style: AppTheme.bodySmall.copyWith(
-                      color: AppTheme.textSecondary,
-                      height: 1.6,
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: AppTheme.textPrimary,
+                      height: 1.7,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          // 정성 피드백 배지 (qualitative 있을 때만)
-          if (qualMsg != null) ...[
+          if (subMessage != null) ...[
             const SizedBox(height: AppTheme.spaceMD),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: AppTheme.smoothBox(
-                color: AppTheme.primary.withValues(alpha: 0.35),
-                side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.2)),
+                color: AppTheme.primary.withValues(alpha: 0.2),
+                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.4)),
                 radius: AppTheme.radiusMD,
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.psychology_rounded, size: 14, color: AppTheme.primaryLight),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      qualMsg,
-                      style: AppTheme.captionLarge.copyWith(
-                        color: AppTheme.textSecondary,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
+              child: Text(
+                subMessage!,
+                style: AppTheme.captionLarge.copyWith(
+                  color: AppTheme.textSecondary,
+                  height: 1.5,
+                ),
               ),
             ),
           ],
@@ -1020,45 +1040,42 @@ class _CalendarHeatmap extends StatelessWidget {
     const headers = ['월', '화', '수', '목', '금', '토', '일'];
     final rows = ((startOffset + daysInMonth) / 7).ceil();
 
-    // LayoutBuilder 대신 MediaQuery로 셀 크기 계산 —
-    // layout 단계에서 위젯 트리를 재생성하지 않아 스크롤 중 freeze 방지
-    final screenW = MediaQuery.sizeOf(context).width;
-    final cellSize = (screenW
-            - AppTheme.screenPadding * 2   // 화면 좌우 패딩
-            - AppTheme.cardPaddingMD * 2)  // 카드 내부 패딩
-        / 7;
-
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: headers.map((d) => SizedBox(
-              width: cellSize,
-              child: Center(
-                child: Text(d,
-                    style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cellSize = constraints.maxWidth / 7;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: headers.map((d) => SizedBox(
+                  width: cellSize,
+                  child: Center(
+                    child: Text(d,
+                        style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
+                  ),
+                )).toList(),
               ),
-            )).toList(),
-          ),
-          const SizedBox(height: AppTheme.spaceSM),
-          ...List.generate(rows, (row) => Row(
-            children: List.generate(7, (col) {
-              final day = row * 7 + col - startOffset + 1;
-              if (day < 1 || day > daysInMonth) {
-                return SizedBox(width: cellSize, height: cellSize);
-              }
-              return _DayCell(
-                day: day,
-                minutes: readingMinutes[day] ?? 0,
-                size: cellSize,
-              );
-            }),
-          )),
-          const SizedBox(height: AppTheme.spaceSM),
-          _CalendarLegend(),
-        ],
+              const SizedBox(height: AppTheme.spaceSM),
+              ...List.generate(rows, (row) => Row(
+                children: List.generate(7, (col) {
+                  final day = row * 7 + col - startOffset + 1;
+                  if (day < 1 || day > daysInMonth) {
+                    return SizedBox(width: cellSize, height: cellSize);
+                  }
+                  return _DayCell(
+                    day: day,
+                    minutes: readingMinutes[day] ?? 0,
+                    size: cellSize,
+                  );
+                }),
+              )),
+              const SizedBox(height: AppTheme.spaceSM),
+              _CalendarLegend(),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1115,19 +1132,23 @@ class _CalendarLegend extends StatelessWidget {
       (color: AppTheme.accent, label: '2시간'),
       (color: AppTheme.primaryLight, label: '2시간+'),
     ];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: steps.expand((s) => [
-        Container(
-          width: 12, height: 12,
-          decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2)),
-        ),
-        const SizedBox(width: 4),
-        Text(s.label,
-            style: AppTheme.captionSmall.copyWith(fontSize: 10, color: AppTheme.textTertiary)),
-        const SizedBox(width: 8),
-      ]).toList()
-        ..removeLast(),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: steps.expand((s) => [
+          Container(
+            width: 12, height: 12,
+            decoration: BoxDecoration(color: s.color, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(width: 4),
+          Text(s.label,
+              style: AppTheme.captionSmall.copyWith(fontSize: 10, color: AppTheme.textTertiary)),
+          const SizedBox(width: 8),
+        ]).toList()
+          ..removeLast(),
+      ),
     );
   }
 }
@@ -1333,6 +1354,631 @@ class _FinishedBookList extends StatelessWidget {
             ],
           );
         }),
+      ),
+    );
+  }
+}
+
+// ─── 이번 주 독서 성향 카드 ────────────────────────────────────────────
+class _ReadingPersonaCard extends StatelessWidget {
+  final String persona;
+  final IconData icon;
+  final String description;
+
+  const _ReadingPersonaCard({
+    required this.persona,
+    required this.icon,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+      borderColor: AppTheme.primary.withValues(alpha: 0.3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48, height: 48,
+            decoration: AppTheme.smoothBox(
+              gradient: AppTheme.greenGradient,
+              radius: AppTheme.radiusMD,
+            ),
+            child: Icon(icon, color: Colors.black, size: 24),
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  persona,
+                  style: AppTheme.headingMedium.copyWith(color: AppTheme.primaryLight),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textSecondary,
+                    height: 1.6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 이번 달 독서 밀도 카드 ───────────────────────────────────────────
+class _ReadingDensityCard extends StatelessWidget {
+  final int readDays;
+  final int totalDays;
+  final int maxStreak;
+  final String streakDescription;
+
+  const _ReadingDensityCard({
+    required this.readDays,
+    required this.totalDays,
+    required this.maxStreak,
+    required this.streakDescription,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = readDays / totalDays;
+    final pct = (ratio * 100).round();
+
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '독서한 날',
+                      style: AppTheme.captionLarge.copyWith(color: AppTheme.textTertiary),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        GradientText(
+                          '$readDays',
+                          style: AppTheme.displaySmall,
+                          gradient: AppTheme.greenGradientVertical,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4, left: 4),
+                          child: Text(
+                            '/ $totalDays일',
+                            style: AppTheme.headingSmall.copyWith(color: AppTheme.textTertiary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('최장 연속', style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary)),
+                  const SizedBox(height: 4),
+                  Text('$maxStreak일', style: AppTheme.headingSmall.copyWith(color: AppTheme.accent)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 8,
+              backgroundColor: AppTheme.darkBorder,
+              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            '$pct%의 날을 책과 함께했어요',
+            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: AppTheme.smoothBox(
+              color: AppTheme.primary.withValues(alpha: 0.2),
+              side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.4)),
+              radius: AppTheme.radiusMD,
+            ),
+            child: Text(
+              streakDescription,
+              style: AppTheme.captionLarge.copyWith(
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 올해의 독서 정체성 카드 ──────────────────────────────────────────
+class _ReaderIdentityCard extends StatelessWidget {
+  final String identity;
+  final IconData icon;
+  final String description;
+
+  const _ReaderIdentityCard({
+    required this.identity,
+    required this.icon,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+      borderColor: AppTheme.primary.withValues(alpha: 0.3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: AppTheme.smoothBox(
+                  gradient: AppTheme.greenGradient,
+                  radius: AppTheme.radiusMD,
+                ),
+                child: Icon(icon, color: Colors.black, size: 20),
+              ),
+              const SizedBox(width: AppTheme.spaceMD),
+              Text(
+                '올해 나는',
+                style: AppTheme.captionLarge.copyWith(color: AppTheme.textTertiary),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          GradientText(
+            identity,
+            style: AppTheme.displaySmall.copyWith(height: 1.1),
+            gradient: AppTheme.greenGradientVertical,
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          const Divider(color: AppTheme.darkBorder, height: 1),
+          const SizedBox(height: AppTheme.spaceMD),
+          Text(
+            description,
+            style: AppTheme.bodySmall.copyWith(
+              color: AppTheme.textSecondary,
+              height: 1.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 내 문장 반응 카드 ────────────────────────────────────────────────
+class _SentenceReactionsCard extends StatelessWidget {
+  final List<({String text, String book, int reactions, bool isTop})> sentences;
+
+  const _SentenceReactionsCard({required this.sentences});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChorokCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: List.generate(sentences.length, (i) {
+          final s = sentences[i];
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 3,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: s.isTop
+                            ? AppTheme.greenGradientVertical
+                            : LinearGradient(
+                                colors: [
+                                  AppTheme.primary.withValues(alpha: 0.6),
+                                  AppTheme.primary.withValues(alpha: 0.3),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '\u201c${s.text}\u201d',
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.textSecondary,
+                              height: 1.5,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '— ${s.book}',
+                            style: AppTheme.captionSmall.copyWith(
+                                color: AppTheme.textTertiary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (s.isTop)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: AppTheme.smoothPill(
+                              gradient: AppTheme.greenGradient,
+                            ),
+                            child: Text(
+                              'TOP',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 9,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.favorite_rounded,
+                                size: 12, color: AppTheme.primaryLight),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${s.reactions}',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: AppTheme.primaryLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (i < sentences.length - 1)
+                const Divider(height: 1, color: AppTheme.darkBorder, indent: 19),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─── 커뮤니티 하이라이트 카드 ─────────────────────────────────────────
+class _CommunityHighlightsCard extends StatelessWidget {
+  final List<({String text, String book, int reactions})> highlights;
+
+  const _CommunityHighlightsCard({required this.highlights});
+
+  String _formatReactions(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChorokCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: List.generate(highlights.length, (i) {
+          final h = highlights[i];
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${i + 1}',
+                          style: AppTheme.captionLarge.copyWith(
+                            color: AppTheme.primaryLight,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '\u201c${h.text}\u201d',
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.textPrimary,
+                              height: 1.55,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Text(
+                                '— ${h.book}',
+                                style: AppTheme.captionSmall.copyWith(
+                                    color: AppTheme.textTertiary),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.favorite_rounded,
+                                  size: 11, color: AppTheme.accent),
+                              const SizedBox(width: 3),
+                              Text(
+                                _formatReactions(h.reactions),
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: AppTheme.accent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (i < highlights.length - 1)
+                const Divider(height: 1, color: AppTheme.darkBorder, indent: 64),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─── 주간: 요일별 독서 리듬 거품 차트 ────────────────────────────────────
+class _WeekBubbleChart extends StatelessWidget {
+  final List<String> labels;
+  final List<int> values; // minutes per day
+  final int highlightIndex;
+
+  const _WeekBubbleChart({
+    required this.labels,
+    required this.values,
+    required this.highlightIndex,
+  });
+
+  static const double _kMaxR = 26.0;
+  static const double _kMinR = 5.0;
+  static const double _kAreaH = 80.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+
+    return ChorokCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.cardPaddingMD,
+        AppTheme.cardPaddingMD,
+        AppTheme.cardPaddingMD,
+        AppTheme.spaceMD,
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: _kAreaH,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(labels.length, (i) {
+                final mins = values[i];
+                final ratio = maxVal == 0 ? 0.0 : mins / maxVal;
+                final diameter = mins == 0
+                    ? _kMinR * 2
+                    : (_kMinR * 2 + (_kMaxR * 2 - _kMinR * 2) * ratio)
+                        .clamp(_kMinR * 2, _kMaxR * 2);
+                final isToday = i == highlightIndex;
+
+                return Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isToday && mins > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: AppTheme.spaceXS),
+                            child: Text(
+                              mins >= 60
+                                  ? '${mins ~/ 60}h ${mins % 60}m'
+                                  : '${mins}m',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: AppTheme.accent,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        Container(
+                          width: diameter,
+                          height: diameter,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: isToday && mins > 0
+                                ? AppTheme.greenGradient
+                                : null,
+                            color: mins == 0
+                                ? AppTheme.darkBorder.withValues(alpha: 0.3)
+                                : isToday
+                                    ? null
+                                    : AppTheme.accent
+                                        .withValues(alpha: 0.2 + 0.55 * ratio),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Row(
+            children: List.generate(labels.length, (i) {
+              final isToday = i == highlightIndex;
+              return Expanded(
+                child: Text(
+                  labels[i],
+                  textAlign: TextAlign.center,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: isToday ? AppTheme.primaryLight : AppTheme.textTertiary,
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 연간: 월별 원형 다이얼 차트 ─────────────────────────────────────────
+class _YearMonthDials extends StatelessWidget {
+  final List<int> values; // 12 months, reading minutes each
+  final int highlightIndex; // current month index (0–11)
+
+  const _YearMonthDials({
+    required this.values,
+    required this.highlightIndex,
+  });
+
+  static const _monthLabels = [
+    '1월', '2월', '3월', '4월',
+    '5월', '6월', '7월', '8월',
+    '9월', '10월', '11월', '12월',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final maxVal = values
+        .where((v) => v > 0)
+        .fold<int>(1, (a, b) => a > b ? a : b);
+
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: AppTheme.spaceMD,
+          crossAxisSpacing: AppTheme.spaceSM,
+          childAspectRatio: 0.88,
+        ),
+        itemCount: 12,
+        itemBuilder: (_, i) {
+          final mins = values[i];
+          final isFuture = i > highlightIndex;
+          final isCurrent = i == highlightIndex;
+          final ratio = isFuture ? 0.0 : (mins / maxVal).clamp(0.0, 1.0);
+
+          final dialColor = isCurrent
+              ? AppTheme.primaryLight
+              : mins > 0
+                  ? AppTheme.accent.withValues(alpha: 0.4 + 0.6 * ratio)
+                  : AppTheme.darkBorder.withValues(alpha: 0.4);
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 52,
+                height: 52,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: ratio,
+                      strokeWidth: isCurrent ? 5.0 : 3.5,
+                      backgroundColor: AppTheme.darkBorder.withValues(alpha: 0.35),
+                      valueColor: AlwaysStoppedAnimation(dialColor),
+                      strokeCap: StrokeCap.round,
+                    ),
+                    Text(
+                      _monthLabels[i],
+                      style: AppTheme.captionSmall.copyWith(
+                        fontSize: 10,
+                        fontWeight:
+                            isCurrent ? FontWeight.w700 : FontWeight.w500,
+                        color: isCurrent
+                            ? AppTheme.primaryLight
+                            : isFuture
+                                ? AppTheme.textTertiary.withValues(alpha: 0.5)
+                                : AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppTheme.spaceXS),
+              Text(
+                isFuture || mins == 0
+                    ? '—'
+                    : mins >= 60
+                        ? '${mins ~/ 60}h'
+                        : '${mins}m',
+                style: AppTheme.captionSmall.copyWith(
+                  fontSize: 10,
+                  color: isCurrent ? AppTheme.accent : AppTheme.textTertiary,
+                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

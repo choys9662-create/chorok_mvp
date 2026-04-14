@@ -1,7 +1,14 @@
+import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -23,6 +30,10 @@ class RecapData {
   final int totalPages;
   final DateTime? sessionStartedAt;
 
+  /// 이탈 횟수 / 이탈 누적 시간(초)
+  final int exitCount;
+  final int exitDurationSeconds;
+
   const RecapData({
     required this.seconds,
     required this.bookTitle,
@@ -32,6 +43,8 @@ class RecapData {
     this.startPage = 0,
     this.totalPages = 0,
     this.sessionStartedAt,
+    this.exitCount = 0,
+    this.exitDurationSeconds = 0,
   });
 }
 
@@ -99,6 +112,55 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   bool _pageRecorded = false;
   bool _isSavingPage = false;
 
+  // 공유 카드 캡처용 키
+  final _shareKey = GlobalKey();
+
+  // 집중도 (0~100)
+  double get _focusPercent {
+    final total = widget.data.seconds + widget.data.exitDurationSeconds;
+    if (total <= 0) return 100.0;
+    return (widget.data.seconds / total * 100).clamp(0.0, 100.0);
+  }
+
+  // 집중도 기반 인사이트
+  String get _focusInsightText {
+    final exits = widget.data.exitCount;
+    final focus = _focusPercent;
+    if (exits == 0) return '한 번도 이탈하지 않은 완벽한 집중이에요! 🎯';
+    if (focus >= 90) return '대단해요! 거의 완벽한 집중을 유지했어요 ✨';
+    if (focus >= 70) return '좋은 집중력이에요. 이탈이 있었지만 금방 돌아왔어요 👍';
+    if (focus >= 50) return '집중과 이탈이 반반이었어요. 다음엔 더 잘할 수 있어요 💪';
+    return '오늘은 집중이 쉽지 않았지만, 책을 펼친 것만으로도 훌륭해요 🌱';
+  }
+
+  Future<void> _share() async {
+    HapticFeedback.selectionClick();
+    try {
+      final boundary =
+          _shareKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null || !mounted) return;
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/chorok_session.png');
+      await file.writeAsBytes(bytes.buffer.asUint8List());
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: '$_timeText 독서 완료! 📚',
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('공유 준비 중 오류가 발생했어요'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -151,6 +213,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         durationSeconds: widget.data.seconds,
         choseoCount: widget.data.sentences.length,
         startedAt: widget.data.sessionStartedAt,
+        exitCount: widget.data.exitCount,
+        exitDurationSeconds: widget.data.exitDurationSeconds,
       );
 
       // 초서 문장 개별 저장
@@ -301,20 +365,37 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 세션 히어로 카드
-                        _SessionHeroCard(
-                          bookTitle: widget.data.bookTitle,
-                          bookAuthor: widget.data.bookAuthor,
-                          timeText: _timeText,
-                          sentenceCount: widget.data.sentences.length,
-                        ),
-                        const SizedBox(height: 16),
+                        // 공유 캡처 영역
+                        RepaintBoundary(
+                          key: _shareKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // 세션 히어로 카드
+                              _SessionHeroCard(
+                                bookTitle: widget.data.bookTitle,
+                                bookAuthor: widget.data.bookAuthor,
+                                timeText: _timeText,
+                                sentenceCount: widget.data.sentences.length,
+                              ),
+                              const SizedBox(height: 16),
 
-                        // 점수 카드
-                        _ScoreCard(
-                          score: _score,
-                          evalText: _evalText(
-                              _score, widget.data.sentences.length),
+                              // 집중도 게이지 카드
+                              _FocusGaugeCard(
+                                focusPercent: _focusPercent,
+                                exitCount: widget.data.exitCount,
+                                insightText: _focusInsightText,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 점수 카드
+                              _ScoreCard(
+                                score: _score,
+                                evalText: _evalText(
+                                    _score, widget.data.sentences.length),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 16),
 
@@ -355,7 +436,10 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                 ),
 
                 // ─── 하단 CTA ────────────────────────────────────
-                _RecapActions(sentences: widget.data.sentences),
+                _RecapActions(
+                  sentences: widget.data.sentences,
+                  onShare: _share,
+                ),
               ],
             ),
           ),
@@ -922,7 +1006,8 @@ class _Divider extends StatelessWidget {
 // ─── 하단 액션 버튼 ───────────────────────────────────────────────────
 class _RecapActions extends StatelessWidget {
   final List<CollectedSentence> sentences;
-  const _RecapActions({required this.sentences});
+  final Future<void> Function() onShare;
+  const _RecapActions({required this.sentences, required this.onShare});
 
   @override
   Widget build(BuildContext context) {
@@ -937,16 +1022,7 @@ class _RecapActions extends StatelessWidget {
           // 공유하기
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('공유 기능은 준비 중이에요'),
-                    backgroundColor: AppTheme.primary,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
+              onPressed: onShare,
               icon: const Icon(Icons.share_outlined, size: 18),
               label: const Text('공유하기'),
               style: OutlinedButton.styleFrom(
@@ -1372,4 +1448,185 @@ class _OverlapHintCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── 집중도 게이지 카드 ────────────────────────────────────────────────
+class _FocusGaugeCard extends StatefulWidget {
+  final double focusPercent;
+  final int exitCount;
+  final String insightText;
+
+  const _FocusGaugeCard({
+    required this.focusPercent,
+    required this.exitCount,
+    required this.insightText,
+  });
+
+  @override
+  State<_FocusGaugeCard> createState() => _FocusGaugeCardState();
+}
+
+class _FocusGaugeCardState extends State<_FocusGaugeCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _anim = Tween<double>(begin: 0, end: widget.focusPercent / 100)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Color get _gaugeColor {
+    if (widget.focusPercent >= 80) return AppTheme.primaryLight;
+    if (widget.focusPercent >= 50) return AppTheme.accent;
+    return const Color(0xFFFF7B7B);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.smoothBox(
+        color: AppTheme.darkCard,
+        radius: 20,
+        side: const BorderSide(color: AppTheme.darkBorder),
+      ),
+      child: Row(
+        children: [
+          // 원형 게이지
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (_, _) => SizedBox(
+              width: 72,
+              height: 72,
+              child: CustomPaint(
+                painter: _FocusArcPainter(
+                  progress: _anim.value,
+                  color: _gaugeColor,
+                ),
+                child: Center(
+                  child: Text(
+                    '${(_anim.value * 100).round()}%',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: _gaugeColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // 텍스트
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '집중도',
+                      style: AppTheme.captionLarge
+                          .copyWith(color: AppTheme.textTertiary),
+                    ),
+                    if (widget.exitCount > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: AppTheme.smoothBox(
+                          color: AppTheme.darkCardElevated,
+                          radius: 8,
+                          side: const BorderSide(color: AppTheme.darkBorder),
+                        ),
+                        child: Text(
+                          '이탈 ${widget.exitCount}회',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: AppTheme.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  widget.insightText,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FocusArcPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  const _FocusArcPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final radius = math.min(cx, cy) - 6;
+    const startAngle = -math.pi / 2;
+
+    // 트랙
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: radius),
+      0,
+      math.pi * 2,
+      false,
+      Paint()
+        ..color = AppTheme.darkBorder
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // 진행 호
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(cx, cy), radius: radius),
+        startAngle,
+        math.pi * 2 * progress,
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 6
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FocusArcPainter old) =>
+      old.progress != progress || old.color != color;
 }

@@ -3,10 +3,13 @@ import 'package:go_router/go_router.dart';
 
 // import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../main.dart' show initialLocationProvider;
+
 import '../../features/analytics/screen/analytics_screen.dart';
 import '../../features/auth/screen/auth_screen.dart';
 import '../../features/explore/screen/explore_screen.dart';
 import '../../features/feed/screen/feed_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/screen/search_screen.dart';
 import '../../shared/models/session_goal.dart';
 import '../../features/home/screen/book_detail_screen.dart';
@@ -24,8 +27,9 @@ import '../constants/app_constants.dart';
 
 /// go_router 인스턴스 프로바이더
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final initialLocation = ref.read(initialLocationProvider);
   return GoRouter(
-    initialLocation: AppConstants.routeHome,
+    initialLocation: initialLocation,
     debugLogDiagnostics: false,
 
     // ── 인증 가드 (디자인 작업 중 비활성화) ─────────────────────────
@@ -39,6 +43,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // },
 
     routes: [
+      // 온보딩
+      GoRoute(
+        path: AppConstants.routeOnboarding,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
       // 인증
       GoRoute(
         path: AppConstants.routeAuth,

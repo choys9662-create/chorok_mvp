@@ -4,16 +4,25 @@ import '../../../shared/models/session_goal.dart';
 
 /// 초서 바텀시트 — 문장 수집 + 내 생각 입력 UI
 class ChosuSheet extends StatefulWidget {
-  const ChosuSheet({super.key});
+  /// OCR / STT로 인식된 텍스트를 미리 채울 때 사용
+  final String initialText;
+
+  const ChosuSheet({super.key, this.initialText = ''});
 
   @override
   State<ChosuSheet> createState() => _ChosuSheetState();
 }
 
 class _ChosuSheetState extends State<ChosuSheet> {
-  final _sentenceCtrl = TextEditingController();
+  late final TextEditingController _sentenceCtrl;
   final _thoughtCtrl = TextEditingController();
   bool _saved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sentenceCtrl = TextEditingController(text: widget.initialText);
+  }
 
   @override
   void dispose() {
@@ -59,7 +68,8 @@ class _ChosuSheetState extends State<ChosuSheet> {
               // 핸들
               Center(
                 child: Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: AppTheme.darkBorder,
                     borderRadius: BorderRadius.circular(2),
@@ -71,16 +81,25 @@ class _ChosuSheetState extends State<ChosuSheet> {
               // 헤더
               Row(
                 children: [
-                  Icon(Icons.format_quote_rounded,
-                      color: AppTheme.primaryLight, size: 20),
+                  Icon(
+                    Icons.format_quote_rounded,
+                    color: AppTheme.primaryLight,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  Text('문장 수집',
-                      style: AppTheme.headingSmall.copyWith(
-                          color: AppTheme.textPrimary)),
+                  Text(
+                    '문장 수집',
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
                   const Spacer(),
-                  Text('채식주의자 · 186쪽',
-                      style: AppTheme.captionSmall.copyWith(
-                          color: AppTheme.textTertiary)),
+                  Text(
+                    '채식주의자 · 186쪽',
+                    style: AppTheme.captionSmall.copyWith(
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -114,8 +133,9 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   decoration: InputDecoration(
                     hintText: '마음에 남은 문장을 입력하세요...',
                     hintStyle: AppTheme.bodyMedium.copyWith(
-                        color: AppTheme.textTertiary,
-                        fontStyle: FontStyle.italic),
+                      color: AppTheme.textTertiary,
+                      fontStyle: FontStyle.italic,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.all(14),
                   ),
@@ -124,45 +144,15 @@ class _ChosuSheetState extends State<ChosuSheet> {
               ),
               const SizedBox(height: 12),
 
-              // 입력 도구 버튼 행
-              Row(
-                children: [
-                  _InputTool(
-                    icon: Icons.camera_alt_outlined,
-                    label: 'OCR',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('OCR 기능은 출시 예정이에요',
-                              style: AppTheme.bodySmall),
-                          backgroundColor: AppTheme.primary,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+              // 글자 수 표시
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${_sentenceCtrl.text.length}자',
+                  style: AppTheme.captionSmall.copyWith(
+                    color: AppTheme.textTertiary,
                   ),
-                  const SizedBox(width: 10),
-                  _InputTool(
-                    icon: Icons.mic_outlined,
-                    label: 'STT',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('음성 입력 기능은 출시 예정이에요',
-                              style: AppTheme.bodySmall),
-                          backgroundColor: AppTheme.primary,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${_sentenceCtrl.text.length}자',
-                    style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.textTertiary),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -194,7 +184,8 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   decoration: InputDecoration(
                     hintText: '이 문장에서 무엇을 느꼈나요?',
                     hintStyle: AppTheme.bodyMedium.copyWith(
-                        color: AppTheme.textTertiary),
+                      color: AppTheme.textTertiary,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.all(14),
                   ),
@@ -216,7 +207,8 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _saved
                       ? Row(
@@ -224,18 +216,24 @@ class _ChosuSheetState extends State<ChosuSheet> {
                           children: [
                             const Icon(Icons.check_rounded, size: 18),
                             const SizedBox(width: 6),
-                            Text('저장됐어요!',
-                                style: AppTheme.bodySmall.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black)),
+                            Text(
+                              '저장됐어요!',
+                              style: AppTheme.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
                           ],
                         )
-                      : Text('저장하기',
+                      : Text(
+                          '저장하기',
                           style: AppTheme.bodySmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: _sentenceCtrl.text.trim().isEmpty
-                                  ? AppTheme.textTertiary
-                                  : Colors.black)),
+                            fontWeight: FontWeight.w600,
+                            color: _sentenceCtrl.text.trim().isEmpty
+                                ? AppTheme.textTertiary
+                                : Colors.black,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -265,26 +263,36 @@ class _FieldLabel extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 5),
-        Text(label,
-            style: AppTheme.captionLarge.copyWith(
-                color: color, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: AppTheme.captionLarge.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         if (optional) ...[
           const SizedBox(width: 6),
-          Text('선택',
-              style: AppTheme.captionSmall.copyWith(
-                  color: AppTheme.textTertiary)),
+          Text(
+            '선택',
+            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+          ),
         ],
       ],
     );
   }
 }
 
+// ignore: unused_element
 class _InputTool extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _InputTool({required this.icon, required this.label, required this.onTap});
+  const _InputTool({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -302,9 +310,12 @@ class _InputTool extends StatelessWidget {
           children: [
             Icon(icon, size: 15, color: AppTheme.primaryLight),
             const SizedBox(width: 5),
-            Text(label,
-                style: AppTheme.captionSmall.copyWith(
-                    color: AppTheme.primaryLight)),
+            Text(
+              label,
+              style: AppTheme.captionSmall.copyWith(
+                color: AppTheme.primaryLight,
+              ),
+            ),
           ],
         ),
       ),

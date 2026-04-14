@@ -43,7 +43,7 @@ Future<Database> openAppDatabase() async {
 
   return openDatabase(
     path,
-    version: 3,
+    version: 4,
     onCreate: (db, version) async {
       await _createAllTables(db);
     },
@@ -79,6 +79,13 @@ Future<Database> openAppDatabase() async {
           )
         ''');
       }
+      if (oldVersion < 4) {
+        // reading_sessions에 이탈 횟수/시간 컬럼 추가
+        await db.execute('ALTER TABLE reading_sessions ADD COLUMN exit_count INTEGER NOT NULL DEFAULT 0');
+        await db.execute('ALTER TABLE reading_sessions ADD COLUMN exit_duration_seconds INTEGER NOT NULL DEFAULT 0');
+        // choseo에 reflection 컬럼 추가
+        await db.execute('ALTER TABLE choseo ADD COLUMN reflection TEXT');
+      }
     },
   );
 }
@@ -101,14 +108,16 @@ Future<void> _createAllTables(Database db) async {
   ''');
   await db.execute('''
     CREATE TABLE reading_sessions (
-      id               INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id       TEXT    NOT NULL UNIQUE,
-      book_id          TEXT,
-      started_at       TEXT    NOT NULL,
-      ended_at         TEXT    NOT NULL,
-      duration_seconds INTEGER NOT NULL DEFAULT 0,
-      pages_read       INTEGER NOT NULL DEFAULT 0,
-      choseo_count     INTEGER NOT NULL DEFAULT 0
+      id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id             TEXT    NOT NULL UNIQUE,
+      book_id                TEXT,
+      started_at             TEXT    NOT NULL,
+      ended_at               TEXT    NOT NULL,
+      duration_seconds       INTEGER NOT NULL DEFAULT 0,
+      pages_read             INTEGER NOT NULL DEFAULT 0,
+      choseo_count           INTEGER NOT NULL DEFAULT 0,
+      exit_count             INTEGER NOT NULL DEFAULT 0,
+      exit_duration_seconds  INTEGER NOT NULL DEFAULT 0
     )
   ''');
   await db.execute('''
@@ -122,6 +131,7 @@ Future<void> _createAllTables(Database db) async {
       my_thought  TEXT,
       cover_url   TEXT,
       page_number INTEGER,
+      reflection  TEXT,
       created_at  TEXT    NOT NULL
     )
   ''');
@@ -214,6 +224,8 @@ class BookRepository {
     required int durationSeconds,
     required int choseoCount,
     DateTime? startedAt,
+    int exitCount = 0,
+    int exitDurationSeconds = 0,
   }) async {
     final existing = await getBook(bookId);
     bool justCompleted = false;
@@ -258,6 +270,8 @@ class BookRepository {
         durationSeconds: durationSeconds,
         pagesRead: pagesRead,
         choseoCount: choseoCount,
+        exitCount: exitCount,
+        exitDurationSeconds: exitDurationSeconds,
       );
       await _db.insert(
         'reading_sessions',
@@ -277,6 +291,8 @@ class BookRepository {
       durationSeconds: durationSeconds,
       pagesRead: 0,
       choseoCount: choseoCount,
+      exitCount: exitCount,
+      exitDurationSeconds: exitDurationSeconds,
     );
     await _db.insert(
       'reading_sessions',
@@ -445,6 +461,91 @@ class BookRepository {
       orderBy: 'created_at DESC',
     );
     return rows.map(IsarChoseo.fromMap).toList();
+  }
+
+  // ── 초서 리플렉션 메모 업데이트 ─────────────────────────────────────────────
+
+  Future<void> updateChoseoReflection(String choseoId, String? reflection) async {
+    await _db.update(
+      'choseo',
+      {'reflection': reflection},
+      where: 'choseo_id = ?',
+      whereArgs: [choseoId],
+    );
+  }
+
+  // ── 책별 초서 개수 ────────────────────────────────────────────────────────
+
+  Future<Map<String, int>> getChoseoCountByBook() async {
+    final rows = await _db.rawQuery(
+      'SELECT book_id, COUNT(*) as cnt FROM choseo GROUP BY book_id',
+    );
+    return {
+      for (final r in rows) r['book_id'] as String: r['cnt'] as int,
+    };
+  }
+
+  Future<int> getChoseoCountForBook(String bookId) async {
+    final result = await _db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM choseo WHERE book_id = ?',
+      [bookId],
+    );
+    return (result.first['cnt'] as int?) ?? 0;
+  }
+
+  // ── 타임캡슐: 1년 전 수집 문장 ──────────────────────────────────────────────
+
+  /// 오늘로부터 정확히 1년 전 ±3일 범위의 초서 중 1개 반환
+  Future<IsarChoseo?> getTimeCapsuleChoseo() async {
+    final now = DateTime.now();
+    final yearAgo = DateTime(now.year - 1, now.month, now.day);
+    final from = yearAgo.subtract(const Duration(days: 3));
+    final to = yearAgo.add(const Duration(days: 3));
+    final rows = await _db.rawQuery(
+      '''
+      SELECT * FROM choseo
+      WHERE date(created_at) BETWEEN date(?) AND date(?)
+      ORDER BY RANDOM()
+      LIMIT 1
+      ''',
+      [from.toIso8601String(), to.toIso8601String()],
+    );
+    if (rows.isEmpty) return null;
+    return IsarChoseo.fromMap(rows.first);
+  }
+
+  // ── 오늘 세션 인사이트 데이터 ────────────────────────────────────────────────
+
+  /// 오늘 독서 세션 목록
+  Future<List<IsarReadingSession>> getTodaySessions() async {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
+    final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59).toIso8601String();
+    final rows = await _db.query(
+      'reading_sessions',
+      where: 'started_at BETWEEN ? AND ?',
+      whereArgs: [startOfDay, endOfDay],
+      orderBy: 'started_at DESC',
+    );
+    return rows.map(IsarReadingSession.fromMap).toList();
+  }
+
+  /// 최근 7일 평균 일일 페이지 수 (완독 예상일 계산용)
+  Future<double> getAvgDailyPagesLast7Days(String bookId) async {
+    final from = DateTime.now().subtract(const Duration(days: 7));
+    final rows = await _db.rawQuery(
+      '''
+      SELECT SUM(pages_read) as total, COUNT(DISTINCT date(started_at)) as days
+      FROM reading_sessions
+      WHERE book_id = ? AND started_at >= ?
+      ''',
+      [bookId, from.toIso8601String()],
+    );
+    if (rows.isEmpty) return 0;
+    final total = (rows.first['total'] as int?) ?? 0;
+    final days = (rows.first['days'] as int?) ?? 0;
+    if (days <= 0) return 0;
+    return total / days;
   }
 
   // ── 독서 스트릭 계산 ──────────────────────────────────────────────────────

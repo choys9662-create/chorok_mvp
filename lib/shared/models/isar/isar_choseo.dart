@@ -9,6 +9,7 @@ class IsarChoseo {
   final String? myThought;   // 내 생각 (선택)
   final String? coverUrl;    // 책 표지 URL (있으면 표시)
   final int? pageNumber;
+  final String? reflection;  // 나중에 추가한 리플렉션 메모
   final DateTime createdAt;
 
   const IsarChoseo({
@@ -21,8 +22,25 @@ class IsarChoseo {
     this.myThought,
     this.coverUrl,
     this.pageNumber,
+    this.reflection,
     required this.createdAt,
   });
+
+  IsarChoseo copyWith({String? reflection}) {
+    return IsarChoseo(
+      isarId: isarId,
+      choseoId: choseoId,
+      bookId: bookId,
+      bookTitle: bookTitle,
+      bookAuthor: bookAuthor,
+      content: content,
+      myThought: myThought,
+      coverUrl: coverUrl,
+      pageNumber: pageNumber,
+      reflection: reflection ?? this.reflection,
+      createdAt: createdAt,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         'choseo_id': choseoId,
@@ -33,6 +51,7 @@ class IsarChoseo {
         'my_thought': myThought,
         'cover_url': coverUrl,
         'page_number': pageNumber,
+        'reflection': reflection,
         'created_at': createdAt.toIso8601String(),
       };
 
@@ -46,6 +65,7 @@ class IsarChoseo {
         myThought: m['my_thought'] as String?,
         coverUrl: m['cover_url'] as String?,
         pageNumber: m['page_number'] as int?,
+        reflection: m['reflection'] as String?,
         createdAt: DateTime.parse(m['created_at'] as String),
       );
 }

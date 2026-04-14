@@ -6,9 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/onboarding/onboarding_screen.dart';
 import 'shared/repositories/book_repository.dart';
+
+/// 앱 초기 진입 경로 — main()에서 주입
+final initialLocationProvider = Provider<String>((_) => AppConstants.routeHome);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,21 +28,31 @@ Future<void> main() async {
     ),
   );
 
-  // 웹은 sqflite 미지원 — 목업 데이터로 동작
+  // 온보딩 완료 여부 — 웹은 항상 완료로 처리
+  final onboardingDone = kIsWeb ? true : await isOnboardingCompleted();
+  final initialLocation = onboardingDone
+      ? AppConstants.routeHome
+      : AppConstants.routeOnboarding;
+
   if (kIsWeb) {
     _initDeepLinks();
-    runApp(const ProviderScope(child: ChorokApp()));
+    runApp(ProviderScope(
+      overrides: [initialLocationProvider.overrideWithValue(initialLocation)],
+      child: const ChorokApp(),
+    ));
     return;
   }
 
   // 로컬 DB 초기화 (모바일/데스크톱)
   final Database db = await openAppDatabase();
 
-  // OAuth 콜백 딥링크 리스너
   _initDeepLinks();
 
   runApp(ProviderScope(
-    overrides: [dbProvider.overrideWithValue(db)],
+    overrides: [
+      dbProvider.overrideWithValue(db),
+      initialLocationProvider.overrideWithValue(initialLocation),
+    ],
     child: const ChorokApp(),
   ));
 }

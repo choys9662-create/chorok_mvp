@@ -30,10 +30,14 @@ class _LiveForestPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final f in fireflies) {
-      final pos = Offset(f.position.dx * size.width, f.position.dy * size.height);
+      final pos = Offset(
+        f.position.dx * size.width,
+        f.position.dy * size.height,
+      );
 
       // 개별 반짝임 계산
-      final pulse = 0.65 + 0.35 * sin((animationValue * 2 * pi) + f.phaseOffset);
+      final pulse =
+          0.65 + 0.35 * sin((animationValue * 2 * pi) + f.phaseOffset);
       final alpha = (255 * f.brightness * pulse).clamp(0.0, 255.0).toInt();
 
       // 글로우 효과
@@ -59,8 +63,10 @@ class _LiveForestPainter extends CustomPainter {
 class LiveForestWidget extends StatefulWidget {
   /// 현재 읽는 중 (밝음)
   final int activeCount;
+
   /// 오늘 읽음 (중간)
   final int todayCount;
+
   /// 이번 주 읽음 (희미)
   final int weekCount;
 
@@ -91,23 +97,30 @@ class _LiveForestWidgetState extends State<LiveForestWidget>
   }
 
   void _generateFireflies() {
-    final rng = Random(42);
+    final rng = Random(); // 매번 다른 패턴의 반딧불을 생성하도록 고정 시드 제거
     _fireflies = [];
 
-    void addGroup(int count, double brightness, double minSize, double maxSize) {
+    void addGroup(
+      int count,
+      double brightness,
+      double minSize,
+      double maxSize,
+    ) {
       for (int i = 0; i < count; i++) {
-        _fireflies.add(_Firefly(
-          position: Offset(rng.nextDouble(), rng.nextDouble()),
-          size: minSize + rng.nextDouble() * (maxSize - minSize),
-          brightness: brightness,
-          phaseOffset: rng.nextDouble() * 2 * pi,
-        ));
+        _fireflies.add(
+          _Firefly(
+            position: Offset(rng.nextDouble(), rng.nextDouble()),
+            size: minSize + rng.nextDouble() * (maxSize - minSize),
+            brightness: brightness,
+            phaseOffset: rng.nextDouble() * 2 * pi,
+          ),
+        );
       }
     }
 
-    addGroup(widget.activeCount, 1.0, 2.0, 3.5);   // 현재 읽는 중
-    addGroup(widget.todayCount, 0.45, 1.5, 2.5);   // 오늘 읽음
-    addGroup(widget.weekCount, 0.18, 1.0, 2.0);    // 이번 주 읽음
+    addGroup(widget.activeCount, 1.0, 2.0, 3.5); // 현재 읽는 중
+    addGroup(widget.todayCount, 0.45, 1.5, 2.5); // 오늘 읽음
+    addGroup(widget.weekCount, 0.18, 1.0, 2.0); // 이번 주 읽음
   }
 
   @override

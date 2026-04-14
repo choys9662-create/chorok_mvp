@@ -7,7 +7,11 @@ final dbServiceProvider = Provider<DbService>((ref) => DbService());
 /// Supabase DB 접근 서비스
 class DbService {
   // ── 현재 로그인된 유저 ID ─────────────────────────────────────────
-  String get _uid => supabase.auth.currentUser!.id;
+  String get _uid {
+    final user = supabase.auth.currentUser;
+    if (user == null) throw Exception('사용자 인증 정보가 없습니다. 다시 로그인해주세요.');
+    return user.id;
+  }
 
   // ────────────────────────────────────────────────────────────────────
   // 책

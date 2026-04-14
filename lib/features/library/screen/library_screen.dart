@@ -153,6 +153,22 @@ IconData _statusIcon(ReadingStatus s) => switch (s) {
   ReadingStatus.wantToRead => Icons.bookmark_outline_rounded,
 };
 
+/// 현재 페이지 / 독서 시간 기반 완독 예상일 (30분/일 가정)
+String? _estimateCompletion(Book book) {
+  if (book.totalReadingHours <= 0 ||
+      book.currentPage <= 0 ||
+      book.totalPages <= book.currentPage) {
+    return null;
+  }
+  final pagesPerHour = book.currentPage / book.totalReadingHours;
+  if (pagesPerHour <= 0) return null;
+  final pagesPerDay = pagesPerHour * 0.5;
+  final remaining = book.totalPages - book.currentPage;
+  final daysLeft = (remaining / pagesPerDay).ceil();
+  final date = DateTime.now().add(Duration(days: daysLeft));
+  return '${date.month}월 ${date.day}일 완독 예상';
+}
+
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 final _kBooks = [
   Book(
@@ -648,6 +664,44 @@ class _BookCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    // ── 초서 수 뱃지 ──────────────────────────────
+                    if (book.savedSentences.isNotEmpty)
+                      Positioned(
+                        bottom: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: AppTheme.smoothPill(
+                            color: AppTheme.primary.withValues(alpha: 0.88),
+                            side: BorderSide(
+                              color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.format_quote_rounded,
+                                size: 10,
+                                color: AppTheme.primaryLight,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${book.savedSentences.length}',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.primaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -705,6 +759,18 @@ class _BookCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // ── 완독 예상일 ──────────────────────────────────
+                    if (_estimateCompletion(book) case final est?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          est,
+                          style: AppTheme.captionSmall.copyWith(
+                            color: AppTheme.textTertiary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     // ── 바로 읽기 버튼 ──────────────────────────────
                     Semantics(
