@@ -204,10 +204,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final timer = ref.watch(timerProvider);
     final ctrl = ref.read(timerProvider.notifier);
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF060B07),
+    return Theme(
+      data: AppTheme.dark,
+      child: PopScope(
+        canPop: false,
+        child: Scaffold(
+          backgroundColor: context.appBg,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -287,6 +289,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -160,7 +160,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final bool isSearchActive = _searchController.text.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppTheme.darkSurface,
+      backgroundColor: context.appSurface,
       body: SafeArea(
         child: Column(
           children: [
@@ -204,7 +204,7 @@ class _AppBarArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppTheme.darkSurface,
+      color: context.appSurface,
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
         12,
@@ -227,9 +227,9 @@ class _AppBarArea extends StatelessWidget {
                       HapticFeedback.selectionClick();
                       Navigator.of(context).pop();
                     },
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       size: 20,
                     ),
                   ),
@@ -239,7 +239,7 @@ class _AppBarArea extends StatelessWidget {
                 '탐색',
                 style: AppTheme.headingLarge.copyWith(
                   fontFamily: 'Pretendard',
-                  color: AppTheme.textPrimary,
+                  color: context.appTextPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -281,10 +281,10 @@ class _SearchBar extends StatelessWidget {
       curve: Curves.easeOutCubic,
       height: 48,
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: 12,
         side: BorderSide(
-          color: isSearchFocused ? AppTheme.accent : AppTheme.darkBorder,
+          color: isSearchFocused ? AppTheme.accent : context.appBorder,
           width: isSearchFocused ? 1.5 : 1,
         ),
         shadows: isSearchFocused
@@ -304,7 +304,7 @@ class _SearchBar extends StatelessWidget {
           Icon(
             Icons.search_rounded,
             size: 20,
-            color: isSearchFocused ? AppTheme.accent : AppTheme.textTertiary,
+            color: isSearchFocused ? AppTheme.accent : context.appTextTertiary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -313,14 +313,14 @@ class _SearchBar extends StatelessWidget {
               focusNode: focusNode,
               style: AppTheme.bodyMedium.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
               ),
               cursorColor: AppTheme.accent,
               decoration: InputDecoration(
                 hintText: '책 제목, 저자 검색...',
                 hintStyle: AppTheme.bodyMedium.copyWith(
                   fontFamily: 'Pretendard',
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -335,10 +335,10 @@ class _SearchBar extends StatelessWidget {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.close_rounded,
                   size: 18,
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
             ),
@@ -390,18 +390,18 @@ class _MainContentView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.search_off_rounded,
-                      size: 52, color: AppTheme.textTertiary),
+                      size: 52, color: context.appTextTertiary),
                   const SizedBox(height: 16),
                   Text(
                     '${_kCategories[selectedCategoryIndex]} 장르 결과가 없어요',
                     style: AppTheme.headingSmall.copyWith(
-                        color: AppTheme.textSecondary),
+                        color: context.appTextSecondary),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '다른 장르를 선택해보세요',
                     style: AppTheme.captionLarge.copyWith(
-                        color: AppTheme.textTertiary),
+                        color: context.appTextTertiary),
                   ),
                 ],
               ),
@@ -490,14 +490,14 @@ class _SearchResultsView extends StatelessWidget {
             Icon(
               Icons.search_off_rounded,
               size: 56,
-              color: AppTheme.textTertiary,
+              color: context.appTextTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               '검색 결과가 없어요',
               style: AppTheme.headingSmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
               ),
             ),
             const SizedBox(height: 8),
@@ -505,7 +505,7 @@ class _SearchResultsView extends StatelessWidget {
               '다른 제목이나 저자 이름으로 검색해보세요',
               style: AppTheme.bodySmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.textTertiary,
+                color: context.appTextTertiary,
               ),
             ),
           ],
@@ -584,9 +584,9 @@ class _CategoryChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
-            color: isSelected ? AppTheme.accent : AppTheme.darkCard,
+            color: isSelected ? AppTheme.accent : context.appCard,
             side: BorderSide(
-              color: isSelected ? AppTheme.accent : AppTheme.darkBorder,
+              color: isSelected ? AppTheme.accent : context.appBorder,
             ),
             shadows: isSelected
                 ? [
@@ -602,7 +602,7 @@ class _CategoryChip extends StatelessWidget {
             label,
             style: AppTheme.captionLarge.copyWith(
               fontFamily: 'Pretendard',
-              color: isSelected ? AppTheme.darkSurface : AppTheme.textSecondary,
+              color: isSelected ? context.appSurface : context.appTextSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
@@ -691,7 +691,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                       colors: gradientColors,
                     ),
                     radius: 12,
-                    side: const BorderSide(color: AppTheme.darkBorder),
+                    side: BorderSide(color: context.appBorder),
                     shadows: [
                       BoxShadow(
                         color: gradientColors.last.withValues(alpha: 0.2),
@@ -729,7 +729,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                   widget.book.title,
                   style: AppTheme.bodySmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     fontWeight: FontWeight.w600,
                     height: 1.4,
                   ),
@@ -741,7 +741,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                   widget.book.author,
                   style: AppTheme.captionSmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.textSecondary,
+                    color: context.appTextSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -765,7 +765,7 @@ class _SentenceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.darkSurface.withValues(alpha: 0.8),
+        color: context.appSurface.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4), width: 1),
       ),
@@ -806,14 +806,14 @@ class _PopularBookTileState extends State<_PopularBookTile> {
           '서재에 추가됐어요',
           style: AppTheme.bodySmall.copyWith(
             fontFamily: 'Pretendard',
-            color: AppTheme.textPrimary,
+            color: context.appTextPrimary,
           ),
         ),
-        backgroundColor: AppTheme.darkCardElevated,
+        backgroundColor: context.appCardElevated,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppTheme.darkBorder, width: 1),
+          side: BorderSide(color: context.appBorder, width: 1),
         ),
         margin: const EdgeInsets.fromLTRB(
           AppTheme.screenPadding,
@@ -849,9 +849,9 @@ class _PopularBookTileState extends State<_PopularBookTile> {
           transformAlignment: Alignment.center,
           transform: Matrix4.diagonal3Values(_isPressed ? 0.98 : 1.0, _isPressed ? 0.98 : 1.0, 1.0),
           decoration: AppTheme.smoothBox(
-            color: AppTheme.darkCard,
+            color: context.appCard,
             radius: 16,
-            side: const BorderSide(color: AppTheme.darkBorder),
+            side: BorderSide(color: context.appBorder),
           ),
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -862,7 +862,7 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                   '${widget.rank}',
                   style: AppTheme.headingSmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: isTopThree ? AppTheme.accent : AppTheme.textTertiary,
+                    color: isTopThree ? AppTheme.accent : context.appTextTertiary,
                     fontWeight: isTopThree ? FontWeight.w700 : FontWeight.w400,
                     fontSize: isTopThree ? 17 : 14,
                   ),
@@ -880,7 +880,7 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                     colors: gradientColors,
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.darkBorder, width: 1),
+                  border: Border.all(color: context.appBorder, width: 1),
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,
@@ -897,7 +897,7 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                       widget.book.title,
                       style: AppTheme.bodySmall.copyWith(
                         fontFamily: 'Pretendard',
-                        color: AppTheme.textPrimary,
+                        color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -908,7 +908,7 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                       '${widget.book.author} · ${widget.book.publisher}',
                       style: AppTheme.captionSmall.copyWith(
                         fontFamily: 'Pretendard',
-                        color: AppTheme.textSecondary,
+                        color: context.appTextSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -929,7 +929,7 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                           '${_formatCount(widget.book.readerCount)}명 읽는 중',
                           style: AppTheme.captionSmall.copyWith(
                             fontFamily: 'Pretendard',
-                            color: AppTheme.textSecondary,
+                            color: context.appTextSecondary,
                           ),
                         ),
                       ],
@@ -949,9 +949,9 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppTheme.darkCardElevated,
+                      color: context.appCardElevated,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.darkBorder, width: 1),
+                      border: Border.all(color: context.appBorder, width: 1),
                     ),
                     child: Text(
                       '서재에 추가',
@@ -1012,9 +1012,9 @@ class _SentenceCardState extends State<_SentenceCard> {
           transformAlignment: Alignment.center,
           transform: Matrix4.diagonal3Values(_isPressed ? 0.98 : 1.0, _isPressed ? 0.98 : 1.0, 1.0),
           decoration: AppTheme.smoothBox(
-            color: AppTheme.darkCard,
+            color: context.appCard,
             radius: 16,
-            side: const BorderSide(color: AppTheme.darkBorder),
+            side: BorderSide(color: context.appBorder),
             shadows: [
               BoxShadow(
                 color: AppTheme.primary.withValues(alpha: 0.3),
@@ -1047,7 +1047,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                           '"${widget.sentence.sentence}"',
                           style: AppTheme.bodySmall.copyWith(
                             fontFamily: 'Pretendard',
-                            color: AppTheme.textPrimary,
+                            color: context.appTextPrimary,
                             fontStyle: FontStyle.italic,
                             height: 1.6,
                           ),
@@ -1074,7 +1074,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                                     widget.sentence.author,
                                     style: AppTheme.captionSmall.copyWith(
                                       fontFamily: 'Pretendard',
-                                      color: AppTheme.textSecondary,
+                                      color: context.appTextSecondary,
                                     ),
                                   ),
                                 ],
@@ -1103,7 +1103,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                                           size: 18,
                                           color: _isLiked
                                               ? AppTheme.accent
-                                              : AppTheme.textTertiary,
+                                              : context.appTextTertiary,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
@@ -1115,7 +1115,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                                           fontFamily: 'Pretendard',
                                           color: _isLiked
                                               ? AppTheme.accent
-                                              : AppTheme.textTertiary,
+                                              : context.appTextTertiary,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1214,7 +1214,7 @@ class _AladinSearchBannerState extends State<_AladinSearchBanner> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1225,7 +1225,7 @@ class _AladinSearchBannerState extends State<_AladinSearchBanner> {
                             fontFamily: 'Pretendard',
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: context.appTextPrimary,
                             height: 1.4,
                           ),
                         ),
@@ -1235,16 +1235,16 @@ class _AladinSearchBannerState extends State<_AladinSearchBanner> {
                             fontFamily: 'Pretendard',
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: AppTheme.textSecondary,
+                            color: context.appTextSecondary,
                             height: 1.5,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: AppTheme.textTertiary,
+                    color: context.appTextTertiary,
                     size: 16,
                   ),
                 ],

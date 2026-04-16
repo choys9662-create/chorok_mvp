@@ -86,25 +86,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: [
           Icon(
             success ? Icons.check_circle_rounded : Icons.info_rounded,
-            color: success ? AppTheme.primaryLight : AppTheme.textSecondary,
+            color: success ? AppTheme.primaryLight : context.appTextSecondary,
             size: 18,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
                 height: 1.4,
               ),
             ),
           ),
         ],
       ),
-      backgroundColor: AppTheme.darkCardElevated,
+      backgroundColor: context.appCardElevated,
       behavior: SnackBarBehavior.floating,
       shape: ContinuousRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.35),
@@ -119,7 +119,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final searchState = ref.watch(bookSearchProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.darkBg,
+      backgroundColor: context.appBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -199,9 +199,9 @@ class _SearchBar extends StatelessWidget {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: AppTheme.textSecondary,
+                  color: context.appTextSecondary,
                   size: 20,
                 ),
               ),
@@ -214,16 +214,16 @@ class _SearchBar extends StatelessWidget {
             child: Container(
               height: 48,
               decoration: AppTheme.smoothBox(
-                color: AppTheme.darkCard,
+                color: context.appCard,
                 radius: AppTheme.radiusMD,
-                side: BorderSide(color: AppTheme.darkBorder, width: 1),
+                side: BorderSide(color: context.appBorder, width: 1),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.search_rounded,
-                    color: AppTheme.textTertiary,
+                    color: context.appTextTertiary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -232,20 +232,20 @@ class _SearchBar extends StatelessWidget {
                       controller: controller,
                       focusNode: focusNode,
                       onChanged: onChanged,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
-                        color: AppTheme.textPrimary,
+                        color: context.appTextPrimary,
                         height: 1.5,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: '제목, 저자, 키워드 검색',
                         hintStyle: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
-                          color: AppTheme.textTertiary,
+                          color: context.appTextTertiary,
                           height: 1.5,
                         ),
                         border: InputBorder.none,
@@ -263,11 +263,11 @@ class _SearchBar extends StatelessWidget {
                       if (value.text.isEmpty) return const SizedBox.shrink();
                       return GestureDetector(
                         onTap: onClear,
-                        child: const Padding(
-                          padding: EdgeInsets.only(left: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
                           child: Icon(
                             Icons.cancel_rounded,
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                             size: 18,
                           ),
                         ),
@@ -291,13 +291,13 @@ class _SearchBar extends StatelessWidget {
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppTheme.darkCard,
+                  color: context.appCard,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  border: Border.all(color: AppTheme.darkBorder),
+                  border: Border.all(color: context.appBorder),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.qr_code_scanner_rounded,
-                  color: AppTheme.textSecondary,
+                  color: context.appTextSecondary,
                   size: 22,
                 ),
               ),
@@ -353,9 +353,9 @@ class _BookCard extends ConsumerWidget {
       label: '${book.title}, ${book.author}',
       child: Container(
         decoration: AppTheme.smoothBox(
-          color: AppTheme.darkCard,
+          color: context.appCard,
           radius: AppTheme.radiusLG,
-          side: BorderSide(color: AppTheme.darkBorder, width: 1),
+          side: BorderSide(color: context.appBorder, width: 1),
         ),
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -375,11 +375,11 @@ class _BookCard extends ConsumerWidget {
                 children: [
                   Text(
                     book.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       height: 1.4,
                     ),
                     maxLines: 2,
@@ -388,11 +388,11 @@ class _BookCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     book.author,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: AppTheme.textSecondary,
+                      color: context.appTextSecondary,
                       height: 1.5,
                     ),
                     maxLines: 1,
@@ -401,11 +401,11 @@ class _BookCard extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     book.publisher,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                       height: 1.5,
                     ),
                     maxLines: 1,
@@ -478,11 +478,11 @@ class _PlaceholderCover extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: Text(
         title.length > 6 ? '${title.substring(0, 6)}...' : title,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: AppTheme.textPrimary,
+          color: context.appTextPrimary,
           height: 1.4,
         ),
         maxLines: 4,
@@ -514,9 +514,9 @@ class _AddButtonState extends State<_AddButton> {
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: AppTheme.smoothBox(
-          color: AppTheme.darkCardElevated,
+          color: context.appCardElevated,
           radius: AppTheme.radiusSM,
-          side: BorderSide(color: AppTheme.darkBorder, width: 1),
+          side: BorderSide(color: context.appBorder, width: 1),
         ),
         alignment: Alignment.center,
         child: const Row(
@@ -647,7 +647,7 @@ class _ShimmerCard extends StatelessWidget {
       height: 136,
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: AppTheme.radiusLG,
       ),
       child: Row(
@@ -698,7 +698,7 @@ class _ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppTheme.darkCardElevated.withValues(alpha: opacity),
+        color: context.appCardElevated.withValues(alpha: opacity),
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -712,30 +712,30 @@ class _IdlePrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_rounded, color: AppTheme.textTertiary, size: 48),
-          SizedBox(height: 16),
+          Icon(Icons.search_rounded, color: context.appTextTertiary, size: 48),
+          const SizedBox(height: 16),
           Text(
             '읽고 싶은 책을 검색해보세요',
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppTheme.textSecondary,
+              color: context.appTextSecondary,
               height: 1.5,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             '제목, 저자, 키워드로 찾을 수 있어요',
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: AppTheme.textTertiary,
+              color: context.appTextTertiary,
               height: 1.5,
             ),
           ),
@@ -760,31 +760,31 @@ class _EmptyResult extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.search_off_rounded,
-              color: AppTheme.textTertiary,
+              color: context.appTextTertiary,
               size: 48,
             ),
             const SizedBox(height: 16),
             Text(
               '"$query"',
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '검색 결과가 없어요\n다른 키워드로 찾아보세요',
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
                 height: 1.6,
               ),
               textAlign: TextAlign.center,
@@ -812,30 +812,30 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.wifi_off_rounded,
-              color: AppTheme.textTertiary,
+              color: context.appTextTertiary,
               size: 48,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '검색에 실패했어요',
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,

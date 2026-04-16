@@ -1,5 +1,19 @@
 import 'package:flutter/material.dart';
 
+// ─── 테마 컨텍스트 확장 — 다크/라이트 자동 분기 ────────────────────────────
+extension AppThemeExt on BuildContext {
+  bool get _isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get appBg => _isDark ? AppTheme.darkBg : AppTheme.lightBg;
+  Color get appSurface => _isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
+  Color get appCard => _isDark ? AppTheme.darkCard : AppTheme.lightCard;
+  Color get appCardElevated => _isDark ? AppTheme.darkCardElevated : AppTheme.lightSurface;
+  Color get appBorder => _isDark ? AppTheme.darkBorder : AppTheme.lightBorderColor;
+  Color get appDivider => _isDark ? AppTheme.darkBorder : AppTheme.lightDivider;
+  Color get appTextPrimary => _isDark ? AppTheme.textPrimary : AppTheme.lightTextPrimary;
+  Color get appTextSecondary => _isDark ? AppTheme.textSecondary : AppTheme.lightTextSecondary;
+  Color get appTextTertiary => _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
+}
+
 /// 초록 앱 테마 정의
 class AppTheme {
   // ─── 브랜드 색상 팔레트 ───────────────────────────────────────────
@@ -54,10 +68,17 @@ class AppTheme {
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFE8F5EE);
 
-  // ─── 텍스트 색상 토큰 ────────────────────────────────────────────
+  // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFE8F5EE);
   static const Color textSecondary = Color(0xFF9BC9A8); // 대비비 ~4.6:1 on darkCard
   static const Color textTertiary = Color(0xFF6A9E7A);  // 대비비 ~3.2:1 on darkCard
+
+  // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
+  static const Color lightTextPrimary   = Color(0xFF1A2D24); // 대비비 ~14:1 on lightBg
+  static const Color lightTextSecondary = Color(0xFF3D6B50); // 대비비 ~5.8:1 on lightBg
+  static const Color lightTextTertiary  = Color(0xFF4E8065); // 대비비 ~3.5:1 on lightBg
+  static const Color lightBorderColor   = Color(0xFFB8D9C6);
+  static const Color lightDivider       = Color(0xFFD5EBE0);
 
   // ─── Smooth Corner (Squircle) ──────────────────────────────────
   // Apple / Figma "부드러운 모서리" — ContinuousRectangleBorder 기반
@@ -270,21 +291,64 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     fontFamily: 'Pretendard',
-    colorScheme: ColorScheme(
+    colorScheme: const ColorScheme(
       brightness: Brightness.light,
-      primary: const Color(0xFF1A3D2B),
+      primary: primary,
       onPrimary: Colors.white,
       secondary: primaryLight,
       onSecondary: Colors.black,
       tertiary: accent,
       onTertiary: Colors.black,
-      error: const Color(0xFFB00020),
+      error: Color(0xFFB00020),
       onError: Colors.white,
       surface: lightSurface,
-      onSurface: const Color(0xFF1A2D24),
+      onSurface: lightTextPrimary,
       surfaceContainerHighest: lightCard,
-      outline: const Color(0xFFB8D9C6),
+      outline: lightBorderColor,
     ),
     scaffoldBackgroundColor: lightBg,
+    cardTheme: CardThemeData(
+      color: lightSurface,
+      elevation: 0,
+      shape: smoothShape(
+        radius: radiusLG,
+        side: const BorderSide(color: lightBorderColor),
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: lightSurface,
+      indicatorColor: Colors.transparent,
+      height: 60,
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return labelStyle.copyWith(color: primary);
+        }
+        return captionSmall.copyWith(color: lightTextTertiary);
+      }),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return const IconThemeData(color: primary);
+        }
+        return const IconThemeData(color: lightTextTertiary);
+      }),
+      elevation: 0,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: lightBg,
+      foregroundColor: lightTextPrimary,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: lightTextPrimary,
+      ),
+    ),
+    dividerColor: lightDivider,
+    chipTheme: ChipThemeData(
+      backgroundColor: lightCard,
+      labelStyle: captionLarge.copyWith(color: lightTextSecondary),
+      shape: const StadiumBorder(),
+    ),
   );
 }

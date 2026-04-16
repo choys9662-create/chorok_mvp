@@ -31,10 +31,10 @@ class _AddToLibrarySheet extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         decoration: AppTheme.smoothBox(
-          color: AppTheme.darkCard,
+          color: context.appCard,
           radius: AppTheme.radiusXL,
           side: BorderSide(
-            color: AppTheme.darkBorder,
+            color: context.appBorder,
             width: 1,
           ),
         ),
@@ -46,32 +46,32 @@ class _AddToLibrarySheet extends StatelessWidget {
             Container(
               width: 36,
               height: 4,
-              decoration: const ShapeDecoration(
-                color: AppTheme.textTertiary,
-                shape: StadiumBorder(),
+              decoration: ShapeDecoration(
+                color: context.appTextTertiary,
+                shape: const StadiumBorder(),
               ),
             ),
             const SizedBox(height: 24),
 
             // 헤더
-            const Text(
+            Text(
               '서재에 추가',
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               book.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
                 height: 1.5,
               ),
               maxLines: 1,
@@ -105,7 +105,7 @@ class _AddToLibrarySheet extends StatelessWidget {
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.textTertiary,
+                  foregroundColor: context.appTextTertiary,
                   textStyle: const TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 15,
@@ -165,10 +165,10 @@ class _StatusTileState extends State<_StatusTile> {
             height: 68,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: AppTheme.smoothBox(
-              color: AppTheme.darkCardElevated,
+              color: context.appCardElevated,
               radius: AppTheme.radiusMD,
               side: BorderSide(
-                color: AppTheme.darkBorder,
+                color: context.appBorder,
                 width: 1,
               ),
             ),
@@ -194,30 +194,30 @@ class _StatusTileState extends State<_StatusTile> {
                     children: [
                       Text(
                         widget.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: context.appTextPrimary,
                           height: 1.4,
                         ),
                       ),
                       Text(
                         widget.sublabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: AppTheme.textSecondary,
+                          color: context.appTextSecondary,
                           height: 1.5,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                   size: 20,
                 ),
               ],

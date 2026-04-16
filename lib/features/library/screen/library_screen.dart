@@ -8,10 +8,44 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
+import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
+import '../../analytics/widgets/book_treemap_widget.dart';
+import '../../analytics/widgets/stacked_area_chart_widget.dart';
+import '../../analytics/widgets/waffle_chart_widget.dart';
+
+// ─── 서재 통계 목업 ─────────────────────────────────────────────────────────
+// TODO: Isar 연동 시 Repository/Provider로 교체
+
+const _kTreemapItems = <({String title, double hours})>[
+  (title: '채식주의자',         hours: 12.4),
+  (title: '파친코',             hours: 8.2),
+  (title: '아몬드',             hours: 6.7),
+  (title: '지구 끝의 온실',     hours: 4.6),
+  (title: '82년생 김지영',      hours: 3.1),
+  (title: '달러구트 꿈 백화점', hours: 2.8),
+];
+
+const _kWaffleItems = <({String name, Color color, int cells})>[
+  (name: '소설',     color: AppTheme.primaryLight,   cells: 60),
+  (name: '문학',     color: Color(0xFF1D9E75),        cells: 22),
+  (name: '인문',     color: Color(0xFF0F6E56),        cells: 11),
+  (name: '자기계발', color: Color(0xFF3BC49A),        cells: 7),
+];
+
+const _kGenreWeekLabels = <String>[
+  '2/3', '2/10', '2/17', '2/24', '3/3', '3/10', '3/17', '3/24',
+];
+
+final _kGenreSeries = <({String name, Color color, List<double> values})>[
+  (name: '소설',     color: AppTheme.primaryLight,   values: [3.0, 4.5, 2.0, 5.0, 6.0, 3.5, 4.0, 7.0]),
+  (name: '문학',     color: const Color(0xFF1D9E75), values: [1.5, 2.0, 1.0, 2.5, 2.0, 1.5, 3.0, 2.0]),
+  (name: '인문',     color: const Color(0xFF0F6E56), values: [0.5, 1.0, 0.5, 1.0, 1.5, 0.5, 1.0, 1.5]),
+  (name: '자기계발', color: const Color(0xFF3BC49A), values: [0.0, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5]),
+];
 
 // ─── 독서 기록 목업 (캘린더용) ────────────────────────────────────────────
 typedef _ReadingLog = ({
@@ -240,7 +274,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkSurface,
+      backgroundColor: context.appSurface,
       body: SafeArea(
         child: Column(
           children: [
@@ -295,7 +329,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.darkCard,
+                            color: context.appCard,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: AppTheme.accent.withValues(alpha: 0.3),
@@ -312,18 +346,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               Expanded(
                                 child: Text(
                                   label,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'Pretendard',
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: AppTheme.textPrimary,
+                                    color: context.appTextPrimary,
                                     height: 1.4,
                                   ),
                                 ),
                               ),
-                              const Icon(
+                              Icon(
                                 Icons.chevron_right_rounded,
-                                color: AppTheme.textTertiary,
+                                color: context.appTextTertiary,
                                 size: 20,
                               ),
                             ],
@@ -343,7 +377,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 horizontal: AppTheme.screenPadding,
               ),
               child: _SegmentToggle(
-                labels: const ['서재', '캘린더'],
+                labels: const ['서재', '통계', '캘린더'],
                 selectedIndex: _viewIndex,
                 onChanged: (i) {
                   HapticFeedback.selectionClick();
@@ -363,6 +397,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     onAddBook: () => _showAddBookSheet(context),
                     scrollController: ref.read(tabScrollControllersProvider)[3],
                   ),
+                  _StatsView(
+                    scrollController: ref.read(tabScrollControllersProvider)[5],
+                  ),
                   _CalendarView(
                     logs: _kReadingLogs,
                     scrollController: ref.read(tabScrollControllersProvider)[4],
@@ -380,7 +417,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.darkCard,
+      backgroundColor: context.appCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -463,11 +500,11 @@ class _LibraryTabState extends State<_LibraryTab> {
                   curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: AppTheme.smoothPill(
-                    color: isSelected ? AppTheme.primary : AppTheme.darkCard,
+                    color: isSelected ? AppTheme.primary : context.appCard,
                     side: BorderSide(
                       color: isSelected
                           ? AppTheme.primaryLight.withValues(alpha: 0.3)
-                          : AppTheme.darkBorder,
+                          : context.appBorder,
                     ),
                   ),
                   child: Row(
@@ -477,7 +514,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                         size: 14,
                         color: isSelected
                             ? AppTheme.primaryLight
-                            : AppTheme.textTertiary,
+                            : context.appTextTertiary,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -486,7 +523,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                           fontFamily: 'Pretendard',
                           color: isSelected
                               ? AppTheme.primaryLight
-                              : AppTheme.textTertiary,
+                              : context.appTextTertiary,
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w400,
@@ -522,9 +559,9 @@ class _LibraryTabState extends State<_LibraryTab> {
             AppTheme.screenPadding,
             AppTheme.spaceLG,
           ),
-          decoration: const BoxDecoration(
-            color: AppTheme.darkSurface,
-            border: Border(top: BorderSide(color: AppTheme.darkBorder)),
+          decoration: BoxDecoration(
+            color: context.appSurface,
+            border: Border(top: BorderSide(color: context.appBorder)),
           ),
           child: SizedBox(
             width: double.infinity,
@@ -618,9 +655,9 @@ class _BookCard extends StatelessWidget {
       },
       child: Container(
         decoration: AppTheme.smoothBox(
-          color: AppTheme.darkCard,
+          color: context.appCard,
           radius: 22,
-          side: const BorderSide(color: AppTheme.darkBorder),
+          side: BorderSide(color: context.appBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -716,7 +753,7 @@ class _BookCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.headingSmall.copyWith(
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       fontSize: 14,
                     ),
                   ),
@@ -724,7 +761,7 @@ class _BookCard extends StatelessWidget {
                   Text(
                     book.author,
                     style: AppTheme.captionLarge.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: context.appTextSecondary,
                     ),
                   ),
                   if (book.status == ReadingStatus.reading) ...[
@@ -733,7 +770,7 @@ class _BookCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(
                         value: book.readingProgress,
-                        backgroundColor: AppTheme.darkBorder,
+                        backgroundColor: context.appBorder,
                         valueColor: const AlwaysStoppedAnimation(
                           AppTheme.primaryLight,
                         ),
@@ -754,7 +791,7 @@ class _BookCard extends StatelessWidget {
                         Text(
                           '${book.currentPage}/${book.totalPages}쪽',
                           style: AppTheme.captionSmall.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                           ),
                         ),
                       ],
@@ -766,7 +803,7 @@ class _BookCard extends StatelessWidget {
                         child: Text(
                           est,
                           style: AppTheme.captionSmall.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                             fontSize: 10,
                           ),
                         ),
@@ -820,30 +857,30 @@ class _BookCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.schedule_rounded,
                           size: 11,
-                          color: AppTheme.textTertiary,
+                          color: context.appTextTertiary,
                         ),
                         const SizedBox(width: 3),
                         Text(
                           '${book.totalReadingHours.toStringAsFixed(1)}시간',
                           style: AppTheme.captionSmall.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                           ),
                         ),
                         if (book.savedSentences.isNotEmpty) ...[
                           const SizedBox(width: 6),
-                          const Icon(
+                          Icon(
                             Icons.format_quote_rounded,
                             size: 11,
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                           ),
                           const SizedBox(width: 3),
                           Text(
                             '${book.savedSentences.length}',
                             style: AppTheme.captionSmall.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: context.appTextTertiary,
                             ),
                           ),
                         ],
@@ -879,17 +916,17 @@ class _EmptyShelf extends StatelessWidget {
           Icon(
             Icons.menu_book_outlined,
             size: 52,
-            color: AppTheme.textTertiary,
+            color: context.appTextTertiary,
           ),
           const SizedBox(height: AppTheme.spaceMD),
           Text(
             message,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary),
+            style: AppTheme.bodyMedium.copyWith(color: context.appTextSecondary),
           ),
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             sub,
-            style: AppTheme.captionLarge.copyWith(color: AppTheme.textTertiary),
+            style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary),
           ),
         ],
       ),
@@ -931,7 +968,7 @@ class _AddBookSheetState extends State<_AddBookSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.darkBorder,
+                  color: context.appBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -940,22 +977,22 @@ class _AddBookSheetState extends State<_AddBookSheet> {
             Text(
               '책 추가',
               style: AppTheme.headingMedium.copyWith(
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
               ),
             ),
             const SizedBox(height: AppTheme.spaceLG),
             TextField(
               controller: _searchController,
               autofocus: true,
-              style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+              style: AppTheme.bodyMedium.copyWith(color: context.appTextPrimary),
               decoration: InputDecoration(
                 hintText: '책 제목, 저자, ISBN으로 검색',
                 hintStyle: AppTheme.bodyMedium.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search_rounded,
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
                 suffixIcon: IconButton(
                   icon: const Icon(
@@ -974,7 +1011,7 @@ class _AddBookSheetState extends State<_AddBookSheet> {
                   },
                 ),
                 filled: true,
-                fillColor: AppTheme.darkCardElevated,
+                fillColor: context.appCardElevated,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -990,7 +1027,7 @@ class _AddBookSheetState extends State<_AddBookSheet> {
               child: Text(
                 '알라딘 · 네이버 도서 검색 연동 (출시 예정)',
                 style: AppTheme.captionSmall.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
             ),
@@ -1007,7 +1044,7 @@ void _showBookDetail(BuildContext context, Book book) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppTheme.darkCard,
+    backgroundColor: context.appCard,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -1035,7 +1072,7 @@ class _BookDetailSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.darkBorder,
+                color: context.appBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1065,14 +1102,14 @@ class _BookDetailSheet extends StatelessWidget {
                     Text(
                       book.title,
                       style: AppTheme.headingMedium.copyWith(
-                        color: AppTheme.textPrimary,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       book.author,
                       style: AppTheme.bodyMedium.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: context.appTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1086,7 +1123,7 @@ class _BookDetailSheet extends StatelessWidget {
                             ? AppTheme.primaryLight.withValues(alpha: 0.12)
                             : isReading
                             ? AppTheme.accent.withValues(alpha: 0.12)
-                            : AppTheme.darkCardElevated,
+                            : context.appCardElevated,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -1096,7 +1133,7 @@ class _BookDetailSheet extends StatelessWidget {
                               ? AppTheme.primaryLight
                               : isReading
                               ? AppTheme.accent
-                              : AppTheme.textTertiary,
+                              : context.appTextTertiary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1110,7 +1147,7 @@ class _BookDetailSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: AppTheme.smoothBox(
-              color: AppTheme.darkCardElevated,
+              color: context.appCardElevated,
               radius: 12,
             ),
             child: Row(
@@ -1141,7 +1178,7 @@ class _BookDetailSheet extends StatelessWidget {
             Text(
               '수집한 문장',
               style: AppTheme.headingSmall.copyWith(
-                color: AppTheme.textPrimary,
+                color: context.appTextPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -1154,7 +1191,7 @@ class _BookDetailSheet extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.darkCardElevated,
+                        color: context.appCardElevated,
                         borderRadius: BorderRadius.circular(10),
                         border: const Border(
                           left: BorderSide(
@@ -1167,7 +1204,7 @@ class _BookDetailSheet extends StatelessWidget {
                         '"$s"',
                         style: AppTheme.bodySmall.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: AppTheme.textPrimary,
+                          color: context.appTextPrimary,
                           height: 1.5,
                         ),
                       ),
@@ -1181,7 +1218,7 @@ class _BookDetailSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: book.readingProgress,
-                backgroundColor: AppTheme.darkBorder,
+                backgroundColor: context.appBorder,
                 valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
                 minHeight: 6,
               ),
@@ -1250,8 +1287,8 @@ class _BookDetailSheet extends StatelessWidget {
                 },
                 icon: const Icon(Icons.delete_outline_rounded),
                 style: IconButton.styleFrom(
-                  foregroundColor: AppTheme.textTertiary,
-                  backgroundColor: AppTheme.darkCardElevated,
+                  foregroundColor: context.appTextTertiary,
+                  backgroundColor: context.appCardElevated,
                   padding: const EdgeInsets.all(14),
                 ),
               ),
@@ -1283,7 +1320,7 @@ class _DetailStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+            style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
           ),
         ],
       ),
@@ -1309,9 +1346,9 @@ class _SegmentToggle extends StatelessWidget {
       height: 40,
       padding: const EdgeInsets.all(3),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: 12,
-        side: const BorderSide(color: AppTheme.darkBorder),
+        side: BorderSide(color: context.appBorder),
       ),
       child: Row(
         children: List.generate(labels.length, (i) {
@@ -1335,7 +1372,7 @@ class _SegmentToggle extends StatelessWidget {
                     fontFamily: 'Pretendard',
                     color: isSelected
                         ? AppTheme.primaryLight
-                        : AppTheme.textTertiary,
+                        : context.appTextTertiary,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
@@ -1444,12 +1481,12 @@ class _CalendarViewState extends State<_CalendarView> {
                   button: true,
                   child: GestureDetector(
                     onTap: _prevMonth,
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 40,
                       height: 40,
                       child: Icon(
                         Icons.chevron_left_rounded,
-                        color: AppTheme.textSecondary,
+                        color: context.appTextSecondary,
                         size: 24,
                       ),
                     ),
@@ -1459,7 +1496,7 @@ class _CalendarViewState extends State<_CalendarView> {
                   '${_focusedMonth.year}년 ${_focusedMonth.month}월',
                   style: AppTheme.headingSmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1468,12 +1505,12 @@ class _CalendarViewState extends State<_CalendarView> {
                   button: true,
                   child: GestureDetector(
                     onTap: _nextMonth,
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 40,
                       height: 40,
                       child: Icon(
                         Icons.chevron_right_rounded,
-                        color: AppTheme.textSecondary,
+                        color: context.appTextSecondary,
                         size: 24,
                       ),
                     ),
@@ -1499,7 +1536,7 @@ class _CalendarViewState extends State<_CalendarView> {
                           d,
                           style: AppTheme.captionSmall.copyWith(
                             fontFamily: 'Pretendard',
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1544,7 +1581,7 @@ class _CalendarViewState extends State<_CalendarView> {
                     '${_selectedDate!.month}월 ${_selectedDate!.day}일',
                     style: AppTheme.headingSmall.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1588,7 +1625,7 @@ class _CalendarViewState extends State<_CalendarView> {
                     '이 날은 독서 기록이 없어요',
                     style: AppTheme.bodyMedium.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                     ),
                   ),
                 ),
@@ -1681,12 +1718,12 @@ class _CalendarGrid extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                     color: isFuture
-                        ? AppTheme.textTertiary.withValues(alpha: 0.3)
+                        ? context.appTextTertiary.withValues(alpha: 0.3)
                         : isSelected
                         ? AppTheme.primaryLight
                         : isToday
                         ? AppTheme.primaryLight
-                        : AppTheme.textPrimary,
+                        : context.appTextPrimary,
                     height: 1.4,
                   ),
                 ),
@@ -1731,9 +1768,9 @@ class _ReadingLogCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: 14,
-        side: const BorderSide(color: AppTheme.darkBorder),
+        side: BorderSide(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -1761,7 +1798,7 @@ class _ReadingLogCard extends StatelessWidget {
                   log.bookTitle,
                   style: AppTheme.bodySmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1770,7 +1807,7 @@ class _ReadingLogCard extends StatelessWidget {
                   log.bookAuthor,
                   style: AppTheme.captionSmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.textSecondary,
+                    color: context.appTextSecondary,
                   ),
                 ),
               ],
@@ -1806,7 +1843,7 @@ class _ReadingLogCard extends StatelessWidget {
                 '${log.pages}쪽 읽음',
                 style: AppTheme.captionSmall.copyWith(
                   fontFamily: 'Pretendard',
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
             ],
@@ -1823,7 +1860,7 @@ void _showSettingsSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: AppTheme.darkCard,
+    backgroundColor: context.appCard,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -1860,7 +1897,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.darkBorder,
+                color: context.appBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1872,14 +1909,14 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                 Text(
                   '설정',
                   style: AppTheme.headingMedium.copyWith(
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: AppTheme.textTertiary,
+                    color: context.appTextTertiary,
                     size: 20,
                   ),
                   onPressed: () => Navigator.pop(context),
@@ -1894,6 +1931,23 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               children: [
                 _SettingsSection(
+                  title: '화면',
+                  children: [
+                    Consumer(
+                      builder: (context, ref, _) => _ToggleTile(
+                        label: '다크 모드',
+                        description: '어두운 배경으로 눈의 피로를 줄여요',
+                        value: ref.watch(themeModeProvider) == ThemeMode.dark,
+                        onChanged: (_) {
+                          ref.read(themeModeProvider.notifier).toggle();
+                        },
+                        showDivider: false,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _SettingsSection(
                   title: '독서 목표',
                   children: [
                     Padding(
@@ -1906,7 +1960,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                               Text(
                                 '하루 목표',
                                 style: AppTheme.bodyMedium.copyWith(
-                                  color: AppTheme.textPrimary,
+                                  color: context.appTextPrimary,
                                 ),
                               ),
                               const Spacer(),
@@ -1923,7 +1977,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                           SliderTheme(
                             data: SliderThemeData(
                               activeTrackColor: AppTheme.primaryLight,
-                              inactiveTrackColor: AppTheme.darkBorder,
+                              inactiveTrackColor: context.appBorder,
                               thumbColor: AppTheme.primaryLight,
                               overlayColor: AppTheme.primaryLight.withValues(
                                 alpha: 0.12,
@@ -1948,7 +2002,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                                   (l) => Text(
                                     l,
                                     style: AppTheme.captionSmall.copyWith(
-                                      color: AppTheme.textTertiary,
+                                      color: context.appTextTertiary,
                                     ),
                                   ),
                                 )
@@ -1999,7 +2053,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                       trailing: Text(
                         '1.0.0',
                         style: AppTheme.captionLarge.copyWith(
-                          color: AppTheme.textTertiary,
+                          color: context.appTextTertiary,
                         ),
                       ),
                     ),
@@ -2013,7 +2067,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                   children: [
                     _SettingsMenuTile(
                       label: '로그아웃',
-                      labelColor: AppTheme.textSecondary,
+                      labelColor: context.appTextSecondary,
                       onTap: () {
                         HapticFeedback.mediumImpact();
                         Navigator.pop(context);
@@ -2053,7 +2107,7 @@ class _SettingsSection extends StatelessWidget {
           child: Text(
             title,
             style: AppTheme.captionLarge.copyWith(
-              color: AppTheme.textTertiary,
+              color: context.appTextTertiary,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -2061,9 +2115,9 @@ class _SettingsSection extends StatelessWidget {
         ),
         Container(
           decoration: AppTheme.smoothBox(
-            color: AppTheme.darkCardElevated,
+            color: context.appCardElevated,
             radius: 14,
-            side: const BorderSide(color: AppTheme.darkBorder),
+            side: BorderSide(color: context.appBorder),
           ),
           child: Column(children: children),
         ),
@@ -2102,14 +2156,14 @@ class _ToggleTile extends StatelessWidget {
                     Text(
                       label,
                       style: AppTheme.bodyMedium.copyWith(
-                        color: AppTheme.textPrimary,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       description,
                       style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.textTertiary,
+                        color: context.appTextTertiary,
                       ),
                     ),
                   ],
@@ -2123,14 +2177,14 @@ class _ToggleTile extends StatelessWidget {
                 },
                 activeThumbColor: AppTheme.primaryLight,
                 activeTrackColor: AppTheme.primaryLight.withValues(alpha: 0.25),
-                inactiveTrackColor: AppTheme.darkBorder,
-                inactiveThumbColor: AppTheme.textTertiary,
+                inactiveTrackColor: context.appBorder,
+                inactiveThumbColor: context.appTextTertiary,
               ),
             ],
           ),
         ),
         if (showDivider)
-          const Divider(height: 1, color: AppTheme.darkBorder, indent: 16),
+          Divider(height: 1, color: context.appBorder, indent: 16),
       ],
     );
   }
@@ -2171,16 +2225,16 @@ class _SettingsMenuTile extends StatelessWidget {
                   child: Text(
                     label,
                     style: AppTheme.bodyMedium.copyWith(
-                      color: labelColor ?? AppTheme.textPrimary,
+                      color: labelColor ?? context.appTextPrimary,
                     ),
                   ),
                 ),
                 trailing ??
                     (onTap != null
-                        ? const Icon(
+                        ? Icon(
                             Icons.chevron_right_rounded,
                             size: 18,
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                           )
                         : const SizedBox.shrink()),
               ],
@@ -2188,7 +2242,47 @@ class _SettingsMenuTile extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(height: 1, color: AppTheme.darkBorder, indent: 16),
+          Divider(height: 1, color: context.appBorder, indent: 16),
+      ],
+    );
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// 통계 탭 — 장르 트렌드 · 책별 비중 · 장르 비율
+// ════════════════════════════════════════════════════════════════════════════
+class _StatsView extends StatelessWidget {
+  final ScrollController? scrollController;
+
+  const _StatsView({this.scrollController});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      controller: scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding, 16,
+        AppTheme.screenPadding, 40,
+      ),
+      children: [
+        const ChorokSectionHeader(title: '장르별 독서 트렌드'),
+        const SizedBox(height: AppTheme.spaceMD),
+        StackedAreaChartWidget(
+          labels: _kGenreWeekLabels,
+          series: _kGenreSeries,
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '책별 독서 비중'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const BookTreemapWidget(items: _kTreemapItems),
+        const SizedBox(height: AppTheme.spaceXL),
+
+        const ChorokSectionHeader(title: '장르 비율'),
+        const SizedBox(height: AppTheme.spaceMD),
+        const WaffleChartWidget(genres: _kWaffleItems),
       ],
     );
   }

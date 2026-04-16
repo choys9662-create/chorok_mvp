@@ -158,7 +158,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             // ─── 헤더 ─────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding, 12,
+                AppTheme.screenPadding, 20,
                 AppTheme.screenPadding, 12,
               ),
               child: Row(
@@ -177,14 +177,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           height: 36,
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
-                            color: AppTheme.darkCard,
+                            color: context.appCard,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.darkBorder),
+                            border: Border.all(color: context.appBorder),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.arrow_back_ios_new_rounded,
                             size: 16,
-                            color: AppTheme.textSecondary,
+                            color: context.appTextSecondary,
                           ),
                         ),
                       ),
@@ -193,7 +193,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   Text(
                     '피드',
                     style: AppTheme.headingLarge.copyWith(
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const Spacer(),
@@ -209,7 +209,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppTheme.darkBorder),
+            Divider(height: 1, color: context.appBorder),
 
             // ─── 필터 칩 ──────────────────────────────────────
             SizedBox(
@@ -250,7 +250,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ? _buildEmptyState()
                       : RefreshIndicator(
                           color: AppTheme.primaryLight,
-                          backgroundColor: AppTheme.darkCard,
+                          backgroundColor: context.appCard,
                           onRefresh: _onRefresh,
                           child: _SentenceList(
                             sentences: filtered,
@@ -270,7 +270,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     return RefreshIndicator(
       color: AppTheme.primaryLight,
-      backgroundColor: AppTheme.darkCard,
+      backgroundColor: context.appCard,
       onRefresh: _onRefresh,
       child: ListView.separated(
         controller: ctrl,
@@ -292,13 +292,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.format_quote_rounded,
-              size: 48, color: AppTheme.textTertiary),
+          Icon(Icons.format_quote_rounded,
+              size: 48, color: context.appTextTertiary),
           const SizedBox(height: 12),
           Text(
             '겹문장이 아직 없어요',
             style: AppTheme.bodyMedium
-                .copyWith(color: AppTheme.textSecondary),
+                .copyWith(color: context.appTextSecondary),
           ),
         ],
       ),
@@ -331,16 +331,16 @@ class _FeedFilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
-          color: isSelected ? AppTheme.accent : AppTheme.darkCard,
+          color: isSelected ? AppTheme.accent : context.appCard,
           side: BorderSide(
-            color: isSelected ? AppTheme.accent : AppTheme.darkBorder,
+            color: isSelected ? AppTheme.accent : context.appBorder,
           ),
         ),
         child: Text(
           label,
           style: AppTheme.captionLarge.copyWith(
             color:
-                isSelected ? AppTheme.darkSurface : AppTheme.textSecondary,
+                isSelected ? context.appSurface : context.appTextSecondary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -424,12 +424,12 @@ class _SentenceCardState extends State<_SentenceCard> {
 
     return Container(
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: 16,
         side: BorderSide(
           color: overlap
               ? AppTheme.primaryLight.withValues(alpha: 0.35)
-              : AppTheme.darkBorder,
+              : context.appBorder,
         ),
       ),
       child: Column(
@@ -494,7 +494,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                           Text(
                             s.bookAuthor,
                             style: AppTheme.captionLarge.copyWith(
-                              color: AppTheme.textSecondary,
+                              color: context.appTextSecondary,
                             ),
                           ),
                         ],
@@ -503,7 +503,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     Text(
                       _formatTime(s.savedAt),
                       style: AppTheme.captionSmall
-                          .copyWith(color: AppTheme.textTertiary),
+                          .copyWith(color: context.appTextTertiary),
                     ),
                   ],
                 ),
@@ -513,13 +513,13 @@ class _SentenceCardState extends State<_SentenceCard> {
                 Container(
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
-                    color: AppTheme.darkCardElevated,
+                    color: context.appCardElevated,
                     borderRadius: BorderRadius.circular(10),
                     border: Border(
                       left: BorderSide(
                         color: overlap
                             ? AppTheme.primaryLight
-                            : AppTheme.darkBorder,
+                            : context.appBorder,
                         width: 3,
                       ),
                     ),
@@ -528,7 +528,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     '"${s.content}"',
                     style: AppTheme.bodyMedium.copyWith(
                       fontStyle: FontStyle.italic,
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       height: 1.6,
                     ),
                   ),
@@ -552,7 +552,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     Text(
                       s.username,
                       style: AppTheme.captionLarge
-                          .copyWith(color: AppTheme.textSecondary),
+                          .copyWith(color: context.appTextSecondary),
                     ),
                     const Spacer(),
                     GestureDetector(
@@ -566,7 +566,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                             size: 16,
                             color: _isLiked
                                 ? const Color(0xFFFF6B6B)
-                                : AppTheme.textTertiary,
+                                : context.appTextTertiary,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -574,7 +574,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                             style: AppTheme.captionLarge.copyWith(
                               color: _isLiked
                                   ? const Color(0xFFFF6B6B)
-                                  : AppTheme.textTertiary,
+                                  : context.appTextTertiary,
                             ),
                           ),
                         ],
@@ -595,7 +595,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                                 color: Colors.white,
                               ),
                             ),
-                            backgroundColor: AppTheme.darkCardElevated,
+                            backgroundColor: context.appCardElevated,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(100),
@@ -608,11 +608,11 @@ class _SentenceCardState extends State<_SentenceCard> {
                           ),
                         );
                       },
-                      child: const SizedBox(
+                      child: SizedBox(
                         width: 36,
                         height: 36,
                         child: Icon(Icons.share_outlined,
-                            size: 16, color: AppTheme.textTertiary),
+                            size: 16, color: context.appTextTertiary),
                       ),
                     ),
                   ],
@@ -647,7 +647,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
 
     return Container(
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: AppTheme.radiusLG,
         side: BorderSide(
           color: AppTheme.primaryLight.withValues(alpha: 0.35),
@@ -720,7 +720,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
-                    color: AppTheme.darkCardElevated,
+                    color: context.appCardElevated,
                     borderRadius: BorderRadius.circular(10),
                     border: const Border(
                       left: BorderSide(
@@ -744,7 +744,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                         '"${g.commonPhrase}"',
                         style: AppTheme.bodyMedium.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: AppTheme.textPrimary,
+                          color: context.appTextPrimary,
                           height: 1.6,
                         ),
                       ),
@@ -799,7 +799,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                           Text(
                             '${g.memberCount}명의 기록',
                             style: AppTheme.captionLarge.copyWith(
-                              color: AppTheme.textSecondary,
+                              color: context.appTextSecondary,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -807,10 +807,10 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                             turns: _isExpanded ? 0.5 : 0.0,
                             duration: const Duration(milliseconds: 200),
                             curve: Curves.easeOutCubic,
-                            child: const Icon(
+                            child: Icon(
                               Icons.keyboard_arrow_down_rounded,
                               size: 18,
-                              color: AppTheme.textTertiary,
+                              color: context.appTextTertiary,
                             ),
                           ),
                         ],
@@ -836,8 +836,8 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                     ),
                     child: Column(
                       children: [
-                        const Divider(
-                            height: 1, color: AppTheme.darkBorder),
+                        Divider(
+                            height: 1, color: context.appBorder),
                         const SizedBox(height: 12),
                         ...g.members.map((m) => Padding(
                               padding: const EdgeInsets.only(
@@ -874,7 +874,7 @@ class _OverlapMemberTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCardElevated,
+        color: context.appCardElevated,
         radius: AppTheme.radiusMD,
       ),
       child: Column(
@@ -897,7 +897,7 @@ class _OverlapMemberTile extends StatelessWidget {
                 child: Text(
                   member.username,
                   style: AppTheme.captionLarge.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: context.appTextSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -949,7 +949,7 @@ class _HighlightedText extends StatelessWidget {
         '"$text"',
         style: AppTheme.bodySmall.copyWith(
           fontStyle: FontStyle.italic,
-          color: AppTheme.textPrimary,
+          color: context.appTextPrimary,
           height: 1.5,
         ),
       );
@@ -971,7 +971,7 @@ class _HighlightedText extends StatelessWidget {
     int lastEnd = 0;
     final baseStyle = AppTheme.bodySmall.copyWith(
       fontStyle: FontStyle.italic,
-      color: AppTheme.textPrimary,
+      color: context.appTextPrimary,
       height: 1.5,
     );
     final highlightStyle = baseStyle.copyWith(

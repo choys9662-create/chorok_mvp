@@ -8,12 +8,6 @@ import 'controller/choseo_list_controller.dart';
 
 // ─── 색상 토큰 ────────────────────────────────────────────────────────────────
 const _kGreen = AppTheme.primaryLight;
-const _kBg = AppTheme.darkBg;
-const _kSurface = AppTheme.darkCard;
-const _kBorder = AppTheme.darkBorder;
-const _kTextPrimary = AppTheme.textPrimary;
-const _kTextSecondary = AppTheme.textSecondary;
-const _kTextTertiary = AppTheme.textTertiary;
 
 // ─── 화면 ────────────────────────────────────────────────────────────────────
 
@@ -66,7 +60,7 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
     final state = ref.watch(choseoListProvider);
 
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: context.appBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -142,12 +136,12 @@ class _TopBar extends StatelessWidget {
             label: '뒤로가기',
             child: GestureDetector(
               onTap: onBack,
-              child: const SizedBox(
+              child: SizedBox(
                 width: 48,
                 height: 48,
                 child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: _kTextSecondary,
+                  color: context.appTextSecondary,
                   size: 20,
                 ),
               ),
@@ -170,23 +164,23 @@ class _TopBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           '내 문장',
                           style: TextStyle(
                             fontFamily: 'Pretendard',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: _kTextPrimary,
+                            color: context.appTextPrimary,
                             height: 1.3,
                           ),
                         ),
                         Text(
                           '총 $totalCount개',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Pretendard',
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: _kTextTertiary,
+                            color: context.appTextTertiary,
                             height: 1.4,
                           ),
                         ),
@@ -210,7 +204,7 @@ class _TopBar extends StatelessWidget {
                   child: Icon(
                     searchActive ? Icons.close_rounded : Icons.search_rounded,
                     key: ValueKey(searchActive),
-                    color: searchActive ? _kGreen : _kTextSecondary,
+                    color: searchActive ? _kGreen : context.appTextSecondary,
                     size: 22,
                   ),
                 ),
@@ -241,27 +235,27 @@ class _SearchField extends StatelessWidget {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: _kSurface,
+        color: context.appCard,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: _kBorder),
+        border: Border.all(color: context.appBorder),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
         onChanged: onChanged,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 14,
-          color: _kTextPrimary,
+          color: context.appTextPrimary,
           height: 1.4,
         ),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: '문장 내용, 책 제목, 저자 검색',
           hintStyle: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 14,
-            color: _kTextTertiary,
+            color: context.appTextTertiary,
             height: 1.4,
           ),
           border: InputBorder.none,
@@ -287,9 +281,9 @@ class _ChoseoTabBar extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       height: 44,
       decoration: BoxDecoration(
-        color: _kSurface,
+        color: context.appCard,
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: _kBorder),
+        border: Border.all(color: context.appBorder),
       ),
       child: TabBar(
         controller: controller,
@@ -315,7 +309,7 @@ class _ChoseoTabBar extends StatelessWidget {
           height: 1.4,
         ),
         labelColor: _kGreen,
-        unselectedLabelColor: _kTextTertiary,
+        unselectedLabelColor: context.appTextTertiary,
         tabs: const [
           Tab(text: '책별'),
           Tab(text: '날짜순'),
@@ -372,10 +366,10 @@ class _BookGroupState extends State<_BookGroup> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: ShapeDecoration(
-        color: _kSurface,
+        color: context.appCard,
         shape: ContinuousRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusXL * 1.35),
-          side: const BorderSide(color: _kBorder),
+          side: BorderSide(color: context.appBorder),
         ),
       ),
       child: Column(
@@ -427,11 +421,11 @@ class _BookGroupState extends State<_BookGroup> {
                         children: [
                           Text(
                             widget.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: _kTextPrimary,
+                              color: context.appTextPrimary,
                               height: 1.4,
                             ),
                             maxLines: 1,
@@ -440,10 +434,10 @@ class _BookGroupState extends State<_BookGroup> {
                           const SizedBox(height: 2),
                           Text(
                             author,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Pretendard',
                               fontSize: 12,
-                              color: _kTextTertiary,
+                              color: context.appTextTertiary,
                               height: 1.4,
                             ),
                           ),
@@ -476,9 +470,9 @@ class _BookGroupState extends State<_BookGroup> {
                       turns: _expanded ? 0 : -0.25,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOutCubic,
-                      child: const Icon(
+                      child: Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: _kTextTertiary,
+                        color: context.appTextTertiary,
                         size: 20,
                       ),
                     ),
@@ -498,8 +492,8 @@ class _BookGroupState extends State<_BookGroup> {
             secondCurve: Curves.easeOutCubic,
             firstChild: Column(
               children: [
-                const Divider(
-                    color: _kBorder, height: 1, indent: 16, endIndent: 16),
+                Divider(
+                    color: context.appBorder, height: 1, indent: 16, endIndent: 16),
                 ...widget.items.map(
                   (c) => _ChoseoCard(item: c, showBookInfo: false),
                 ),
@@ -560,10 +554,10 @@ class _ChoseoCard extends StatelessWidget {
 
     return Container(
       decoration: ShapeDecoration(
-        color: _kSurface,
+        color: context.appCard,
         shape: ContinuousRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLG * 1.35),
-          side: const BorderSide(color: _kBorder),
+          side: BorderSide(color: context.appBorder),
         ),
       ),
       child: Column(
@@ -607,11 +601,11 @@ class _ChoseoCard extends StatelessWidget {
                       children: [
                         Text(
                           item.bookTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Pretendard',
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: _kTextPrimary,
+                            color: context.appTextPrimary,
                             height: 1.4,
                           ),
                           maxLines: 1,
@@ -619,10 +613,10 @@ class _ChoseoCard extends StatelessWidget {
                         ),
                         Text(
                           item.bookAuthor,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Pretendard',
                             fontSize: 11,
-                            color: _kTextTertiary,
+                            color: context.appTextTertiary,
                             height: 1.4,
                           ),
                         ),
@@ -632,10 +626,10 @@ class _ChoseoCard extends StatelessWidget {
 
                   Text(
                     _relativeDate(item.createdAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 11,
-                      color: _kTextTertiary,
+                      color: context.appTextTertiary,
                       height: 1.4,
                     ),
                   ),
@@ -651,10 +645,10 @@ class _ChoseoCard extends StatelessWidget {
                   if (item.pageNumber != null)
                     Text(
                       'p. ${item.pageNumber}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 11,
-                        color: _kTextTertiary,
+                        color: context.appTextTertiary,
                         height: 1.4,
                       ),
                     )
@@ -662,10 +656,10 @@ class _ChoseoCard extends StatelessWidget {
                     const SizedBox.shrink(),
                   Text(
                     _relativeDate(item.createdAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 11,
-                      color: _kTextTertiary,
+                      color: context.appTextTertiary,
                       height: 1.4,
                     ),
                   ),
@@ -691,11 +685,11 @@ class _ChoseoCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     item.content,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: _kTextPrimary,
+                      color: context.appTextPrimary,
                       height: 1.6,
                     ),
                     maxLines: 2,
@@ -713,20 +707,20 @@ class _ChoseoCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 13,
-                    color: _kTextTertiary,
+                    color: context.appTextTertiary,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       item.myThought!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: _kTextSecondary,
+                        color: context.appTextSecondary,
                         height: 1.5,
                         fontStyle: FontStyle.italic,
                       ),
@@ -752,30 +746,30 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.format_quote_rounded, size: 48, color: _kTextTertiary),
-          SizedBox(height: 16),
+          Icon(Icons.format_quote_rounded, size: 48, color: context.appTextTertiary),
+          const SizedBox(height: 16),
           Text(
             '아직 기록한 문장이 없어요',
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: _kTextSecondary,
+              color: context.appTextSecondary,
               height: 1.5,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             '독서 세션 중 마음에 드는 문장을\n저장해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
-              color: _kTextTertiary,
+              color: context.appTextTertiary,
               height: 1.6,
             ),
           ),
@@ -826,10 +820,10 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
           height: 110,
           decoration: ShapeDecoration(
             color: Color.lerp(
-                AppTheme.darkCard, AppTheme.darkCardElevated, _anim.value),
+                context.appCard, context.appCardElevated, _anim.value),
             shape: ContinuousRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusLG * 1.35),
-              side: const BorderSide(color: _kBorder),
+              side: BorderSide(color: context.appBorder),
             ),
           ),
         ),

@@ -76,7 +76,7 @@ class _BookReflectionScreenState extends State<BookReflectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.darkBg,
+      backgroundColor: context.appBg,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(
@@ -154,13 +154,13 @@ class _Header extends StatelessWidget {
               Text(
                 '완독 감상',
                 style: AppTheme.captionLarge.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
               Text(
                 '이 책 어떠셨나요?',
                 style: AppTheme.headingLarge.copyWith(
-                  color: AppTheme.textPrimary,
+                  color: context.appTextPrimary,
                 ),
               ),
             ],
@@ -178,14 +178,14 @@ class _Header extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppTheme.darkCard,
+                  color: context.appCard,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.darkBorder),
+                  border: Border.all(color: context.appBorder),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close_rounded,
                   size: 18,
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
             ),
@@ -222,9 +222,9 @@ class _CompletionBanner extends StatelessWidget {
               gradient: AppTheme.greenGradient,
               radius: AppTheme.radiusMD,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.auto_stories_rounded,
-              color: AppTheme.darkBg,
+              color: context.appBg,
               size: 28,
             ),
           ),
@@ -256,11 +256,11 @@ class _CompletionBanner extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   bookTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     height: 1.4,
                   ),
                   maxLines: 2,
@@ -268,11 +268,11 @@ class _CompletionBanner extends StatelessWidget {
                 ),
                 Text(
                   author,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: AppTheme.textSecondary,
+                    color: context.appTextSecondary,
                     height: 1.5,
                   ),
                 ),
@@ -300,20 +300,20 @@ class _StarRatingSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
+        color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: const BorderSide(color: AppTheme.darkBorder),
+        side: BorderSide(color: context.appBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '이 책에 별점을 주세요',
             style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: context.appTextPrimary,
               height: 1.4,
             ),
           ),
@@ -342,7 +342,7 @@ class _StarRatingSection extends StatelessWidget {
                         size: 36,
                         color: filled
                             ? AppTheme.primaryLight
-                            : AppTheme.textTertiary,
+                            : context.appTextTertiary,
                       ),
                     ),
                   ),
@@ -387,41 +387,41 @@ class _ReflectionInput extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '감상을 남겨보세요',
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: context.appTextPrimary,
             height: 1.4,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: AppTheme.smoothBox(
-            color: AppTheme.darkCard,
+            color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: const BorderSide(color: AppTheme.darkBorder),
+            side: BorderSide(color: context.appBorder),
           ),
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: controller,
             maxLines: 6,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 14,
               fontWeight: FontWeight.w400,
-              color: AppTheme.textPrimary,
+              color: context.appTextPrimary,
               height: 1.6,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '이 책을 읽고 어떤 생각이 들었나요?\n기억에 남는 순간, 느낀 점을 자유롭게 적어보세요.',
               hintStyle: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: AppTheme.textTertiary,
+                color: context.appTextTertiary,
                 height: 1.6,
               ),
               border: InputBorder.none,
@@ -456,8 +456,8 @@ class _BottomActions extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
-        color: AppTheme.darkBg,
-        border: Border(top: BorderSide(color: AppTheme.darkBorder)),
+        color: context.appBg,
+        border: Border(top: BorderSide(color: context.appBorder)),
       ),
       child: Row(
         children: [
@@ -470,7 +470,7 @@ class _BottomActions extends StatelessWidget {
               child: TextButton(
                 onPressed: onSkip,
                 style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.textTertiary,
+                  foregroundColor: context.appTextTertiary,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
                 child: const Text(
@@ -499,20 +499,20 @@ class _BottomActions extends StatelessWidget {
                   height: 52,
                   decoration: AppTheme.smoothBox(
                     gradient: canSave ? AppTheme.greenGradient : null,
-                    color: canSave ? null : AppTheme.darkCard,
+                    color: canSave ? null : context.appCard,
                     radius: AppTheme.radiusMD,
                     side: canSave
                         ? BorderSide.none
-                        : BorderSide(color: AppTheme.darkBorder),
+                        : BorderSide(color: context.appBorder),
                   ),
                   alignment: Alignment.center,
                   child: isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppTheme.darkBg,
+                            color: context.appBg,
                           ),
                         )
                       : Text(
@@ -522,8 +522,8 @@ class _BottomActions extends StatelessWidget {
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: canSave
-                                ? AppTheme.darkBg
-                                : AppTheme.textTertiary,
+                                ? context.appBg
+                                : context.appTextTertiary,
                             height: 1.4,
                           ),
                         ),

@@ -26,7 +26,7 @@ class ChorokSectionHeader extends StatelessWidget {
               Text(
                 title,
                 style: AppTheme.headingSmall.copyWith(
-                  color: AppTheme.textPrimary,
+                  color: context.appTextPrimary,
                 ),
               ),
               if (subtitle != null) ...[
@@ -34,7 +34,7 @@ class ChorokSectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: AppTheme.captionLarge.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: context.appTextSecondary,
                   ),
                 ),
               ],

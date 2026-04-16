@@ -10,6 +10,7 @@ import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'shared/providers/theme_provider.dart';
 import 'shared/repositories/book_repository.dart';
 
 /// 앱 초기 진입 경로 — main()에서 주입
@@ -34,10 +35,15 @@ Future<void> main() async {
       ? AppConstants.routeHome
       : AppConstants.routeOnboarding;
 
+  final savedThemeMode = await loadSavedThemeMode();
+
   if (kIsWeb) {
     _initDeepLinks();
     runApp(ProviderScope(
-      overrides: [initialLocationProvider.overrideWithValue(initialLocation)],
+      overrides: [
+        initialLocationProvider.overrideWithValue(initialLocation),
+        initialThemeModeProvider.overrideWithValue(savedThemeMode),
+      ],
       child: const ChorokApp(),
     ));
     return;
@@ -52,6 +58,7 @@ Future<void> main() async {
     overrides: [
       dbProvider.overrideWithValue(db),
       initialLocationProvider.overrideWithValue(initialLocation),
+      initialThemeModeProvider.overrideWithValue(savedThemeMode),
     ],
     child: const ChorokApp(),
   ));
@@ -73,11 +80,12 @@ class ChorokApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: '초록',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

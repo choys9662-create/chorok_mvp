@@ -80,5 +80,8 @@
       "Bash(flutter --version)",
       "Bash(flutter doctor:*)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }
