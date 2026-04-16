@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-const Color _kLabel      = Color(0xFF7A8597);
-const Color _kGridRadar  = Color(0xFF1A1A1A);
+const Color _kLabel = Color(0xFF7A8597);
 
 /// 레이더 차트 — 독서 습관 5축 비교 (이번 달 vs 지난 달)
 ///
@@ -37,8 +36,8 @@ class HabitRadarChartWidget extends StatelessWidget {
                 tickCount: 5,
                 ticksTextStyle: const TextStyle(color: Colors.transparent),
                 radarBorderData: const BorderSide(color: Colors.transparent),
-                gridBorderData: const BorderSide(color: _kGridRadar, width: 1),
-                tickBorderData: const BorderSide(color: _kGridRadar, width: 1),
+                gridBorderData: BorderSide(color: context.appBorder, width: 1),
+                tickBorderData: BorderSide(color: context.appBorder, width: 1),
                 titlePositionPercentageOffset: 0.15,
                 titleTextStyle: AppTheme.captionSmall.copyWith(
                   color: _kLabel,

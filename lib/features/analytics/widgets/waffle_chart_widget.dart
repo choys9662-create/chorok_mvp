@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-const Color _kEmpty = Color(0xFF1A1A1A);
-
 /// 와플 차트 — 10×10 격자(100칸)로 장르 비율 표시
 ///
 /// [genres] 각 항목: (name, color, cells) — cells 합계 = 100
@@ -17,8 +15,10 @@ class WaffleChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 빈 셀: 다크 모드는 어두운 녹색, 라이트 모드는 연한 민트
+    final emptyColor = context.appCard;
     // 100칸 색상 배열 구성
-    final cellColors = List<Color>.filled(100, _kEmpty);
+    final cellColors = List<Color>.filled(100, emptyColor);
     int idx = 0;
     for (final g in genres) {
       for (int i = 0; i < g.cells && idx < 100; i++, idx++) {

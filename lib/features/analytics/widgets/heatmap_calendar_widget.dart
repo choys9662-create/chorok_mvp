@@ -3,7 +3,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
 // ─── 차트 전용 색상 ──────────────────────────────────────────────────────
-const Color _kEmpty  = Color(0xFF1A1A1A);
 const Color _kLv1    = Color(0xFF0F6E56);
 const Color _kLv2    = Color(0xFF1D9E75);
 const Color _kLv3    = Color(0xFF3BC49A);
@@ -24,14 +23,16 @@ class HeatmapCalendarWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 빈 셀: 다크 모드는 어두운 녹색, 라이트 모드는 연한 민트
+    final emptyColor = context.appCard;
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeatmapPainterBox(data: data, year: year),
+          _HeatmapPainterBox(data: data, year: year, emptyColor: emptyColor),
           const SizedBox(height: AppTheme.spaceMD),
-          _Legend(),
+          _Legend(emptyColor: emptyColor),
         ],
       ),
     );
@@ -43,8 +44,13 @@ class HeatmapCalendarWidget extends StatelessWidget {
 class _HeatmapPainterBox extends StatelessWidget {
   final Map<DateTime, int> data;
   final int year;
+  final Color emptyColor;
 
-  const _HeatmapPainterBox({required this.data, required this.year});
+  const _HeatmapPainterBox({
+    required this.data,
+    required this.year,
+    required this.emptyColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +67,11 @@ class _HeatmapPainterBox extends StatelessWidget {
       width:  totalW,
       height: totalH,
       child: CustomPaint(
-        painter: _HeatmapPainter(data: data, year: year),
+        painter: _HeatmapPainter(
+          data: data,
+          year: year,
+          emptyColor: emptyColor,
+        ),
       ),
     );
   }
@@ -70,8 +80,13 @@ class _HeatmapPainterBox extends StatelessWidget {
 class _HeatmapPainter extends CustomPainter {
   final Map<DateTime, int> data;
   final int year;
+  final Color emptyColor;
 
-  const _HeatmapPainter({required this.data, required this.year});
+  const _HeatmapPainter({
+    required this.data,
+    required this.year,
+    required this.emptyColor,
+  });
 
   static const _cellSize = 11.0;
   static const _gap      = 3.0;
@@ -148,7 +163,7 @@ class _HeatmapPainter extends CustomPainter {
   }
 
   Color _intensityColor(int minutes) {
-    if (minutes == 0)   return _kEmpty;
+    if (minutes == 0)   return emptyColor;
     if (minutes < 30)   return _kLv1;
     if (minutes < 60)   return _kLv2;
     if (minutes < 120)  return _kLv3;
@@ -157,22 +172,24 @@ class _HeatmapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HeatmapPainter old) =>
-      old.data != data || old.year != year;
+      old.data != data || old.year != year || old.emptyColor != emptyColor;
 }
 
 // ─── 범례 ─────────────────────────────────────────────────────────────────
 
 class _Legend extends StatelessWidget {
-  const _Legend();
+  final Color emptyColor;
+
+  const _Legend({required this.emptyColor});
 
   @override
   Widget build(BuildContext context) {
-    const levels = [
-      (color: _kEmpty, label: '없음'),
-      (color: _kLv1,   label: '~30분'),
-      (color: _kLv2,   label: '~1h'),
-      (color: _kLv3,   label: '~2h'),
-      (color: _kLv4,   label: '2h+'),
+    final levels = [
+      (color: emptyColor, label: '없음'),
+      (color: _kLv1,      label: '~30분'),
+      (color: _kLv2,      label: '~1h'),
+      (color: _kLv3,      label: '~2h'),
+      (color: _kLv4,      label: '2h+'),
     ];
     return Row(
       children: [
@@ -200,7 +217,7 @@ class _Legend extends StatelessWidget {
                 l.label,
                 style: AppTheme.captionSmall.copyWith(
                   color: _kLabel,
-                        fontSize: 10,
+                  fontSize: 10,
                 ),
               ),
             ],

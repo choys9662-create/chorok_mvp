@@ -274,7 +274,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.appSurface,
+      backgroundColor: context.appBg,
       body: SafeArea(
         child: Column(
           children: [

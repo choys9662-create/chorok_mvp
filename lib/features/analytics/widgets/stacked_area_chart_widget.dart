@@ -4,7 +4,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
 const Color _kLabel = Color(0xFF7A8597);
-const Color _kGrid  = Color(0xFF1A1A1A);
 
 /// 스택드 에리어 차트 — 주간/월간 독서 시간을 장르별로 층층이 쌓기
 ///
@@ -103,7 +102,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: _kGrid,
+                    color: context.appBorder,
                     strokeWidth: 1,
                   ),
                 ),

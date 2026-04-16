@@ -139,7 +139,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollCtrl = ref.read(tabScrollControllersProvider)[0];
     return Scaffold(
-      backgroundColor: context.appSurface,
+      backgroundColor: context.appBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
