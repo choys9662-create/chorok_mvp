@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 
 // ─── 테마 컨텍스트 확장 — 다크/라이트 자동 분기 ────────────────────────────
@@ -12,6 +13,11 @@ extension AppThemeExt on BuildContext {
   Color get appTextPrimary => _isDark ? AppTheme.textPrimary : AppTheme.lightTextPrimary;
   Color get appTextSecondary => _isDark ? AppTheme.textSecondary : AppTheme.lightTextSecondary;
   Color get appTextTertiary => _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
+
+  // 브랜드 초록 — 다크: 네온 그린(#00FF00), 라이트: 접근성 보장 딥 그린(#1B7A3A)
+  Color get appPrimaryAccent => _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
+  // accent 계열 — 다크: #00CC6A, 라이트: lightPrimaryAccent와 동일 톤
+  Color get appAccentColor => _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
 }
 
 /// 초록 앱 테마 정의
@@ -80,16 +86,19 @@ class AppTheme {
   static const Color lightBorderColor   = Color(0xFFB8D9C6);
   static const Color lightDivider       = Color(0xFFD5EBE0);
 
-  // ─── Smooth Corner (Squircle) ──────────────────────────────────
-  // Apple / Figma "부드러운 모서리" — ContinuousRectangleBorder 기반
-  // 배율 1.35: 정r 대비 미세하게 부드러운 수준 (Apple 스타일)
+  // 라이트 모드 전용 브랜드 초록 — primaryLight(#00FF00)은 라이트 배경 대비 불충분
+  // lightBg(#F0FAF4) 위에서 대비비 ~7.2:1 확보
+  static const Color lightPrimaryAccent = Color(0xFF1B7A3A);
+
+  // ─── Smooth Corner (Figma 60% squircle) ───────────────────────
+  // figma_squircle 패키지 — Figma의 corner smoothing 60% 수식과 동일
   //
   // 디자인 라운드 규칙 (4px 배수):
   //   radiusSM  =  8  → 배지, 작은 알약형 요소
   //   radiusMD  = 12  → 칩, 버튼, 인풋 필드
   //   radiusLG  = 16  → 카드, 일반 컨테이너 (기본값)
   //   radiusXL  = 20  → 히어로 카드, 대형 컨테이너
-  static const double _smoothK = 1.8;
+  static const double _smoothness = 0.6; // Figma corner smoothing 60%
 
   static const double radiusSM = 8;
   static const double radiusMD = 12;
@@ -108,8 +117,11 @@ class AppTheme {
       color: color,
       gradient: gradient,
       shadows: shadows,
-      shape: ContinuousRectangleBorder(
-        borderRadius: BorderRadius.circular(radius * _smoothK),
+      shape: SmoothRectangleBorder(
+        borderRadius: SmoothBorderRadius(
+          cornerRadius: radius,
+          cornerSmoothing: _smoothness,
+        ),
         side: side,
       ),
     );
@@ -131,20 +143,26 @@ class AppTheme {
   }
 
   /// 버튼/카드 shape 용
-  static ContinuousRectangleBorder smoothShape({
+  static OutlinedBorder smoothShape({
     double radius = radiusLG,
     BorderSide side = BorderSide.none,
   }) {
-    return ContinuousRectangleBorder(
-      borderRadius: BorderRadius.circular(radius * _smoothK),
+    return SmoothRectangleBorder(
+      borderRadius: SmoothBorderRadius(
+        cornerRadius: radius,
+        cornerSmoothing: _smoothness,
+      ),
       side: side,
     );
   }
 
   /// ClipPath 용 — Container 안에서 gradient + smooth corner 조합 시
   static ShapeBorder smoothBorder(double radius) {
-    return ContinuousRectangleBorder(
-      borderRadius: BorderRadius.circular(radius * _smoothK),
+    return SmoothRectangleBorder(
+      borderRadius: SmoothBorderRadius(
+        cornerRadius: radius,
+        cornerSmoothing: _smoothness,
+      ),
     );
   }
 

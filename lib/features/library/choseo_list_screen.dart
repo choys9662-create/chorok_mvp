@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,6 @@ import '../../shared/models/isar/isar_choseo.dart';
 import 'controller/choseo_list_controller.dart';
 
 // ─── 색상 토큰 ────────────────────────────────────────────────────────────────
-const _kGreen = AppTheme.primaryLight;
 
 // ─── 화면 ────────────────────────────────────────────────────────────────────
 
@@ -204,7 +204,7 @@ class _TopBar extends StatelessWidget {
                   child: Icon(
                     searchActive ? Icons.close_rounded : Icons.search_rounded,
                     key: ValueKey(searchActive),
-                    color: searchActive ? _kGreen : context.appTextSecondary,
+                    color: searchActive ? context.appPrimaryAccent : context.appTextSecondary,
                     size: 22,
                   ),
                 ),
@@ -234,10 +234,12 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 40,
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.appCard,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: context.appBorder),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+          side: BorderSide(color: context.appBorder),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: TextField(
@@ -262,7 +264,7 @@ class _SearchField extends StatelessWidget {
           isDense: true,
           contentPadding: EdgeInsets.symmetric(vertical: 10),
         ),
-        cursorColor: _kGreen,
+        cursorColor: context.appPrimaryAccent,
         cursorWidth: 1.5,
       ),
     );
@@ -292,7 +294,7 @@ class _ChoseoTabBar extends StatelessWidget {
           color: AppTheme.primary,
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: _kGreen.withValues(alpha: 0.3),
+            color: context.appPrimaryAccent.withValues(alpha: 0.3),
           ),
         ),
         dividerColor: Colors.transparent,
@@ -308,7 +310,7 @@ class _ChoseoTabBar extends StatelessWidget {
           fontWeight: FontWeight.w400,
           height: 1.4,
         ),
-        labelColor: _kGreen,
+        labelColor: context.appPrimaryAccent,
         unselectedLabelColor: context.appTextTertiary,
         tabs: const [
           Tab(text: '책별'),
@@ -367,8 +369,8 @@ class _BookGroupState extends State<_BookGroup> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: ShapeDecoration(
         color: context.appCard,
-        shape: ContinuousRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusXL * 1.35),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusXL, cornerSmoothing: 0.6),
           side: BorderSide(color: context.appBorder),
         ),
       ),
@@ -391,13 +393,15 @@ class _BookGroupState extends State<_BookGroup> {
                     Container(
                       width: 44,
                       height: 56,
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: colors,
                         ),
-                        borderRadius: BorderRadius.circular(6),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                        ),
                       ),
                       child: Center(
                         child: Text(
@@ -455,11 +459,11 @@ class _BookGroupState extends State<_BookGroup> {
                       ),
                       child: Text(
                         '${widget.items.length}개',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: _kGreen,
+                          color: context.appPrimaryAccent,
                           height: 1.4,
                         ),
                       ),
@@ -555,8 +559,8 @@ class _ChoseoCard extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: context.appCard,
-        shape: ContinuousRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG * 1.35),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
           side: BorderSide(color: context.appBorder),
         ),
       ),
@@ -678,7 +682,7 @@ class _ChoseoCard extends StatelessWidget {
                   height: 16,
                   margin: const EdgeInsets.only(top: 2, right: 10),
                   decoration: BoxDecoration(
-                    color: _kGreen,
+                    color: context.appPrimaryAccent,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

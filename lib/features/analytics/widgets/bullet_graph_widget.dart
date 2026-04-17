@@ -86,7 +86,7 @@ class BulletGraphWidget extends StatelessWidget {
               Text(
                 '${(progress * 100).round()}% 달성',
                 style: AppTheme.captionSmall.copyWith(
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w600,
                 ),
               ),

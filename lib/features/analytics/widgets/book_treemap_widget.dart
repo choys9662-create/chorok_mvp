@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
@@ -57,7 +58,7 @@ class BookTreemapWidget extends StatelessWidget {
                   final t = maxH > 0 ? item.hours / maxH : 0.0;
                   final color = Color.lerp(
                     const Color(0xFF0F6E56),
-                    AppTheme.primaryLight,
+                    context.appPrimaryAccent,
                     t,
                   )!;
                   final showLabel = rect.width > 80 && rect.height > 50;
@@ -67,8 +68,8 @@ class BookTreemapWidget extends StatelessWidget {
                     top:    rect.top + 1,
                     width:  rect.width - 2,
                     height: rect.height - 2,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                    child: ClipSmoothRect(
+                      radius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         color: color.withValues(alpha: 0.85),

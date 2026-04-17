@@ -62,8 +62,8 @@ class HabitRadarChartWidget extends StatelessWidget {
                   ),
                   // 이번 달
                   RadarDataSet(
-                    fillColor: AppTheme.primaryLight.withValues(alpha: 0.3),
-                    borderColor: AppTheme.primaryLight,
+                    fillColor: context.appPrimaryAccent.withValues(alpha: 0.3),
+                    borderColor: context.appPrimaryAccent,
                     borderWidth: 2,
                     entryRadius: 3,
                     dataEntries: current
@@ -80,7 +80,7 @@ class HabitRadarChartWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendDot(color: AppTheme.primaryLight, label: '이번 달'),
+              _LegendDot(color: context.appPrimaryAccent, label: '이번 달'),
               const SizedBox(width: 16),
               _LegendDot(color: const Color(0xFF444444), label: '지난 달'),
             ],

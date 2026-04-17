@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
@@ -14,6 +15,16 @@ class ProfileHeader extends StatefulWidget {
 }
 
 class _ProfileHeaderState extends State<ProfileHeader> {
+  // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
+  static final _modalShape = SmoothRectangleBorder(
+    borderRadius: SmoothBorderRadius.only(
+      topLeft: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+      topRight: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+    ),
+  );
+  static final _buttonBorderRadius =
+      SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6);
+
   // 더미 프로필 데이터
   String _name = '이지현';
   String _bio = '책 속에서 길을 찾는 중 🌿';
@@ -24,12 +35,15 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding, 16, AppTheme.screenPadding, 0,
+        AppTheme.screenPadding,
+        16,
+        AppTheme.screenPadding,
+        0,
       ),
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 16,
+        radius: 24,
         side: BorderSide(color: context.appBorder),
       ),
       child: Column(
@@ -44,12 +58,11 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   children: [
                     CircleAvatar(
                       radius: 32,
-                      backgroundColor:
-                          AppTheme.primary.withValues(alpha: 0.4),
-                      child: const Icon(
+                      backgroundColor: AppTheme.primary.withValues(alpha: 0.4),
+                      child: Icon(
                         Icons.person_rounded,
                         size: 32,
-                        color: AppTheme.primaryLight,
+                        color: context.appPrimaryAccent,
                       ),
                     ),
                     Positioned(
@@ -125,8 +138,9 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         style: IconButton.styleFrom(
                           foregroundColor: AppTheme.accent,
-                          backgroundColor:
-                              AppTheme.primary.withValues(alpha: 0.2),
+                          backgroundColor: AppTheme.primary.withValues(
+                            alpha: 0.2,
+                          ),
                           padding: EdgeInsets.zero,
                         ),
                       ),
@@ -142,12 +156,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         height: 40,
                         child: IconButton(
                           onPressed: widget.onSettingsTap,
-                          icon: const Icon(
-                              Icons.settings_outlined, size: 18),
+                          icon: const Icon(Icons.settings_outlined, size: 18),
                           style: IconButton.styleFrom(
                             foregroundColor: context.appTextSecondary,
-                            backgroundColor:
-                                context.appCardElevated,
+                            backgroundColor: context.appCardElevated,
                             padding: EdgeInsets.zero,
                           ),
                         ),
@@ -183,11 +195,13 @@ class _ProfileHeaderState extends State<ProfileHeader> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: AppTheme.smoothPill(
                     color: AppTheme.primary.withValues(alpha: 0.3),
                     side: BorderSide(
-                      color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                      color: context.appPrimaryAccent.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Row(
@@ -197,11 +211,11 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       const SizedBox(width: 4),
                       Text(
                         '${widget.streak}일 연속 독서 중',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           height: 1.4,
                         ),
                       ),
@@ -236,9 +250,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       context: context,
       isScrollControlled: true,
       backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: _modalShape,
       builder: (_) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -270,8 +282,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                 ),
               ),
               const SizedBox(height: 20),
-              _SheetField(
-                  controller: nameController, label: '이름', maxLines: 1),
+              _SheetField(controller: nameController, label: '이름', maxLines: 1),
               const SizedBox(height: 12),
               _SheetField(
                 controller: bioController,
@@ -294,8 +305,8 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: _buttonBorderRadius,
                     ),
                   ),
                   child: const Text(
@@ -324,9 +335,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: _modalShape,
       builder: (_) => _FollowListSheet(
         title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
         names: list,
@@ -363,11 +372,11 @@ class _StatItem extends StatelessWidget {
             children: [
               Text(
                 '$count',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Pretendard',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   height: 1.4,
                 ),
               ),
@@ -390,6 +399,12 @@ class _StatItem extends StatelessWidget {
 
 // ─── 편집 필드 ─────────────────────────────────────────────────────────
 class _SheetField extends StatelessWidget {
+  // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
+  // OutlineInputBorder는 SmoothBorderRadius 미지원 — 그대로 유지
+  static const _inputRadius = BorderRadius.all(
+    Radius.circular(AppTheme.radiusMD),
+  );
+
   final TextEditingController controller;
   final String label;
   final int maxLines;
@@ -420,12 +435,12 @@ class _SheetField extends StatelessWidget {
         filled: true,
         fillColor: context.appCardElevated,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: _inputRadius,
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryLight),
+          borderRadius: _inputRadius,
+          borderSide: BorderSide(color: context.appPrimaryAccent),
         ),
       ),
     );
@@ -449,6 +464,10 @@ class _FollowListSheet extends StatefulWidget {
 }
 
 class _FollowListSheetState extends State<_FollowListSheet> {
+  // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
+  static final _followButtonRadius =
+      SmoothBorderRadius(cornerRadius: 20, cornerSmoothing: 0.6);
+
   late List<bool> _followStates;
 
   @override
@@ -474,9 +493,12 @@ class _FollowListSheetState extends State<_FollowListSheet> {
         ),
         Padding(
           padding: const EdgeInsets.all(20),
-          child: Text(widget.title,
-              style: AppTheme.headingSmall
-                  .copyWith(color: context.appTextPrimary)),
+          child: Text(
+            widget.title,
+            style: AppTheme.headingSmall.copyWith(
+              color: context.appTextPrimary,
+            ),
+          ),
         ),
         Expanded(
           child: ListView.builder(
@@ -488,43 +510,48 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor:
-                        AppTheme.primary.withValues(alpha: 0.3),
+                    backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
                     child: Text(
                       widget.names[i][0],
                       style: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.primaryLight,
-                          fontWeight: FontWeight.w600),
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(widget.names[i],
-                        style: AppTheme.bodyMedium
-                            .copyWith(color: context.appTextPrimary)),
+                    child: Text(
+                      widget.names[i],
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextPrimary,
+                      ),
+                    ),
                   ),
                   if (widget.showFollowButton)
                     GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(
-                            () => _followStates[i] = !_followStates[i]);
+                        setState(() => _followStates[i] = !_followStates[i]);
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutCubic,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: ShapeDecoration(
                           color: _followStates[i]
                               ? context.appBorder
                               : AppTheme.primary,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _followStates[i]
-                                ? context.appBorder
-                                : AppTheme.primaryLight
-                                    .withValues(alpha: 0.4),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: _followButtonRadius,
+                            side: BorderSide(
+                              color: _followStates[i]
+                                  ? context.appBorder
+                                  : context.appPrimaryAccent.withValues(alpha: 0.4),
+                            ),
                           ),
                         ),
                         child: Text(
@@ -533,7 +560,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                             fontFamily: 'Pretendard',
                             color: _followStates[i]
                                 ? context.appTextTertiary
-                                : AppTheme.primaryLight,
+                                : context.appPrimaryAccent,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

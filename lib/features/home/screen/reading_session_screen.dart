@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,8 +133,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             duration: const Duration(milliseconds: 1500),
             backgroundColor: const Color(0xFF1A3D2B),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
             ),
           ),
         );

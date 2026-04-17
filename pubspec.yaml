@@ -49,6 +49,9 @@ dependencies:
   share_plus: ^10.1.4
   path_provider: ^2.1.5
 
+  # Figma 60% smooth corner 정확 구현
+  figma_squircle: ^0.5.3
+
   # 차트
   fl_chart: ^0.68.0
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +87,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: [
           Icon(
             success ? Icons.check_circle_rounded : Icons.info_rounded,
-            color: success ? AppTheme.primaryLight : context.appTextSecondary,
+            color: success ? context.appPrimaryAccent : context.appTextSecondary,
             size: 18,
           ),
           const SizedBox(width: 8),
@@ -106,8 +107,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       backgroundColor: context.appCardElevated,
       behavior: SnackBarBehavior.floating,
-      shape: ContinuousRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.35),
+      shape: SmoothRectangleBorder(
+        borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
       ),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       duration: const Duration(seconds: 3),
@@ -253,7 +254,7 @@ class _SearchBar extends StatelessWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                       textInputAction: TextInputAction.search,
-                      cursorColor: AppTheme.primaryLight,
+                      cursorColor: context.appPrimaryAccent,
                     ),
                   ),
                   // 지우기 버튼
@@ -290,10 +291,12 @@ class _SearchBar extends StatelessWidget {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: context.appCard,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  border: Border.all(color: context.appBorder),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+                    side: BorderSide(color: context.appBorder),
+                  ),
                 ),
                 child: Icon(
                   Icons.qr_code_scanner_rounded,
@@ -519,12 +522,12 @@ class _AddButtonState extends State<_AddButton> {
           side: BorderSide(color: context.appBorder, width: 1),
         ),
         alignment: Alignment.center,
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.check_rounded,
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
               size: 14,
             ),
             SizedBox(width: 4),
@@ -534,7 +537,7 @@ class _AddButtonState extends State<_AddButton> {
                 fontFamily: 'Pretendard',
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 height: 1.4,
               ),
             ),

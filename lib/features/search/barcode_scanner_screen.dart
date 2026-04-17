@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,8 +161,8 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       ),
       backgroundColor: _kSurface,
       behavior: SnackBarBehavior.floating,
-      shape: ContinuousRectangleBorder(
-        borderRadius: BorderRadius.circular(32),
+      shape: SmoothRectangleBorder(
+        borderRadius: SmoothBorderRadius(cornerRadius: 32, cornerSmoothing: 0.6),
       ),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       duration: const Duration(seconds: 3),
@@ -478,10 +479,12 @@ class _BottomStatus extends StatelessWidget {
               key: const ValueKey('status'),
               margin: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: _kSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _kBorder),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(cornerRadius: 16, cornerSmoothing: 0.6),
+                  side: const BorderSide(color: _kBorder),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

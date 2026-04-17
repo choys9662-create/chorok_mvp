@@ -18,7 +18,7 @@ class ChorokStatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = valueColor ?? AppTheme.primaryLight;
+    final color = valueColor ?? context.appPrimaryAccent;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

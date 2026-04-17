@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -76,9 +77,14 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.appCard,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius.only(
+            topLeft: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+            topRight: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          ),
+        ),
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
@@ -283,7 +289,7 @@ class _TabButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.bodySmall.copyWith(
-            color: isSelected ? AppTheme.primaryLight : context.appTextTertiary,
+            color: isSelected ? context.appPrimaryAccent : context.appTextTertiary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -411,7 +417,7 @@ class _PresetChip extends StatelessWidget {
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
             color: isSelected
-                ? AppTheme.accent.withValues(alpha: 0.15)
+                ? context.appAccentColor.withValues(alpha: 0.15)
                 : context.appCardElevated,
             side: BorderSide(
               color: isSelected ? AppTheme.accent : context.appBorder,
@@ -510,7 +516,7 @@ class _PageGoalSection extends StatelessWidget {
           Text(
             '$remaining쪽 남았어요',
             style: AppTheme.captionLarge.copyWith(
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
             ),
           ),
         ],

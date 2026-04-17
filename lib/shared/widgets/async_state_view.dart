@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -115,9 +116,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 14,
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: context.appBorder,
-              borderRadius: BorderRadius.circular(7),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 7, cornerSmoothing: 0.6),
+              ),
             ),
           ),
           const SizedBox(height: AppTheme.spaceSM),
@@ -125,9 +128,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.75,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: context.appBorder,
-              borderRadius: BorderRadius.circular(6),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+              ),
             ),
           ),
           const SizedBox(height: AppTheme.spaceXS),
@@ -135,9 +140,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.55,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: context.appBorder,
-              borderRadius: BorderRadius.circular(6),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+              ),
             ),
           ),
         ],
@@ -249,7 +256,7 @@ class _ErrorState extends StatelessWidget {
                       '다시 시도',
                       style: AppTheme.bodySmall.copyWith(
                         fontFamily: 'Pretendard',
-                        color: AppTheme.primaryLight,
+                        color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

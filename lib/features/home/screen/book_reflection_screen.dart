@@ -211,7 +211,7 @@ class _CompletionBanner extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         gradient: AppTheme.greenCardGradient,
         radius: AppTheme.radiusXL,
-        side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.2)),
+        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -239,16 +239,16 @@ class _CompletionBanner extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: AppTheme.smoothBox(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.12),
+                    color: context.appPrimaryAccent.withValues(alpha: 0.12),
                     radius: AppTheme.radiusSM,
                   ),
-                  child: const Text(
+                  child: Text(
                     '🎉  완독 달성',
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryLight,
+                      color: context.appPrimaryAccent,
                       height: 1.4,
                     ),
                   ),
@@ -341,7 +341,7 @@ class _StarRatingSection extends StatelessWidget {
                             : Icons.star_outline_rounded,
                         size: 36,
                         color: filled
-                            ? AppTheme.primaryLight
+                            ? context.appPrimaryAccent
                             : context.appTextTertiary,
                       ),
                     ),
@@ -358,11 +358,11 @@ class _StarRatingSection extends StatelessWidget {
                 child: Text(
                   _labels[rating],
                   key: ValueKey(rating),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Pretendard',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     height: 1.4,
                   ),
                 ),
@@ -428,7 +428,7 @@ class _ReflectionInput extends StatelessWidget {
               isDense: true,
               contentPadding: EdgeInsets.zero,
             ),
-            cursorColor: AppTheme.primaryLight,
+            cursorColor: context.appPrimaryAccent,
           ),
         ),
       ],

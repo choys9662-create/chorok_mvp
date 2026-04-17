@@ -6,7 +6,7 @@ import '../../../shared/widgets/chorok_card.dart';
 const Color _kLv1    = Color(0xFF0F6E56);
 const Color _kLv2    = Color(0xFF1D9E75);
 const Color _kLv3    = Color(0xFF3BC49A);
-const Color _kLv4    = Color(0xFF00FF00); // AppTheme.primaryLight
+const Color _kLv4    = Color(0xFF00FF00); // context.appPrimaryAccent
 const Color _kLabel  = Color(0xFF7A8597);
 
 /// 1년치 독서 기록 히트맵 — GitHub 잔디 형태

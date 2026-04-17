@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -290,7 +291,7 @@ class _SearchBar extends StatelessWidget {
         shadows: isSearchFocused
             ? [
                 BoxShadow(
-                  color: AppTheme.accent.withValues(alpha: 0.12),
+                  color: context.appAccentColor.withValues(alpha: 0.12),
                   blurRadius: 16,
                   spreadRadius: 0,
                   offset: const Offset(0, 4),
@@ -591,7 +592,7 @@ class _CategoryChip extends StatelessWidget {
             shadows: isSelected
                 ? [
                     BoxShadow(
-                      color: AppTheme.accent.withValues(alpha: 0.24),
+                      color: context.appAccentColor.withValues(alpha: 0.24),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -708,7 +709,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                         child: Icon(
                           Icons.menu_book_rounded,
                           size: 80,
-                          color: AppTheme.primaryLight.withValues(alpha: 0.08),
+                          color: context.appPrimaryAccent.withValues(alpha: 0.08),
                         ),
                       ),
                       Padding(
@@ -764,10 +765,12 @@ class _SentenceBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.appSurface.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4), width: 1),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+          side: BorderSide(color: context.appAccentColor.withValues(alpha: 0.4), width: 1),
+        ),
       ),
       child: Text(
         '${_formatCount(count)}개 문장 기록됨',
@@ -811,8 +814,8 @@ class _PopularBookTileState extends State<_PopularBookTile> {
         ),
         backgroundColor: context.appCardElevated,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
           side: BorderSide(color: context.appBorder, width: 1),
         ),
         margin: const EdgeInsets.fromLTRB(
@@ -873,19 +876,21 @@ class _PopularBookTileState extends State<_PopularBookTile> {
               Container(
                 width: 44,
                 height: 60,
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: gradientColors,
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.appBorder, width: 1),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                    side: BorderSide(color: context.appBorder, width: 1),
+                  ),
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,
                   size: 20,
-                  color: AppTheme.primaryLight.withValues(alpha: 0.6),
+                  color: context.appPrimaryAccent.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(width: 12),
@@ -948,10 +953,12 @@ class _PopularBookTileState extends State<_PopularBookTile> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: context.appCardElevated,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: context.appBorder, width: 1),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                        side: BorderSide(color: context.appBorder, width: 1),
+                      ),
                     ),
                     child: Text(
                       '서재에 추가',
@@ -1029,11 +1036,13 @@ class _SentenceCardState extends State<_SentenceCard> {
               children: [
                 Container(
                   width: 4,
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     gradient: AppTheme.greenGradientVertical,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius.only(
+                        topLeft: SmoothRadius(cornerRadius: 16, cornerSmoothing: 0.6),
+                        bottomLeft: SmoothRadius(cornerRadius: 16, cornerSmoothing: 0.6),
+                      ),
                     ),
                   ),
                 ),
@@ -1193,7 +1202,7 @@ class _AladinSearchBannerState extends State<_AladinSearchBanner> {
                 gradient: AppTheme.greenCardGradient,
                 radius: AppTheme.radiusLG,
                 side: BorderSide(
-                  color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                  color: context.appPrimaryAccent.withValues(alpha: 0.15),
                   width: 1,
                 ),
               ),

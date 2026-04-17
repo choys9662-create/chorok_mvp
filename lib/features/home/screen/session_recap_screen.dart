@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -471,7 +472,7 @@ class _SessionHeroCard extends StatelessWidget {
         gradient: AppTheme.greenCardGradient,
         radius: 20,
         side: BorderSide(
-            color: AppTheme.primaryLight.withValues(alpha: 0.2)),
+            color: context.appPrimaryAccent.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -479,14 +480,15 @@ class _SessionHeroCard extends StatelessWidget {
           Container(
             width: 56,
             height: 72,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.3)),
+              ),
             ),
-            child: const Icon(Icons.menu_book_rounded,
-                color: AppTheme.primaryLight, size: 26),
+            child: Icon(Icons.menu_book_rounded,
+                color: context.appPrimaryAccent, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -534,19 +536,19 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.primaryLight.withValues(alpha: 0.12),
+        color: context.appPrimaryAccent.withValues(alpha: 0.12),
         radius: 12,
         side: BorderSide(
-            color: AppTheme.primaryLight.withValues(alpha: 0.25)),
+            color: context.appPrimaryAccent.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppTheme.primaryLight),
+          Icon(icon, size: 12, color: context.appPrimaryAccent),
           const SizedBox(width: 4),
           Text(label,
               style: AppTheme.captionSmall.copyWith(
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w600)),
         ],
       ),
@@ -616,12 +618,12 @@ class _ScoreCardState extends State<_ScoreCard>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: AppTheme.smoothBox(
-                  color: AppTheme.primaryLight.withValues(alpha: 0.1),
+                  color: context.appPrimaryAccent.withValues(alpha: 0.1),
                   radius: 12,
                 ),
                 child: Text(_scoreLabel,
                     style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.primaryLight,
+                        color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -669,7 +671,7 @@ class _ScoreCardState extends State<_ScoreCard>
                       value: progress,
                       backgroundColor: context.appBorder,
                       valueColor: AlwaysStoppedAnimation(
-                        Color.lerp(AppTheme.accent, AppTheme.primaryLight,
+                        Color.lerp(AppTheme.accent, context.appPrimaryAccent,
                             progress)!,
                       ),
                       minHeight: 6,
@@ -711,12 +713,12 @@ class _SentencesSection extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: AppTheme.smoothBox(
-                color: AppTheme.primaryLight.withValues(alpha: 0.1),
+                color: context.appPrimaryAccent.withValues(alpha: 0.1),
                 radius: 10,
               ),
               child: Text('${sentences.length}',
                   style: AppTheme.captionSmall.copyWith(
-                      color: AppTheme.primaryLight,
+                      color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w600)),
             ),
           ],
@@ -747,7 +749,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
         String tagDesc) = switch (tag) {
       _SentenceTag.overlap => (
           '겹문장',
-          AppTheme.primaryLight,
+          context.appPrimaryAccent,
           Icons.join_inner_rounded,
           '${_overlapCount(entry.content)}명이 함께 수집한 문장이에요',
         ),
@@ -782,10 +784,14 @@ class _SentenceAnalysisCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: tagColor.withValues(alpha: 0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(15)),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius.only(
+                  topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
+                  topRight: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
+                ),
+              ),
             ),
             child: Row(
               children: [
@@ -837,7 +843,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
                     children: [
                       Icon(Icons.edit_note_rounded,
                           size: 14,
-                          color: AppTheme.accent.withValues(alpha: 0.8)),
+                          color: context.appAccentColor.withValues(alpha: 0.8)),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(entry.thought,
@@ -972,13 +978,13 @@ class _StatItem extends StatelessWidget {
           Icon(icon,
               size: 16,
               color: highlight
-                  ? AppTheme.primaryLight
+                  ? context.appPrimaryAccent
                   : context.appTextTertiary),
           const SizedBox(height: 4),
           Text(value,
               style: AppTheme.bodyLarge.copyWith(
                 color: highlight
-                    ? AppTheme.primaryLight
+                    ? context.appPrimaryAccent
                     : context.appTextPrimary,
                 fontWeight: FontWeight.w700,
               )),
@@ -1046,11 +1052,11 @@ class _RecapActions extends StatelessWidget {
               label: const Text('홈으로'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.primary,
-                foregroundColor: AppTheme.primaryLight,
+                foregroundColor: context.appPrimaryAccent,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: AppTheme.smoothShape(radius: 14),
                 side: BorderSide(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+                    color: context.appPrimaryAccent.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -1086,12 +1092,12 @@ class _PageRecordCard extends StatelessWidget {
           color: context.appCard,
           radius: AppTheme.radiusLG,
           side: BorderSide(
-              color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+              color: context.appPrimaryAccent.withValues(alpha: 0.3)),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.check_circle_rounded,
-                color: AppTheme.primaryLight, size: 20),
+                color: context.appPrimaryAccent, size: 20),
             SizedBox(width: 12),
             Text(
               '페이지 기록이 저장됐어요',
@@ -1099,7 +1105,7 @@ class _PageRecordCard extends StatelessWidget {
                 fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 height: 1.4,
               ),
             ),
@@ -1120,8 +1126,8 @@ class _PageRecordCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.bookmark_rounded,
-                  color: AppTheme.primaryLight, size: 18),
+              Icon(Icons.bookmark_rounded,
+                  color: context.appPrimaryAccent, size: 18),
               const SizedBox(width: 8),
               Text(
                 '오늘 몇 쪽까지 읽었나요?',
@@ -1189,7 +1195,7 @@ class _PageRecordCard extends StatelessWidget {
                         color: context.appTextSecondary,
                       ),
                     ),
-                    cursorColor: AppTheme.primaryLight,
+                    cursorColor: context.appPrimaryAccent,
                   ),
                 ),
               ),
@@ -1259,10 +1265,10 @@ class _CompletionDialog extends StatelessWidget {
           color: context.appCard,
           radius: AppTheme.radiusXL,
           side: BorderSide(
-              color: AppTheme.primaryLight.withValues(alpha: 0.25)),
+              color: context.appPrimaryAccent.withValues(alpha: 0.25)),
           shadows: [
             BoxShadow(
-              color: AppTheme.primaryLight.withValues(alpha: 0.08),
+              color: context.appPrimaryAccent.withValues(alpha: 0.08),
               blurRadius: 40,
               spreadRadius: 0,
             ),
@@ -1388,7 +1394,7 @@ class _OverlapHintCard extends StatelessWidget {
         color: AppTheme.primary.withValues(alpha: 0.15),
         radius: 16,
         side: BorderSide(
-          color: AppTheme.primaryLight.withValues(alpha: 0.25),
+          color: context.appPrimaryAccent.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
@@ -1420,8 +1426,8 @@ class _OverlapHintCard extends StatelessWidget {
                     children: [
                       TextSpan(
                         text: '이 중 $overlapCount개',
-                        style: const TextStyle(
-                          color: AppTheme.primaryLight,
+                        style: TextStyle(
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1492,7 +1498,7 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
   }
 
   Color get _gaugeColor {
-    if (widget.focusPercent >= 80) return AppTheme.primaryLight;
+    if (widget.focusPercent >= 80) return context.appPrimaryAccent;
     if (widget.focusPercent >= 50) return AppTheme.accent;
     return const Color(0xFFFF7B7B);
   }

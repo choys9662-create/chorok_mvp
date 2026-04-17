@@ -97,7 +97,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Color _colorFor(NotiType type) => switch (type) {
         NotiType.follow  => AppTheme.accent,
         NotiType.like    => const Color(0xFFFF6B6B),
-        NotiType.overlap => AppTheme.primaryLight,
+        NotiType.overlap => context.appPrimaryAccent,
         NotiType.system  => context.appTextSecondary,
       };
 
@@ -212,14 +212,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: AppTheme.smoothBox(
-                        color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.15),
                         radius: 10,
                       ),
                       child: Text(
                         '$unread 새로운',
                         style: AppTheme.captionSmall.copyWith(
                           fontFamily: 'Pretendard',
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -268,7 +268,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           child: Text(
                             '새로운',
                             style: AppTheme.captionLarge.copyWith(
-                              color: AppTheme.primaryLight,
+                              color: context.appPrimaryAccent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -382,7 +382,7 @@ class _NotiTile extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         color: item.isRead
             ? Colors.transparent
-            : AppTheme.primaryLight.withValues(alpha: 0.04),
+            : context.appPrimaryAccent.withValues(alpha: 0.04),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,11 +443,11 @@ class _NotiTile extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.5),
                         blurRadius: 4,
                       ),
                     ],

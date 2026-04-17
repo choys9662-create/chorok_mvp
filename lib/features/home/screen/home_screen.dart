@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -344,11 +345,11 @@ String _subtext(TimerData timer) {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryLight.withValues(
+                              color: context.appPrimaryAccent.withValues(
                                 alpha: 0.6,
                               ),
                               blurRadius: 4,
@@ -428,15 +429,17 @@ class _WeeklyStatusCard extends ConsumerWidget {
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLight.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
+                decoration: ShapeDecoration(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                  ),
                 ),
                 child: Text(
                   '$daysAchieved일 달성',
                   style: AppTheme.captionSmall.copyWith(
                     fontFamily: 'Pretendard',
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -538,7 +541,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
                                             colors: achieved
                                                 ? [
                                                     AppTheme.primary,
-                                                    AppTheme.primaryLight,
+                                                    context.appPrimaryAccent,
                                                   ]
                                                 : [
                                                     AppTheme.primary.withValues(
@@ -560,7 +563,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
                             style: AppTheme.captionSmall.copyWith(
                               fontFamily: 'Pretendard',
                               color: isToday
-                                  ? AppTheme.primaryLight
+                                  ? context.appPrimaryAccent
                                   : context.appTextTertiary,
                               fontWeight: isToday
                                   ? FontWeight.w700
@@ -580,14 +583,16 @@ class _WeeklyStatusCard extends ConsumerWidget {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              decoration: ShapeDecoration(
+                color: context.appPrimaryAccent.withValues(alpha: 0.06),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+                ),
               ),
               child: Text(
                 insight,
                 style: AppTheme.captionLarge.copyWith(
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -644,12 +649,12 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
           ),
           shape: StadiumBorder(
             side: BorderSide(
-              color: AppTheme.primaryLight.withValues(alpha: 0.25),
+              color: context.appPrimaryAccent.withValues(alpha: 0.25),
             ),
           ),
           shadows: [
             BoxShadow(
-              color: AppTheme.primaryLight.withValues(
+              color: context.appPrimaryAccent.withValues(
                 alpha: 0.12 + _glow.value * 0.28,
               ),
               blurRadius: 6 + _glow.value * 18,
@@ -672,11 +677,11 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.7),
+                    color: context.appPrimaryAccent.withValues(alpha: 0.7),
                     blurRadius: 6,
                   ),
                 ],
@@ -687,22 +692,22 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
               '이어하기',
               style: AppTheme.captionSmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ] else ...[
-            const Icon(
+            Icon(
               Icons.play_arrow_rounded,
               size: 14,
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
             ),
             const SizedBox(width: 4),
             Text(
               '독서 시작',
               style: AppTheme.captionSmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -752,7 +757,7 @@ class _ReadingBooksSection extends StatelessWidget {
               Text(
                 '${_kReadingBooks.length}권',
                 style: AppTheme.captionLarge.copyWith(
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -813,17 +818,17 @@ class _InsightChip extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: AppTheme.primary.withValues(alpha: 0.2),
         radius: AppTheme.radiusMD,
-        side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.12)),
+        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.12)),
       ),
       child: Row(
         children: [
-          Icon(insight.icon, size: 16, color: AppTheme.primaryLight),
+          Icon(insight.icon, size: 16, color: context.appPrimaryAccent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               insight.message,
               style: AppTheme.captionLarge.copyWith(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 height: 1.4,
               ),
               maxLines: 2,
@@ -916,7 +921,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 64,
-                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
                       ),
                     ),
                     // 진행률 배지
@@ -928,15 +933,17 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                           horizontal: 8,
                           vertical: 4,
                         ),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(8),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                          ),
                         ),
                         child: Text(
                           '${(progress * 100).round()}%',
                           style: AppTheme.captionSmall.copyWith(
                             fontFamily: 'Pretendard',
-                            color: AppTheme.primaryLight,
+                            color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1023,14 +1030,14 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         color: AppTheme.primary.withValues(alpha: 0.5),
                         radius: 10,
                         side: BorderSide(
-                          color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                          color: context.appPrimaryAccent.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
                         '이어 읽기',
                         style: AppTheme.captionLarge.copyWith(
                           fontFamily: 'Pretendard',
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1089,27 +1096,29 @@ class _RecommendedBooksSection extends StatelessWidget {
               const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLight.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.2),
+                decoration: ShapeDecoration(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                    side: BorderSide(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.2),
+                    ),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.auto_awesome_rounded,
                       size: 12,
-                      color: AppTheme.primaryLight,
+                      color: context.appPrimaryAccent,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'AI',
                       style: AppTheme.captionSmall.copyWith(
                         fontFamily: 'Pretendard',
-                        color: AppTheme.primaryLight,
+                        color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1210,7 +1219,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 48,
-                        color: AppTheme.primaryLight.withValues(alpha: 0.08),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
                       ),
                     ),
                     // 매칭 점수
@@ -1222,15 +1231,17 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                           horizontal: 6,
                           vertical: 2,
                         ),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(6),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                          ),
                         ),
                         child: Text(
                           '${(b.matchScore * 100).round()}%',
                           style: AppTheme.captionSmall.copyWith(
                             fontFamily: 'Pretendard',
-                            color: AppTheme.primaryLight,
+                            color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1268,22 +1279,24 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       // 추천 이유
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: AppTheme.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppTheme.primary.withValues(alpha: 0.2),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                            side: BorderSide(
+                              color: AppTheme.primary.withValues(alpha: 0.2),
+                            ),
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.only(top: 1),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
                               child: Icon(
                                 Icons.format_quote_rounded,
                                 size: 12,
-                                color: AppTheme.primaryLight,
+                                color: context.appPrimaryAccent,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -1321,29 +1334,31 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                           child: Container(
                             height: 32,
                             alignment: Alignment.center,
-                            decoration: BoxDecoration(
+                            decoration: ShapeDecoration(
                               color: AppTheme.primary.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppTheme.primaryLight.withValues(
-                                  alpha: 0.2,
+                              shape: SmoothRectangleBorder(
+                                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                                side: BorderSide(
+                                  color: context.appPrimaryAccent.withValues(
+                                    alpha: 0.2,
+                                  ),
                                 ),
                               ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.add_rounded,
                                   size: 14,
-                                  color: AppTheme.primaryLight,
+                                  color: context.appPrimaryAccent,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
                                     fontFamily: 'Pretendard',
-                                    color: AppTheme.primaryLight,
+                                    color: context.appPrimaryAccent,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -1550,31 +1565,33 @@ class _HighlightCard extends StatelessWidget {
                                 horizontal: 8,
                                 vertical: 3,
                               ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryLight.withValues(
+                              decoration: ShapeDecoration(
+                                color: context.appPrimaryAccent.withValues(
                                   alpha: 0.08,
                                 ),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: AppTheme.primaryLight.withValues(
-                                    alpha: 0.2,
+                                shape: SmoothRectangleBorder(
+                                  borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                                  side: BorderSide(
+                                    color: context.appPrimaryAccent.withValues(
+                                      alpha: 0.2,
+                                    ),
                                   ),
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.join_inner_rounded,
                                     size: 11,
-                                    color: AppTheme.primaryLight,
+                                    color: context.appPrimaryAccent,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '겹문장 · ${sentence.recordCount}명 수집',
                                     style: AppTheme.captionSmall.copyWith(
                                       fontFamily: 'Pretendard',
-                                      color: AppTheme.primaryLight,
+                                      color: context.appPrimaryAccent,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1612,7 +1629,7 @@ class _HighlightCard extends StatelessWidget {
                             Icon(
                               Icons.favorite_rounded,
                               size: 12,
-                              color: AppTheme.accent.withValues(alpha: 0.8),
+                              color: context.appAccentColor.withValues(alpha: 0.8),
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -1666,8 +1683,11 @@ class _StreakBanner extends ConsumerWidget {
               color: hasReadToday
                   ? AppTheme.warningColor.withValues(alpha: 0.08)
                   : context.appCard,
-              shape: ContinuousRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: AppTheme.radiusMD * 1.8,
+                  cornerSmoothing: 0.6,
+                ),
                 side: BorderSide(
                   color: hasReadToday
                       ? AppTheme.warningColor.withValues(alpha: 0.3)
@@ -1744,9 +1764,10 @@ class _TimeCapsuleSection extends ConsumerWidget {
                 padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
                 decoration: ShapeDecoration(
                   color: context.appCard,
-                  shape: ContinuousRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.radiusLG * 1.8,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: AppTheme.radiusLG * 1.8,
+                      cornerSmoothing: 0.6,
                     ),
                     side: BorderSide(color: context.appBorder),
                   ),
@@ -1799,7 +1820,7 @@ class _TimeCapsuleSection extends ConsumerWidget {
                           vertical: 8,
                         ),
                         decoration: ShapeDecoration(
-                          color: AppTheme.primaryLight.withValues(alpha: 0.08),
+                          color: context.appPrimaryAccent.withValues(alpha: 0.08),
                           shape: StadiumBorder(
                             side: BorderSide(color: context.appBorder),
                           ),
@@ -1807,7 +1828,7 @@ class _TimeCapsuleSection extends ConsumerWidget {
                         child: Text(
                           '그때의 나는 무슨 생각을 했을까?',
                           style: AppTheme.captionLarge.copyWith(
-                            color: AppTheme.primaryLight,
+                            color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

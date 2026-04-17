@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -470,10 +471,12 @@ class _StarStep extends StatelessWidget {
         // 서브 안내
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: _kSurface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD * AppTheme.radiusSM / 6),
-            border: Border.all(color: _kBorder),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
+              side: const BorderSide(color: _kBorder),
+            ),
           ),
           child: const Row(
             children: [
@@ -522,10 +525,12 @@ class _TextStep extends StatelessWidget {
         // 입력 필드
         Container(
           width: double.infinity,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: _kSurface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            border: Border.all(color: _kBorder),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
+              side: const BorderSide(color: _kBorder),
+            ),
           ),
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -676,9 +681,8 @@ class _BottomCtaState extends State<_BottomCta> {
                           )
                         : null,
                     color: active ? null : _kSurface,
-                    shape: ContinuousRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          AppTheme.radiusMD * 1.35),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
                       side: active
                           ? BorderSide.none
                           : const BorderSide(color: _kBorder),

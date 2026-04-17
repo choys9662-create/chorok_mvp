@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,10 +107,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         _SummaryCard(
           mainValue: '9',
           mainUnit: '시간 38분',
-          stats: const [
+          stats: [
             (icon: Icons.calendar_today_rounded, label: '독서 일수', value: '5일', color: null),
-            (icon: Icons.format_quote_rounded, label: '수집 문장', value: '47개', color: AppTheme.accent),
-            (icon: Icons.trending_up_rounded, label: '전주 대비', value: '+23%', color: AppTheme.primaryLight),
+            (icon: Icons.format_quote_rounded, label: '수집 문장', value: '47개', color: context.appAccentColor),
+            (icon: Icons.trending_up_rounded, label: '전주 대비', value: '+23%', color: context.appPrimaryAccent),
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -160,7 +161,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ChorokSectionHeader(
           title: '집중도',
           trailing: Text('이번 주 83점',
-              style: AppTheme.captionLarge.copyWith(color: AppTheme.primaryLight)),
+              style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
         ),
         const SizedBox(height: AppTheme.spaceMD),
         _FocusCard(
@@ -191,7 +192,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               HapticFeedback.selectionClick();
               _showAllSessions(context);
             },
-            child: Text('전체', style: AppTheme.captionLarge.copyWith(color: AppTheme.primaryLight)),
+            child: Text('전체', style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
           ),
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -254,10 +255,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         _SummaryCard(
           mainValue: '38',
           mainUnit: '시간 12분',
-          stats: const [
+          stats: [
             (icon: Icons.calendar_today_rounded, label: '독서 일수', value: '18일', color: null),
-            (icon: Icons.format_quote_rounded, label: '수집 문장', value: '183개', color: AppTheme.accent),
-            (icon: Icons.trending_up_rounded, label: '전월 대비', value: '+8%', color: AppTheme.primaryLight),
+            (icon: Icons.format_quote_rounded, label: '수집 문장', value: '183개', color: context.appAccentColor),
+            (icon: Icons.trending_up_rounded, label: '전월 대비', value: '+8%', color: context.appPrimaryAccent),
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -283,7 +284,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ChorokSectionHeader(
           title: '집중도',
           trailing: Text('이번 달 79점',
-              style: AppTheme.captionLarge.copyWith(color: AppTheme.primaryLight)),
+              style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
         ),
         const SizedBox(height: AppTheme.spaceMD),
         _FocusCard(
@@ -379,7 +380,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ChorokSectionHeader(
           title: '집중도',
           trailing: Text('올해 평균 81점',
-              style: AppTheme.captionLarge.copyWith(color: AppTheme.primaryLight)),
+              style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
         ),
         const SizedBox(height: AppTheme.spaceMD),
         _FocusCard(
@@ -409,7 +410,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         _GenreChart(
           genres: [
-            (name: '소설', count: 6, color: AppTheme.primaryLight),
+            (name: '소설', count: 6, color: context.appPrimaryAccent),
             (name: '에세이', count: 2, color: AppTheme.accent),
             (name: '자기계발', count: 1, color: context.appTextSecondary),
           ],
@@ -468,8 +469,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: SmoothRectangleBorder(
+        borderRadius: SmoothBorderRadius.only(
+          topLeft: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+          topRight: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+        ),
       ),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.7,
@@ -691,7 +695,7 @@ class _BarChart extends StatelessWidget {
                   height: _kBarMaxH * ratio,
                   decoration: BoxDecoration(
                     color: isHighlight
-                        ? AppTheme.primaryLight
+                        ? context.appPrimaryAccent
                         : AppTheme.primary.withValues(alpha: 0.35),
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
                   ),
@@ -701,7 +705,7 @@ class _BarChart extends StatelessWidget {
                   '${labels[i]}$labelSuffix',
                   style: AppTheme.captionSmall.copyWith(
                     fontSize: labels.length > 8 ? 10 : null,
-                    color: isHighlight ? AppTheme.primaryLight : context.appTextTertiary,
+                    color: isHighlight ? context.appPrimaryAccent : context.appTextTertiary,
                     fontWeight: isHighlight ? FontWeight.w700 : FontWeight.normal,
                   ),
                 ),
@@ -757,12 +761,12 @@ class _FocusCard extends StatelessWidget {
                       value: score / 100,
                       strokeWidth: 7,
                       backgroundColor: context.appBorder,
-                      valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+                      valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
                       strokeCap: StrokeCap.round,
                     ),
                     Center(
                       child: Text('$score',
-                          style: AppTheme.displaySmall.copyWith(color: AppTheme.primaryLight)),
+                          style: AppTheme.displaySmall.copyWith(color: context.appPrimaryAccent)),
                     ),
                   ],
                 ),
@@ -801,7 +805,7 @@ class _FocusCard extends StatelessWidget {
               Expanded(
                 child: ChorokStatCell(
                   label: stat3Label, value: stat3Value,
-                  valueColor: AppTheme.primaryLight, icon: Icons.speed_rounded),
+                  valueColor: context.appPrimaryAccent, icon: Icons.speed_rounded),
               ),
             ],
           ),
@@ -854,9 +858,11 @@ class _SessionTile extends StatelessWidget {
         children: [
           Container(
             width: 36, height: 48,
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: AppTheme.primary.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+              ),
             ),
             child: const Icon(Icons.menu_book_rounded, color: AppTheme.accent, size: 18),
           ),
@@ -876,7 +882,7 @@ class _SessionTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(duration, style: AppTheme.bodySmall.copyWith(
-                  color: AppTheme.primaryLight, fontWeight: FontWeight.w600)),
+                  color: context.appPrimaryAccent, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text(date, style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
             ],
@@ -936,7 +942,7 @@ class _TimeOfDayChart extends StatelessWidget {
                       backgroundColor: context.appBorder,
                       valueColor: AlwaysStoppedAnimation(
                         ratio >= 0.8
-                            ? AppTheme.primaryLight
+                            ? context.appPrimaryAccent
                             : ratio >= 0.4
                                 ? AppTheme.accent
                                 : AppTheme.primary.withValues(alpha: 0.5),
@@ -951,7 +957,7 @@ class _TimeOfDayChart extends StatelessWidget {
                     '$pct%',
                     textAlign: TextAlign.right,
                     style: AppTheme.captionSmall.copyWith(
-                      color: ratio >= 0.8 ? AppTheme.primaryLight : context.appTextTertiary,
+                      color: ratio >= 0.8 ? context.appPrimaryAccent : context.appTextTertiary,
                       fontWeight: ratio >= 0.8 ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
@@ -1150,11 +1156,11 @@ class _GoalProgressCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: AppTheme.smoothPill(
                   color: AppTheme.primary.withValues(alpha: 0.4),
-                  side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+                  side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   '$pct%',
-                  style: AppTheme.headingSmall.copyWith(color: AppTheme.primaryLight),
+                  style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent),
                 ),
               ),
             ],
@@ -1166,7 +1172,7 @@ class _GoalProgressCard extends StatelessWidget {
               value: progress,
               minHeight: 8,
               backgroundColor: context.appBorder,
-              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+              valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
             ),
           ),
           const SizedBox(height: AppTheme.spaceMD),
@@ -1261,12 +1267,14 @@ class _FinishedBookList extends StatelessWidget {
                   children: [
                     Container(
                       width: 36, height: 48,
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                          side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.3)),
+                        ),
                       ),
-                      child: const Icon(Icons.check_rounded, color: AppTheme.primaryLight, size: 18),
+                      child: Icon(Icons.check_rounded, color: context.appPrimaryAccent, size: 18),
                     ),
                     const SizedBox(width: AppTheme.spaceMD),
                     Expanded(
@@ -1285,7 +1293,7 @@ class _FinishedBookList extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(b.date, style: AppTheme.captionLarge.copyWith(
-                            color: AppTheme.primaryLight, fontWeight: FontWeight.w500)),
+                            color: context.appPrimaryAccent, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 2),
                         Text('${b.pages}p',
                             style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
@@ -1339,7 +1347,7 @@ class _ReadingPersonaCard extends StatelessWidget {
               children: [
                 Text(
                   persona,
-                  style: AppTheme.headingMedium.copyWith(color: AppTheme.primaryLight),
+                  style: AppTheme.headingMedium.copyWith(color: context.appPrimaryAccent),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -1431,7 +1439,7 @@ class _ReadingDensityCard extends StatelessWidget {
               value: ratio,
               minHeight: 8,
               backgroundColor: context.appBorder,
-              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+              valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
             ),
           ),
           const SizedBox(height: AppTheme.spaceSM),
@@ -1603,13 +1611,13 @@ class _SentenceReactionsCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.favorite_rounded,
-                                size: 12, color: AppTheme.primaryLight),
+                            Icon(Icons.favorite_rounded,
+                                size: 12, color: context.appPrimaryAccent),
                             const SizedBox(width: 3),
                             Text(
                               '${s.reactions}',
                               style: AppTheme.captionSmall.copyWith(
-                                color: AppTheme.primaryLight,
+                                color: context.appPrimaryAccent,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1657,15 +1665,17 @@ class _CommunityHighlightsCard extends StatelessWidget {
                   children: [
                     Container(
                       width: 32, height: 32,
-                      decoration: BoxDecoration(
+                      decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                        ),
                       ),
                       child: Center(
                         child: Text(
                           '${i + 1}',
                           style: AppTheme.captionLarge.copyWith(
-                            color: AppTheme.primaryLight,
+                            color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1763,9 +1773,9 @@ class _YearMonthDials extends StatelessWidget {
           final ratio = isFuture ? 0.0 : (mins / maxVal).clamp(0.0, 1.0);
 
           final dialColor = isCurrent
-              ? AppTheme.primaryLight
+              ? context.appPrimaryAccent
               : mins > 0
-                  ? AppTheme.accent.withValues(alpha: 0.4 + 0.6 * ratio)
+                  ? context.appAccentColor.withValues(alpha: 0.4 + 0.6 * ratio)
                   : context.appBorder.withValues(alpha: 0.4);
 
           return Column(
@@ -1792,7 +1802,7 @@ class _YearMonthDials extends StatelessWidget {
                         fontWeight:
                             isCurrent ? FontWeight.w700 : FontWeight.w500,
                         color: isCurrent
-                            ? AppTheme.primaryLight
+                            ? context.appPrimaryAccent
                             : isFuture
                                 ? context.appTextTertiary.withValues(alpha: 0.5)
                                 : context.appTextSecondary,

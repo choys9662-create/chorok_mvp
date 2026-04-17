@@ -531,7 +531,7 @@ class _HeroSection extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
                         color: isCompleted
-                            ? AppTheme.accent.withValues(alpha: 0.15)
+                            ? context.appAccentColor.withValues(alpha: 0.15)
                             : context.appCard,
                         radius: AppTheme.radiusMD,
                         side: BorderSide(
@@ -646,7 +646,7 @@ class _ProgressSection extends StatelessWidget {
             Text(
               '${(progress * 100).round()}%',
               style: AppTheme.captionLarge.copyWith(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -745,7 +745,7 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: AppTheme.headingSmall.copyWith(
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
             ),
           ),
           const SizedBox(height: 4),
@@ -795,12 +795,12 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: AppTheme.smoothPill(
-              color: AppTheme.primaryLight.withValues(alpha: 0.12),
+              color: context.appPrimaryAccent.withValues(alpha: 0.12),
             ),
             child: Text(
               '$count',
               style: AppTheme.captionSmall.copyWith(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -834,13 +834,13 @@ class _AddMemoButton extends StatelessWidget {
           decoration: AppTheme.smoothPill(
             color: AppTheme.primary.withValues(alpha: 0.3),
             side: BorderSide(
-              color: AppTheme.primaryLight.withValues(alpha: 0.2),
+              color: context.appPrimaryAccent.withValues(alpha: 0.2),
             ),
           ),
           child: Text(
             '+ 메모 추가',
             style: AppTheme.captionLarge.copyWith(
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -881,7 +881,7 @@ class _SentenceCard extends StatelessWidget {
         radius: AppTheme.radiusLG,
         side: BorderSide(
           color: hasSocial
-              ? AppTheme.primaryLight.withValues(alpha: 0.2)
+              ? context.appPrimaryAccent.withValues(alpha: 0.2)
               : context.appBorder,
         ),
       ),
@@ -905,7 +905,7 @@ class _SentenceCard extends StatelessWidget {
                       child: Text(
                         'p.${ s.page}',
                         style: AppTheme.captionSmall.copyWith(
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -922,7 +922,7 @@ class _SentenceCard extends StatelessWidget {
                       Icon(
                         Icons.join_inner_rounded,
                         size: 14,
-                        color: AppTheme.accent.withValues(alpha: 0.7),
+                        color: context.appAccentColor.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -947,7 +947,7 @@ class _SentenceCard extends StatelessWidget {
                     border: Border(
                       left: BorderSide(
                         color: hasSocial
-                            ? AppTheme.primaryLight
+                            ? context.appPrimaryAccent
                             : context.appBorder,
                         width: 3,
                       ),
@@ -975,7 +975,7 @@ class _SentenceCard extends StatelessWidget {
                           Icons.lightbulb_outline_rounded,
                           size: 16,
                           color:
-                              AppTheme.primaryLight.withValues(alpha: 0.6),
+                              context.appPrimaryAccent.withValues(alpha: 0.6),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1106,7 +1106,7 @@ class _SocialThoughtTile extends StatelessWidget {
                 child: Text(
                   thought.username[0].toUpperCase(),
                   style: AppTheme.captionSmall.copyWith(
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                   ),
                 ),
               ),
@@ -1250,7 +1250,7 @@ class _MenuSheet extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(100),
                     side: BorderSide(
-                      color: AppTheme.primaryLight.withValues(alpha: 0.4),
+                      color: context.appPrimaryAccent.withValues(alpha: 0.4),
                     ),
                   ),
                   margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),

@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
@@ -50,9 +51,13 @@ class _ChosuSheetState extends State<ChosuSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: ShapeDecoration(
         color: context.appCard,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        shape: const SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius.vertical(
+            top: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          ),
+        ),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -83,7 +88,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 children: [
                   Icon(
                     Icons.format_quote_rounded,
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -108,17 +113,19 @@ class _ChosuSheetState extends State<ChosuSheet> {
               _FieldLabel(
                 icon: Icons.format_quote_rounded,
                 label: '수집할 문장',
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
               ),
               const SizedBox(height: 6),
               Container(
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: context.appCardElevated,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _sentenceCtrl.text.isNotEmpty
-                        ? AppTheme.primaryLight.withValues(alpha: 0.4)
-                        : context.appBorder,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+                    side: BorderSide(
+                      color: _sentenceCtrl.text.isNotEmpty
+                          ? context.appPrimaryAccent.withValues(alpha: 0.4)
+                          : context.appBorder,
+                    ),
                   ),
                 ),
                 child: TextField(
@@ -165,13 +172,15 @@ class _ChosuSheetState extends State<ChosuSheet> {
               ),
               const SizedBox(height: 6),
               Container(
-                decoration: BoxDecoration(
+                decoration: ShapeDecoration(
                   color: context.appCardElevated,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _thoughtCtrl.text.isNotEmpty
-                        ? AppTheme.accent.withValues(alpha: 0.4)
-                        : context.appBorder,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+                    side: BorderSide(
+                      color: _thoughtCtrl.text.isNotEmpty
+                          ? context.appAccentColor.withValues(alpha: 0.4)
+                          : context.appBorder,
+                    ),
                   ),
                 ),
                 child: TextField(
@@ -202,12 +211,12 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _saved
                         ? AppTheme.accent
-                        : AppTheme.primaryLight,
+                        : context.appPrimaryAccent,
                     disabledBackgroundColor: context.appBorder,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
                     ),
                   ),
                   child: _saved
@@ -300,20 +309,22 @@ class _InputTool extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: context.appCardElevated,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: context.appBorder),
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+            side: BorderSide(color: context.appBorder),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: AppTheme.primaryLight),
+            Icon(icon, size: 15, color: context.appPrimaryAccent),
             const SizedBox(width: 5),
             Text(
               label,
               style: AppTheme.captionSmall.copyWith(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
               ),
             ),
           ],
