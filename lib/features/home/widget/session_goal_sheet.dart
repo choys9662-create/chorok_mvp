@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
 /// 독서 세션 목표 설정 바텀 시트
 ///
@@ -95,17 +96,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── 핸들 ───────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const ChorokSheetHandle(),
               const SizedBox(height: 20),
 
               // ── 헤더 ───────────────────────────────────────────

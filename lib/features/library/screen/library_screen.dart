@@ -11,6 +11,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
@@ -1629,16 +1630,7 @@ class _SortSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const ChorokSheetHandle(),
           const SizedBox(height: 16),
           Text(
             '정렬',
@@ -1734,16 +1726,7 @@ class _AddBookSheetState extends State<_AddBookSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBorder,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            const ChorokSheetHandle(),
             const SizedBox(height: AppTheme.spaceXL),
             Text(
               '책 추가',
@@ -1887,16 +1870,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const ChorokSheetHandle(),
           const SizedBox(height: 24),
           // ── 책 정보 ────────────────────────────────────────────
           Row(

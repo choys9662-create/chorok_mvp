@@ -2,6 +2,7 @@ import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
 /// 초서 바텀시트 — 문장 수집 + 내 생각 입력 UI
 class ChosuSheet extends StatefulWidget {
@@ -70,17 +71,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 핸들
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const ChorokSheetHandle(),
               const SizedBox(height: 20),
 
               // 헤더
