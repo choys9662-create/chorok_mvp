@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,8 +133,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             duration: const Duration(milliseconds: 1500),
             backgroundColor: const Color(0xFF1A3D2B),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
             ),
           ),
         );
@@ -204,10 +205,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final timer = ref.watch(timerProvider);
     final ctrl = ref.read(timerProvider.notifier);
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF060B07),
+    return Theme(
+      data: AppTheme.dark,
+      child: PopScope(
+        canPop: false,
+        child: Scaffold(
+          backgroundColor: context.appBg,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -287,6 +290,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           ],
         ),
       ),
+    ),
     );
   }
 }

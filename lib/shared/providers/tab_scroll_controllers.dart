@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 탭별 스크롤 컨트롤러 — 같은 탭 재탭 시 상단 복귀에 사용
-/// index: 0=홈, 1=피드, 2=분석, 3=서재(그리드), 4=서재(캘린더)
+/// index: 0=홈, 1=피드, 2=분석, 3=서재(그리드), 4=서재(캘린더), 5=서재(통계)
 final tabScrollControllersProvider = Provider<TabScrollControllers>((ref) {
   final c = TabScrollControllers();
   ref.onDispose(c.dispose);
@@ -11,7 +11,7 @@ final tabScrollControllersProvider = Provider<TabScrollControllers>((ref) {
 
 class TabScrollControllers {
   final List<ScrollController> _ctrls =
-      List.generate(5, (_) => ScrollController());
+      List.generate(6, (_) => ScrollController());
 
   ScrollController operator [](int index) => _ctrls[index];
 
@@ -31,6 +31,7 @@ class TabScrollControllers {
     if (tabIndex == 3) {
       animate(_ctrls[3]);
       animate(_ctrls[4]);
+      animate(_ctrls[5]);
     } else {
       animate(_ctrls[tabIndex]);
     }

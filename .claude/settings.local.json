@@ -78,7 +78,21 @@
       "mcp__claude_ai_Figma__get_metadata",
       "mcp__claude_ai_Figma__use_figma",
       "Bash(flutter --version)",
-      "Bash(flutter doctor:*)"
+      "Bash(flutter doctor:*)",
+      "Bash(sed -n '760,770p' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -n '1173,1180p' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -n '1275,1282p' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -n '1440,1447p' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -n '1613,1620p' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -i '' 's/const AlwaysStoppedAnimation\\(context\\\\./AlwaysStoppedAnimation\\(context./g' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -i '' 's/const Icon\\(\\\\\\(.*\\\\\\)color: context\\\\./Icon\\(\\\\1color: context./g' lib/features/analytics/screen/analytics_screen.dart)",
+      "Bash(sed -i '' 's/child: const Icon\\(Icons\\\\.menu_book_rounded,$/child: Icon\\(Icons.menu_book_rounded,/' lib/features/feed/screen/feed_screen.dart)",
+      "Bash(sed -n '732,740p' lib/features/feed/screen/feed_screen.dart)",
+      "Bash(sed -i '' 's/style: const TextStyle\\(/style: TextStyle\\(/g' lib/features/home/screen/book_reflection_screen.dart)",
+      "Bash(sed -i '' 's/child: const Icon\\(Icons\\\\.menu_book_rounded,/child: Icon\\(Icons.menu_book_rounded,/g; s/child: const Row\\(/child: Row\\(/g; s/const Icon\\(Icons\\\\.check_circle_rounded,/Icon\\(Icons.check_circle_rounded,/g; s/const Icon\\(Icons\\\\.bookmark_rounded,/Icon\\(Icons.bookmark_rounded,/g; s/style: const TextStyle\\(/style: TextStyle\\(/g' lib/features/home/screen/session_recap_screen.dart)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }

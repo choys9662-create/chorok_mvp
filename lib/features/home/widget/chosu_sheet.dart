@@ -1,6 +1,8 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
 /// 초서 바텀시트 — 문장 수집 + 내 생각 입력 UI
 class ChosuSheet extends StatefulWidget {
@@ -50,9 +52,13 @@ class _ChosuSheetState extends State<ChosuSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: ShapeDecoration(
+        color: context.appCard,
+        shape: const SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius.vertical(
+            top: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          ),
+        ),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -65,17 +71,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 핸들
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const ChorokSheetHandle(),
               const SizedBox(height: 20),
 
               // 헤더
@@ -83,21 +79,21 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 children: [
                   Icon(
                     Icons.format_quote_rounded,
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '문장 수집',
                     style: AppTheme.headingSmall.copyWith(
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '채식주의자 · 186쪽',
                     style: AppTheme.captionSmall.copyWith(
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                     ),
                   ),
                 ],
@@ -108,17 +104,19 @@ class _ChosuSheetState extends State<ChosuSheet> {
               _FieldLabel(
                 icon: Icons.format_quote_rounded,
                 label: '수집할 문장',
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
               ),
               const SizedBox(height: 6),
               Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCardElevated,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _sentenceCtrl.text.isNotEmpty
-                        ? AppTheme.primaryLight.withValues(alpha: 0.4)
-                        : AppTheme.darkBorder,
+                decoration: ShapeDecoration(
+                  color: context.appCardElevated,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+                    side: BorderSide(
+                      color: _sentenceCtrl.text.isNotEmpty
+                          ? context.appPrimaryAccent.withValues(alpha: 0.4)
+                          : context.appBorder,
+                    ),
                   ),
                 ),
                 child: TextField(
@@ -126,14 +124,14 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   maxLines: 4,
                   autofocus: true,
                   style: AppTheme.bodyMedium.copyWith(
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     height: 1.7,
                     fontStyle: FontStyle.italic,
                   ),
                   decoration: InputDecoration(
                     hintText: '마음에 남은 문장을 입력하세요...',
                     hintStyle: AppTheme.bodyMedium.copyWith(
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                       fontStyle: FontStyle.italic,
                     ),
                     border: InputBorder.none,
@@ -150,7 +148,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 child: Text(
                   '${_sentenceCtrl.text.length}자',
                   style: AppTheme.captionSmall.copyWith(
-                    color: AppTheme.textTertiary,
+                    color: context.appTextTertiary,
                   ),
                 ),
               ),
@@ -165,26 +163,28 @@ class _ChosuSheetState extends State<ChosuSheet> {
               ),
               const SizedBox(height: 6),
               Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCardElevated,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _thoughtCtrl.text.isNotEmpty
-                        ? AppTheme.accent.withValues(alpha: 0.4)
-                        : AppTheme.darkBorder,
+                decoration: ShapeDecoration(
+                  color: context.appCardElevated,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+                    side: BorderSide(
+                      color: _thoughtCtrl.text.isNotEmpty
+                          ? context.appAccentColor.withValues(alpha: 0.4)
+                          : context.appBorder,
+                    ),
                   ),
                 ),
                 child: TextField(
                   controller: _thoughtCtrl,
                   maxLines: 3,
                   style: AppTheme.bodyMedium.copyWith(
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                     height: 1.6,
                   ),
                   decoration: InputDecoration(
                     hintText: '이 문장에서 무엇을 느꼈나요?',
                     hintStyle: AppTheme.bodyMedium.copyWith(
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.all(14),
@@ -202,12 +202,12 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _saved
                         ? AppTheme.accent
-                        : AppTheme.primaryLight,
-                    disabledBackgroundColor: AppTheme.darkBorder,
+                        : context.appPrimaryAccent,
+                    disabledBackgroundColor: context.appBorder,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
                     ),
                   ),
                   child: _saved
@@ -230,7 +230,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                           style: AppTheme.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _sentenceCtrl.text.trim().isEmpty
-                                ? AppTheme.textTertiary
+                                ? context.appTextTertiary
                                 : Colors.black,
                           ),
                         ),
@@ -274,7 +274,7 @@ class _FieldLabel extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '선택',
-            style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+            style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
           ),
         ],
       ],
@@ -300,20 +300,22 @@ class _InputTool extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.darkCardElevated,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppTheme.darkBorder),
+        decoration: ShapeDecoration(
+          color: context.appCardElevated,
+          shape: SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+            side: BorderSide(color: context.appBorder),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: AppTheme.primaryLight),
+            Icon(icon, size: 15, color: context.appPrimaryAccent),
             const SizedBox(width: 5),
             Text(
               label,
               style: AppTheme.captionSmall.copyWith(
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
               ),
             ),
           ],

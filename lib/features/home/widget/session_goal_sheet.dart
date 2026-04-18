@@ -1,8 +1,10 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
 /// 독서 세션 목표 설정 바텀 시트
 ///
@@ -76,9 +78,14 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: ShapeDecoration(
+        color: context.appCard,
+        shape: SmoothRectangleBorder(
+          borderRadius: SmoothBorderRadius.only(
+            topLeft: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+            topRight: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          ),
+        ),
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
@@ -89,31 +96,21 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── 핸들 ───────────────────────────────────────────
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const ChorokSheetHandle(),
               const SizedBox(height: 20),
 
               // ── 헤더 ───────────────────────────────────────────
               Text(
                 '이번 독서 목표',
                 style: AppTheme.headingMedium.copyWith(
-                  color: AppTheme.textPrimary,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 widget.bookTitle,
                 style: AppTheme.bodySmall.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: context.appTextTertiary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -178,7 +175,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                     child: Text(
                       '독서 시작하기',
                       style: AppTheme.bodyLarge.copyWith(
-                        color: AppTheme.darkBg,
+                        color: context.appBg,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -200,7 +197,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                         child: Text(
                           '목표 없이 자유롭게 읽기',
                           style: AppTheme.bodySmall.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: context.appTextTertiary,
                           ),
                         ),
                       ),
@@ -233,7 +230,7 @@ class _GoalTypeSelector extends StatelessWidget {
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCardElevated,
+        color: context.appCardElevated,
         radius: AppTheme.radiusMD,
       ),
       child: Row(
@@ -283,7 +280,7 @@ class _TabButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTheme.bodySmall.copyWith(
-            color: isSelected ? AppTheme.primaryLight : AppTheme.textTertiary,
+            color: isSelected ? context.appPrimaryAccent : context.appTextTertiary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -350,21 +347,21 @@ class _TimeGoalSection extends StatelessWidget {
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: AppTheme.smoothBox(
-                    color: AppTheme.darkCardElevated,
+                    color: context.appCardElevated,
                     radius: AppTheme.radiusMD,
-                    side: const BorderSide(color: AppTheme.darkBorder),
+                    side: BorderSide(color: context.appBorder),
                   ),
                   child: TextField(
                     controller: customController,
                     keyboardType: TextInputType.number,
                     style: AppTheme.bodyMedium.copyWith(
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                     ),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '분 단위로 입력',
                       hintStyle: AppTheme.bodyMedium.copyWith(
-                        color: AppTheme.textTertiary,
+                        color: context.appTextTertiary,
                       ),
                     ),
                   ),
@@ -374,7 +371,7 @@ class _TimeGoalSection extends StatelessWidget {
               Text(
                 '분',
                 style: AppTheme.bodyMedium.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: context.appTextSecondary,
                 ),
               ),
             ],
@@ -411,16 +408,16 @@ class _PresetChip extends StatelessWidget {
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
             color: isSelected
-                ? AppTheme.accent.withValues(alpha: 0.15)
-                : AppTheme.darkCardElevated,
+                ? context.appAccentColor.withValues(alpha: 0.15)
+                : context.appCardElevated,
             side: BorderSide(
-              color: isSelected ? AppTheme.accent : AppTheme.darkBorder,
+              color: isSelected ? AppTheme.accent : context.appBorder,
             ),
           ),
           child: Text(
             label,
             style: AppTheme.bodySmall.copyWith(
-              color: isSelected ? AppTheme.accent : AppTheme.textSecondary,
+              color: isSelected ? AppTheme.accent : context.appTextSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
@@ -460,7 +457,7 @@ class _PageGoalSection extends StatelessWidget {
         Text(
           '현재 $currentPage쪽 / $totalPages쪽',
           style: AppTheme.captionLarge.copyWith(
-            color: AppTheme.textSecondary,
+            color: context.appTextSecondary,
           ),
         ),
         const SizedBox(height: 12),
@@ -473,22 +470,22 @@ class _PageGoalSection extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: AppTheme.smoothBox(
-                  color: AppTheme.darkCardElevated,
+                  color: context.appCardElevated,
                   radius: AppTheme.radiusMD,
-                  side: const BorderSide(color: AppTheme.darkBorder),
+                  side: BorderSide(color: context.appBorder),
                 ),
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
                   onChanged: (_) => onChanged(),
                   style: AppTheme.bodyMedium.copyWith(
-                    color: AppTheme.textPrimary,
+                    color: context.appTextPrimary,
                   ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: '목표 페이지 (예: ${(currentPage + 30).clamp(0, totalPages)})',
                     hintStyle: AppTheme.bodyMedium.copyWith(
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                     ),
                   ),
                 ),
@@ -498,7 +495,7 @@ class _PageGoalSection extends StatelessWidget {
             Text(
               '쪽',
               style: AppTheme.bodyMedium.copyWith(
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
               ),
             ),
           ],
@@ -510,7 +507,7 @@ class _PageGoalSection extends StatelessWidget {
           Text(
             '$remaining쪽 남았어요',
             style: AppTheme.captionLarge.copyWith(
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
             ),
           ),
         ],

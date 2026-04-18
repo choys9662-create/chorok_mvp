@@ -1,10 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 카메라 권한 (ISBN 바코드 스캐너) -->
+    <!-- 카메라 권한 (ISBN 바코드 스캐너 + OCR) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- 마이크 권한 (STT — speech_to_text) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- 네트워크 (Supabase / 알라딘 API) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="chorok_app"
+        android:label="초록"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
@@ -28,6 +34,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- OAuth 딥링크 (Supabase OAuth / Apple / Google 로그인 콜백) -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.chorok.chorokapp" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

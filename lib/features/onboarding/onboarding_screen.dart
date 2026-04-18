@@ -173,7 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           height: 6,
                           decoration: BoxDecoration(
                             color: i == _currentPage
-                                ? AppTheme.primaryLight
+                                ? context.appPrimaryAccent
                                 : AppTheme.darkBorder,
                             borderRadius: BorderRadius.circular(3),
                           ),
@@ -269,19 +269,19 @@ class _SlidePage extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppTheme.primaryLight.withValues(alpha: 0.15),
-                      AppTheme.primaryLight.withValues(alpha: 0.0),
+                      context.appPrimaryAccent.withValues(alpha: 0.15),
+                      context.appPrimaryAccent.withValues(alpha: 0.0),
                     ],
                   ),
                   border: Border.all(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.2),
+                    color: context.appPrimaryAccent.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
                 child: Center(
                   child: Text(
                     data.emoji,
-                    style: const TextStyle(fontSize: 52),
+                    style: TextStyle(fontSize: 52),
                   ),
                 ),
               ),
@@ -294,7 +294,7 @@ class _SlidePage extends StatelessWidget {
           Text(
             data.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 26,
               fontWeight: FontWeight.w700,
@@ -309,21 +309,21 @@ class _SlidePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: ShapeDecoration(
-              color: AppTheme.primaryLight.withValues(alpha: 0.08),
-              shape: const StadiumBorder(
+              color: context.appPrimaryAccent.withValues(alpha: 0.08),
+              shape: StadiumBorder(
                 side: BorderSide(
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   width: 0.5,
                 ),
               ),
             ),
             child: Text(
               data.subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryLight,
+                color: context.appPrimaryAccent,
                 height: 1.4,
               ),
             ),
@@ -335,7 +335,7 @@ class _SlidePage extends StatelessWidget {
           Text(
             data.body,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 15,
               fontWeight: FontWeight.w400,
@@ -390,8 +390,8 @@ class _MiniFirefliesState extends State<_MiniFireflies>
       height: 60,
       child: AnimatedBuilder(
         animation: _ctrl,
-        builder: (_, _) => CustomPaint(
-          painter: _MiniFireflyPainter(t: _ctrl.value),
+        builder: (ctx, _) => CustomPaint(
+          painter: _MiniFireflyPainter(t: _ctrl.value, color: ctx.appPrimaryAccent),
         ),
       ),
     );
@@ -400,7 +400,8 @@ class _MiniFirefliesState extends State<_MiniFireflies>
 
 class _MiniFireflyPainter extends CustomPainter {
   final double t;
-  _MiniFireflyPainter({required this.t});
+  final Color color;
+  _MiniFireflyPainter({required this.t, required this.color});
 
   static final _rng = math.Random(42);
   static final List<({double x, double y, double phase, double speed})> _flies =
@@ -422,7 +423,7 @@ class _MiniFireflyPainter extends CustomPainter {
       final alpha = ((math.sin(angle + math.pi / 2) + 1) / 2 * 0.8 + 0.2)
           .clamp(0.0, 1.0);
       final paint = Paint()
-        ..color = AppTheme.primaryLight.withValues(alpha: alpha)
+        ..color = color.withValues(alpha: alpha)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
       canvas.drawCircle(Offset(dx, dy), 2.5, paint);
     }
@@ -486,12 +487,12 @@ class _PrimaryButtonState extends State<_PrimaryButton>
           height: 56,
           decoration: ShapeDecoration(
             gradient: AppTheme.greenGradient,
-            shape: const StadiumBorder(),
+            shape: StadiumBorder(),
           ),
           child: Center(
             child: Text(
               widget.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,

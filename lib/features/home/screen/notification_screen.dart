@@ -97,8 +97,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Color _colorFor(NotiType type) => switch (type) {
         NotiType.follow  => AppTheme.accent,
         NotiType.like    => const Color(0xFFFF6B6B),
-        NotiType.overlap => AppTheme.primaryLight,
-        NotiType.system  => AppTheme.textSecondary,
+        NotiType.overlap => context.appPrimaryAccent,
+        NotiType.system  => context.appTextSecondary,
       };
 
   void _markAllRead() {
@@ -127,13 +127,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
           SnackBar(
             content: Text(
               '프로필 페이지는 곧 지원돼요 🌿',
-              style: AppTheme.bodySmall.copyWith(color: AppTheme.textPrimary),
+              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
             ),
-            backgroundColor: AppTheme.darkCardElevated,
+            backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
               radius: 12,
-              side: const BorderSide(color: AppTheme.darkBorder),
+              side: BorderSide(color: context.appBorder),
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             duration: const Duration(seconds: 2),
@@ -145,13 +145,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
           SnackBar(
             content: Text(
               '문장 상세 페이지는 곧 지원돼요 🌿',
-              style: AppTheme.bodySmall.copyWith(color: AppTheme.textPrimary),
+              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
             ),
-            backgroundColor: AppTheme.darkCardElevated,
+            backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
               radius: 12,
-              side: const BorderSide(color: AppTheme.darkBorder),
+              side: BorderSide(color: context.appBorder),
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             duration: const Duration(seconds: 2),
@@ -168,7 +168,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final unread = _notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
-      backgroundColor: AppTheme.darkSurface,
+      backgroundColor: context.appSurface,
       body: SafeArea(
         child: Column(
           children: [
@@ -189,9 +189,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           HapticFeedback.selectionClick();
                           Navigator.of(context).pop();
                         },
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          color: AppTheme.textPrimary,
+                          color: context.appTextPrimary,
                           size: 20,
                         ),
                       ),
@@ -202,7 +202,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     '알림',
                     style: AppTheme.headingLarge.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -212,14 +212,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: AppTheme.smoothBox(
-                        color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.15),
                         radius: 10,
                       ),
                       child: Text(
                         '$unread 새로운',
                         style: AppTheme.captionSmall.copyWith(
                           fontFamily: 'Pretendard',
-                          color: AppTheme.primaryLight,
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -234,7 +234,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         '모두 읽음',
                         style: AppTheme.captionLarge.copyWith(
                           fontFamily: 'Pretendard',
-                          color: AppTheme.textTertiary,
+                          color: context.appTextTertiary,
                         ),
                       ),
                     ),
@@ -242,7 +242,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Divider(height: 1, color: AppTheme.darkBorder),
+            Divider(height: 1, color: context.appBorder),
 
             // ─── 알림 목록 (새로운 / 이전 그룹) ────────────────
             Expanded(
@@ -268,7 +268,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           child: Text(
                             '새로운',
                             style: AppTheme.captionLarge.copyWith(
-                              color: AppTheme.primaryLight,
+                              color: context.appPrimaryAccent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -289,9 +289,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       _onNotiTap(context, entry.key),
                                 ),
                                 if (i < newItems.length - 1)
-                                  const Divider(
+                                  Divider(
                                       height: 1,
-                                      color: AppTheme.darkBorder),
+                                      color: context.appBorder),
                               ],
                             );
                           },
@@ -308,7 +308,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           child: Text(
                             '이전',
                             style: AppTheme.captionLarge.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: context.appTextTertiary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -329,9 +329,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       _onNotiTap(context, entry.key),
                                 ),
                                 if (i < oldItems.length - 1)
-                                  const Divider(
+                                  Divider(
                                       height: 1,
-                                      color: AppTheme.darkBorder),
+                                      color: context.appBorder),
                               ],
                             );
                           },
@@ -342,10 +342,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                     // 알림 없음
                     if (newItems.isEmpty && oldItems.isEmpty)
-                      const SliverFillRemaining(
+                      SliverFillRemaining(
                         child: Center(
                           child: Text('알림이 없어요',
-                              style: TextStyle(color: AppTheme.textTertiary)),
+                              style: TextStyle(color: context.appTextTertiary)),
                         ),
                       ),
                   ],
@@ -382,7 +382,7 @@ class _NotiTile extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         color: item.isRead
             ? Colors.transparent
-            : AppTheme.primaryLight.withValues(alpha: 0.04),
+            : context.appPrimaryAccent.withValues(alpha: 0.04),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +407,7 @@ class _NotiTile extends StatelessWidget {
                     item.title,
                     style: AppTheme.bodySmall.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textPrimary,
+                      color: context.appTextPrimary,
                       fontWeight:
                           item.isRead ? FontWeight.w400 : FontWeight.w600,
                       height: 1.4,
@@ -420,7 +420,7 @@ class _NotiTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.captionLarge.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textTertiary,
+                      color: context.appTextTertiary,
                       height: 1.5,
                     ),
                   ),
@@ -429,7 +429,7 @@ class _NotiTile extends StatelessWidget {
                     item.time,
                     style: AppTheme.captionSmall.copyWith(
                       fontFamily: 'Pretendard',
-                      color: AppTheme.textTertiary.withValues(alpha: 0.6),
+                      color: context.appTextTertiary.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -443,11 +443,11 @@ class _NotiTile extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
+                    color: context.appPrimaryAccent,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.5),
                         blurRadius: 4,
                       ),
                     ],

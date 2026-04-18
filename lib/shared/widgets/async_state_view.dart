@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -76,8 +77,8 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
       animation: _animation,
       builder: (context, _) {
         final shimmerColor = Color.lerp(
-          AppTheme.darkCard,
-          AppTheme.darkCardElevated,
+          context.appCard,
+          context.appCardElevated,
           _animation.value,
         )!;
         return ListView.separated(
@@ -106,7 +107,7 @@ class _ShimmerCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: color,
         radius: 16,
-        side: const BorderSide(color: AppTheme.darkBorder),
+        side: BorderSide(color: context.appBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,9 +116,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 14,
             width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppTheme.darkBorder,
-              borderRadius: BorderRadius.circular(7),
+            decoration: ShapeDecoration(
+              color: context.appBorder,
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 7, cornerSmoothing: 0.6),
+              ),
             ),
           ),
           const SizedBox(height: AppTheme.spaceSM),
@@ -125,9 +128,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.75,
-            decoration: BoxDecoration(
-              color: AppTheme.darkBorder,
-              borderRadius: BorderRadius.circular(6),
+            decoration: ShapeDecoration(
+              color: context.appBorder,
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+              ),
             ),
           ),
           const SizedBox(height: AppTheme.spaceXS),
@@ -135,9 +140,11 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.55,
-            decoration: BoxDecoration(
-              color: AppTheme.darkBorder,
-              borderRadius: BorderRadius.circular(6),
+            decoration: ShapeDecoration(
+              color: context.appBorder,
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+              ),
             ),
           ),
         ],
@@ -166,10 +173,10 @@ class _EmptyState extends StatelessWidget {
                 color: AppTheme.primary.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.inbox_rounded,
                 size: 32,
-                color: AppTheme.textTertiary,
+                color: context.appTextTertiary,
               ),
             ),
             const SizedBox(height: AppTheme.spaceLG),
@@ -178,7 +185,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTheme.bodyMedium.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
                 height: 1.5,
               ),
             ),
@@ -222,7 +229,7 @@ class _ErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTheme.bodyMedium.copyWith(
                 fontFamily: 'Pretendard',
-                color: AppTheme.textSecondary,
+                color: context.appTextSecondary,
                 height: 1.5,
               ),
             ),
@@ -242,14 +249,14 @@ class _ErrorState extends StatelessWidget {
                           AppTheme.primary.withValues(alpha: 0.3),
                       shape: AppTheme.smoothShape(
                         radius: 12,
-                        side: const BorderSide(color: AppTheme.darkBorder),
+                        side: BorderSide(color: context.appBorder),
                       ),
                     ),
                     child: Text(
                       '다시 시도',
                       style: AppTheme.bodySmall.copyWith(
                         fontFamily: 'Pretendard',
-                        color: AppTheme.primaryLight,
+                        color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

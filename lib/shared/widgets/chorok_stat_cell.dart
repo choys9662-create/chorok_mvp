@@ -18,7 +18,7 @@ class ChorokStatCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = valueColor ?? AppTheme.primaryLight;
+    final color = valueColor ?? context.appPrimaryAccent;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -29,16 +29,19 @@ class ChorokStatCell extends StatelessWidget {
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 4),
             ],
-            Text(
-              value,
-              style: AppTheme.displaySmall.copyWith(color: color),
+            Flexible(
+              child: Text(
+                value,
+                style: AppTheme.displaySmall.copyWith(color: color),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: AppTheme.captionSmall.copyWith(color: AppTheme.textTertiary),
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
         ),
       ],
     );
