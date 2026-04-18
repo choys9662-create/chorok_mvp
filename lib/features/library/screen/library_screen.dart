@@ -849,9 +849,14 @@ class _BookCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(15),
+              child: ClipPath(
+                clipper: ShapeBorderClipper(
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius.only(
+                      topLeft: const SmoothRadius(cornerRadius: 29, cornerSmoothing: 1.0),
+                      topRight: const SmoothRadius(cornerRadius: 29, cornerSmoothing: 1.0),
+                    ),
+                  ),
                 ),
                 child: Stack(
                   fit: StackFit.expand,

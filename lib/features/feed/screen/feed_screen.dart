@@ -443,7 +443,7 @@ class _SentenceCardState extends State<_SentenceCard> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: ShapeDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.2),
+                color: AppTheme.primary.withValues(alpha: 0.4),
                 shape: SmoothRectangleBorder(
                   borderRadius: SmoothBorderRadius.only(
                     topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),

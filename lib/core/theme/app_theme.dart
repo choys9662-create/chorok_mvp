@@ -5,19 +5,27 @@ import 'package:flutter/material.dart';
 extension AppThemeExt on BuildContext {
   bool get _isDark => Theme.of(this).brightness == Brightness.dark;
   Color get appBg => _isDark ? AppTheme.darkBg : AppTheme.lightBg;
-  Color get appSurface => _isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
+  Color get appSurface =>
+      _isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
   Color get appCard => _isDark ? AppTheme.darkCard : AppTheme.lightCard;
-  Color get appCardElevated => _isDark ? AppTheme.darkCardElevated : AppTheme.lightSurface;
-  Color get appBorder => _isDark ? AppTheme.darkBorder : AppTheme.lightBorderColor;
+  Color get appCardElevated =>
+      _isDark ? AppTheme.darkCardElevated : AppTheme.lightSurface;
+  Color get appBorder =>
+      _isDark ? AppTheme.darkBorder : AppTheme.lightBorderColor;
   Color get appDivider => _isDark ? AppTheme.darkBorder : AppTheme.lightDivider;
-  Color get appTextPrimary => _isDark ? AppTheme.textPrimary : AppTheme.lightTextPrimary;
-  Color get appTextSecondary => _isDark ? AppTheme.textSecondary : AppTheme.lightTextSecondary;
-  Color get appTextTertiary => _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
+  Color get appTextPrimary =>
+      _isDark ? AppTheme.textPrimary : AppTheme.lightTextPrimary;
+  Color get appTextSecondary =>
+      _isDark ? AppTheme.textSecondary : AppTheme.lightTextSecondary;
+  Color get appTextTertiary =>
+      _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
 
   // 브랜드 초록 — 다크: 네온 그린(#00FF00), 라이트: 접근성 보장 딥 그린(#1B7A3A)
-  Color get appPrimaryAccent => _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
+  Color get appPrimaryAccent =>
+      _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
   // accent 계열 — 다크: #00CC6A, 라이트: lightPrimaryAccent와 동일 톤
-  Color get appAccentColor => _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
+  Color get appAccentColor =>
+      _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
 }
 
 /// 초록 앱 테마 정의
@@ -70,35 +78,37 @@ class AppTheme {
   static const Color darkBorder = Color(0xFF1E3024);
 
   // ─── 라이트 배경 ─────────────────────────────────────────────────
-  static const Color lightBg = Color(0xFFF0FAF4);
+  static const Color lightBg = Color(0xFFEAF5EF);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFE8F5EE);
+  static const Color lightCard = Color(0xFFF0F0F0);
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFE8F5EE);
-  static const Color textSecondary = Color(0xFF9BC9A8); // 대비비 ~4.6:1 on darkCard
-  static const Color textTertiary = Color(0xFF6A9E7A);  // 대비비 ~3.2:1 on darkCard
+  static const Color textSecondary = Color(
+    0xFF9BC9A8,
+  ); // 대비비 ~4.6:1 on darkCard
+  static const Color textTertiary = Color(0xFF6A9E7A); // 대비비 ~3.2:1 on darkCard
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
-  static const Color lightTextPrimary   = Color(0xFF1A2D24); // 대비비 ~14:1 on lightBg
-  static const Color lightTextSecondary = Color(0xFF3D6B50); // 대비비 ~5.8:1 on lightBg
-  static const Color lightTextTertiary  = Color(0xFF4E8065); // 대비비 ~3.5:1 on lightBg
-  static const Color lightBorderColor   = Color(0xFFB8D9C6);
-  static const Color lightDivider       = Color(0xFFD5EBE0);
+  static const Color lightTextPrimary = Color(0xFF111111);
+  static const Color lightTextSecondary = Color(0xFF484848);
+  static const Color lightTextTertiary = Color(0xFF777777);
+  static const Color lightBorderColor = Color(0xFFBCBCBC);
+  static const Color lightDivider = Color(0xFFE0E0E0);
 
   // 라이트 모드 전용 브랜드 초록 — primaryLight(#00FF00)은 라이트 배경 대비 불충분
   // lightBg(#F0FAF4) 위에서 대비비 ~7.2:1 확보
   static const Color lightPrimaryAccent = Color(0xFF1B7A3A);
 
-  // ─── Smooth Corner (Figma 60% squircle) ───────────────────────
-  // figma_squircle 패키지 — Figma의 corner smoothing 60% 수식과 동일
+  // ─── Smooth Corner (Figma squircle) ───────────────────────────
+  // figma_squircle 패키지 — Figma의 corner smoothing 수식과 동일
   //
   // 디자인 라운드 규칙 (4px 배수):
   //   radiusSM  =  8  → 배지, 작은 알약형 요소
   //   radiusMD  = 12  → 칩, 버튼, 인풋 필드
   //   radiusLG  = 16  → 카드, 일반 컨테이너 (기본값)
   //   radiusXL  = 20  → 히어로 카드, 대형 컨테이너
-  static const double _smoothness = 0.6; // Figma corner smoothing 60%
+  static const double _smoothness = 1;
 
   static const double radiusSM = 8;
   static const double radiusMD = 12;

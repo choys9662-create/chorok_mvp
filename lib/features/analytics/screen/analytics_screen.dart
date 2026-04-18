@@ -1,4 +1,5 @@
 import 'package:figma_squircle/figma_squircle.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,7 +139,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const ChorokSectionHeader(title: '요일별 독서 리듬'),
         const SizedBox(height: AppTheme.spaceMD),
         ChorokCard(
-          child: _BarChart(
+          child: _LineRhythmChart(
             labels: const ['월', '화', '수', '목', '금', '토', '일'],
             values: const [85, 42, 120, 65, 30, 153, 83],
             highlightIndex: DateTime.now().weekday - 1,
@@ -716,6 +717,155 @@ class _BarChart extends StatelessWidget {
       }),
     );
   }
+}
+
+// ─── 라인 리듬 차트 ────────────────────────────────────────────────────
+class _LineRhythmChart extends StatelessWidget {
+  final List<String> labels;
+  final List<int> values;
+  final int highlightIndex;
+
+  const _LineRhythmChart({
+    required this.labels,
+    required this.values,
+    required this.highlightIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final highlightMins = values[highlightIndex];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 120,
+          child: CustomPaint(
+            size: const Size(double.infinity, 120),
+            painter: _LineRhythmPainter(
+              values: values,
+              highlightIndex: highlightIndex,
+              maxVal: maxVal,
+              lineColor: AppTheme.primary.withValues(alpha: 0.35),
+              accentColor: context.appPrimaryAccent,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: List.generate(labels.length, (i) {
+            final isHighlight = i == highlightIndex;
+            return Expanded(
+              child: Column(
+                children: [
+                  if (isHighlight)
+                    Text(
+                      highlightMins >= 60
+                          ? '${highlightMins ~/ 60}h ${highlightMins % 60}m'
+                          : '${highlightMins}m',
+                      style: AppTheme.captionSmall.copyWith(color: AppTheme.accent),
+                    )
+                  else
+                    const SizedBox(height: 14),
+                  Text(
+                    labels[i],
+                    textAlign: TextAlign.center,
+                    style: AppTheme.captionSmall.copyWith(
+                      color: isHighlight ? context.appPrimaryAccent : context.appTextTertiary,
+                      fontWeight: isHighlight ? FontWeight.w700 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _LineRhythmPainter extends CustomPainter {
+  final List<int> values;
+  final int highlightIndex;
+  final int maxVal;
+  final Color lineColor;
+  final Color accentColor;
+
+  const _LineRhythmPainter({
+    required this.values,
+    required this.highlightIndex,
+    required this.maxVal,
+    required this.lineColor,
+    required this.accentColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = values.length;
+    if (maxVal == 0 || n < 2) return;
+    final xStep = size.width / (n - 1);
+    const topPad = 12.0;
+    const botPad = 8.0;
+    final availH = size.height - topPad - botPad;
+
+    final points = List<Offset>.generate(
+      n,
+      (i) => Offset(i * xStep, topPad + availH * (1 - values[i] / maxVal)),
+    );
+
+    final fillPath = Path()..moveTo(0, size.height);
+    for (final p in points) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    fillPath.lineTo((n - 1) * xStep, size.height);
+    fillPath.close();
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [lineColor.withValues(alpha: 0.25), lineColor.withValues(alpha: 0.0)],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+    );
+
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < n; i++) {
+      linePath.lineTo(points[i].dx, points[i].dy);
+    }
+    canvas.drawPath(linePath, linePaint);
+
+    final dotPaint = Paint()..color = lineColor;
+    final ringPaint = Paint()..color = accentColor.withValues(alpha: 0.2);
+    final accentPaint = Paint()..color = accentColor;
+    final innerPaint = Paint()..color = Colors.white;
+    for (int i = 0; i < n; i++) {
+      final p = points[i];
+      if (i == highlightIndex) {
+        canvas.drawCircle(p, 7, ringPaint);
+        canvas.drawCircle(p, 5, accentPaint);
+        canvas.drawCircle(p, 2.5, innerPaint);
+      } else {
+        canvas.drawCircle(p, 3.5, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LineRhythmPainter old) =>
+      old.highlightIndex != highlightIndex ||
+      old.maxVal != maxVal ||
+      old.lineColor != lineColor ||
+      old.accentColor != accentColor ||
+      !listEquals(old.values, values);
 }
 
 // ─── 집중도 카드 (공통) ────────────────────────────────────────────────

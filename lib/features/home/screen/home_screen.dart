@@ -192,11 +192,7 @@ const _kGoalMessages = [
   '훌륭해요. 이게 쌓이면 습관이 돼요',
 ];
 
-const _kStreakSuffix = [
-  '오늘 빠지면 너무 아깝잖아요',
-  '이 기록, 오늘도 이어가요',
-  '여기서 멈추실 건 아니죠?',
-];
+const _kStreakSuffix = ['오늘 빠지면 너무 아깝잖아요', '이 기록, 오늘도 이어가요', '여기서 멈추실 건 아니죠?'];
 
 const _kSlackMessages = [
   '요즘 바쁘신가봐요?',
@@ -206,11 +202,7 @@ const _kSlackMessages = [
   '오늘 딱 5분만요. 딱 5분',
 ];
 
-const _kNudgeMessages = [
-  '오늘 첫 독서를 시작해볼까요?',
-  '딱 10분만 읽어볼까요?',
-  '책이 기다리고 있어요',
-];
+const _kNudgeMessages = ['오늘 첫 독서를 시작해볼까요?', '딱 10분만 읽어볼까요?', '책이 기다리고 있어요'];
 
 // 연속 달성일 수 계산 (오늘 제외, 어제부터 역산)
 int _calcReadStreak(int todayIndex) {
@@ -238,7 +230,7 @@ int _daysSinceLastRead(int todayIndex) {
 class _HomeAppBar extends ConsumerWidget {
   const _HomeAppBar();
 
-String _subtext(TimerData timer) {
+  String _subtext(TimerData timer) {
     final now = DateTime.now();
     final todayIndex = (now.weekday - 1).clamp(0, 6);
     final todayMin = timer.seconds ~/ 60;
@@ -432,7 +424,10 @@ class _WeeklyStatusCard extends ConsumerWidget {
                 decoration: ShapeDecoration(
                   color: context.appPrimaryAccent.withValues(alpha: 0.08),
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 8,
+                      cornerSmoothing: 0.6,
+                    ),
                   ),
                 ),
                 child: Text(
@@ -530,9 +525,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: isFuture
-                                        ? context.appBorder
-                                        : null,
+                                    color: isFuture ? context.appBorder : null,
                                     gradient: isFuture
                                         ? null
                                         : LinearGradient(
@@ -586,7 +579,10 @@ class _WeeklyStatusCard extends ConsumerWidget {
               decoration: ShapeDecoration(
                 color: context.appPrimaryAccent.withValues(alpha: 0.06),
                 shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: AppTheme.radiusMD,
+                    cornerSmoothing: 0.6,
+                  ),
                 ),
               ),
               child: Text(
@@ -818,7 +814,9 @@ class _InsightChip extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: AppTheme.primary.withValues(alpha: 0.2),
         radius: AppTheme.radiusMD,
-        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.12)),
+        side: BorderSide(
+          color: context.appPrimaryAccent.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
         children: [
@@ -897,7 +895,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
           clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 16,
+            radius: 24,
             side: BorderSide(color: context.appBorder),
           ),
           child: Column(
@@ -936,7 +934,10 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.75),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 8,
+                              cornerSmoothing: 0.6,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -1030,7 +1031,9 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         color: AppTheme.primary.withValues(alpha: 0.5),
                         radius: 10,
                         side: BorderSide(
-                          color: context.appPrimaryAccent.withValues(alpha: 0.3),
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -1099,7 +1102,10 @@ class _RecommendedBooksSection extends StatelessWidget {
                 decoration: ShapeDecoration(
                   color: context.appPrimaryAccent.withValues(alpha: 0.08),
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 8,
+                      cornerSmoothing: 0.6,
+                    ),
                     side: BorderSide(
                       color: context.appPrimaryAccent.withValues(alpha: 0.2),
                     ),
@@ -1234,7 +1240,10 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                         decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.8),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 6,
+                              cornerSmoothing: 0.6,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -1282,7 +1291,10 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                         decoration: ShapeDecoration(
                           color: AppTheme.primary.withValues(alpha: 0.12),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 8,
+                              cornerSmoothing: 0.6,
+                            ),
                             side: BorderSide(
                               color: AppTheme.primary.withValues(alpha: 0.2),
                             ),
@@ -1337,7 +1349,10 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             decoration: ShapeDecoration(
                               color: AppTheme.primary.withValues(alpha: 0.4),
                               shape: SmoothRectangleBorder(
-                                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                                borderRadius: SmoothBorderRadius(
+                                  cornerRadius: 8,
+                                  cornerSmoothing: 0.6,
+                                ),
                                 side: BorderSide(
                                   color: context.appPrimaryAccent.withValues(
                                     alpha: 0.2,
@@ -1570,7 +1585,10 @@ class _HighlightCard extends StatelessWidget {
                                   alpha: 0.08,
                                 ),
                                 shape: SmoothRectangleBorder(
-                                  borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                                  borderRadius: SmoothBorderRadius(
+                                    cornerRadius: 6,
+                                    cornerSmoothing: 0.6,
+                                  ),
                                   side: BorderSide(
                                     color: context.appPrimaryAccent.withValues(
                                       alpha: 0.2,
@@ -1629,7 +1647,9 @@ class _HighlightCard extends StatelessWidget {
                             Icon(
                               Icons.favorite_rounded,
                               size: 12,
-                              color: context.appAccentColor.withValues(alpha: 0.8),
+                              color: context.appAccentColor.withValues(
+                                alpha: 0.8,
+                              ),
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -1820,7 +1840,9 @@ class _TimeCapsuleSection extends ConsumerWidget {
                           vertical: 8,
                         ),
                         decoration: ShapeDecoration(
-                          color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.08,
+                          ),
                           shape: StadiumBorder(
                             side: BorderSide(color: context.appBorder),
                           ),
