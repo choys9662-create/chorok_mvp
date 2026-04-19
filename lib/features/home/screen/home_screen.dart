@@ -100,6 +100,39 @@ const List<_BookData> _kReadingBooks = [
   ),
 ];
 
+// ─── 위시리스트 목업 ──────────────────────────────────────────────────────────
+typedef _WishlistBook = ({
+  String title,
+  String author,
+  int addedDays,
+  int gradientIndex,
+  int totalPages,
+});
+
+const List<_WishlistBook> _kWishlistBooks = [
+  (
+    title: '소년이 온다',
+    author: '한강',
+    addedDays: 3,
+    gradientIndex: 3,
+    totalPages: 216,
+  ),
+  (
+    title: '불편한 편의점',
+    author: '김호연',
+    addedDays: 7,
+    gradientIndex: 6,
+    totalPages: 312,
+  ),
+  (
+    title: '달러구트 꿈 백화점',
+    author: '이미예',
+    addedDays: 14,
+    gradientIndex: 1,
+    totalPages: 304,
+  ),
+];
+
 // ─── 책별 독서 통계 (목업) ──────────────────────────────────────────────────
 const List<BookReadingStats> _kBookStats = [
   BookReadingStats(
@@ -166,7 +199,10 @@ class HomeScreen extends ConsumerWidget {
                   // ③ 문장 기반 추천
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: _RecommendedBooksSection()),
-                  // ④ 피드 하이라이트
+                  // ④ 다음에 읽을 책
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(child: _WishlistSection()),
+                  // ⑤ 피드 하이라이트
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   const SliverToBoxAdapter(child: _FeedHighlightSection()),
                   // ⑤ 타임캡슐 문장
@@ -861,6 +897,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final progress = b.currentPage / b.totalPages;
     final gradColors = AppTheme
@@ -1028,7 +1065,9 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                       height: 36,
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
-                        color: AppTheme.primary.withValues(alpha: 0.5),
+                        color: isDark
+                            ? AppTheme.primary.withValues(alpha: 0.5)
+                            : AppTheme.lightPrimaryAccent,
                         radius: 10,
                         side: BorderSide(
                           color: context.appPrimaryAccent.withValues(
@@ -1040,7 +1079,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         '이어 읽기',
                         style: AppTheme.captionLarge.copyWith(
                           fontFamily: 'Pretendard',
-                          color: context.appPrimaryAccent,
+                          color: isDark ? context.appPrimaryAccent : Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1173,6 +1212,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final gradColors = AppTheme
         .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
@@ -1347,7 +1387,9 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.4),
+                              color: isDark
+                                  ? AppTheme.primary.withValues(alpha: 0.4)
+                                  : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
                                 borderRadius: SmoothBorderRadius(
                                   cornerRadius: 8,
@@ -1366,14 +1408,14 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                                 Icon(
                                   Icons.add_rounded,
                                   size: 14,
-                                  color: context.appPrimaryAccent,
+                                  color: isDark ? context.appPrimaryAccent : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
                                     fontFamily: 'Pretendard',
-                                    color: context.appPrimaryAccent,
+                                    color: isDark ? context.appPrimaryAccent : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -1863,6 +1905,248 @@ class _TimeCapsuleSection extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// ─── ④ 다음에 읽을 책 ────────────────────────────────────────────────────────
+
+class _WishlistSection extends StatelessWidget {
+  const _WishlistSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+          child: Row(
+            children: [
+              Text(
+                '다음에 읽을 책',
+                style: AppTheme.headingSmall.copyWith(
+                  fontFamily: 'Pretendard',
+                  color: context.appTextPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${_kWishlistBooks.length}권',
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            itemCount: _kWishlistBooks.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _kWishlistBooks.length - 1 ? 12 : 0,
+                ),
+                child: _WishlistBookCard(book: _kWishlistBooks[index]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WishlistBookCard extends StatefulWidget {
+  final _WishlistBook book;
+  const _WishlistBookCard({required this.book});
+
+  @override
+  State<_WishlistBookCard> createState() => _WishlistBookCardState();
+}
+
+class _WishlistBookCardState extends State<_WishlistBookCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.book;
+    final gradColors =
+        AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final daysText = b.addedDays == 0 ? '오늘' : '${b.addedDays}일 전';
+
+    return GestureDetector(
+      onTapDown: (_) {
+        HapticFeedback.selectionClick();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          width: 150,
+          clipBehavior: Clip.antiAlias,
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: 20,
+            side: BorderSide(color: context.appBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradColors,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -8,
+                      bottom: -8,
+                      child: Icon(
+                        Icons.bookmark_rounded,
+                        size: 56,
+                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: ShapeDecoration(
+                          color: context.appSurface.withValues(alpha: 0.75),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 6,
+                              cornerSmoothing: 0.6,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          daysText,
+                          style: AppTheme.captionSmall.copyWith(
+                            fontFamily: 'Pretendard',
+                            color: context.appTextSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      b.title,
+                      style: AppTheme.bodySmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      b.author,
+                      style: AppTheme.captionSmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Semantics(
+                  label: '${b.title} 읽기 시작',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.mediumImpact();
+                      final goal = await showModalBottomSheet<SessionGoal>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => SessionGoalSheet(
+                          currentPage: 0,
+                          totalPages: b.totalPages,
+                          bookTitle: b.title,
+                        ),
+                      );
+                      if (goal != null && context.mounted) {
+                        context.push(
+                          AppConstants.routeSession,
+                          extra: SessionExtra(
+                            goal: goal,
+                            bookId: b.title.hashCode.toString(),
+                            bookTitle: b.title,
+                            bookAuthor: b.author,
+                            startPage: 0,
+                            totalPages: b.totalPages,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: AppTheme.smoothBox(
+                        color: AppTheme.primary.withValues(alpha: 0.4),
+                        radius: 10,
+                        side: BorderSide(
+                          color: context.appPrimaryAccent.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            size: 14,
+                            color: context.appPrimaryAccent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '읽기 시작',
+                            style: AppTheme.captionLarge.copyWith(
+                              fontFamily: 'Pretendard',
+                              color: context.appPrimaryAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
