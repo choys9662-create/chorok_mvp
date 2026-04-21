@@ -54,7 +54,11 @@ class BulletGraphWidget extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       // 1. 배경 트랙
-                      Container(color: const Color(0xFF1A1A1A)),
+                      Container(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF1A1A1A)
+                            : AppTheme.lightDivider,
+                      ),
                       // 2. 현재 진행률
                       FractionallySizedBox(
                         alignment: Alignment.centerLeft,

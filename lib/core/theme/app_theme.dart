@@ -26,28 +26,42 @@ extension AppThemeExt on BuildContext {
   // accent 계열 — 다크: #00CC6A, 라이트: lightPrimaryAccent와 동일 톤
   Color get appAccentColor =>
       _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
+
+  // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
+  Color primaryBg(double alpha) => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: alpha)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: (alpha * 1.5).clamp(0, 1));
+
+  // 읽기 관련 진행 그라디언트 — DESIGN.md Primary Green 기반
+  Gradient get appReadingGradient => _isDark
+      ? AppTheme.greenGradient
+      : const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF009B58), Color(0xFF00C870)],
+        );
 }
 
 /// 초록 앱 테마 정의
 class AppTheme {
   // ─── 브랜드 색상 팔레트 ───────────────────────────────────────────
-  static const Color primary = Color(0xFF1A3D2B); // 어두운 숲 초록 (배경/버튼)
-  static const Color primaryLight = Color(0xFF00FF00); // 핵심 컬러 — 라임 그린
-  static const Color accent = Color(0xFF00CC6A); // 보조 강조 (그라디언트 끝값)
-  static const Color fireflyColor = Color(0xFF00FF00); // 반딧불 색상
+  static const Color primary = Color(0xFF1A3D2B); // 어두운 숲 초록 (CTA 버튼 fill)
+  static const Color primaryLight = Color(0xFF10B981); // 다크 모드 브랜드 에메랄드
+  static const Color accent = Color(0xFF059669); // 보조 강조 (그라디언트 끝값)
+  static const Color fireflyColor = Color(0xFF00FF00); // 반딧불 이펙트 전용
   static const Color warningColor = Color(0xFFFF8C42); // 경고/연속 독서
 
   // ─── 그린 그라디언트 ─────────────────────────────────────────────
-  /// #00FF00 → #00CC6A: 네온 그린의 쨍함을 그라디언트로 완화
+  /// #10B981 → #059669: 에메랄드 그린 그라디언트
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
+    colors: [Color(0xFF10B981), Color(0xFF059669)],
   );
   static const LinearGradient greenGradientVertical = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
+    colors: [Color(0xFF10B981), Color(0xFF059669)],
   );
 
   /// 카드/배경에 쓸 어두운 그린 그라디언트
@@ -70,50 +84,46 @@ class AppTheme {
     [Color(0xFF184230), Color(0xFF00E090)],
   ];
 
-  // ─── 다크 배경 ───────────────────────────────────────────────────
-  static const Color darkBg = Color(0xFF060B07);
-  static const Color darkSurface = Color(0xFF0D1410);
-  static const Color darkCard = Color(0xFF131C16);
-  static const Color darkCardElevated = Color(0xFF192319);
-  static const Color darkBorder = Color(0xFF1E3024);
+  // ─── 다크 배경 (중립 다크 — DESIGN.md §1) ──────────────────────
+  static const Color darkBg = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1A1A1A);
+  static const Color darkCard = Color(0xFF1A1A1A);
+  static const Color darkCardElevated = Color(0xFF222222);
+  static const Color darkBorder = Color(0xFF2C2C2C);
+  static const Color darkPrimaryContainer = Color(0xFF1E3A2F);
 
-  // ─── 라이트 배경 ─────────────────────────────────────────────────
-  static const Color lightBg = Color(0xFFEAF5EF);
+  // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
+  static const Color lightBg = Color(0xFFF2F4F6);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFF0F0F0);
+  static const Color lightCard = Color(0xFFFFFFFF);
+  static const Color lightPrimaryContainer = Color(0xFFE6F5ED);
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
-  static const Color textPrimary = Color(0xFFE8F5EE);
-  static const Color textSecondary = Color(
-    0xFF9BC9A8,
-  ); // 대비비 ~4.6:1 on darkCard
-  static const Color textTertiary = Color(0xFF6A9E7A); // 대비비 ~3.2:1 on darkCard
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFFADADAD);
+  static const Color textTertiary = Color(0xFF6B6B6B);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
-  static const Color lightTextPrimary = Color(0xFF111111);
-  static const Color lightTextSecondary = Color(0xFF484848);
-  static const Color lightTextTertiary = Color(0xFF777777);
-  static const Color lightBorderColor = Color(0xFFBCBCBC);
-  static const Color lightDivider = Color(0xFFE0E0E0);
+  static const Color lightTextPrimary = Color(0xFF191F28);
+  static const Color lightTextSecondary = Color(0xFF8B95A1);
+  static const Color lightTextTertiary = Color(0xFFB0B8C1);
+  static const Color lightBorderColor = Color(0xFFE5E8EB);
+  static const Color lightDivider = Color(0xFFE5E8EB);
 
-  // 라이트 모드 전용 브랜드 초록 — primaryLight(#00FF00)은 라이트 배경 대비 불충분
-  // lightBg(#F0FAF4) 위에서 대비비 ~7.2:1 확보
-  static const Color lightPrimaryAccent = Color(0xFF1B7A3A);
+  // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
+  static const Color lightPrimaryAccent = Color(0xFF009B58);
 
-  // ─── Smooth Corner (Figma squircle) ───────────────────────────
-  // figma_squircle 패키지 — Figma의 corner smoothing 수식과 동일
-  //
-  // 디자인 라운드 규칙 (4px 배수):
-  //   radiusSM  =  8  → 배지, 작은 알약형 요소
-  //   radiusMD  = 12  → 칩, 버튼, 인풋 필드
-  //   radiusLG  = 16  → 카드, 일반 컨테이너 (기본값)
-  //   radiusXL  = 20  → 히어로 카드, 대형 컨테이너
+  // ─── Smooth Corner — DESIGN.md §2 Radius Hierarchy ──────────────
+  //   radiusSM  =  8  → 태그, 작은 아이콘 배경 (Small)
+  //   radiusMD  = 12  → 표준 버튼, 검색창, ListTile (Medium)
+  //   radiusLG  = 18  → 콘텐츠 박스, 히어로 섹션 (Large)
+  //   radiusXL  = 24  → 메인 컨테이너, 바텀 시트 (XL)
   static const double _smoothness = 1;
 
   static const double radiusSM = 8;
   static const double radiusMD = 12;
-  static const double radiusLG = 16;
-  static const double radiusXL = 20;
+  static const double radiusLG = 18;
+  static const double radiusXL = 24;
 
   /// BoxDecoration 대체용 — color, gradient, border, shadow 모두 지원
   static ShapeDecoration smoothBox({

@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-// ─── 차트 전용 색상 ──────────────────────────────────────────────────────
-const Color _kLv1    = Color(0xFF0F6E56);
-const Color _kLv2    = Color(0xFF1D9E75);
-const Color _kLv3    = Color(0xFF3BC49A);
-const Color _kLv4    = Color(0xFF00FF00); // context.appPrimaryAccent
-const Color _kLabel  = Color(0xFF7A8597);
+const Color _kLv1   = Color(0xFF0F6E56);
+const Color _kLv2   = Color(0xFF1D9E75);
+const Color _kLv3   = Color(0xFF3BC49A);
+const Color _kLabel = Color(0xFF7A8597);
 
-/// 1년치 독서 기록 히트맵 — GitHub 잔디 형태
-/// [data] DateTime(y,m,d) → 독서 분(minutes)
-class HeatmapCalendarWidget extends StatelessWidget {
+const _kDays = ['월', '화', '수', '목', '금', '토', '일'];
+
+/// 월간 독서 캘린더 히트맵 — 이전/다음 달 이동 가능
+class HeatmapCalendarWidget extends StatefulWidget {
   final Map<DateTime, int> data;
   final int year;
 
@@ -22,165 +21,214 @@ class HeatmapCalendarWidget extends StatelessWidget {
   });
 
   @override
+  State<HeatmapCalendarWidget> createState() => _HeatmapCalendarWidgetState();
+}
+
+class _HeatmapCalendarWidgetState extends State<HeatmapCalendarWidget> {
+  late DateTime _month;
+
+  @override
+  void initState() {
+    super.initState();
+    _month = DateTime(DateTime.now().year, DateTime.now().month);
+  }
+
+  void _prev() => setState(() => _month = DateTime(_month.year, _month.month - 1));
+  void _next() => setState(() => _month = DateTime(_month.year, _month.month + 1));
+
+  @override
   Widget build(BuildContext context) {
-    // 빈 셀: 다크 모드는 어두운 녹색, 라이트 모드는 연한 민트
-    final emptyColor = context.appCard;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final emptyColor = isDark ? const Color(0xFF2A2D2A) : const Color(0xFFE2EDE9);
+    final lv4Color = context.appPrimaryAccent;
+
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeatmapPainterBox(data: data, year: year, emptyColor: emptyColor),
+          _MonthHeader(month: _month, onPrev: _prev, onNext: _next),
           const SizedBox(height: AppTheme.spaceMD),
-          _Legend(emptyColor: emptyColor),
+          _DayOfWeekRow(),
+          const SizedBox(height: 6),
+          _MonthGrid(
+            month: _month,
+            data: widget.data,
+            emptyColor: emptyColor,
+            lv4Color: lv4Color,
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          _Legend(emptyColor: emptyColor, lv4Color: lv4Color),
         ],
       ),
     );
   }
 }
 
-// ─── 캔버스 ──────────────────────────────────────────────────────────────
+// ─── 월 헤더 ────────────────────────────────────────────────────────────────
 
-class _HeatmapPainterBox extends StatelessWidget {
+class _MonthHeader extends StatelessWidget {
+  final DateTime month;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+
+  const _MonthHeader({required this.month, required this.onPrev, required this.onNext});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          onPressed: onPrev,
+          icon: const Icon(Icons.chevron_left),
+          iconSize: 20,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          color: _kLabel,
+        ),
+        Text(
+          '${month.year}년 ${month.month}월',
+          style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+        ),
+        IconButton(
+          onPressed: onNext,
+          icon: const Icon(Icons.chevron_right),
+          iconSize: 20,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          color: _kLabel,
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 요일 헤더 행 ────────────────────────────────────────────────────────────
+
+class _DayOfWeekRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _kDays.map((d) => Expanded(
+        child: Center(
+          child: Text(
+            d,
+            style: AppTheme.captionSmall.copyWith(color: _kLabel, fontSize: 11),
+          ),
+        ),
+      )).toList(),
+    );
+  }
+}
+
+// ─── 월 그리드 ───────────────────────────────────────────────────────────────
+
+class _MonthGrid extends StatelessWidget {
+  final DateTime month;
   final Map<DateTime, int> data;
-  final int year;
   final Color emptyColor;
+  final Color lv4Color;
 
-  const _HeatmapPainterBox({
+  const _MonthGrid({
+    required this.month,
     required this.data,
-    required this.year,
     required this.emptyColor,
+    required this.lv4Color,
   });
 
   @override
   Widget build(BuildContext context) {
-    const cellSize  = 11.0;
-    const gap       = 3.0;
-    const step      = cellSize + gap;
-    const colCount  = 53;
+    // 월 첫날 요일 오프셋 (월=0 … 일=6)
+    final firstDay = DateTime(month.year, month.month, 1);
+    final offset = (firstDay.weekday - 1) % 7;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final today = DateTime.now();
 
-    // 월 레이블 높이 + 그리드 높이
-    final totalW = colCount * step - gap;
-    final totalH = 16.0 + 4.0 + 7 * step - gap; // label + spacing + grid
+    final cells = <Widget>[];
 
-    return SizedBox(
-      width:  totalW,
-      height: totalH,
-      child: CustomPaint(
-        painter: _HeatmapPainter(
-          data: data,
-          year: year,
-          emptyColor: emptyColor,
+    // 앞 빈칸
+    for (int i = 0; i < offset; i++) {
+      cells.add(const SizedBox.shrink());
+    }
+
+    // 날짜 셀
+    for (int d = 1; d <= daysInMonth; d++) {
+      final date = DateTime(month.year, month.month, d);
+      final key  = DateTime(date.year, date.month, date.day);
+      final mins = data[key] ?? 0;
+      final isToday = date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day;
+
+      cells.add(_DayCell(
+        day: d,
+        color: _intensityColor(mins, emptyColor, lv4Color),
+        isToday: isToday,
+      ));
+    }
+
+    return GridView.count(
+      crossAxisCount: 7,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 4,
+      crossAxisSpacing: 4,
+      children: cells,
+    );
+  }
+
+  Color _intensityColor(int minutes, Color empty, Color lv4) {
+    if (minutes == 0)   return empty;
+    if (minutes < 30)   return _kLv1;
+    if (minutes < 60)   return _kLv2;
+    if (minutes < 120)  return _kLv3;
+    return lv4;
+  }
+}
+
+// ─── 날짜 셀 ────────────────────────────────────────────────────────────────
+
+class _DayCell extends StatelessWidget {
+  final int day;
+  final Color color;
+  final bool isToday;
+
+  const _DayCell({required this.day, required this.color, required this.isToday});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+        border: isToday
+            ? Border.all(color: context.appPrimaryAccent, width: 1.5)
+            : null,
+      ),
+      child: Center(
+        child: Text(
+          '$day',
+          style: AppTheme.captionSmall.copyWith(
+            fontSize: 11,
+            color: color == const Color(0xFF2A2D2A) || color == const Color(0xFFE2EDE9)
+                ? _kLabel
+                : Colors.white,
+            fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+          ),
         ),
       ),
     );
   }
 }
 
-class _HeatmapPainter extends CustomPainter {
-  final Map<DateTime, int> data;
-  final int year;
-  final Color emptyColor;
-
-  const _HeatmapPainter({
-    required this.data,
-    required this.year,
-    required this.emptyColor,
-  });
-
-  static const _cellSize = 11.0;
-  static const _gap      = 3.0;
-  static const _step     = _cellSize + _gap;
-  static const _labelH   = 16.0;
-  static const _labelGap = 4.0;
-  static const _gridTop  = _labelH + _labelGap;
-  // 요일 레이블 너비 (월/수/금만 표시)
-  static const _dayLabelW = 20.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final start = DateTime(year, 1, 1);
-    // 첫째 날 요일 오프셋 (월=0)
-    final startWeekday = (start.weekday - 1) % 7;
-    final isLeap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
-    final totalDays = isLeap ? 366 : 365;
-
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    const labelStyle = TextStyle(
-      fontSize: 10,
-      color: _kLabel,
-      fontFamily: 'Pretendard',
-    );
-
-    // ── 월 레이블 ─────────────────────────────────────────────────
-    const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-    int prevMonth = -1;
-    for (int d = 0; d < totalDays; d++) {
-      final date = start.add(Duration(days: d));
-      if (date.month != prevMonth) {
-        prevMonth = date.month;
-        final col = (d + startWeekday) ~/ 7;
-        final x = _dayLabelW + col * _step;
-        textPainter
-          ..text = TextSpan(text: months[date.month - 1], style: labelStyle)
-          ..layout();
-        textPainter.paint(canvas, Offset(x, 0));
-      }
-    }
-
-    // ── 요일 레이블 (월/수/금) ─────────────────────────────────────
-    const dayLabels = ['월', '', '수', '', '금', '', ''];
-    for (int row = 0; row < 7; row++) {
-      if (dayLabels[row].isEmpty) continue;
-      textPainter
-        ..text = TextSpan(text: dayLabels[row], style: labelStyle)
-        ..layout();
-      final y = _gridTop + row * _step + (_cellSize - textPainter.height) / 2;
-      textPainter.paint(canvas, Offset(0, y));
-    }
-
-    // ── 셀 그리드 ──────────────────────────────────────────────────
-    final paint  = Paint()..isAntiAlias = true;
-    const radius = Radius.circular(3);
-
-    for (int d = 0; d < totalDays; d++) {
-      final date = start.add(Duration(days: d));
-      final key  = DateTime(date.year, date.month, date.day);
-      final mins = data[key] ?? 0;
-      final col  = (d + startWeekday) ~/ 7;
-      final row  = (d + startWeekday) % 7;
-
-      final x = _dayLabelW + col * _step;
-      final y = _gridTop + row * _step;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, y, _cellSize, _cellSize),
-        radius,
-      );
-
-      paint.color = _intensityColor(mins);
-      canvas.drawRRect(rect, paint);
-    }
-  }
-
-  Color _intensityColor(int minutes) {
-    if (minutes == 0)   return emptyColor;
-    if (minutes < 30)   return _kLv1;
-    if (minutes < 60)   return _kLv2;
-    if (minutes < 120)  return _kLv3;
-    return _kLv4;
-  }
-
-  @override
-  bool shouldRepaint(_HeatmapPainter old) =>
-      old.data != data || old.year != year || old.emptyColor != emptyColor;
-}
-
-// ─── 범례 ─────────────────────────────────────────────────────────────────
+// ─── 범례 ───────────────────────────────────────────────────────────────────
 
 class _Legend extends StatelessWidget {
   final Color emptyColor;
+  final Color lv4Color;
 
-  const _Legend({required this.emptyColor});
+  const _Legend({required this.emptyColor, required this.lv4Color});
 
   @override
   Widget build(BuildContext context) {
@@ -189,16 +237,11 @@ class _Legend extends StatelessWidget {
       (color: _kLv1,      label: '~30분'),
       (color: _kLv2,      label: '~1h'),
       (color: _kLv3,      label: '~2h'),
-      (color: _kLv4,      label: '2h+'),
+      (color: lv4Color,   label: '2h+'),
     ];
     return Row(
       children: [
-        Text(
-          '독서량',
-          style: AppTheme.captionSmall.copyWith(
-            color: _kLabel,
-          ),
-        ),
+        Text('독서량', style: AppTheme.captionSmall.copyWith(color: _kLabel)),
         const SizedBox(width: 8),
         ...levels.map((l) => Padding(
           padding: const EdgeInsets.only(right: 6),
@@ -215,10 +258,7 @@ class _Legend extends StatelessWidget {
               const SizedBox(width: 3),
               Text(
                 l.label,
-                style: AppTheme.captionSmall.copyWith(
-                  color: _kLabel,
-                  fontSize: 10,
-                ),
+                style: AppTheme.captionSmall.copyWith(color: _kLabel, fontSize: 10),
               ),
             ],
           ),

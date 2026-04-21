@@ -172,7 +172,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ─── 헤더 ─────────────────────────────────────────
+            // ─── 헤더 (고정) ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppTheme.screenPadding, 20,
@@ -230,87 +230,102 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             const SizedBox(height: 10),
             Divider(height: 1, color: context.appBorder),
 
-            // ─── 필터 칩 ──────────────────────────────────────
-            SizedBox(
-              height: 48,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.screenPadding, vertical: 8),
-                children: [
-                  _FeedFilterChip(
-                    label: '최신순',
-                    isSelected: _filter == _FeedFilter.latest,
-                    onTap: () => setState(() => _filter = _FeedFilter.latest),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedFilterChip(
-                    label: '인기순',
-                    isSelected: _filter == _FeedFilter.popular,
-                    onTap: () =>
-                        setState(() => _filter = _FeedFilter.popular),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedFilterChip(
-                    label: '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
-                    isSelected: _filter == _FeedFilter.overlap,
-                    onTap: () =>
-                        setState(() => _filter = _FeedFilter.overlap),
-                  ),
-                ],
-              ),
-            ),
-
-            // ─── 콘텐츠 ──────────────────────────────────────
+            // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
             Expanded(
-              child: _filter == _FeedFilter.overlap
-                  ? _buildOverlapView(groups, scrollCtrl)
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _TrendingBooksSection(),
-                        Divider(height: 1, color: context.appBorder),
-                        Expanded(
-                          child: filtered.isEmpty
-                              ? _buildEmptyState()
-                              : RefreshIndicator(
-                                  color: context.appPrimaryAccent,
-                                  backgroundColor: context.appCard,
-                                  onRefresh: _onRefresh,
-                                  child: _SentenceList(
-                                    sentences: filtered,
-                                    overlapIds: overlapIds,
-                                    controller: scrollCtrl,
-                                  ),
-                                ),
+              child: RefreshIndicator(
+                color: context.appPrimaryAccent,
+                backgroundColor: context.appCard,
+                onRefresh: _onRefresh,
+                child: CustomScrollView(
+                  controller: scrollCtrl,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.screenPadding, vertical: 8),
+                          children: [
+                            _FeedFilterChip(
+                              label: '최신순',
+                              isSelected: _filter == _FeedFilter.latest,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.latest),
+                            ),
+                            const SizedBox(width: 8),
+                            _FeedFilterChip(
+                              label: '인기순',
+                              isSelected: _filter == _FeedFilter.popular,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.popular),
+                            ),
+                            const SizedBox(width: 8),
+                            _FeedFilterChip(
+                              label:
+                                  '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
+                              isSelected: _filter == _FeedFilter.overlap,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.overlap),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
+                    if (_filter != _FeedFilter.overlap) ...[
+                      const SliverToBoxAdapter(child: _TrendingBooksSection()),
+                      SliverToBoxAdapter(
+                        child: Divider(height: 1, color: context.appBorder),
+                      ),
+                    ],
+                    if (_filter == _FeedFilter.overlap)
+                      groups.isEmpty
+                          ? SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(),
+                            )
+                          : SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.screenPadding,
+                                vertical: AppTheme.spaceMD,
+                              ),
+                              sliver: SliverList.separated(
+                                itemCount: groups.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppTheme.spaceMD),
+                                itemBuilder: (_, i) =>
+                                    _OverlapGroupCard(group: groups[i]),
+                              ),
+                            )
+                    else
+                      filtered.isEmpty
+                          ? SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(),
+                            )
+                          : SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.screenPadding,
+                                vertical: AppTheme.spaceMD,
+                              ),
+                              sliver: SliverList.separated(
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppTheme.spaceMD),
+                                itemBuilder: (_, i) => _SentenceCard(
+                                  sentence: filtered[i],
+                                  isOverlap:
+                                      overlapIds.contains(filtered[i].id),
+                                ),
+                              ),
+                            ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOverlapView(List<OverlapGroup> groups, ScrollController ctrl) {
-    if (groups.isEmpty) return _buildEmptyState();
-
-    return RefreshIndicator(
-      color: context.appPrimaryAccent,
-      backgroundColor: context.appCard,
-      onRefresh: _onRefresh,
-      child: ListView.separated(
-        controller: ctrl,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.screenPadding,
-          vertical: AppTheme.spaceMD,
-        ),
-        itemCount: groups.length,
-        separatorBuilder: (_, _) =>
-            const SizedBox(height: AppTheme.spaceMD),
-        itemBuilder: (_, i) => _OverlapGroupCard(group: groups[i]),
       ),
     );
   }
@@ -600,38 +615,6 @@ class _FeedFilterChip extends StatelessWidget {
   }
 }
 
-// ─── 문장 목록 (최신/인기 필터용) ─────────────────────────────────────────
-class _SentenceList extends StatelessWidget {
-  final List<FeedSentence> sentences;
-  final Set<String> overlapIds;
-  final ScrollController? controller;
-
-  const _SentenceList({
-    required this.sentences,
-    required this.overlapIds,
-    this.controller,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.screenPadding,
-        vertical: AppTheme.spaceMD,
-      ),
-      itemCount: sentences.length,
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: AppTheme.spaceMD),
-      itemBuilder: (_, i) => _SentenceCard(
-        sentence: sentences[i],
-        isOverlap: overlapIds.contains(sentences[i].id),
-      ),
-    );
-  }
-}
-
 class _SentenceCard extends StatefulWidget {
   final FeedSentence sentence;
   final bool isOverlap;
@@ -693,7 +676,7 @@ class _SentenceCardState extends State<_SentenceCard> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: ShapeDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.4),
+                color: context.appPrimaryAccent.withValues(alpha: 0.1),
                 shape: SmoothRectangleBorder(
                   borderRadius: SmoothBorderRadius.only(
                     topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
@@ -727,7 +710,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                       width: 28,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(Icons.menu_book_rounded,
@@ -795,7 +778,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     CircleAvatar(
                       radius: 12,
                       backgroundColor:
-                          AppTheme.primary.withValues(alpha: 0.3),
+                          context.appPrimaryAccent.withValues(alpha: 0.12),
                       child: Text(
                         s.username[0].toUpperCase(),
                         style: AppTheme.captionSmall
@@ -916,7 +899,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: ShapeDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.2),
+              color: context.appPrimaryAccent.withValues(alpha: 0.1),
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius.only(
                   topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
@@ -952,7 +935,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                       width: 28,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(Icons.menu_book_rounded,
@@ -1037,8 +1020,8 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                                     left: i * 16.0,
                                     child: CircleAvatar(
                                       radius: 12,
-                                      backgroundColor: AppTheme.primary
-                                          .withValues(alpha: 0.4),
+                                      backgroundColor: context.appPrimaryAccent
+                                          .withValues(alpha: 0.15),
                                       child: Text(
                                         g.members[i].username[0]
                                             .toUpperCase(),
@@ -1142,7 +1125,7 @@ class _OverlapMemberTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.12),
                 child: Text(
                   member.username[0].toUpperCase(),
                   style: AppTheme.captionSmall

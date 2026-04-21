@@ -9,7 +9,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
-import '../../../shared/providers/theme_provider.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/sheet_handle.dart';
@@ -321,145 +320,157 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return Scaffold(
       backgroundColor: context.appBg,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── 프로필 + 설정 ─────────────────────────────────────
-            Consumer(
-              builder: (context, ref, _) {
-                final streak =
-                    ref
-                        .watch(readingStreakProvider)
-                        .whenOrNull(data: (v) => v) ??
-                    0;
-                return ProfileHeader(
-                  onSettingsTap: () {
-                    HapticFeedback.selectionClick();
-                    _showSettingsSheet(context);
-                  },
-                  streak: streak,
-                );
-              },
+        child: NestedScrollView(
+          controller: ref.read(tabScrollControllersProvider)[3],
+          headerSliverBuilder: (context, _) => [
+            // ── 프로필 + 설정 ───────────────────────────────────
+            SliverToBoxAdapter(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final streak =
+                      ref
+                          .watch(readingStreakProvider)
+                          .whenOrNull(data: (v) => v) ??
+                      0;
+                  return ProfileHeader(
+                    onSettingsTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push(AppConstants.routeSettings);
+                    },
+                    streak: streak,
+                  );
+                },
+              ),
             ),
 
             // ── 수집한 문장 전체 보기 버튼 ──────────────────────
-            Consumer(
-              builder: (context, ref, _) {
-                final choseoCount = ref.watch(choseoCountProvider);
-                final label = choseoCount.when(
-                  data: (n) => '수집한 문장 전체 보기 ($n개)',
-                  loading: () => '수집한 문장 전체 보기',
-                  error: (_, _) => '수집한 문장 전체 보기',
-                );
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.screenPadding,
-                    8,
-                    AppTheme.screenPadding,
-                    0,
-                  ),
-                  child: Semantics(
-                    label: label,
-                    button: true,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push(AppConstants.routeChoseoList);
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: context.appCard,
-                            shape: SmoothRectangleBorder(
-                              borderRadius: SmoothBorderRadius(
-                                cornerRadius: 12,
-                                cornerSmoothing: 0.6,
-                              ),
-                              side: BorderSide(
-                                color: context.appAccentColor.withValues(
-                                  alpha: 0.3,
-                                ),
-                              ),
+            SliverToBoxAdapter(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final choseoCount = ref.watch(choseoCountProvider);
+                  final label = choseoCount.when(
+                    data: (n) => '수집한 문장 전체 보기 ($n개)',
+                    loading: () => '수집한 문장 전체 보기',
+                    error: (_, _) => '수집한 문장 전체 보기',
+                  );
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      8,
+                      AppTheme.screenPadding,
+                      0,
+                    ),
+                    child: Semantics(
+                      label: label,
+                      button: true,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push(AppConstants.routeChoseoList);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.format_quote_rounded,
-                                color: context.appAccentColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontFamily: 'Pretendard',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: context.appTextPrimary,
-                                    height: 1.4,
+                            decoration: ShapeDecoration(
+                              color: context.appCard,
+                              shape: SmoothRectangleBorder(
+                                borderRadius: SmoothBorderRadius(
+                                  cornerRadius: 12,
+                                  cornerSmoothing: 0.6,
+                                ),
+                                side: BorderSide(
+                                  color: context.appAccentColor.withValues(
+                                    alpha: 0.3,
                                   ),
                                 ),
                               ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: context.appTextTertiary,
-                                size: 20,
-                              ),
-                            ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.format_quote_rounded,
+                                  color: context.appAccentColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontFamily: 'Pretendard',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: context.appTextPrimary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: context.appTextTertiary,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // ── 세그먼트 토글 ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding,
-              ),
-              child: _SegmentToggle(
-                labels: const ['서재', '통계', '캘린더'],
-                selectedIndex: _viewIndex,
-                onChanged: (i) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _viewIndex = i);
+                  );
                 },
               ),
             ),
-            const SizedBox(height: 4),
-
-            // ── 콘텐츠 ──────────────────────────────────────────
-            Expanded(
-              child: IndexedStack(
-                index: _viewIndex,
-                children: [
-                  _LibraryTab(
-                    books: _kBooks,
-                    onAddBook: () => _showAddBookSheet(context),
-                    scrollController: ref.read(tabScrollControllersProvider)[3],
-                  ),
-                  _StatsView(
-                    scrollController: ref.read(tabScrollControllersProvider)[5],
-                  ),
-                  _CalendarView(
-                    logs: _kReadingLogs,
-                    scrollController: ref.read(tabScrollControllersProvider)[4],
-                  ),
-                ],
-              ),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
           ],
+          body: Column(
+            children: [
+              // ── 세그먼트 토글 (스크롤 후 상단 고정) ────────────
+              ColoredBox(
+                color: context.appBg,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.screenPadding,
+                    0,
+                    AppTheme.screenPadding,
+                    4,
+                  ),
+                  child: _SegmentToggle(
+                    labels: const ['서재', '통계', '캘린더'],
+                    selectedIndex: _viewIndex,
+                    onChanged: (i) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _viewIndex = i);
+                    },
+                  ),
+                ),
+              ),
+
+              // ── 콘텐츠 ────────────────────────────────────────
+              Expanded(
+                child: IndexedStack(
+                  index: _viewIndex,
+                  children: [
+                    _LibraryTab(
+                      books: _kBooks,
+                      onAddBook: () => _showAddBookSheet(context),
+                    ),
+                    _StatsView(
+                      scrollController: ref.read(tabScrollControllersProvider)[5],
+                    ),
+                    _CalendarView(
+                      logs: _kReadingLogs,
+                      scrollController: ref.read(tabScrollControllersProvider)[4],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -484,12 +495,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 class _LibraryTab extends StatefulWidget {
   final List<Book> books;
   final VoidCallback onAddBook;
-  final ScrollController? scrollController;
 
   const _LibraryTab({
     required this.books,
     required this.onAddBook,
-    this.scrollController,
   });
 
   @override
@@ -532,6 +541,7 @@ class _LibraryTabState extends State<_LibraryTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
     final todayMinutes = _kReadingLogs
         .where(
@@ -546,7 +556,6 @@ class _LibraryTabState extends State<_LibraryTab> {
         .toList();
 
     return CustomScrollView(
-      controller: widget.scrollController,
       slivers: [
         // ── 이번 달 성과 뱃지 ──────────────────────────────────────
         SliverToBoxAdapter(
@@ -577,13 +586,14 @@ class _LibraryTabState extends State<_LibraryTab> {
                       vertical: 3,
                     ),
                     decoration: AppTheme.smoothBox(
-                      color: AppTheme.primary.withValues(alpha: 0.2),
+                      color: context.appPrimaryAccent.withValues(alpha: 0.1),
                       radius: 10,
                     ),
                     child: Text(
                       '${widget.books.length}권',
                       style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.accent,
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -612,7 +622,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                           Icons.sort_rounded,
                           size: 16,
                           color: _sortOption != _SortOption.recent
-                              ? AppTheme.primaryLight
+                              ? (isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent)
                               : context.appTextTertiary,
                         ),
                       ),
@@ -693,7 +703,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                               : context.appCard,
                           side: BorderSide(
                             color: isSelected
-                                ? AppTheme.primaryLight.withValues(alpha: 0.3)
+                                ? context.appPrimaryAccent.withValues(alpha: 0.3)
                                 : context.appBorder,
                           ),
                         ),
@@ -704,7 +714,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                               _statusIcon(status),
                               size: 14,
                               color: isSelected
-                                  ? AppTheme.primaryLight
+                                  ? Colors.white
                                   : context.appTextTertiary,
                             ),
                             const SizedBox(width: 6),
@@ -713,7 +723,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                               style: AppTheme.captionLarge.copyWith(
                                 fontFamily: 'Pretendard',
                                 color: isSelected
-                                    ? AppTheme.primaryLight
+                                    ? Colors.white
                                     : context.appTextTertiary,
                                 fontWeight: isSelected
                                     ? FontWeight.w700
@@ -1071,17 +1081,14 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: AppTheme.smoothBox(
-                        color: AppTheme.primary.withValues(alpha: 0.4),
+                        color: context.appPrimaryAccent,
                         radius: AppTheme.radiusSM,
-                        side: BorderSide(
-                          color: context.appPrimaryAccent.withValues(alpha: 0.25),
-                        ),
                       ),
                       child: Text(
                         '읽기 시작',
                         style: AppTheme.captionLarge.copyWith(
                           fontFamily: 'Pretendard',
-                          color: context.appPrimaryAccent,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1104,15 +1111,21 @@ class _CoverPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gradColors = AppTheme
+        .coverGradients[bookId.hashCode.abs() % AppTheme.coverGradients.length];
     return Container(
-      color: AppTheme.primary.withValues(
-        alpha: 0.15 + (bookId.hashCode % 5) * 0.04,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradColors,
+        ),
       ),
-      child: Center(
+      child: const Center(
         child: Icon(
           Icons.menu_book_rounded,
           size: 40,
-          color: context.appPrimaryAccent.withValues(alpha: 0.6),
+          color: Colors.white,
         ),
       ),
     );
@@ -1199,7 +1212,7 @@ class _BookCard extends StatelessWidget {
                           decoration: AppTheme.smoothPill(
                             color: AppTheme.primary.withValues(alpha: 0.88),
                             side: BorderSide(
-                              color: AppTheme.primaryLight.withValues(
+                              color: context.appPrimaryAccent.withValues(
                                 alpha: 0.3,
                               ),
                             ),
@@ -1210,7 +1223,7 @@ class _BookCard extends StatelessWidget {
                               const Icon(
                                 Icons.format_quote_rounded,
                                 size: 10,
-                                color: AppTheme.primaryLight,
+                                color: Colors.white,
                               ),
                               const SizedBox(width: 3),
                               Text(
@@ -1219,7 +1232,7 @@ class _BookCard extends StatelessWidget {
                                   fontFamily: 'Pretendard',
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: AppTheme.primaryLight,
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
@@ -1450,8 +1463,9 @@ class _TodayGoalBanner extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: AppTheme.smoothBox(
-          color: AppTheme.primary.withValues(alpha: 0.18),
+          color: context.appPrimaryAccent.withValues(alpha: 0.08),
           radius: AppTheme.radiusLG,
+          side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.15)),
         ),
         child: Row(
           children: [
@@ -1459,7 +1473,7 @@ class _TodayGoalBanner extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: AppTheme.smoothBox(
-                color: AppTheme.primary.withValues(alpha: 0.4),
+                color: context.appPrimaryAccent.withValues(alpha: 0.15),
                 radius: 10,
               ),
               child: Icon(
@@ -1580,7 +1594,7 @@ class _TodayGoalBanner extends StatelessWidget {
               if (firstReadingBook != null)
                 Icon(
                   Icons.play_circle_outline_rounded,
-                  color: AppTheme.primaryLight,
+                  color: context.appPrimaryAccent,
                   size: 24,
                 ),
             ],
@@ -1925,6 +1939,7 @@ class _SortSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
       child: Column(
@@ -1961,7 +1976,7 @@ class _SortSheet extends StatelessWidget {
                     radius: 12,
                     side: BorderSide(
                       color: opt == current
-                          ? AppTheme.primaryLight.withValues(alpha: 0.3)
+                          ? context.appPrimaryAccent.withValues(alpha: 0.4)
                           : Colors.transparent,
                     ),
                   ),
@@ -1972,7 +1987,7 @@ class _SortSheet extends StatelessWidget {
                           opt.label,
                           style: AppTheme.bodyMedium.copyWith(
                             color: opt == current
-                                ? AppTheme.primaryLight
+                                ? context.appPrimaryAccent
                                 : context.appTextPrimary,
                             fontWeight: opt == current
                                 ? FontWeight.w600
@@ -1981,10 +1996,10 @@ class _SortSheet extends StatelessWidget {
                         ),
                       ),
                       if (opt == current)
-                        const Icon(
+                        Icon(
                           Icons.check_rounded,
                           size: 18,
-                          color: AppTheme.primaryLight,
+                          color: isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent,
                         ),
                     ],
                   ),
@@ -2075,7 +2090,7 @@ class _AddBookSheetState extends State<_AddBookSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppTheme.primaryLight),
+                  borderSide: BorderSide(color: context.appPrimaryAccent),
                 ),
               ),
             ),
@@ -2160,6 +2175,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final book = widget.book;
     final isReading = book.status == ReadingStatus.reading;
     final isCompleted = book.status == ReadingStatus.completed;
@@ -2181,12 +2197,14 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                 width: 64,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.3),
+                  color: isDark
+                      ? AppTheme.primary.withValues(alpha: 0.3)
+                      : AppTheme.lightPrimaryAccent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,
-                  color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                  color: Colors.white.withValues(alpha: 0.85),
                   size: 28,
                 ),
               ),
@@ -2216,19 +2234,17 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                       ),
                       decoration: BoxDecoration(
                         color: isCompleted
-                            ? AppTheme.primaryLight.withValues(alpha: 0.12)
+                            ? context.primaryBg(0.12)
                             : isReading
-                            ? AppTheme.accent.withValues(alpha: 0.12)
+                            ? context.appPrimaryAccent.withValues(alpha: isDark ? 0.12 : 0.15)
                             : context.appCardElevated,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         book.status.label,
                         style: AppTheme.captionSmall.copyWith(
-                          color: isCompleted
-                              ? AppTheme.primaryLight
-                              : isReading
-                              ? AppTheme.accent
+                          color: isCompleted || isReading
+                              ? context.appPrimaryAccent
                               : context.appTextTertiary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2291,9 +2307,9 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                       decoration: BoxDecoration(
                         color: context.appCardElevated,
                         borderRadius: BorderRadius.circular(10),
-                        border: const Border(
+                        border: Border(
                           left: BorderSide(
-                            color: AppTheme.primaryLight,
+                            color: context.appPrimaryAccent,
                             width: 3,
                           ),
                         ),
@@ -2318,7 +2334,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: context.appBorder,
-                valueColor: const AlwaysStoppedAnimation(AppTheme.primaryLight),
+                valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
                 minHeight: 6,
               ),
             ),
@@ -2383,8 +2399,8 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: AppTheme.primaryLight,
+                              borderSide: BorderSide(
+                                color: context.appPrimaryAccent,
                               ),
                             ),
                           ),
@@ -2414,7 +2430,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                       onPressed: () => _savePage(context),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.primary,
-                        foregroundColor: AppTheme.primaryLight,
+                        foregroundColor: isDark ? AppTheme.primaryLight : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: AppTheme.smoothShape(radius: 10),
                       ),
@@ -2470,7 +2486,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
-                    foregroundColor: AppTheme.primaryLight,
+                    foregroundColor: isDark ? AppTheme.primaryLight : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: AppTheme.smoothShape(radius: 12),
                   ),
@@ -2488,7 +2504,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                       behavior: SnackBarBehavior.floating,
                       action: SnackBarAction(
                         label: '취소',
-                        textColor: AppTheme.primaryLight,
+                        textColor: Colors.white,
                         onPressed: () {},
                       ),
                     ),
@@ -2527,17 +2543,21 @@ class _PageAdjustButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: AppTheme.smoothBox(
-            color: AppTheme.primary.withValues(alpha: 0.15),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppTheme.primary.withValues(alpha: 0.15)
+                : AppTheme.lightPrimaryAccent,
             radius: 10,
             side: BorderSide(
-              color: AppTheme.primaryLight.withValues(alpha: 0.2),
+              color: context.appPrimaryAccent.withValues(alpha: 0.3),
             ),
           ),
           child: Text(
             label,
             style: AppTheme.captionLarge.copyWith(
               fontFamily: 'Pretendard',
-              color: AppTheme.primaryLight,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.primaryLight
+                  : Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -2559,7 +2579,7 @@ class _DetailStat extends StatelessWidget {
           Text(
             value,
             style: AppTheme.bodyLarge.copyWith(
-              color: AppTheme.primaryLight,
+              color: context.appPrimaryAccent,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -2610,7 +2630,7 @@ class _SegmentToggle extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primary.withValues(alpha: 0.6)
+                      ? context.appPrimaryAccent
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(9),
                 ),
@@ -2619,7 +2639,7 @@ class _SegmentToggle extends StatelessWidget {
                   style: AppTheme.captionLarge.copyWith(
                     fontFamily: 'Pretendard',
                     color: isSelected
-                        ? AppTheme.primaryLight
+                        ? Colors.white
                         : context.appTextTertiary,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   ),
@@ -3100,411 +3120,6 @@ class _ReadingLogCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─── 설정 시트 ────────────────────────────────────────────────────────
-
-void _showSettingsSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: context.appCard,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) => const _SettingsSheet(),
-  );
-}
-
-class _SettingsSheet extends StatefulWidget {
-  const _SettingsSheet();
-
-  @override
-  State<_SettingsSheet> createState() => _SettingsSheetState();
-}
-
-class _SettingsSheetState extends State<_SettingsSheet> {
-  bool _notiFollow = true;
-  bool _notiLike = true;
-  bool _notiGoal = true;
-  bool _notiOverlap = false;
-  int _dailyGoalMinutes = 30;
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (_, scrollCtrl) => Column(
-        children: [
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              children: [
-                Text(
-                  '설정',
-                  style: AppTheme.headingMedium.copyWith(
-                    color: context.appTextPrimary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: context.appTextTertiary,
-                    size: 20,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              controller: scrollCtrl,
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              children: [
-                _SettingsSection(
-                  title: '화면',
-                  children: [
-                    Consumer(
-                      builder: (context, ref, _) => _ToggleTile(
-                        label: '다크 모드',
-                        description: '어두운 배경으로 눈의 피로를 줄여요',
-                        value: ref.watch(themeModeProvider) == ThemeMode.dark,
-                        onChanged: (_) {
-                          ref.read(themeModeProvider.notifier).toggle();
-                        },
-                        showDivider: false,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _SettingsSection(
-                  title: '독서 목표',
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                '하루 목표',
-                                style: AppTheme.bodyMedium.copyWith(
-                                  color: context.appTextPrimary,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                '$_dailyGoalMinutes분',
-                                style: AppTheme.bodyMedium.copyWith(
-                                  color: AppTheme.primaryLight,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SliderTheme(
-                            data: SliderThemeData(
-                              activeTrackColor: AppTheme.primaryLight,
-                              inactiveTrackColor: context.appBorder,
-                              thumbColor: AppTheme.primaryLight,
-                              overlayColor: AppTheme.primaryLight.withValues(
-                                alpha: 0.12,
-                              ),
-                              trackHeight: 3,
-                              padding: EdgeInsets.zero,
-                            ),
-                            child: Slider(
-                              value: _dailyGoalMinutes.toDouble(),
-                              min: 10,
-                              max: 120,
-                              divisions: 11,
-                              onChanged: (v) {
-                                HapticFeedback.selectionClick();
-                                setState(() => _dailyGoalMinutes = v.toInt());
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: ['10분', '30분', '60분', '120분']
-                                .map(
-                                  (l) => Text(
-                                    l,
-                                    style: AppTheme.captionSmall.copyWith(
-                                      color: context.appTextTertiary,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _SettingsSection(
-                  title: '알림',
-                  children: [
-                    _ToggleTile(
-                      label: '팔로우 신청',
-                      description: '누군가 나를 팔로우할 때',
-                      value: _notiFollow,
-                      onChanged: (v) => setState(() => _notiFollow = v),
-                    ),
-                    _ToggleTile(
-                      label: '좋아요',
-                      description: '내 문장에 좋아요가 달릴 때',
-                      value: _notiLike,
-                      onChanged: (v) => setState(() => _notiLike = v),
-                    ),
-                    _ToggleTile(
-                      label: '목표 달성 알림',
-                      description: '하루 독서 목표 달성 시',
-                      value: _notiGoal,
-                      onChanged: (v) => setState(() => _notiGoal = v),
-                    ),
-                    _ToggleTile(
-                      label: '겹문장 알림',
-                      description: '내 문장을 다른 사람도 기록할 때',
-                      value: _notiOverlap,
-                      onChanged: (v) => setState(() => _notiOverlap = v),
-                      showDivider: false,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _SettingsSection(
-                  title: '앱 정보',
-                  children: [
-                    _SettingsMenuTile(
-                      label: '버전 정보',
-                      trailing: Text(
-                        '1.0.0',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appTextTertiary,
-                        ),
-                      ),
-                    ),
-                    const _SettingsMenuTile(label: '개인정보 처리방침'),
-                    const _SettingsMenuTile(label: '이용약관', showDivider: false),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _SettingsSection(
-                  title: '계정',
-                  children: [
-                    _SettingsMenuTile(
-                      label: '로그아웃',
-                      labelColor: context.appTextSecondary,
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('로그인 기능 활성화 후 사용 가능해요'),
-                            backgroundColor: AppTheme.primary,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                      showDivider: false,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  const _SettingsSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            title,
-            style: AppTheme.captionLarge.copyWith(
-              color: context.appTextTertiary,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        Material(
-          color: context.appCard,
-          shape: AppTheme.smoothShape(
-            radius: AppTheme.radiusLG,
-            side: BorderSide(color: context.appBorder),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Material(
-              color: context.appCardElevated,
-              shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-              clipBehavior: Clip.antiAlias,
-              child: Column(children: children),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ToggleTile extends StatelessWidget {
-  final String label;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final bool showDivider;
-
-  const _ToggleTile({
-    required this.label,
-    required this.description,
-    required this.value,
-    required this.onChanged,
-    this.showDivider = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: value,
-                onChanged: (v) {
-                  HapticFeedback.selectionClick();
-                  onChanged(v);
-                },
-                activeThumbColor: AppTheme.primaryLight,
-                activeTrackColor: AppTheme.primaryLight.withValues(alpha: 0.25),
-                inactiveTrackColor: context.appBorder,
-                inactiveThumbColor: context.appTextTertiary,
-              ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          Divider(height: 1, color: context.appBorder, indent: 16),
-      ],
-    );
-  }
-}
-
-class _SettingsMenuTile extends StatelessWidget {
-  final String label;
-  final Color? labelColor;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final bool showDivider;
-
-  const _SettingsMenuTile({
-    required this.label,
-    this.labelColor,
-    this.trailing,
-    this.onTap,
-    this.showDivider = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap != null
-              ? () {
-                  HapticFeedback.selectionClick();
-                  onTap!();
-                }
-              : null,
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: labelColor ?? context.appTextPrimary,
-                    ),
-                  ),
-                ),
-                trailing ??
-                    (onTap != null
-                        ? Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: context.appTextTertiary,
-                          )
-                        : const SizedBox.shrink()),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(height: 1, color: context.appBorder, indent: 16),
-      ],
     );
   }
 }

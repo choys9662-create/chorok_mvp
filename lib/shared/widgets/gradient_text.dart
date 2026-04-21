@@ -16,6 +16,15 @@ class GradientText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 라이트 모드에서는 네온 그라디언트 대신 딥 그린 단색 사용
+    if (Theme.of(context).brightness == Brightness.light) {
+      return Text(
+        text,
+        style: (style ?? const TextStyle()).copyWith(
+          color: context.appPrimaryAccent,
+        ),
+      );
+    }
     return ShaderMask(
       shaderCallback: (bounds) => gradient.createShader(
         Rect.fromLTWH(0, 0, bounds.width, bounds.height),
@@ -43,6 +52,9 @@ class GradientIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (Theme.of(context).brightness == Brightness.light) {
+      return Icon(icon, size: size, color: context.appPrimaryAccent);
+    }
     return ShaderMask(
       shaderCallback: (bounds) => gradient.createShader(
         Rect.fromLTWH(0, 0, bounds.width, bounds.height),
