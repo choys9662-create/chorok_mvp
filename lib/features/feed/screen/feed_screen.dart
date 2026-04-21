@@ -9,6 +9,22 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
 
+// ─── 트렌딩 책 목업 ───────────────────────────────────────────────────────────
+typedef _TrendingBook = ({
+  String title,
+  String author,
+  int sentenceCount,
+  int gradientIndex,
+});
+
+const List<_TrendingBook> _kTrendingBooks = [
+  (title: '채식주의자', author: '한강', sentenceCount: 142, gradientIndex: 0),
+  (title: '파친코', author: '이민진', sentenceCount: 98, gradientIndex: 2),
+  (title: '아몬드', author: '손원평', sentenceCount: 87, gradientIndex: 4),
+  (title: '소년이 온다', author: '한강', sentenceCount: 76, gradientIndex: 3),
+  (title: '82년생 김지영', author: '조남주', sentenceCount: 61, gradientIndex: 1),
+];
+
 /// 피드 스크린: 소식(소셜 활동) & 발견(문장 탐색)
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -156,7 +172,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ─── 헤더 ─────────────────────────────────────────
+            // ─── 헤더 (고정) ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppTheme.screenPadding, 20,
@@ -210,80 +226,106 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ],
               ),
             ),
+            const _ActivityBanner(),
+            const SizedBox(height: 10),
             Divider(height: 1, color: context.appBorder),
 
-            // ─── 필터 칩 ──────────────────────────────────────
-            SizedBox(
-              height: 48,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.screenPadding, vertical: 8),
-                children: [
-                  _FeedFilterChip(
-                    label: '최신순',
-                    isSelected: _filter == _FeedFilter.latest,
-                    onTap: () => setState(() => _filter = _FeedFilter.latest),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedFilterChip(
-                    label: '인기순',
-                    isSelected: _filter == _FeedFilter.popular,
-                    onTap: () =>
-                        setState(() => _filter = _FeedFilter.popular),
-                  ),
-                  const SizedBox(width: 8),
-                  _FeedFilterChip(
-                    label: '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
-                    isSelected: _filter == _FeedFilter.overlap,
-                    onTap: () =>
-                        setState(() => _filter = _FeedFilter.overlap),
-                  ),
-                ],
-              ),
-            ),
-
-            // ─── 콘텐츠 ──────────────────────────────────────
+            // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
             Expanded(
-              child: _filter == _FeedFilter.overlap
-                  ? _buildOverlapView(groups, scrollCtrl)
-                  : filtered.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                          color: context.appPrimaryAccent,
-                          backgroundColor: context.appCard,
-                          onRefresh: _onRefresh,
-                          child: _SentenceList(
-                            sentences: filtered,
-                            overlapIds: overlapIds,
-                            controller: scrollCtrl,
-                          ),
+              child: RefreshIndicator(
+                color: context.appPrimaryAccent,
+                backgroundColor: context.appCard,
+                onRefresh: _onRefresh,
+                child: CustomScrollView(
+                  controller: scrollCtrl,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 48,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.screenPadding, vertical: 8),
+                          children: [
+                            _FeedFilterChip(
+                              label: '최신순',
+                              isSelected: _filter == _FeedFilter.latest,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.latest),
+                            ),
+                            const SizedBox(width: 8),
+                            _FeedFilterChip(
+                              label: '인기순',
+                              isSelected: _filter == _FeedFilter.popular,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.popular),
+                            ),
+                            const SizedBox(width: 8),
+                            _FeedFilterChip(
+                              label:
+                                  '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
+                              isSelected: _filter == _FeedFilter.overlap,
+                              onTap: () =>
+                                  setState(() => _filter = _FeedFilter.overlap),
+                            ),
+                          ],
                         ),
+                      ),
+                    ),
+                    if (_filter != _FeedFilter.overlap) ...[
+                      const SliverToBoxAdapter(child: _TrendingBooksSection()),
+                      SliverToBoxAdapter(
+                        child: Divider(height: 1, color: context.appBorder),
+                      ),
+                    ],
+                    if (_filter == _FeedFilter.overlap)
+                      groups.isEmpty
+                          ? SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(),
+                            )
+                          : SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.screenPadding,
+                                vertical: AppTheme.spaceMD,
+                              ),
+                              sliver: SliverList.separated(
+                                itemCount: groups.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppTheme.spaceMD),
+                                itemBuilder: (_, i) =>
+                                    _OverlapGroupCard(group: groups[i]),
+                              ),
+                            )
+                    else
+                      filtered.isEmpty
+                          ? SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(),
+                            )
+                          : SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.screenPadding,
+                                vertical: AppTheme.spaceMD,
+                              ),
+                              sliver: SliverList.separated(
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: AppTheme.spaceMD),
+                                itemBuilder: (_, i) => _SentenceCard(
+                                  sentence: filtered[i],
+                                  isOverlap:
+                                      overlapIds.contains(filtered[i].id),
+                                ),
+                              ),
+                            ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOverlapView(List<OverlapGroup> groups, ScrollController ctrl) {
-    if (groups.isEmpty) return _buildEmptyState();
-
-    return RefreshIndicator(
-      color: context.appPrimaryAccent,
-      backgroundColor: context.appCard,
-      onRefresh: _onRefresh,
-      child: ListView.separated(
-        controller: ctrl,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.screenPadding,
-          vertical: AppTheme.spaceMD,
-        ),
-        itemCount: groups.length,
-        separatorBuilder: (_, _) =>
-            const SizedBox(height: AppTheme.spaceMD),
-        itemBuilder: (_, i) => _OverlapGroupCard(group: groups[i]),
       ),
     );
   }
@@ -302,6 +344,229 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 .copyWith(color: context.appTextSecondary),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── 활동 배너 ────────────────────────────────────────────────────────────────
+class _ActivityBanner extends StatelessWidget {
+  const _ActivityBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final seed = DateTime.now().day;
+    final readers = 300 + (seed * 7) % 200;
+    final overlaps = 8 + seed % 13;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding, 10,
+        AppTheme.screenPadding, 0,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: AppTheme.radiusMD,
+          side: BorderSide(color: context.appBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: context.appPrimaryAccent,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: context.appPrimaryAccent.withValues(alpha: 0.5),
+                    blurRadius: 5,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '오늘 $readers명',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const TextSpan(text: '이 문장을 기록했어요 · '),
+                    TextSpan(
+                      text: '겹문장 $overlaps건',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 트렌딩 책 섹션 ───────────────────────────────────────────────────────────
+class _TrendingBooksSection extends StatelessWidget {
+  const _TrendingBooksSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding, 16, AppTheme.screenPadding, 8,
+          ),
+          child: Text(
+            '이번 주 화제의 책',
+            style: AppTheme.captionLarge.copyWith(
+              fontFamily: 'Pretendard',
+              color: context.appTextTertiary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 72,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            itemCount: _kTrendingBooks.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _kTrendingBooks.length - 1 ? 10 : 0,
+                ),
+                child: _TrendingBookCard(book: _kTrendingBooks[index]),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _TrendingBookCard extends StatefulWidget {
+  final _TrendingBook book;
+  const _TrendingBookCard({required this.book});
+
+  @override
+  State<_TrendingBookCard> createState() => _TrendingBookCardState();
+}
+
+class _TrendingBookCardState extends State<_TrendingBookCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.book;
+    final gradColors =
+        AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+
+    return GestureDetector(
+      onTapDown: (_) {
+        HapticFeedback.selectionClick();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          width: 196,
+          clipBehavior: Clip.antiAlias,
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: AppTheme.radiusMD,
+            side: BorderSide(color: context.appBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: gradColors,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      b.title,
+                      style: AppTheme.bodySmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      b.author,
+                      style: AppTheme.captionSmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: ShapeDecoration(
+                    color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: 6,
+                        cornerSmoothing: 0.6,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    '${b.sentenceCount}개',
+                    style: AppTheme.captionSmall.copyWith(
+                      fontFamily: 'Pretendard',
+                      color: context.appPrimaryAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -345,38 +610,6 @@ class _FeedFilterChip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── 문장 목록 (최신/인기 필터용) ─────────────────────────────────────────
-class _SentenceList extends StatelessWidget {
-  final List<FeedSentence> sentences;
-  final Set<String> overlapIds;
-  final ScrollController? controller;
-
-  const _SentenceList({
-    required this.sentences,
-    required this.overlapIds,
-    this.controller,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      controller: controller,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.screenPadding,
-        vertical: AppTheme.spaceMD,
-      ),
-      itemCount: sentences.length,
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: AppTheme.spaceMD),
-      itemBuilder: (_, i) => _SentenceCard(
-        sentence: sentences[i],
-        isOverlap: overlapIds.contains(sentences[i].id),
       ),
     );
   }
@@ -443,7 +676,7 @@ class _SentenceCardState extends State<_SentenceCard> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: ShapeDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.4),
+                color: context.appPrimaryAccent.withValues(alpha: 0.1),
                 shape: SmoothRectangleBorder(
                   borderRadius: SmoothBorderRadius.only(
                     topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
@@ -477,7 +710,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                       width: 28,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(Icons.menu_book_rounded,
@@ -545,7 +778,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                     CircleAvatar(
                       radius: 12,
                       backgroundColor:
-                          AppTheme.primary.withValues(alpha: 0.3),
+                          context.appPrimaryAccent.withValues(alpha: 0.12),
                       child: Text(
                         s.username[0].toUpperCase(),
                         style: AppTheme.captionSmall
@@ -666,7 +899,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: ShapeDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.2),
+              color: context.appPrimaryAccent.withValues(alpha: 0.1),
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius.only(
                   topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
@@ -702,7 +935,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                       width: 28,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.25),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(Icons.menu_book_rounded,
@@ -787,8 +1020,8 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                                     left: i * 16.0,
                                     child: CircleAvatar(
                                       radius: 12,
-                                      backgroundColor: AppTheme.primary
-                                          .withValues(alpha: 0.4),
+                                      backgroundColor: context.appPrimaryAccent
+                                          .withValues(alpha: 0.15),
                                       child: Text(
                                         g.members[i].username[0]
                                             .toUpperCase(),
@@ -892,7 +1125,7 @@ class _OverlapMemberTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.12),
                 child: Text(
                   member.username[0].toUpperCase(),
                   style: AppTheme.captionSmall

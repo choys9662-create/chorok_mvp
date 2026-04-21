@@ -1,138 +1,59 @@
-# High-End Flutter UI/UX 다중 에이전트 하네스 v2.2 (자기 갱신형)
+Flutter UI/UX 다중 에이전트 하네스 v2.2
+Planner → Generator → Evaluator 3단계 파이프라인. 모든 에이전트는 DESIGN.md를 유일한 시각적·구현 기준으로 사용한다. DESIGN.md는 에이전트가 직접 갱신하는 살아있는 문서다. CLAUDE.md 자체는 수정 불가.
 
-이 하네스는 고품질 Flutter UI/UX 구현을 위한 **Planner → Generator → Evaluator** 3단계 에이전트 파이프라인과, 실수를 영구 학습하고 사용자 변경 요청을 문서에 반영하는 **자기 갱신 프로토콜(Self-Update Protocol)**로 구성됩니다.
+1. Planner (초기화)
+작업 시작 전 DESIGN.md 전체(특히 §13 안티패턴, §14 변경 이력)를 읽는다.
 
-모든 에이전트는 프로젝트 루트의 `DESIGN.md`를 절대적인 시각적·구현 기준으로 삼습니다. `DESIGN.md`는 살아있는 문서(Living Document)이며, 에이전트는 프로토콜에 따라 이를 직접 갱신할 책임을 집니다.
+feature_list.json 작성 — 기능을 항목별로 분해, 초기값 "passes": false
+claude-progress.txt 생성 — Generator의 첫 작업 명시
+새 UI/UX 규칙 파일을 임의로 만들지 않는다. 모든 규칙은 DESIGN.md에만 존재한다.
 
----
+사용자가 디자인 변경을 요청하면 코드 수정 전에 먼저:
 
-## 1. 초기화 에이전트 (Planner / Initializer)
+DESIGN.md 관련 섹션 수정
+§14 변경 이력 추가
+§15 버전 업
 
-**목적:** 사용자의 요구사항을 분석하고, `DESIGN.md`와 연계된 개발 명세서와 환경을 구축합니다.
 
-당신은 수백만 명의 사용자를 보유한 상용 앱의 '수석 모바일 아키텍트'입니다. 코드를 직접 작성하지 마십시오. 대신 다음 지침에 따라 프로젝트의 기반을 설계하십시오.
+2. Generator (구현)
 
-1. **디자인 시스템 동기화:**
-   - 작업 시작 전 `DESIGN.md` 파일 전체를 스캔하고 완전히 숙지하십시오.
-   - `DESIGN.md`의 **Section 13 (안티패턴 레지스트리)**와 **Section 14 (사용자 변경 요청 이력)**을 반드시 확인하여 과거의 실수와 확정된 변경사항을 메모리에 로드하십시오.
-   - 절대 새로운 UI/UX 규칙 파일을 임의로 생성하지 마십시오. 모든 시각적 제약은 `DESIGN.md`에만 존재합니다.
+claude-progress.txt → feature_list.json → DESIGN.md(§13 포함) 순서로 읽는다.
+"passes": false인 최우선 기능 하나만 구현한다.
+구현 규칙:
 
-2. **기능 명세서 작성 (`feature_list.json`):**
-   - 사용자의 요구사항을 기능별(앱바, 스크롤 리스트, 에러 상태, 로딩 스켈레톤 등)로 분해하여 `feature_list.json`으로 작성하십시오.
-   - 모든 기능의 초기 상태는 `"passes": false`로 설정합니다.
+하드코딩 금지 — 색상·수치는 반드시 ChorokColors / ChorokMetrics / ChorokTypography / ChorokShapes 경유
+BorderRadius.circular() 직접 호출 금지 → ChorokShapes.smooth*() 사용
+4단계 상태(로딩 Shimmer / 성공 / 빈 상태 / 에러)를 switch로 분기 (§10 참조)
+버튼: 48×48px 터치 영역 + Semantics + HapticFeedback + ChorokAnimations.kAnimNormal
+Presentation / Logic 계층 분리, 정적 위젯에 const 적용
 
-3. **진척도 파일 생성 (`claude-progress.txt`):**
-   - 초기화 완료 상태를 기록하고, Generator가 수행해야 할 첫 번째 작업을 명시하십시오.
 
-4. **[자기 갱신 트리거 — 사용자 변경 요청 시]**
-   사용자가 기존 동작이나 디자인의 변경을 요청하면, 코드 수정 전에 다음을 먼저 수행하십시오.
-   - `DESIGN.md`의 관련 섹션(색상, 여백, 곡률, 컴포넌트 등)을 직접 수정하여 새 규칙을 반영합니다.
-   - `DESIGN.md Section 14` (사용자 변경 요청 이력)에 변경 항목을 추가합니다.
-   - `DESIGN.md Section 15` (문서 버전 이력)의 버전을 올리고 변경 요약을 기록합니다.
-   - 이후 Generator에게 갱신된 `DESIGN.md`를 기준으로 구현하도록 지시합니다.
+완료 후 claude-progress.txt 업데이트.
 
----
 
-## 2. 코딩 에이전트 (Generator / 실무자)
+3. Evaluator (검증)
+위반 항목이 하나라도 있으면 즉시 반려 + 에러 리포트 작성. 통과 시 "passes": true.
+검증 체크리스트:
 
-**목적:** 한 번에 하나의 기능씩, `DESIGN.md`의 제약사항을 철저히 지키며 코드를 작성합니다.
+ 4의 배수가 아닌 하드코딩 패딩/마진
+ 하드코딩 색상 (Colors.*, Color(0xFF...))
+ ChorokTypography 미사용 Text
+ BorderRadius.circular() 직접 사용
+ 리스트에 Column 사용 (ListView.builder 대체 필요)
+ 버튼 터치 영역 < 48×48 또는 Semantics 누락
+ Shimmer 대신 CircularProgressIndicator
+ 빈 상태 / 에러 상태 누락
+ 정적 위젯에 const 누락
+ §13 안티패턴 재발
 
-당신은 Flutter UI/UX 프론트엔드 실무 개발자입니다. 작업을 시작할 때 다음 절차를 엄격히 따르십시오.
+새로운 위반 유형 발견 시 — 반려와 동시에 DESIGN.md 갱신:
 
-1. **상태 파악 (필수 순서):**
-   - `claude-progress.txt`, `feature_list.json`을 읽어 현재 작업을 파악합니다.
-   - **`DESIGN.md` 전체를 읽어 디자인 토큰과 구현 규칙을 메모리에 로드합니다.**
-   - **`DESIGN.md Section 13` (안티패턴 레지스트리)를 추가로 정독**하여 과거에 발생한 모든 실수 목록을 숙지합니다. 이 목록에 등재된 패턴은 절대 재현하지 마십시오.
+§13에 추가: | 날짜 | 위반 유형 | 잘못된 예 | 올바른 예 | 관련 섹션 |
+§12 체크리스트 끝에 항목 추가
+§15 버전 이력에 "Evaluator 자동 등록 — [요약]" 기록
 
-2. **단일 작업 집중:**
-   - `feature_list.json`에서 `"passes": false`인 최우선 기능 하나만 선택하여 구현합니다.
 
-3. **구현 원칙 (`DESIGN.md` 절대 준수):**
-   - **토큰 사용:** 하드코딩된 숫자나 색상을 절대 사용하지 마십시오. `AppTheme.*` (`ChorokColors`, `ChorokMetrics`, `ChorokTypography`, `ChorokShapes` 참조) 클래스를 반드시 경유하십시오.
-   - **형태 강제:** `BorderRadius.circular()`를 직접 호출하지 마십시오. 무조건 `ChorokShapes.smooth*()` 계열 메서드를 사용하십시오.
-   - **4단계 상태 렌더링:** `DESIGN.md Section 10`에 명시된 대로 로딩(Shimmer), 성공, 빈 상태, 에러 상태를 `switch` 문으로 완전히 분기 처리하십시오.
-   - **접근성 및 애니메이션:** 모든 버튼에 48×48px 터치 영역 확보 및 `Semantics`를 적용하고, `HapticFeedback`과 `ChorokAnimations.kAnimNormal`을 포함하십시오.
-   - **계층 분리:** Presentation 계층과 비즈니스 로직(Controller/State) 계층을 분리하고, 정적 요소에는 `const` 키워드를 집요하게 추가하십시오.
+공통 원칙
 
-4. **결과 커밋:**
-   - 코딩이 완료되면 `claude-progress.txt`에 작업 내역을 기록하고 종료합니다.
-
----
-
-## 3. 평가 에이전트 (Evaluator / 검증 및 승인자)
-
-**목적:** 생성된 코드가 `DESIGN.md`의 기준을 위반했는지 가차 없이 검증하고, 새로운 위반 유형을 `DESIGN.md`에 영구 등록합니다.
-
-당신은 최고 수준의 품질 기준을 가진 'QA 관리자 겸 하네스 관리자'입니다. 생성된 코드를 검증하고, 발견된 새로운 위반 패턴을 문서화하는 이중 책임을 집니다.
-
-### 3-A. 코드 검증 (Hard Filter)
-
-아래 기준에 따라 코드를 검증하십시오. **하나라도 위반 시 즉시 반려(Reject)하고 상세 에러 리포트를 작성하십시오.**
-
-**1. 토큰 위반 여부:**
-- 4의 배수가 아닌 하드코딩된 패딩/마진 값이 존재하는가? (예: 10, 15, 18 등 — 4px 단위 미만 금지)
-- `Colors.red`, `Color(0xFF...)` 등 하드코딩된 색상이 존재하는가? (`ChorokColors.*` 누락)
-- `ChorokTypography` 토큰을 사용하지 않는 `Text` 위젯이 있는가? (Pretendard 폰트 패밀리 미지정 포함)
-
-**2. 금지된 컴포넌트 패턴 검사:**
-- `ChorokShapes.smooth*()` 대신 `BorderRadius.circular()`를 직접 사용했는가?
-- 고정된 `height`를 가진 왼쪽 컬러 바(Accent Bar)가 존재하는가? (`Row` + `CrossAxisAlignment.stretch` 사용 여부 확인)
-- 긴 리스트 렌더링에 `ListView.builder` 대신 `Column`을 사용했는가?
-- `DESIGN.md Section 13` (안티패턴 레지스트리)에 등재된 패턴이 재발했는가?
-
-**3. UX 결함 검사:**
-- 터치 영역이 48×48 미만이거나 `Semantics` 래핑이 누락된 버튼이 있는가?
-- 로딩 시 Shimmer 대신 구형 `CircularProgressIndicator`를 사용했는가?
-- 빈 상태(Empty State) 또는 에러 상태(Error State) 처리 로직이 누락되었는가?
-
-**4. 성능 검증:**
-- `const`가 누락된 정적 위젯이 있는가?
-- 위젯 트리가 불필요하게 깊게 중첩되었는가?
-
-검증을 통과했을 때만 `feature_list.json`의 `"passes"`를 `true`로 변경합니다.
-
-### 3-B. 자기 갱신 — 새로운 위반 등록 (필수 의무)
-
-검증 과정에서 **기존 `DESIGN.md Section 12` 체크리스트나 `Section 13` 안티패턴 레지스트리에 없는 새로운 위반 유형**을 발견하면, 반드시 다음을 수행하십시오.
-
-```
-[자기 갱신 절차]
-1. DESIGN.md Section 13 (안티패턴 레지스트리)에 새 항목을 추가합니다.
-   형식: | 날짜 | 위반 유형 | 잘못된 코드 예시 | 올바른 코드 예시 | 관련 규칙 섹션 |
-
-2. DESIGN.md Section 12 (자가 검증 파이프라인) 체크리스트에 해당 항목을 추가합니다.
-   (기존 항목의 번호나 내용은 변경하지 않고, 끝에 새 행을 추가합니다.)
-
-3. DESIGN.md Section 15 (문서 버전 이력)에 갱신 기록을 추가합니다.
-   사유: "Evaluator 자동 등록 — [위반 유형 요약]"
-```
-
-이 갱신은 코드를 반려하는 동시에 수행하며, Generator가 재작업 시 반드시 갱신된 `DESIGN.md`를 먼저 읽어야 합니다.
-
----
-
-## 4. 자기 갱신 프로토콜 전체 요약 (Meta-Protocol Reference)
-
-> 이 섹션은 모든 에이전트가 공유하는 메타 규칙입니다.
-
-### 4.1. 갱신 트리거 유형
-
-| 트리거 | 담당 에이전트 | 갱신 대상 | 즉시 수행 여부 |
-| :--- | :--- | :--- | :--- |
-| **새로운 코드 위반 발견** | Evaluator | DESIGN.md §13, §12, §15 | 반려와 동시에 수행 |
-| **사용자 디자인 변경 요청** | Planner | DESIGN.md 관련 섹션, §14, §15 | 코드 수정 전에 먼저 수행 |
-| **반복 실수 패턴 감지** | Evaluator | DESIGN.md §13 기존 항목에 `발생 횟수` 업데이트 | 즉시 수행 |
-| **사용자 규칙 추가 지시** | Planner | DESIGN.md 적절한 섹션, §15 | 즉시 수행 |
-
-### 4.2. 불변 원칙 (CLAUDE.md 자체는 수정 불가)
-
-- **이 파일(`CLAUDE.md`)은 에이전트가 임의로 수정할 수 없습니다.** 하네스 구조(3단계 + 메타 프로토콜)는 사용자의 명시적 지시 없이 변경되지 않습니다.
-- 모든 학습과 갱신은 `DESIGN.md`에만 기록됩니다. 이 분리는 "실행 규칙(HOW)"과 "지식 베이스(WHAT)"의 역할 분리를 보장합니다.
-- `DESIGN.md`의 규칙은 **추가 전용(Append-Only)**입니다. 기존 규칙을 삭제하거나 완화하려면 사용자의 명시적 승인이 필요합니다.
-
-### 4.3. 갱신 후 필수 확인
-
-`DESIGN.md`를 갱신한 에이전트는 갱신 직후 다음을 확인합니다.
-1. 새로 추가된 규칙이 기존 규칙과 충돌하지 않는가?
-2. `Section 15` 버전 이력에 갱신 항목이 기록되었는가?
-3. Generator가 다음 작업 시 갱신된 파일을 읽도록 `claude-progress.txt`에 알림을 남겼는가?
+DESIGN.md 규칙은 추가 전용. 삭제·완화는 사용자 승인 필요.
+갱신 후 확인: 기존 규칙과 충돌 없는지, §15에 기록됐는지, claude-progress.txt에 알림 남겼는지.

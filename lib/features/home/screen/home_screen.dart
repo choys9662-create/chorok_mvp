@@ -100,6 +100,39 @@ const List<_BookData> _kReadingBooks = [
   ),
 ];
 
+// ─── 위시리스트 목업 ──────────────────────────────────────────────────────────
+typedef _WishlistBook = ({
+  String title,
+  String author,
+  int addedDays,
+  int gradientIndex,
+  int totalPages,
+});
+
+const List<_WishlistBook> _kWishlistBooks = [
+  (
+    title: '소년이 온다',
+    author: '한강',
+    addedDays: 3,
+    gradientIndex: 3,
+    totalPages: 216,
+  ),
+  (
+    title: '불편한 편의점',
+    author: '김호연',
+    addedDays: 7,
+    gradientIndex: 6,
+    totalPages: 312,
+  ),
+  (
+    title: '달러구트 꿈 백화점',
+    author: '이미예',
+    addedDays: 14,
+    gradientIndex: 1,
+    totalPages: 304,
+  ),
+];
+
 // ─── 책별 독서 통계 (목업) ──────────────────────────────────────────────────
 const List<BookReadingStats> _kBookStats = [
   BookReadingStats(
@@ -166,7 +199,10 @@ class HomeScreen extends ConsumerWidget {
                   // ③ 문장 기반 추천
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: _RecommendedBooksSection()),
-                  // ④ 피드 하이라이트
+                  // ④ 다음에 읽을 책
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(child: _WishlistSection()),
+                  // ⑤ 피드 하이라이트
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   const SliverToBoxAdapter(child: _FeedHighlightSection()),
                   // ⑤ 타임캡슐 문장
@@ -391,7 +427,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
             .length +
         (todayMin >= goalMin ? 1 : 0);
     final maxMin = [
-      ..._kWeeklyMinutes.sublist(0, todayIndex),
+      ..._kWeeklyMinutes,
       todayMin,
     ].fold<int>(goalMin, (a, b) => a > b ? a : b);
 
@@ -422,7 +458,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: ShapeDecoration(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                  color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
                     borderRadius: SmoothBorderRadius(
                       cornerRadius: 8,
@@ -499,9 +535,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: List.generate(7, (i) {
-                  final min = i == todayIndex
-                      ? todayMin
-                      : (i < todayIndex ? _kWeeklyMinutes[i] : 0);
+                  final min = i == todayIndex ? todayMin : _kWeeklyMinutes[i];
                   final ratio = maxMin > 0
                       ? (min / maxMin).clamp(0.0, 1.0)
                       : 0.0;
@@ -577,7 +611,7 @@ class _WeeklyStatusCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: ShapeDecoration(
-                color: context.appPrimaryAccent.withValues(alpha: 0.06),
+                color: context.primaryBg(0.06),
                 shape: SmoothRectangleBorder(
                   borderRadius: SmoothBorderRadius(
                     cornerRadius: AppTheme.radiusMD,
@@ -633,15 +667,18 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: _glow,
       builder: (_, child) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: ShapeDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppTheme.primary, Color(0xFF0A5C3A)],
+            colors: isDark
+                ? [AppTheme.primary, const Color(0xFF0A5C3A)]
+                : [AppTheme.lightPrimaryAccent, const Color(0xFF00B868)],
           ),
           shape: StadiumBorder(
             side: BorderSide(
@@ -656,10 +693,14 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
               blurRadius: 6 + _glow.value * 18,
               spreadRadius: _glow.value * 3,
             ),
-            const BoxShadow(
-              color: Color(0x661A3D2B),
+            BoxShadow(
+              color:
+                  (isDark
+                          ? const Color(0xFF1A3D2B)
+                          : AppTheme.lightPrimaryAccent)
+                      .withValues(alpha: 0.4),
               blurRadius: 12,
-              offset: Offset(0, 3),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -673,11 +714,12 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: context.appPrimaryAccent,
+                color: isDark ? context.appPrimaryAccent : Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.7),
+                    color: (isDark ? context.appPrimaryAccent : Colors.white)
+                        .withValues(alpha: 0.7),
                     blurRadius: 6,
                   ),
                 ],
@@ -688,7 +730,7 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
               '이어하기',
               style: AppTheme.captionSmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: context.appPrimaryAccent,
+                color: isDark ? context.appPrimaryAccent : Colors.white,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -696,14 +738,14 @@ class _PulsingReadButtonState extends State<_PulsingReadButton>
             Icon(
               Icons.play_arrow_rounded,
               size: 14,
-              color: context.appPrimaryAccent,
+              color: isDark ? context.appPrimaryAccent : Colors.white,
             ),
             const SizedBox(width: 4),
             Text(
               '독서 시작',
               style: AppTheme.captionSmall.copyWith(
                 fontFamily: 'Pretendard',
-                color: context.appPrimaryAccent,
+                color: isDark ? context.appPrimaryAccent : Colors.white,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -812,11 +854,9 @@ class _InsightChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.primary.withValues(alpha: 0.2),
+        color: context.appPrimaryAccent.withValues(alpha: 0.08),
         radius: AppTheme.radiusMD,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.12),
-        ),
+        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -861,6 +901,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final progress = b.currentPage / b.totalPages;
     final gradColors = AppTheme
@@ -895,7 +936,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
           clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 24,
+            radius: AppTheme.radiusLG,
             side: BorderSide(color: context.appBorder),
           ),
           child: Column(
@@ -919,7 +960,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 64,
-                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                        color: context.primaryBg(0.08),
                       ),
                     ),
                     // 진행률 배지
@@ -1027,9 +1068,10 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                     child: Container(
                       height: 36,
                       alignment: Alignment.center,
-                      decoration: AppTheme.smoothBox(
-                        color: AppTheme.primary.withValues(alpha: 0.5),
-                        radius: 10,
+                      decoration: AppTheme.smoothPill(
+                        color: isDark
+                            ? AppTheme.primary.withValues(alpha: 0.5)
+                            : AppTheme.lightPrimaryAccent,
                         side: BorderSide(
                           color: context.appPrimaryAccent.withValues(
                             alpha: 0.3,
@@ -1040,7 +1082,9 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                         '이어 읽기',
                         style: AppTheme.captionLarge.copyWith(
                           fontFamily: 'Pretendard',
-                          color: context.appPrimaryAccent,
+                          color: isDark
+                              ? context.appPrimaryAccent
+                              : Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1100,7 +1144,7 @@ class _RecommendedBooksSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: ShapeDecoration(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                  color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
                     borderRadius: SmoothBorderRadius(
                       cornerRadius: 8,
@@ -1173,6 +1217,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final gradColors = AppTheme
         .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
@@ -1225,7 +1270,7 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       child: Icon(
                         Icons.menu_book_rounded,
                         size: 48,
-                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                        color: context.primaryBg(0.08),
                       ),
                     ),
                     // 매칭 점수
@@ -1289,14 +1334,14 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: ShapeDecoration(
-                          color: AppTheme.primary.withValues(alpha: 0.12),
+                          color: context.appPrimaryAccent.withValues(alpha: 0.06),
                           shape: SmoothRectangleBorder(
                             borderRadius: SmoothBorderRadius(
                               cornerRadius: 8,
                               cornerSmoothing: 0.6,
                             ),
                             side: BorderSide(
-                              color: AppTheme.primary.withValues(alpha: 0.2),
+                              color: context.appPrimaryAccent.withValues(alpha: 0.15),
                             ),
                           ),
                         ),
@@ -1347,7 +1392,9 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.4),
+                              color: isDark
+                                  ? AppTheme.primary.withValues(alpha: 0.4)
+                                  : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
                                 borderRadius: SmoothBorderRadius(
                                   cornerRadius: 8,
@@ -1366,14 +1413,18 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
                                 Icon(
                                   Icons.add_rounded,
                                   size: 14,
-                                  color: context.appPrimaryAccent,
+                                  color: isDark
+                                      ? context.appPrimaryAccent
+                                      : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
                                     fontFamily: 'Pretendard',
-                                    color: context.appPrimaryAccent,
+                                    color: isDark
+                                        ? context.appPrimaryAccent
+                                        : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -1867,6 +1918,263 @@ class _TimeCapsuleSection extends ConsumerWidget {
   }
 }
 
+// ─── ④ 다음에 읽을 책 ────────────────────────────────────────────────────────
+
+class _WishlistSection extends StatelessWidget {
+  const _WishlistSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: Row(
+            children: [
+              Text(
+                '다음에 읽을 책',
+                style: AppTheme.headingSmall.copyWith(
+                  fontFamily: 'Pretendard',
+                  color: context.appTextPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${_kWishlistBooks.length}권',
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
+            itemCount: _kWishlistBooks.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < _kWishlistBooks.length - 1 ? 12 : 0,
+                ),
+                child: _WishlistBookCard(book: _kWishlistBooks[index]),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WishlistBookCard extends StatefulWidget {
+  final _WishlistBook book;
+  const _WishlistBookCard({required this.book});
+
+  @override
+  State<_WishlistBookCard> createState() => _WishlistBookCardState();
+}
+
+class _WishlistBookCardState extends State<_WishlistBookCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final b = widget.book;
+    final gradColors = AppTheme
+        .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final daysText = b.addedDays == 0 ? '오늘' : '${b.addedDays}일 전';
+
+    return GestureDetector(
+      onTapDown: (_) {
+        HapticFeedback.selectionClick();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          width: 150,
+          clipBehavior: Clip.antiAlias,
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: 20,
+            side: BorderSide(color: context.appBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradColors,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -8,
+                      bottom: -8,
+                      child: Icon(
+                        Icons.bookmark_rounded,
+                        size: 56,
+                        color: context.primaryBg(0.08),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: context.appSurface.withValues(alpha: 0.75),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 6,
+                              cornerSmoothing: 0.6,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          daysText,
+                          style: AppTheme.captionSmall.copyWith(
+                            fontFamily: 'Pretendard',
+                            color: context.appTextSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      b.title,
+                      style: AppTheme.bodySmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      b.author,
+                      style: AppTheme.captionSmall.copyWith(
+                        fontFamily: 'Pretendard',
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Semantics(
+                  label: '${b.title} 읽기 시작',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.mediumImpact();
+                      final goal = await showModalBottomSheet<SessionGoal>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => SessionGoalSheet(
+                          currentPage: 0,
+                          totalPages: b.totalPages,
+                          bookTitle: b.title,
+                        ),
+                      );
+                      if (goal != null && context.mounted) {
+                        context.push(
+                          AppConstants.routeSession,
+                          extra: SessionExtra(
+                            goal: goal,
+                            bookId: b.title.hashCode.toString(),
+                            bookTitle: b.title,
+                            bookAuthor: b.author,
+                            startPage: 0,
+                            totalPages: b.totalPages,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: AppTheme.smoothPill(
+                        color: isDark
+                            ? AppTheme.primary.withValues(alpha: 0.5)
+                            : AppTheme.lightPrimaryAccent,
+                        side: BorderSide(
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.3,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            size: 14,
+                            color: isDark
+                                ? context.appPrimaryAccent
+                                : Colors.white,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '읽기 시작',
+                            style: AppTheme.captionLarge.copyWith(
+                              fontFamily: 'Pretendard',
+                              color: isDark
+                                  ? context.appPrimaryAccent
+                                  : Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── 공용: 진행 바 ────────────────────────────────────────────────────────────
 
 class _ProgressBar extends StatelessWidget {
@@ -1888,7 +2196,7 @@ class _ProgressBar extends StatelessWidget {
             width: c.maxWidth * value.clamp(0.0, 1.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(3),
-              gradient: AppTheme.greenGradient,
+              gradient: context.appReadingGradient,
             ),
           ),
         ),

@@ -275,12 +275,12 @@ class _TabButton extends StatelessWidget {
         curve: Curves.easeOutCubic,
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
-          color: isSelected ? AppTheme.primary : Colors.transparent,
+          color: isSelected ? context.appPrimaryAccent : Colors.transparent,
         ),
         child: Text(
           label,
           style: AppTheme.bodySmall.copyWith(
-            color: isSelected ? context.appPrimaryAccent : context.appTextTertiary,
+            color: isSelected ? Colors.white : context.appTextTertiary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),

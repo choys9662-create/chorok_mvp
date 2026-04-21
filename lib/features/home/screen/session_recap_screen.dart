@@ -49,29 +49,40 @@ class RecapData {
   });
 }
 
-enum _SentenceTag { overlap, popular, unique }
+// 특별한 순간 타입 — 실제 서비스에서는 서버 응답으로 대체
+enum _SentenceTag {
+  resonance, // 많은 독자가 독립적으로 같은 문장을 발견
+  rare,      // 거의 아무도 발견하지 않은 희귀한 구절
+  peak,      // 이 책에서 가장 많이 수집된 문장
+  viral,     // 피드에서 폭발적으로 공유된 구절
+  normal,    // 일반 수집
+}
 
-// 문장 분석 태그 — 실제 서비스에서는 서버 응답, MVP에서는 결정적 해시로 배정
+// MVP: 결정적 해시로 타입 배정
 _SentenceTag _analyzeTag(String sentence) {
   final h = sentence.codeUnits.fold(0, (a, b) => a + b);
-  switch (h % 3) {
-    case 0:
-      return _SentenceTag.overlap;
-    case 1:
-      return _SentenceTag.popular;
-    default:
-      return _SentenceTag.unique;
-  }
+  return switch (h % 5) {
+    0 => _SentenceTag.resonance,
+    1 => _SentenceTag.rare,
+    2 => _SentenceTag.peak,
+    3 => _SentenceTag.viral,
+    _ => _SentenceTag.normal,
+  };
 }
 
-int _overlapCount(String sentence) {
+int _resonanceCount(String sentence) {
   final h = sentence.codeUnits.fold(0, (a, b) => a + b);
-  return 2 + (h % 5);
+  return 100 + (h % 500);
 }
 
-int _empathyCount(String sentence) {
+int _rareCount(String sentence) {
   final h = sentence.codeUnits.fold(0, (a, b) => a + b);
-  return 24 + (h % 80);
+  return 1 + (h % 4);
+}
+
+int _viralCount(String sentence) {
+  final h = sentence.codeUnits.fold(0, (a, b) => a + b);
+  return 50 + (h % 200);
 }
 
 // 세션 점수: 시간 + 문장 수 기반
@@ -481,14 +492,14 @@ class _SessionHeroCard extends StatelessWidget {
             width: 56,
             height: 72,
             decoration: ShapeDecoration(
-              color: AppTheme.primary,
+              color: Colors.white.withValues(alpha: 0.12),
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-                side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.3)),
+                side: const BorderSide(color: Colors.white24),
               ),
             ),
-            child: Icon(Icons.menu_book_rounded,
-                color: context.appPrimaryAccent, size: 26),
+            child: const Icon(Icons.menu_book_rounded,
+                color: Colors.white, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -497,11 +508,11 @@ class _SessionHeroCard extends StatelessWidget {
               children: [
                 Text(bookTitle,
                     style: AppTheme.headingSmall
-                        .copyWith(color: context.appTextPrimary)),
+                        .copyWith(color: Colors.white)),
                 const SizedBox(height: 2),
                 Text(bookAuthor,
                     style: AppTheme.captionLarge
-                        .copyWith(color: context.appTextSecondary)),
+                        .copyWith(color: Colors.white.withValues(alpha: 0.75))),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -536,19 +547,18 @@ class _HeroPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: AppTheme.smoothBox(
-        color: context.appPrimaryAccent.withValues(alpha: 0.12),
+        color: Colors.white.withValues(alpha: 0.15),
         radius: 12,
-        side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.25)),
+        side: const BorderSide(color: Colors.white24),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: context.appPrimaryAccent),
+          Icon(icon, size: 12, color: Colors.white),
           const SizedBox(width: 4),
           Text(label,
               style: AppTheme.captionSmall.copyWith(
-                  color: context.appPrimaryAccent,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600)),
         ],
       ),
@@ -645,14 +655,15 @@ class _ScoreCardState extends State<_ScoreCard>
                           fontSize: 44,
                           fontWeight: FontWeight.w800,
                           height: 1.0,
-                          foreground: Paint()
-                            ..shader = const LinearGradient(
-                              colors: [
-                                Color(0xFF00FF00),
-                                Color(0xFF00CC6A)
-                              ],
-                            ).createShader(
-                                const Rect.fromLTWH(0, 0, 100, 60)),
+                          foreground: Theme.of(context).brightness == Brightness.dark
+                              ? (Paint()
+                                ..shader = const LinearGradient(
+                                  colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
+                                ).createShader(const Rect.fromLTWH(0, 0, 100, 60)))
+                              : null,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? null
+                              : context.appPrimaryAccent,
                         ),
                       ),
                       Padding(
@@ -671,8 +682,7 @@ class _ScoreCardState extends State<_ScoreCard>
                       value: progress,
                       backgroundColor: context.appBorder,
                       valueColor: AlwaysStoppedAnimation(
-                        Color.lerp(AppTheme.accent, context.appPrimaryAccent,
-                            progress)!,
+                        context.appPrimaryAccent,
                       ),
                       minHeight: 6,
                     ),
@@ -745,34 +755,42 @@ class _SentenceAnalysisCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tag = _analyzeTag(entry.content);
 
-    final (String tagLabel, Color tagColor, IconData tagIcon,
-        String tagDesc) = switch (tag) {
-      _SentenceTag.overlap => (
-          '겹문장',
+    final (Color tagColor, IconData tagIcon, String tagDesc) = switch (tag) {
+      _SentenceTag.resonance => (
           context.appPrimaryAccent,
-          Icons.join_inner_rounded,
-          '${_overlapCount(entry.content)}명이 함께 수집한 문장이에요',
+          Icons.people_rounded,
+          '${_resonanceCount(entry.content)}명의 독자가 이 문장에 밑줄을 그었어요',
         ),
-      _SentenceTag.popular => (
-          '인기 문장',
-          AppTheme.accent,
-          Icons.local_fire_department_rounded,
-          '공감 ${_empathyCount(entry.content)}개를 받은 유명한 문장이에요',
-        ),
-      _SentenceTag.unique => (
-          '유니크',
+      _SentenceTag.rare => (
           const Color(0xFF7B9EFF),
-          Icons.auto_awesome_rounded,
-          '아직 아무도 수집하지 않은 희귀한 발견이에요!',
+          Icons.explore_rounded,
+          '이 문장을 발견한 독자는 아직 ${_rareCount(entry.content)}명뿐이에요',
+        ),
+      _SentenceTag.peak => (
+          const Color(0xFFFB923C),
+          Icons.menu_book_rounded,
+          '이 책에서 가장 많이 수집된 문장이에요',
+        ),
+      _SentenceTag.viral => (
+          const Color(0xFFF87171),
+          Icons.local_fire_department_rounded,
+          '${_viralCount(entry.content)}명이 이 문장을 공유했어요',
+        ),
+      _SentenceTag.normal => (
+          context.appTextTertiary,
+          Icons.format_quote_rounded,
+          '수집한 문장',
         ),
     };
+
+    final isSpecial = tag != _SentenceTag.normal;
 
     return Container(
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
         side: BorderSide(
-          color: tag == _SentenceTag.overlap
+          color: isSpecial
               ? tagColor.withValues(alpha: 0.35)
               : context.appBorder,
         ),
@@ -785,7 +803,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: ShapeDecoration(
-              color: tagColor.withValues(alpha: 0.1),
+              color: tagColor.withValues(alpha: isSpecial ? 0.09 : 0.05),
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius.only(
                   topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
@@ -797,14 +815,12 @@ class _SentenceAnalysisCard extends StatelessWidget {
               children: [
                 Icon(tagIcon, size: 14, color: tagColor),
                 const SizedBox(width: 6),
-                Text(tagLabel,
-                    style: AppTheme.captionLarge.copyWith(
-                        color: tagColor, fontWeight: FontWeight.w600)),
-                const SizedBox(width: 4),
                 Expanded(
-                  child: Text('·  $tagDesc',
-                      style: AppTheme.captionSmall
-                          .copyWith(color: tagColor.withValues(alpha: 0.7)),
+                  child: Text(tagDesc,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: tagColor,
+                        fontWeight: isSpecial ? FontWeight.w500 : FontWeight.w400,
+                      ),
                       overflow: TextOverflow.ellipsis),
                 ),
               ],
@@ -1051,12 +1067,10 @@ class _RecapActions extends StatelessWidget {
               icon: const Icon(Icons.home_rounded, size: 18),
               label: const Text('홈으로'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: context.appPrimaryAccent,
+                backgroundColor: context.appPrimaryAccent,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: AppTheme.smoothShape(radius: 14),
-                side: BorderSide(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.3)),
               ),
             ),
           ),
@@ -1391,10 +1405,10 @@ class _OverlapHintCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
-        color: AppTheme.primary.withValues(alpha: 0.15),
+        color: context.appPrimaryAccent.withValues(alpha: 0.08),
         radius: 16,
         side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.25),
+          color: context.appPrimaryAccent.withValues(alpha: 0.2),
         ),
       ),
       child: Row(

@@ -21,6 +21,8 @@ import '../../features/library/book_reflection_screen.dart';
 import '../../features/library/screen/library_screen.dart';
 import '../../features/search/barcode_scanner_screen.dart';
 import '../../features/library/choseo_list_screen.dart';
+import '../../features/settings/screen/settings_screen.dart';
+import '../../features/achievements/screen/achievements_screen.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
@@ -130,6 +132,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeChoseoList,
         builder: (context, state) => const ChoseoListScreen(),
+      ),
+
+      // 설정
+      GoRoute(
+        path: AppConstants.routeSettings,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // 성취 & 뱃지
+      GoRoute(
+        path: AppConstants.routeAchievements,
+        builder: (context, state) => const AchievementsScreen(),
       ),
 
       StatefulShellRoute.indexedStack(
