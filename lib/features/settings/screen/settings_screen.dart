@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../features/auth/screen/auth_screen.dart';
 import '../../../shared/providers/theme_provider.dart';
 
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
@@ -171,6 +173,28 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+          // ─── 디자인 미리보기 (debug only) ─────────────────────────
+          if (kDebugMode) ...[
+            _SectionLabel('개발'),
+            _SettingsCard(
+              children: [
+                _InfoTile(
+                  icon: Icons.preview_rounded,
+                  label: '로그인 화면 미리보기',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AuthScreen(),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                  },
+                  trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppTheme.space3XL),
         ],
       ),

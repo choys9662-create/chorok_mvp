@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../main.dart' show initialLocationProvider;
 
@@ -34,15 +34,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: initialLocation,
     debugLogDiagnostics: false,
 
-    // ── 인증 가드 (디자인 작업 중 비활성화) ─────────────────────────
-    // redirect: (context, state) {
-    //   final session = Supabase.instance.client.auth.currentSession;
-    //   final isLoggedIn = session != null;
-    //   final isAuthRoute = state.matchedLocation == AppConstants.routeAuth;
-    //   if (!isLoggedIn && !isAuthRoute) return AppConstants.routeAuth;
-    //   if (isLoggedIn && isAuthRoute) return AppConstants.routeHome;
-    //   return null;
-    // },
+    // ── 인증 가드 ────────────────────────────────────────────────
+    redirect: (context, state) {
+      final session = Supabase.instance.client.auth.currentSession;
+      final isLoggedIn = session != null;
+      final isAuthRoute = state.matchedLocation == AppConstants.routeAuth;
+      if (!isLoggedIn && !isAuthRoute) return AppConstants.routeAuth;
+      if (isLoggedIn && isAuthRoute) return AppConstants.routeHome;
+      return null;
+    },
 
     routes: [
       // 온보딩

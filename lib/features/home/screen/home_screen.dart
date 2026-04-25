@@ -1580,10 +1580,6 @@ class _HighlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors =
-        AppTheme.coverGradients[sentence.gradientIndex %
-            AppTheme.coverGradients.length];
-
     return Semantics(
       label: '${sentence.bookTitle} 문장 보기',
       button: true,
@@ -1603,22 +1599,10 @@ class _HighlightCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 책 표지 컬러 바 — stretch로 카드 전체 높이 채움
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: gradColors,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 // 문장 + 메타
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
