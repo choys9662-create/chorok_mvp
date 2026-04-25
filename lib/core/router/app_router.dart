@@ -38,9 +38,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
-      final isAuthRoute = state.matchedLocation == AppConstants.routeAuth;
-      if (!isLoggedIn && !isAuthRoute) return AppConstants.routeAuth;
-      if (isLoggedIn && isAuthRoute) return AppConstants.routeHome;
+      final loc = state.matchedLocation;
+      final isPublic = loc == AppConstants.routeAuth ||
+          loc == AppConstants.routeOnboarding;
+      if (!isLoggedIn && !isPublic) return AppConstants.routeAuth;
+      if (isLoggedIn && loc == AppConstants.routeAuth) return AppConstants.routeHome;
       return null;
     },
 
