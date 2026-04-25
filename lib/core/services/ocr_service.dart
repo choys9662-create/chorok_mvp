@@ -1,9 +1,15 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 abstract class OcrService {
   Future<String?> extractTextFromCamera();
+}
+
+class _MockOcrService implements OcrService {
+  @override
+  Future<String?> extractTextFromCamera() async => null;
 }
 
 class RealOcrService implements OcrService {
@@ -32,4 +38,7 @@ class RealOcrService implements OcrService {
   }
 }
 
-final ocrServiceProvider = Provider<OcrService>((ref) => RealOcrService());
+final ocrServiceProvider = Provider<OcrService>((ref) {
+  if (Platform.isMacOS) return _MockOcrService();
+  return RealOcrService();
+});

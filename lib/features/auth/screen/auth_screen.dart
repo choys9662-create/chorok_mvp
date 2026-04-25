@@ -72,8 +72,12 @@ class _AuthScreenState extends State<AuthScreen>
 
   String _localizeError(String msg) {
     final lower = msg.toLowerCase();
-    if (lower.contains('invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않아요.';
-    if (lower.contains('email not confirmed')) return '이메일 인증이 필요해요. 받은 편지함을 확인해주세요.';
+    if (lower.contains('invalid login credentials')) {
+      return '이메일 또는 비밀번호가 올바르지 않아요.';
+    }
+    if (lower.contains('email not confirmed')) {
+      return '이메일 인증이 필요해요. 받은 편지함을 확인해주세요.';
+    }
     if (lower.contains('user already registered')) return '이미 가입된 이메일이에요.';
     if (lower.contains('password should be')) return '비밀번호는 6자 이상이어야 해요.';
     if (lower.contains('network')) return '네트워크 연결을 확인해주세요.';
@@ -96,8 +100,7 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   // ── 이메일 회원가입 ───────────────────────────────────────────────
-  Future<void> _signUp(
-      String email, String password, String username) async {
+  Future<void> _signUp(String email, String password, String username) async {
     _setLoading(true);
     try {
       final res = await supabase.auth.signUp(
@@ -210,14 +213,15 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-
   // ── nonce 유틸 ────────────────────────────────────────────────────
   String _generateNonce([int length = 32]) {
     const charset =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final random = Random.secure();
-    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
-        .join();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   String _sha256ofString(String input) {
@@ -234,7 +238,8 @@ class _AuthScreenState extends State<AuthScreen>
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -270,9 +275,7 @@ class _AuthScreenState extends State<AuthScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Container(height: 1, color: _kBorder),
-                        ),
+                        Expanded(child: Container(height: 1, color: _kBorder)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
@@ -284,9 +287,7 @@ class _AuthScreenState extends State<AuthScreen>
                             ),
                           ),
                         ),
-                        Expanded(
-                          child: Container(height: 1, color: _kBorder),
-                        ),
+                        Expanded(child: Container(height: 1, color: _kBorder)),
                       ],
                     ),
                   ),
@@ -441,10 +442,7 @@ class _AuthTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 48,
-      decoration: AppTheme.smoothBox(
-        color: _kSurface,
-        radius: 12,
-      ),
+      decoration: AppTheme.smoothBox(color: _kSurface, radius: 12),
       child: TabBar(
         controller: controller,
         indicator: AppTheme.smoothBox(
@@ -465,7 +463,10 @@ class _AuthTabBar extends StatelessWidget {
         ),
         labelColor: _kGreen,
         unselectedLabelColor: Colors.white38,
-        tabs: const [Tab(text: '로그인'), Tab(text: '회원가입')],
+        tabs: const [
+          Tab(text: '로그인'),
+          Tab(text: '회원가입'),
+        ],
       ),
     );
   }
@@ -536,7 +537,7 @@ class _LoginFormState extends State<_LoginForm> {
 // ─── 회원가입 폼 ──────────────────────────────────────────────────────────────
 class _SignUpForm extends StatefulWidget {
   final Future<void> Function(String email, String password, String username)
-      onSubmit;
+  onSubmit;
   final bool loading;
   const _SignUpForm({required this.onSubmit, required this.loading});
 
@@ -642,8 +643,10 @@ class _Field extends StatelessWidget {
         suffixIcon: suffix,
         filled: true,
         fillColor: _kSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
