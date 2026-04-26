@@ -1,31 +1,60 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/isar/isar_book.dart';
 import '../models/reading_session.dart';
+import '../repositories/book_repository.dart';
 
-/// 서재(책장) 상태 관리
-///
-/// 현재: 인메모리 List — 추후 Isar / Supabase 연동으로 교체 예정
+/// USE_MOCK=true (--dart-define) → 목업 데이터 (디자인 작업용)
+/// 기본값 false → SQLite 실제 데이터 (Android APK, iOS 배포 등)
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
+Book _fromIsarBook(IsarBook b) => Book(
+      id: b.bookId,
+      title: b.title,
+      author: b.author,
+      isbn: b.isbn,
+      coverUrl: b.coverUrl,
+      currentPage: b.currentPage,
+      totalPages: b.totalPages,
+      status: switch (b.status) {
+        IsarReadingStatus.reading => ReadingStatus.reading,
+        IsarReadingStatus.completed => ReadingStatus.completed,
+        IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
+      },
+    );
+
 class LibraryNotifier extends Notifier<List<Book>> {
   @override
-  List<Book> build() => List.from(_kMockBooks);
+  List<Book> build() {
+    if (_useMock) return List.from(_kMockBooks);
+    Future.microtask(_loadFromDb);
+    return [];
+  }
 
-  /// 서재에 책 추가. ISBN 또는 제목+저자 기준 중복 시 false 반환.
+  Future<void> _loadFromDb() async {
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return;
+    final rows = await repo.getAllBooks();
+    state = rows.map(_fromIsarBook).toList();
+  }
+
   bool addBook(Book book) {
     final isDuplicate = state.any((b) =>
         (book.isbn != null && book.isbn!.isNotEmpty && b.isbn == book.isbn) ||
         (b.title == book.title && b.author == book.author));
     if (isDuplicate) return false;
     state = [...state, book];
+    if (!_useMock) {
+      ref.read(bookRepositoryProvider)?.saveFromBook(book);
+    }
     return true;
   }
 
-  /// ISBN으로 이미 서재에 있는지 확인
   bool containsIsbn(String? isbn13) {
     if (isbn13 == null || isbn13.isEmpty) return false;
     return state.any((b) => b.isbn == isbn13);
   }
 
-  /// 제목+저자로 이미 서재에 있는지 확인
   bool containsByTitleAuthor(String title, String author) {
     return state.any((b) => b.title == title && b.author == author);
   }
