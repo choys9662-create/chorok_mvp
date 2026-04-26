@@ -40,7 +40,7 @@ dependencies:
 
   # OCR (카메라 촬영 → 텍스트 추출)
   image_picker: ^1.1.2
-  google_mlkit_text_recognition: ^0.14.0
+  # google_mlkit_text_recognition: ^0.14.0  # iOS 26 시뮬레이터 arm64 미지원으로 임시 비활성화
 
   # STT (음성 → 텍스트)
   speech_to_text: ^7.0.0
