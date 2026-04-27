@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -20,11 +21,8 @@ const _kSurface = Color(0xFF0D1A10);
 const _kBorder = Color(0xFF1A3320);
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
-const String _kGoogleServerClientId =
-    '778649643836-ki6fqjnv898ri317s222kpum3dlaerau.apps.googleusercontent.com';
-
 final _googleSignIn = GoogleSignIn(
-  serverClientId: _kGoogleServerClientId,
+  serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
   scopes: ['email', 'profile'],
 );
 
