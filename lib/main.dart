@@ -29,8 +29,9 @@ Future<void> main() async {
     ),
   );
 
-  // 온보딩 완료 여부 — 웹은 항상 완료로 처리
-  final onboardingDone = kIsWeb ? true : await isOnboardingCompleted();
+  // 목업 모드(USE_MOCK=true)이거나 웹이면 온보딩 체크 없이 바로 홈
+  const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+  final onboardingDone = useMock || kIsWeb || await isOnboardingCompleted();
   final initialLocation = onboardingDone
       ? AppConstants.routeHome
       : AppConstants.routeOnboarding;

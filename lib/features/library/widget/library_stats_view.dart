@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
-import '../../analytics/widgets/stacked_area_chart_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
 
 // ─── 통계 목업 데이터 (TODO: Isar 연동 시 Repository/Provider로 교체) ────
@@ -16,10 +15,6 @@ const kTreemapItems = <({String title, double hours})>[
   (title: '달러구트 꿈 백화점', hours: 2.8),
 ];
 
-const kGenreWeekLabels = <String>[
-  '2/3', '2/10', '2/17', '2/24', '3/3', '3/10', '3/17', '3/24',
-];
-
 List<({String name, Color color, int cells})> buildWaffleItems(BuildContext context) => [
   (name: '소설', color: context.appPrimaryAccent, cells: 60),
   (name: '문학', color: const Color(0xFF1D9E75), cells: 22),
@@ -27,14 +22,7 @@ List<({String name, Color color, int cells})> buildWaffleItems(BuildContext cont
   (name: '자기계발', color: const Color(0xFF3BC49A), cells: 7),
 ];
 
-List<({String name, Color color, List<double> values})> buildGenreSeries(BuildContext context) => [
-  (name: '소설', color: context.appPrimaryAccent, values: [3.0, 4.5, 2.0, 5.0, 6.0, 3.5, 4.0, 7.0]),
-  (name: '문학', color: const Color(0xFF1D9E75), values: [1.5, 2.0, 1.0, 2.5, 2.0, 1.5, 3.0, 2.0]),
-  (name: '인문', color: const Color(0xFF0F6E56), values: [0.5, 1.0, 0.5, 1.0, 1.5, 0.5, 1.0, 1.5]),
-  (name: '자기계발', color: const Color(0xFF3BC49A), values: [0.0, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5]),
-];
-
-// ─── 통계 탭 — 장르 트렌드 · 책별 비중 · 장르 비율 ────────────────────────
+// ─── 통계 탭 — 책별 비중 · 장르 비율 ──────────────────────────────────────
 class LibraryStatsView extends StatelessWidget {
   final ScrollController? scrollController;
 
@@ -47,11 +35,6 @@ class LibraryStatsView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(AppTheme.screenPadding, 16, AppTheme.screenPadding, 40),
       children: [
-        const ChorokSectionHeader(title: '장르별 독서 트렌드'),
-        const SizedBox(height: AppTheme.spaceMD),
-        StackedAreaChartWidget(labels: kGenreWeekLabels, series: buildGenreSeries(context)),
-        const SizedBox(height: AppTheme.spaceXL),
-
         const ChorokSectionHeader(title: '책별 독서 비중'),
         const SizedBox(height: AppTheme.spaceMD),
         const BookTreemapWidget(items: kTreemapItems),

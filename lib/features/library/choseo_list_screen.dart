@@ -310,8 +310,8 @@ class _ChoseoTabBar extends StatelessWidget {
           fontWeight: FontWeight.w400,
           height: 1.4,
         ),
-        labelColor: context.appPrimaryAccent,
-        unselectedLabelColor: context.appTextTertiary,
+        labelColor: Colors.white,
+        unselectedLabelColor: context.appTextSecondary,
         tabs: const [
           Tab(text: '책별'),
           Tab(text: '날짜순'),
@@ -454,7 +454,7 @@ class _BookGroupState extends State<_BookGroup> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: ShapeDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.6),
+                        color: context.appPrimaryAccent.withValues(alpha: 0.12),
                         shape: const StadiumBorder(),
                       ),
                       child: Text(

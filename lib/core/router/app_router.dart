@@ -36,6 +36,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
     // ── 인증 가드 ────────────────────────────────────────────────
     redirect: (context, state) {
+      // 목업 모드(USE_MOCK=true): 인증 우회, 항상 홈으로
+      const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+      if (useMock) {
+        final loc = state.matchedLocation;
+        if (loc == AppConstants.routeAuth || loc == AppConstants.routeOnboarding) {
+          return AppConstants.routeHome;
+        }
+        return null;
+      }
+
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
       final loc = state.matchedLocation;

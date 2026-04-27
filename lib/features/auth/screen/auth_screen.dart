@@ -20,11 +20,11 @@ const _kSurface = Color(0xFF0D1A10);
 const _kBorder = Color(0xFF1A3320);
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
-const String _kGoogleClientId =
-    '1023286897589-c98eh600dgi7tgeovc4qurv99mh9c9h0.apps.googleusercontent.com';
+const String _kGoogleServerClientId =
+    '778649643836-ki6fqjnv898ri317s222kpum3dlaerau.apps.googleusercontent.com';
 
 final _googleSignIn = GoogleSignIn(
-  clientId: _kGoogleClientId,
+  serverClientId: _kGoogleServerClientId,
   scopes: ['email', 'profile'],
 );
 
