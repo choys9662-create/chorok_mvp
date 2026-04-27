@@ -1,44 +1,60 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:image_picker/image_picker.dart';
-// import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 abstract class OcrService {
   Future<String?> extractTextFromCamera();
 }
 
-class MockOcrService implements OcrService {
+class CloudVisionOcrService implements OcrService {
+  final _imagePicker = ImagePicker();
+  static const _endpoint = 'https://vision.googleapis.com/v1/images:annotate';
+  static final _httpClient = http.Client();
+  static final _apiKey = dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
+
   @override
   Future<String?> extractTextFromCamera() async {
-    await Future.delayed(const Duration(seconds: 1)); // 처리 시간 시뮬레이션
-    return "우리가 빛의 속도로 갈 수 없다면, 우리가 볼 수 있는 세계는 이 우주의 아주 일부분에 불과할 것이다.\n(임시 목업 텍스트)";
+    final photo = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+    if (photo == null) return null;
+    if (_apiKey.isEmpty) return null;
+
+    try {
+      final bytes = await File(photo.path).readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final response = await _httpClient.post(
+        Uri.parse('$_endpoint?key=$_apiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'requests': [
+            {
+              'image': {'content': base64Image},
+              'features': [
+                {'type': 'TEXT_DETECTION', 'maxResults': 1}
+              ],
+              'imageContext': {
+                'languageHints': ['ko']
+              },
+            }
+          ]
+        }),
+      );
+
+      if (response.statusCode != 200) return null;
+
+      final data = jsonDecode(response.body);
+      final text = data['responses']?[0]?['fullTextAnnotation']?['text'] as String?;
+      return text?.trim();
+    } catch (_) {
+      return null;
+    }
   }
 }
 
-// class RealOcrService implements OcrService {
-//   final _imagePicker = ImagePicker();
-//   
-//   @override
-//   Future<String?> extractTextFromCamera() async {
-//     final photo = await _imagePicker.pickImage(
-//       source: ImageSource.camera,
-//       imageQuality: 85,
-//     );
-//     if (photo == null) return null;
-//     
-//     String extractedText = '';
-//     final recognizer = TextRecognizer(script: TextRecognitionScript.korean);
-//     try {
-//       final inputImage = InputImage.fromFilePath(photo.path);
-//       final recognized = await recognizer.processImage(inputImage);
-//       extractedText = recognized.text.trim();
-//     } catch (_) {
-//       extractedText = '';
-//     } finally {
-//       recognizer.close();
-//     }
-//     return extractedText;
-//   }
-// }
-
-// TODO: 릴리즈 빌드나 실제 기기 테스트 시 RealOcrService()로 변경
-final ocrServiceProvider = Provider<OcrService>((ref) => MockOcrService());
+final ocrServiceProvider = Provider<OcrService>((ref) => CloudVisionOcrService());

@@ -409,7 +409,6 @@ class _WeeklyStatusCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
-    final isInSession = !timer.isIdle;
 
     // 오늘 요일 (월=0)
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
@@ -473,45 +472,6 @@ class _WeeklyStatusCard extends ConsumerWidget {
                     color: context.appPrimaryAccent,
                     fontWeight: FontWeight.w600,
                   ),
-                ),
-              ),
-              const Spacer(),
-              // 독서 시작 — 헤더 우측 pill 버튼
-              Semantics(
-                label: isInSession ? '세션으로 돌아가기' : '독서 시작',
-                button: true,
-                child: GestureDetector(
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    if (isInSession) {
-                      context.push(AppConstants.routeSession);
-                      return;
-                    }
-                    final goal = await showModalBottomSheet<SessionGoal>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const SessionGoalSheet(
-                        currentPage: 186,
-                        totalPages: 300,
-                        bookTitle: '채식주의자',
-                      ),
-                    );
-                    if (goal != null && context.mounted) {
-                      context.push(
-                        AppConstants.routeSession,
-                        extra: SessionExtra(
-                          goal: goal,
-                          bookId: '1',
-                          bookTitle: '채식주의자',
-                          bookAuthor: '한강',
-                          startPage: 186,
-                          totalPages: 300,
-                        ),
-                      );
-                    }
-                  },
-                  child: _PulsingReadButton(isInSession: isInSession),
                 ),
               ),
             ],
@@ -625,128 +585,6 @@ class _WeeklyStatusCard extends ConsumerWidget {
                   color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w500,
                 ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 독서 시작 버튼 (Breathing Glow 애니메이션) ─────────────────────────────
-
-class _PulsingReadButton extends StatefulWidget {
-  final bool isInSession;
-  const _PulsingReadButton({required this.isInSession});
-
-  @override
-  State<_PulsingReadButton> createState() => _PulsingReadButtonState();
-}
-
-class _PulsingReadButtonState extends State<_PulsingReadButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _glow;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-    _glow = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AnimatedBuilder(
-      animation: _glow,
-      builder: (_, child) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: ShapeDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [AppTheme.primary, const Color(0xFF0A5C3A)]
-                : [AppTheme.lightPrimaryAccent, const Color(0xFF00B868)],
-          ),
-          shape: StadiumBorder(
-            side: BorderSide(
-              color: context.appPrimaryAccent.withValues(alpha: 0.25),
-            ),
-          ),
-          shadows: [
-            BoxShadow(
-              color: context.appPrimaryAccent.withValues(
-                alpha: 0.12 + _glow.value * 0.28,
-              ),
-              blurRadius: 6 + _glow.value * 18,
-              spreadRadius: _glow.value * 3,
-            ),
-            BoxShadow(
-              color:
-                  (isDark
-                          ? const Color(0xFF1A3D2B)
-                          : AppTheme.lightPrimaryAccent)
-                      .withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: child,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.isInSession) ...[
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isDark ? context.appPrimaryAccent : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? context.appPrimaryAccent : Colors.white)
-                        .withValues(alpha: 0.7),
-                    blurRadius: 6,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '이어하기',
-              style: AppTheme.captionSmall.copyWith(
-                fontFamily: 'Pretendard',
-                color: isDark ? context.appPrimaryAccent : Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ] else ...[
-            Icon(
-              Icons.play_arrow_rounded,
-              size: 14,
-              color: isDark ? context.appPrimaryAccent : Colors.white,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '독서 시작',
-              style: AppTheme.captionSmall.copyWith(
-                fontFamily: 'Pretendard',
-                color: isDark ? context.appPrimaryAccent : Colors.white,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -1580,10 +1418,6 @@ class _HighlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors =
-        AppTheme.coverGradients[sentence.gradientIndex %
-            AppTheme.coverGradients.length];
-
     return Semantics(
       label: '${sentence.bookTitle} 문장 보기',
       button: true,
@@ -1603,22 +1437,10 @@ class _HighlightCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 책 표지 컬러 바 — stretch로 카드 전체 높이 채움
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: gradColors,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 // 문장 + 메타
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

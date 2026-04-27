@@ -3,11 +3,18 @@
     "configurations": [
         
         {
-            "name": "chorok_app (iPhone 17)",
+            "name": "chorok_app (iPhone 17 — 목업)",
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "deviceId": "25E52103-8DC5-41AC-A92F-9928ED06AD8E"
+            "deviceId": "25E52103-8DC5-41AC-A92F-9928ED06AD8E",
+            "toolArgs": ["--dart-define=USE_MOCK=true"]
+        },
+        {
+            "name": "chorok_app (Android — 실제 데이터)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/main.dart"
         }
     ]
 }

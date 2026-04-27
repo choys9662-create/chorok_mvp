@@ -18,10 +18,12 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code — 로컬 머신별 경로 포함 (java.home 등)
+.vscode/
+
+# Claude Code / Superpowers 도구 아티팩트
+.superpowers/
+....
 
 # Flutter/Dart/Pub related
 **/doc/api/

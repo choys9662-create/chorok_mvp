@@ -89,7 +89,11 @@
       "Bash(sed -i '' 's/child: const Icon\\(Icons\\\\.menu_book_rounded,$/child: Icon\\(Icons.menu_book_rounded,/' lib/features/feed/screen/feed_screen.dart)",
       "Bash(sed -n '732,740p' lib/features/feed/screen/feed_screen.dart)",
       "Bash(sed -i '' 's/style: const TextStyle\\(/style: TextStyle\\(/g' lib/features/home/screen/book_reflection_screen.dart)",
-      "Bash(sed -i '' 's/child: const Icon\\(Icons\\\\.menu_book_rounded,/child: Icon\\(Icons.menu_book_rounded,/g; s/child: const Row\\(/child: Row\\(/g; s/const Icon\\(Icons\\\\.check_circle_rounded,/Icon\\(Icons.check_circle_rounded,/g; s/const Icon\\(Icons\\\\.bookmark_rounded,/Icon\\(Icons.bookmark_rounded,/g; s/style: const TextStyle\\(/style: TextStyle\\(/g' lib/features/home/screen/session_recap_screen.dart)"
+      "Bash(sed -i '' 's/child: const Icon\\(Icons\\\\.menu_book_rounded,/child: Icon\\(Icons.menu_book_rounded,/g; s/child: const Row\\(/child: Row\\(/g; s/const Icon\\(Icons\\\\.check_circle_rounded,/Icon\\(Icons.check_circle_rounded,/g; s/const Icon\\(Icons\\\\.bookmark_rounded,/Icon\\(Icons.bookmark_rounded,/g; s/style: const TextStyle\\(/style: TextStyle\\(/g' lib/features/home/screen/session_recap_screen.dart)",
+      "Bash(\"/Users/joyongseong/.claude/plugins/cache/claude-plugins-official/ralph-loop/1.0.0/scripts/setup-ralph-loop.sh\")",
+      "Bash(\"/Users/joyongseong/.claude/plugins/cache/claude-plugins-official/ralph-loop/1.0.0/scripts/setup-ralph-loop.sh\" *)",
+      "mcp__claude_ai_Figma__get_screenshot",
+      "mcp__claude_ai_Figma__search_design_system"
     ]
   },
   "enabledPlugins": {

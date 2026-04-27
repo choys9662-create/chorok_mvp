@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
@@ -112,7 +113,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     HapticFeedback.mediumImpact();
     await markOnboardingCompleted();
     if (!mounted) return;
-    context.go(destination);
+    // Android에서 StatefulShellRoute redirect가 누락되는 케이스 방어:
+    // 세션 없으면 /auth로 직접 이동, 있으면 목적지로 이동
+    final isLoggedIn =
+        Supabase.instance.client.auth.currentSession != null;
+    context.go(isLoggedIn ? destination : AppConstants.routeAuth);
   }
 
   @override

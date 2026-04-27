@@ -79,5 +79,4 @@ class MockSttService implements SttService {
   }
 }
 
-// TODO: 릴리즈 빌드나 실제 기기 테스트 시 RealSttService()로 변경
-final sttServiceProvider = Provider<SttService>((ref) => MockSttService());
+final sttServiceProvider = Provider<SttService>((ref) => RealSttService());

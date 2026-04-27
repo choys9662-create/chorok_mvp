@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -20,12 +21,8 @@ const _kSurface = Color(0xFF0D1A10);
 const _kBorder = Color(0xFF1A3320);
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
-// iOS Client ID는 Google Cloud Console → OAuth 2.0 자격증명에서 발급 후 아래에 입력
-// https://console.cloud.google.com → 사용자 인증 정보 → iOS 유형
-const String? _kGoogleClientId = null; // 예: '123456789-xxx.apps.googleusercontent.com'
-
 final _googleSignIn = GoogleSignIn(
-  clientId: _kGoogleClientId,
+  serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
   scopes: ['email', 'profile'],
 );
 
@@ -73,8 +70,12 @@ class _AuthScreenState extends State<AuthScreen>
 
   String _localizeError(String msg) {
     final lower = msg.toLowerCase();
-    if (lower.contains('invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않아요.';
-    if (lower.contains('email not confirmed')) return '이메일 인증이 필요해요. 받은 편지함을 확인해주세요.';
+    if (lower.contains('invalid login credentials')) {
+      return '이메일 또는 비밀번호가 올바르지 않아요.';
+    }
+    if (lower.contains('email not confirmed')) {
+      return '이메일 인증이 필요해요. 받은 편지함을 확인해주세요.';
+    }
     if (lower.contains('user already registered')) return '이미 가입된 이메일이에요.';
     if (lower.contains('password should be')) return '비밀번호는 6자 이상이어야 해요.';
     if (lower.contains('network')) return '네트워크 연결을 확인해주세요.';
@@ -97,8 +98,7 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   // ── 이메일 회원가입 ───────────────────────────────────────────────
-  Future<void> _signUp(
-      String email, String password, String username) async {
+  Future<void> _signUp(String email, String password, String username) async {
     _setLoading(true);
     try {
       final res = await supabase.auth.signUp(
@@ -136,22 +136,6 @@ class _AuthScreenState extends State<AuthScreen>
   // ── Google 로그인 ─────────────────────────────────────────────────
   Future<void> _signInWithGoogle() async {
     HapticFeedback.mediumImpact();
-
-    // Google Client ID가 설정되지 않은 경우 안내
-    if (_kGoogleClientId == null) {
-      _showSetupGuide(
-        title: 'Google 로그인 설정 필요',
-        steps: [
-          '1. console.cloud.google.com 접속',
-          '2. 새 프로젝트 생성 또는 선택',
-          '3. APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client IDs',
-          '4. Application type: iOS 선택',
-          '5. Bundle ID: com.chorok.chorokApp 입력',
-          '6. 발급된 Client ID를 auth_screen.dart의 _kGoogleClientId에 붙여넣기',
-        ],
-      );
-      return;
-    }
 
     _setLoading(true);
     try {
@@ -227,70 +211,15 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-  // ── 설정 안내 다이얼로그 ──────────────────────────────────────────
-  void _showSetupGuide({required String title, required List<String> steps}) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: _kSurface,
-        shape: AppTheme.smoothShape(radius: 16),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ...steps.map((s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      s,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        height: 1.5,
-                      ),
-                    ),
-                  )),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: TextButton.styleFrom(foregroundColor: _kGreen),
-                  child: const Text(
-                    '확인',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // ── nonce 유틸 ────────────────────────────────────────────────────
   String _generateNonce([int length = 32]) {
     const charset =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final random = Random.secure();
-    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
-        .join();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   String _sha256ofString(String input) {
@@ -307,7 +236,8 @@ class _AuthScreenState extends State<AuthScreen>
         child: SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -343,9 +273,7 @@ class _AuthScreenState extends State<AuthScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Container(height: 1, color: _kBorder),
-                        ),
+                        Expanded(child: Container(height: 1, color: _kBorder)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
@@ -357,9 +285,7 @@ class _AuthScreenState extends State<AuthScreen>
                             ),
                           ),
                         ),
-                        Expanded(
-                          child: Container(height: 1, color: _kBorder),
-                        ),
+                        Expanded(child: Container(height: 1, color: _kBorder)),
                       ],
                     ),
                   ),
@@ -482,9 +408,6 @@ class _SocialButton extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: dark ? Colors.white : _kSurface,
             radius: 12,
-            side: BorderSide(
-              color: dark ? Colors.white : _kBorder,
-            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -517,17 +440,12 @@ class _AuthTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 48,
-      decoration: AppTheme.smoothBox(
-        color: _kSurface,
-        radius: 12,
-        side: const BorderSide(color: _kBorder),
-      ),
+      decoration: AppTheme.smoothBox(color: _kSurface, radius: 12),
       child: TabBar(
         controller: controller,
         indicator: AppTheme.smoothBox(
-          color: _kGreen.withValues(alpha: 0.12),
+          color: _kGreen.withValues(alpha: 0.15),
           radius: 10,
-          side: BorderSide(color: _kGreen.withValues(alpha: 0.4)),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
@@ -543,7 +461,10 @@ class _AuthTabBar extends StatelessWidget {
         ),
         labelColor: _kGreen,
         unselectedLabelColor: Colors.white38,
-        tabs: const [Tab(text: '로그인'), Tab(text: '회원가입')],
+        tabs: const [
+          Tab(text: '로그인'),
+          Tab(text: '회원가입'),
+        ],
       ),
     );
   }
@@ -614,7 +535,7 @@ class _LoginFormState extends State<_LoginForm> {
 // ─── 회원가입 폼 ──────────────────────────────────────────────────────────────
 class _SignUpForm extends StatefulWidget {
   final Future<void> Function(String email, String password, String username)
-      onSubmit;
+  onSubmit;
   final bool loading;
   const _SignUpForm({required this.onSubmit, required this.loading});
 
@@ -720,19 +641,21 @@ class _Field extends StatelessWidget {
         suffixIcon: suffix,
         filled: true,
         fillColor: _kSurface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _kBorder),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _kBorder),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _kGreen.withValues(alpha: 0.6)),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -765,12 +688,9 @@ class _SubmitButton extends StatelessWidget {
             curve: Curves.easeOutCubic,
             decoration: AppTheme.smoothBox(
               color: loading
-                  ? _kGreen.withValues(alpha: 0.2)
-                  : _kGreen.withValues(alpha: 0.12),
+                  ? _kGreen.withValues(alpha: 0.15)
+                  : _kGreen.withValues(alpha: 0.22),
               radius: 12,
-              side: BorderSide(
-                color: _kGreen.withValues(alpha: loading ? 0.3 : 0.6),
-              ),
             ),
             child: Center(
               child: loading
