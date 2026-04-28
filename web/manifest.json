@@ -1,11 +1,11 @@
 {
-    "name": "chorok_app",
-    "short_name": "chorok_app",
+    "name": "초록",
+    "short_name": "초록",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#060B07",
+    "theme_color": "#060B07",
+    "description": "독서 몰입 플랫폼",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

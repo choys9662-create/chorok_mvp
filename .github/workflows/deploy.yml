@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - claude/deploy-app-web-gCRoV
+  workflow_dispatch:
 
 jobs:
   build_and_deploy:
@@ -16,7 +18,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.0'
           channel: 'stable'
           cache: true
 
@@ -24,12 +25,15 @@ jobs:
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "ALADIN_API_KEY=${{ secrets.ALADIN_API_KEY }}" >> .env
+          echo "GOOGLE_CLOUD_VISION_API_KEY=${{ secrets.GOOGLE_CLOUD_VISION_API_KEY }}" >> .env
+          echo "GOOGLE_SERVER_CLIENT_ID=${{ secrets.GOOGLE_SERVER_CLIENT_ID }}" >> .env
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release --web-renderer canvaskit
+        run: flutter build web --release --web-renderer canvaskit --dart-define=USE_MOCK=true
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
