@@ -1,14 +1,19 @@
-name: Build & Deploy to Firebase Hosting
+name: Build & Deploy DESIGN to Firebase Hosting
+
+# 디자인 미리보기 환경 — chorok-d1414.web.app
+# USE_MOCK=true 로 빌드해서 mock 데이터로 화면만 확인.
+# 실 Supabase 데이터에는 영향 없음.
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-
+    name: Deploy to chorok-d1414 (design)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,7 +25,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create .env from secrets
+      - name: Create .env (mock 모드용 — 실 키는 USE_MOCK=true 라 사용되지 않음)
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
@@ -28,13 +33,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Flutter Web
-        run: flutter build web --release --web-renderer canvaskit
+      - name: Build Flutter Web (USE_MOCK=true)
+        run: flutter build web --release --dart-define=USE_MOCK=true
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting (design)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
           projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          target: design

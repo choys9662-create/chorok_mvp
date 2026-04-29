@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -139,6 +140,18 @@ class _AuthScreenState extends State<AuthScreen>
 
     _setLoading(true);
     try {
+      if (kIsWeb) {
+        // 웹: Supabase OAuth redirect 플로우.
+        // Google 로그인 화면으로 리다이렉트 → 같은 origin으로 돌아옴 →
+        // Supabase 클라이언트가 URL의 code를 자동으로 세션으로 교환.
+        // 페이지가 새로 로드되므로 finally의 setState는 의미 없음.
+        await supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: Uri.base.origin,
+        );
+        return;
+      }
+
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return; // 사용자가 취소
 
@@ -160,7 +173,8 @@ class _AuthScreenState extends State<AuthScreen>
     } catch (e) {
       _showError('Google 로그인 중 오류가 발생했어요.');
     } finally {
-      _setLoading(false);
+      // 웹은 redirect로 페이지가 새로 로드되므로 setState 호출 불필요
+      if (!kIsWeb) _setLoading(false);
     }
   }
 
