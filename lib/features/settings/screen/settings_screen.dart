@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/screen/auth_screen.dart';
 import '../../../shared/providers/theme_provider.dart';
+
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
 class _ReadingGoal {
@@ -173,6 +176,23 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+          // ─── 계정 (실사용 빌드 전용) ──────────────────────────────
+          if (!_useMock) ...[
+            _SectionLabel('계정'),
+            _SettingsCard(
+              children: [
+                _InfoTile(
+                  icon: Icons.logout_rounded,
+                  label: '로그아웃',
+                  iconColor: const Color(0xFFFF4F4F),
+                  labelColor: const Color(0xFFFF4F4F),
+                  onTap: () => _showLogoutConfirm(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.space2XL),
+          ],
+
           // ─── 디자인 미리보기 (debug only) ─────────────────────────
           if (kDebugMode) ...[
             _SectionLabel('개발'),
@@ -606,17 +626,97 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
+void _showLogoutConfirm(BuildContext context) {
+  HapticFeedback.mediumImpact();
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '로그아웃',
+              style: AppTheme.headingSmall.copyWith(
+                color: const Color(0xFFFF4F4F),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '로그아웃하면 다음에 다시 로그인해야 해요.',
+              style: AppTheme.captionLarge.copyWith(
+                color: Theme.of(ctx).textTheme.bodySmall?.color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text('취소'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await Supabase.instance.client.auth.signOut();
+                      // GoRouter refreshListenable이 signOut을 감지해서 /auth로 리다이렉트
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF4F4F),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text('로그아웃'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class _InfoTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final Color? iconColor;
+  final Color? labelColor;
 
   const _InfoTile({
     required this.icon,
     required this.label,
     this.trailing,
     this.onTap,
+    this.iconColor,
+    this.labelColor,
   });
 
   @override
@@ -627,14 +727,14 @@ class _InfoTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: context.appTextSecondary),
+            Icon(icon, size: 18, color: iconColor ?? context.appTextSecondary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 label,
                 style: AppTheme.bodyMedium.copyWith(
                   fontFamily: 'Pretendard',
-                  color: context.appTextPrimary,
+                  color: labelColor ?? context.appTextPrimary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
