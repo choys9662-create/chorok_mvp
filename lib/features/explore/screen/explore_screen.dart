@@ -6,6 +6,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
 // ─── Data Models ────────────────────────────────────────────────────────────
 
 class _BookData {
@@ -104,7 +106,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedCategoryIndex = 0;
   bool _isSearchFocused = false;
-  List<_BookData> _filteredBooks = _kMockBooks;
+  List<_BookData> _filteredBooks = _useMock ? _kMockBooks : const [];
   late final FocusNode _searchFocusNode;
 
   @override
@@ -128,9 +130,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredBooks = _kMockBooks;
+        _filteredBooks = _useMock ? _kMockBooks : const [];
       } else {
-        _filteredBooks = _kMockBooks.where((b) {
+        _filteredBooks = (_useMock ? _kMockBooks : const <_BookData>[]).where((b) {
           return b.title.toLowerCase().contains(query) ||
               b.author.toLowerCase().contains(query);
         }).toList();
@@ -151,6 +153,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   List<_BookData> get _categoryFilteredBooks {
+    if (!_useMock) return const [];
     if (_selectedCategoryIndex == 0) return _kMockBooks;
     final category = _kCategories[_selectedCategoryIndex];
     return _kMockBooks.where((b) => b.genre == category).toList();

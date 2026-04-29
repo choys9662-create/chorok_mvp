@@ -1,7 +1,10 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
 class ProfileHeader extends StatefulWidget {
@@ -25,11 +28,28 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   static final _buttonBorderRadius =
       SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6);
 
-  // 더미 프로필 데이터
-  String _name = '이지현';
-  String _bio = '책 속에서 길을 찾는 중 🌿';
-  final int _followers = 128;
-  final int _following = 64;
+  String _name = '';
+  String _bio = _useMock ? '책 속에서 길을 찾는 중 🌿' : '';
+  final int _followers = _useMock ? 128 : 0;
+  final int _following = _useMock ? 64 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_useMock) {
+      final meta = Supabase.instance.client.auth.currentUser?.userMetadata;
+      _name = (meta?['full_name'] as String?)?.trim().isNotEmpty == true
+          ? meta!['full_name'] as String
+          : (meta?['name'] as String?)?.trim().isNotEmpty == true
+              ? meta!['name'] as String
+              : Supabase.instance.client.auth.currentUser?.email
+                      ?.split('@')
+                      .first ??
+                  '사용자';
+    } else {
+      _name = '이지현';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,24 +121,26 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _StatItem(
-                          label: '팔로워',
-                          count: _followers,
-                          onTap: () =>
-                              _showFollowList(context, isFollower: true),
-                        ),
-                        const SizedBox(width: 24),
-                        _StatItem(
-                          label: '팔로잉',
-                          count: _following,
-                          onTap: () =>
-                              _showFollowList(context, isFollower: false),
-                        ),
-                      ],
-                    ),
+                    if (_useMock) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _StatItem(
+                            label: '팔로워',
+                            count: _followers,
+                            onTap: () =>
+                                _showFollowList(context, isFollower: true),
+                          ),
+                          const SizedBox(width: 24),
+                          _StatItem(
+                            label: '팔로잉',
+                            count: _following,
+                            onTap: () =>
+                                _showFollowList(context, isFollower: false),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -84,8 +84,10 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
 class _NotificationScreenState extends State<NotificationScreen> {
-  final _notifications = List<NotiItem>.from(_kNotifications);
+  final _notifications = _useMock ? List<NotiItem>.from(_kNotifications) : <NotiItem>[];
 
   IconData _iconFor(NotiType type) => switch (type) {
         NotiType.follow   => Icons.person_add_rounded,

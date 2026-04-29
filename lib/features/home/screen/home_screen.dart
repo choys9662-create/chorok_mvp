@@ -19,6 +19,8 @@ import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
 
 final _timeCapsuleProvider = FutureProvider<IsarChoseo?>((ref) async {
@@ -86,30 +88,39 @@ class HomeScreen extends ConsumerWidget {
                 controller: scrollCtrl,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  // 스트릭 배너 (2일 이상일 때만)
-                  SliverToBoxAdapter(child: _StreakBanner()),
-                  // ① 이번 주 독서 현황
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: const _WeeklyStatusCard(),
+                  // 스트릭 배너 (2일 이상일 때만, 목업 or 모바일만)
+                  if (_useMock)
+                    SliverToBoxAdapter(child: _StreakBanner()),
+                  // ① 이번 주 독서 현황 (목업 전용 — 실데이터 연동 전)
+                  if (_useMock) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: const _WeeklyStatusCard(),
+                      ),
                     ),
-                  ),
+                  ],
                   // ② 지금 읽는 책
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: _ReadingBooksSection()),
-                  // ③ 문장 기반 추천
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  const SliverToBoxAdapter(child: _RecommendedBooksSection()),
+                  // ③ 문장 기반 추천 (목업 전용 — AI 추천 연동 전)
+                  if (_useMock) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    const SliverToBoxAdapter(child: _RecommendedBooksSection()),
+                  ],
                   // ④ 다음에 읽을 책
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: _WishlistSection()),
-                  // ⑤ 피드 하이라이트
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                  const SliverToBoxAdapter(child: _FeedHighlightSection()),
-                  // ⑤ 타임캡슐 문장
-                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                  const SliverToBoxAdapter(child: _TimeCapsuleSection()),
+                  // ⑤ 피드 하이라이트 (목업 전용 — 커뮤니티 기능 연동 전)
+                  if (_useMock) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    const SliverToBoxAdapter(child: _FeedHighlightSection()),
+                  ],
+                  // ⑥ 타임캡슐 문장 (sqflite 기반 — 목업 or 모바일)
+                  if (_useMock) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    const SliverToBoxAdapter(child: _TimeCapsuleSection()),
+                  ],
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 ],
               ),

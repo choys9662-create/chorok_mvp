@@ -12,8 +12,11 @@ typedef ReadingLog = ({
   int pages,
 });
 
-// ─── 독서 기록 목업 (TODO: Isar 연동 시 Repository로 교체) ───────────────
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
+// ─── 독서 기록 목업 (USE_MOCK=true 전용) ────────────────────────────────────
 List<ReadingLog> get mockReadingLogs {
+  if (!_useMock) return const [];
   final now = DateTime.now();
   return [
     (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18),

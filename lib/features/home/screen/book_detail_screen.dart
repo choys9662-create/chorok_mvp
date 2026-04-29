@@ -7,6 +7,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../widget/session_goal_sheet.dart';
 
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
 class BookDetailExtra {
@@ -209,8 +211,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _sentences = _buildMockSentences();
-    _memos = _buildMockMemos();
+    _sentences = _useMock ? _buildMockSentences() : [];
+    _memos = _useMock ? _buildMockMemos() : [];
   }
 
   void _toggleExpansion(String id) {
