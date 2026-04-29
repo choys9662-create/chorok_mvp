@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
 import '../widget/session_goal_sheet.dart';
@@ -23,16 +25,7 @@ final _timeCapsuleProvider = FutureProvider<IsarChoseo?>((ref) async {
   return ref.read(bookRepositoryProvider)?.getTimeCapsuleChoseo();
 });
 
-// ─── 목업 데이터 ──────────────────────────────────────────────────────────
-
-typedef _BookData = ({
-  String title,
-  String author,
-  int currentPage,
-  int totalPages,
-  String lastRead,
-  int gradientIndex,
-});
+// ─── 추천 책 목업 (커뮤니티 기반 추천 — 실데이터 연동 전 placeholder) ──────────
 
 typedef _RecommendedBook = ({
   String title,
@@ -70,97 +63,6 @@ const List<_RecommendedBook> _kRecommendedBooks = [
     reason: '따뜻한 일상 문장을 좋아하시는 취향에 맞춰',
     gradientIndex: 6,
     matchScore: 0.82,
-  ),
-];
-
-const List<_BookData> _kReadingBooks = [
-  (
-    title: '채식주의자',
-    author: '한강',
-    currentPage: 186,
-    totalPages: 300,
-    lastRead: '오늘',
-    gradientIndex: 0,
-  ),
-  (
-    title: '파친코',
-    author: '이민진',
-    currentPage: 234,
-    totalPages: 688,
-    lastRead: '어제',
-    gradientIndex: 1,
-  ),
-  (
-    title: '지구 끝의 온실',
-    author: '김초엽',
-    currentPage: 88,
-    totalPages: 304,
-    lastRead: '3일 전',
-    gradientIndex: 2,
-  ),
-];
-
-// ─── 위시리스트 목업 ──────────────────────────────────────────────────────────
-typedef _WishlistBook = ({
-  String title,
-  String author,
-  int addedDays,
-  int gradientIndex,
-  int totalPages,
-});
-
-const List<_WishlistBook> _kWishlistBooks = [
-  (
-    title: '소년이 온다',
-    author: '한강',
-    addedDays: 3,
-    gradientIndex: 3,
-    totalPages: 216,
-  ),
-  (
-    title: '불편한 편의점',
-    author: '김호연',
-    addedDays: 7,
-    gradientIndex: 6,
-    totalPages: 312,
-  ),
-  (
-    title: '달러구트 꿈 백화점',
-    author: '이미예',
-    addedDays: 14,
-    gradientIndex: 1,
-    totalPages: 304,
-  ),
-];
-
-// ─── 책별 독서 통계 (목업) ──────────────────────────────────────────────────
-const List<BookReadingStats> _kBookStats = [
-  BookReadingStats(
-    title: '채식주의자',
-    currentPage: 186,
-    totalPages: 300,
-    avgPagesPerHour: 25.0,
-    savedSentences: 7,
-    streakDays: 5,
-    totalReadingHours: 12.4,
-  ),
-  BookReadingStats(
-    title: '파친코',
-    currentPage: 234,
-    totalPages: 688,
-    avgPagesPerHour: 18.0,
-    savedSentences: 12,
-    streakDays: 3,
-    totalReadingHours: 8.2,
-  ),
-  BookReadingStats(
-    title: '지구 끝의 온실',
-    currentPage: 88,
-    totalPages: 304,
-    avgPagesPerHour: 30.0,
-    savedSentences: 3,
-    streakDays: 1,
-    totalReadingHours: 4.6,
   ),
 ];
 
@@ -606,11 +508,15 @@ String _todayInsightText(int todayMinutes, int exitCount) {
 
 // ─── ② 지금 읽는 책 ──────────────────────────────────────────────────────
 
-class _ReadingBooksSection extends StatelessWidget {
+class _ReadingBooksSection extends ConsumerWidget {
   const _ReadingBooksSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allBooks = ref.watch(libraryProvider);
+    final readingBooks =
+        allBooks.where((b) => b.status == ReadingStatus.reading).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -631,7 +537,7 @@ class _ReadingBooksSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '${_kReadingBooks.length}권',
+                '${readingBooks.length}권',
                 style: AppTheme.captionLarge.copyWith(
                   color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w600,
@@ -641,47 +547,148 @@ class _ReadingBooksSection extends StatelessWidget {
           ),
         ),
 
-        // ── 인사이트 메시지 ────────────────────────────────────────
-        if (_kBookStats.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.screenPadding,
-              8,
-              AppTheme.screenPadding,
-              12,
-            ),
-            child: _InsightChip(
-              insight: ReadingInsightEngine.generateForBook(_kBookStats.first),
+        // ── 빈 상태: 책이 0권일 때 ─────────────────────────────────
+        if (readingBooks.isEmpty) ...[
+          const SizedBox(height: 12),
+          const _EmptyBooksState(),
+        ] else ...[
+          const SizedBox(height: 12),
+          // 가로 스크롤 카드
+          SizedBox(
+            height: 240,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              itemCount: readingBooks.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: index < readingBooks.length - 1 ? 12 : 0,
+                  ),
+                  child: _ReadingBookCard(book: readingBooks[index]),
+                );
+              },
             ),
           ),
-
-        // 가로 스크롤 카드
-        SizedBox(
-          height: 240,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding,
-            ),
-            itemCount: _kReadingBooks.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index < _kReadingBooks.length - 1 ? 12 : 0,
-                ),
-                child: _ReadingBookCard(book: _kReadingBooks[index]),
-              );
-            },
-          ),
-        ),
+        ],
       ],
     );
   }
 }
 
-// ─── 인사이트 칩 ─────────────────────────────────────────────────────────
+// ─── 빈 상태 카드 (신규 사용자용) ────────────────────────────────────────
+class _EmptyBooksState extends StatelessWidget {
+  const _EmptyBooksState();
 
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+      ),
+      child: ChorokCard(
+        borderColor: context.appBorder,
+        padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: ShapeDecoration(
+                color: context.primaryBg(0.08),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: 16,
+                    cornerSmoothing: 0.6,
+                  ),
+                ),
+              ),
+              child: Icon(
+                Icons.auto_stories_rounded,
+                size: 28,
+                color: context.appPrimaryAccent,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '아직 등록된 책이 없어요',
+              style: AppTheme.headingSmall.copyWith(
+                fontFamily: 'Pretendard',
+                color: context.appTextPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '첫 번째 책을 추가하고 독서를 시작해보세요',
+              style: AppTheme.captionLarge.copyWith(
+                fontFamily: 'Pretendard',
+                color: context.appTextTertiary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Semantics(
+              label: '책 검색해서 추가하기',
+              button: true,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  context.push(AppConstants.routeExplore);
+                },
+                child: Container(
+                  height: 48,
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  decoration: AppTheme.smoothPill(
+                    color: isDark
+                        ? AppTheme.primary.withValues(alpha: 0.5)
+                        : AppTheme.lightPrimaryAccent,
+                    side: BorderSide(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        size: 18,
+                        color: isDark
+                            ? context.appPrimaryAccent
+                            : Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '책 검색해서 추가하기',
+                        style: AppTheme.bodySmall.copyWith(
+                          fontFamily: 'Pretendard',
+                          color: isDark
+                              ? context.appPrimaryAccent
+                              : Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 인사이트 칩 (현재 사용 안 함 — 책별 통계 Supabase 연동 후 복귀 예정) ──────
+
+// ignore: unused_element
 class _InsightChip extends StatelessWidget {
   final ReadingInsight insight;
 
@@ -727,7 +734,7 @@ class _InsightChip extends StatelessWidget {
 }
 
 class _ReadingBookCard extends StatefulWidget {
-  final _BookData book;
+  final Book book;
   const _ReadingBookCard({required this.book});
 
   @override
@@ -737,13 +744,16 @@ class _ReadingBookCard extends StatefulWidget {
 class _ReadingBookCardState extends State<_ReadingBookCard> {
   bool _isPressed = false;
 
+  int get _gradientIndex =>
+      widget.book.title.hashCode.abs() % AppTheme.coverGradients.length;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final progress = b.currentPage / b.totalPages;
-    final gradColors = AppTheme
-        .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final progress = b.totalPages > 0 ? b.currentPage / b.totalPages : 0.0;
+    final gradIdx = _gradientIndex;
+    final gradColors = AppTheme.coverGradients[gradIdx];
 
     return GestureDetector(
       onTap: () {
@@ -754,8 +764,8 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
             author: b.author,
             currentPage: b.currentPage,
             totalPages: b.totalPages,
-            lastRead: b.lastRead,
-            gradientIndex: b.gradientIndex,
+            lastRead: '최근 읽음',
+            gradientIndex: gradIdx,
           ),
         );
       },
@@ -894,7 +904,7 @@ class _ReadingBookCardState extends State<_ReadingBookCard> {
                           AppConstants.routeSession,
                           extra: SessionExtra(
                             goal: goal,
-                            bookId: b.title.hashCode.toString(),
+                            bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
                             startPage: b.currentPage,
@@ -1742,11 +1752,18 @@ class _TimeCapsuleSection extends ConsumerWidget {
 
 // ─── ④ 다음에 읽을 책 ────────────────────────────────────────────────────────
 
-class _WishlistSection extends StatelessWidget {
+class _WishlistSection extends ConsumerWidget {
   const _WishlistSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allBooks = ref.watch(libraryProvider);
+    final wishlistBooks =
+        allBooks.where((b) => b.status == ReadingStatus.wantToRead).toList();
+
+    // 위시리스트가 비어있으면 섹션 자체를 숨김 (신규 사용자 화면 정리)
+    if (wishlistBooks.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1766,7 +1783,7 @@ class _WishlistSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '${_kWishlistBooks.length}권',
+                '${wishlistBooks.length}권',
                 style: AppTheme.captionLarge.copyWith(
                   color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w600,
@@ -1784,13 +1801,13 @@ class _WishlistSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.screenPadding,
             ),
-            itemCount: _kWishlistBooks.length,
+            itemCount: wishlistBooks.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _kWishlistBooks.length - 1 ? 12 : 0,
+                  right: index < wishlistBooks.length - 1 ? 12 : 0,
                 ),
-                child: _WishlistBookCard(book: _kWishlistBooks[index]),
+                child: _WishlistBookCard(book: wishlistBooks[index]),
               );
             },
           ),
@@ -1801,7 +1818,7 @@ class _WishlistSection extends StatelessWidget {
 }
 
 class _WishlistBookCard extends StatefulWidget {
-  final _WishlistBook book;
+  final Book book;
   const _WishlistBookCard({required this.book});
 
   @override
@@ -1811,13 +1828,15 @@ class _WishlistBookCard extends StatefulWidget {
 class _WishlistBookCardState extends State<_WishlistBookCard> {
   bool _isPressed = false;
 
+  int get _gradientIndex =>
+      widget.book.title.hashCode.abs() % AppTheme.coverGradients.length;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final gradColors = AppTheme
-        .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
-    final daysText = b.addedDays == 0 ? '오늘' : '${b.addedDays}일 전';
+    final gradColors = AppTheme.coverGradients[_gradientIndex];
+    const daysText = '위시리스트';
 
     return GestureDetector(
       onTapDown: (_) {
@@ -1940,7 +1959,7 @@ class _WishlistBookCardState extends State<_WishlistBookCard> {
                           AppConstants.routeSession,
                           extra: SessionExtra(
                             goal: goal,
-                            bookId: b.title.hashCode.toString(),
+                            bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
                             startPage: 0,
