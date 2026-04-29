@@ -291,9 +291,7 @@ class _ForestOrbFabState extends State<_ForestOrbFab>
                   _firefly(t, 0.68, 30.0, 44.0),
                   Center(
                     child: Icon(
-                      widget.isInSession
-                          ? Icons.timer_rounded
-                          : Icons.forest_rounded,
+                      Icons.timer_rounded,
                       color: Colors.white,
                       size: 22,
                     ),
