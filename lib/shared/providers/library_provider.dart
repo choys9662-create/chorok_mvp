@@ -80,6 +80,7 @@ final libraryProvider = NotifierProvider<LibraryNotifier, List<Book>>(
 
 // ─── 초기 목업 데이터 ────────────────────────────────────────────────────────
 const _kMockBooks = [
+  // reading
   Book(
     id: '1',
     title: '채식주의자',
@@ -92,6 +93,25 @@ const _kMockBooks = [
   ),
   Book(
     id: '2',
+    title: '파친코',
+    author: '이민진',
+    status: ReadingStatus.reading,
+    totalPages: 688,
+    currentPage: 234,
+    totalReadingHours: 8.2,
+  ),
+  Book(
+    id: '3',
+    title: '지구 끝의 온실',
+    author: '김초엽',
+    status: ReadingStatus.reading,
+    totalPages: 304,
+    currentPage: 88,
+    totalReadingHours: 4.6,
+  ),
+  // completed
+  Book(
+    id: '4',
     title: '82년생 김지영',
     author: '조남주',
     status: ReadingStatus.completed,
@@ -100,7 +120,7 @@ const _kMockBooks = [
     totalReadingHours: 4.1,
   ),
   Book(
-    id: '3',
+    id: '5',
     title: '아몬드',
     author: '손원평',
     status: ReadingStatus.completed,
@@ -108,12 +128,29 @@ const _kMockBooks = [
     currentPage: 264,
     totalReadingHours: 6.3,
   ),
+  // wantToRead
   Book(
-    id: '4',
-    title: '흰',
+    id: '6',
+    title: '소년이 온다',
     author: '한강',
     status: ReadingStatus.wantToRead,
-    totalPages: 160,
+    totalPages: 216,
+    currentPage: 0,
+  ),
+  Book(
+    id: '7',
+    title: '불편한 편의점',
+    author: '김호연',
+    status: ReadingStatus.wantToRead,
+    totalPages: 312,
+    currentPage: 0,
+  ),
+  Book(
+    id: '8',
+    title: '달러구트 꿈 백화점',
+    author: '이미예',
+    status: ReadingStatus.wantToRead,
+    totalPages: 304,
     currentPage: 0,
   ),
 ];
