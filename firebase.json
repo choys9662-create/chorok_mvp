@@ -1,29 +1,60 @@
 {
-  "hosting": {
-    "public": "build/web",
-    "ignore": [
-      "firebase.json",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css|wasm)",
-        "headers": [
-          { "key": "Cache-Control", "value": "max-age=31536000" }
-        ]
-      },
-      {
-        "source": "**",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
-        ]
-      }
-    ]
-  }
+  "hosting": [
+    {
+      "target": "design",
+      "public": "build/web",
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css|wasm)",
+          "headers": [
+            { "key": "Cache-Control", "value": "max-age=31536000" }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "prod",
+      "public": "build/web",
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css|wasm)",
+          "headers": [
+            { "key": "Cache-Control", "value": "max-age=31536000" }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" }
+          ]
+        }
+      ]
+    }
+  ]
 }

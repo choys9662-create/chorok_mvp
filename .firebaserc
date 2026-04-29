@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "chorok-d1414"
+  },
+  "targets": {
+    "chorok-d1414": {
+      "hosting": {
+        "design": [
+          "chorok-d1414"
+        ],
+        "prod": [
+          "chorok-real"
+        ]
+      }
+    }
   }
 }

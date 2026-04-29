@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,12 +30,34 @@ import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
 
+/// Supabase auth 상태 변경을 GoRouter가 감지하도록 래핑.
+/// 로그인/로그아웃 직후 router가 redirect를 재평가하게 만든다.
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier(Stream<AuthState> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<AuthState> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
 /// go_router 인스턴스 프로바이더
 final appRouterProvider = Provider<GoRouter>((ref) {
   final initialLocation = ref.read(initialLocationProvider);
+  final authRefresh = _AuthRefreshNotifier(
+    Supabase.instance.client.auth.onAuthStateChange,
+  );
+  ref.onDispose(authRefresh.dispose);
+
   return GoRouter(
     initialLocation: initialLocation,
     debugLogDiagnostics: false,
+    refreshListenable: authRefresh,
 
     // ── 인증 가드 ────────────────────────────────────────────────
     redirect: (context, state) {

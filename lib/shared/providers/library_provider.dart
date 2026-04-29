@@ -1,11 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/isar/isar_book.dart';
 import '../models/reading_session.dart';
 import '../repositories/book_repository.dart';
+import '../repositories/supabase_book_repository.dart';
 
 /// USE_MOCK=true (--dart-define) → 목업 데이터 (디자인 작업용)
-/// 기본값 false → SQLite 실제 데이터 (Android APK, iOS 배포 등)
+/// 기본값 false:
+///   - 모바일/데스크톱 → SQLite (BookRepository)
+///   - 웹 → Supabase (SupabaseBookRepository)
 const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 Book _fromIsarBook(IsarBook b) => Book(
@@ -32,6 +36,12 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   Future<void> _loadFromDb() async {
+    if (kIsWeb) {
+      // 웹: 로그인된 사용자의 책을 Supabase에서 불러옴
+      final repo = ref.read(supabaseBookRepositoryProvider);
+      state = await repo.getAllBooks();
+      return;
+    }
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return;
     final rows = await repo.getAllBooks();
@@ -44,7 +54,11 @@ class LibraryNotifier extends Notifier<List<Book>> {
         (b.title == book.title && b.author == book.author));
     if (isDuplicate) return false;
     state = [...state, book];
-    if (!_useMock) {
+    if (_useMock) return true;
+    if (kIsWeb) {
+      // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
+      ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
+    } else {
       ref.read(bookRepositoryProvider)?.saveFromBook(book);
     }
     return true;
