@@ -5,14 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
+import '../../../shared/repositories/follow_repository.dart';
 import '../controller/book_search_controller.dart';
+import '../controller/user_search_controller.dart';
 import '../model/aladin_book.dart';
 import '../widget/add_to_library_sheet.dart';
+
+enum _SearchTab { book, author, user }
 
 // ─── 검색 화면 ───────────────────────────────────────────────────────────────
 
@@ -27,6 +33,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   Timer? _debounce;
+  _SearchTab _tab = _SearchTab.book;
+  UserSearchScope _userScope = UserSearchScope.all;
 
   @override
   void initState() {
@@ -47,17 +55,66 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _onChanged(String value) {
     _debounce?.cancel();
     if (value.trim().isEmpty) {
-      ref.read(bookSearchProvider.notifier).clear();
+      _clearActive();
+      // 유저 탭의 팔로잉/팔로워는 빈 쿼리에서도 목록 노출
+      if (_tab == _SearchTab.user && _userScope != UserSearchScope.all) {
+        ref.read(userSearchProvider.notifier).search('', scope: _userScope);
+      }
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      ref.read(bookSearchProvider.notifier).search(value);
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      _runSearch(value);
     });
+  }
+
+  void _runSearch(String q) {
+    switch (_tab) {
+      case _SearchTab.book:
+        ref
+            .read(bookSearchProvider.notifier)
+            .search(q, type: BookSearchType.keyword);
+      case _SearchTab.author:
+        ref
+            .read(bookSearchProvider.notifier)
+            .search(q, type: BookSearchType.author);
+      case _SearchTab.user:
+        ref.read(userSearchProvider.notifier).search(q, scope: _userScope);
+    }
+  }
+
+  void _clearActive() {
+    if (_tab == _SearchTab.user) {
+      ref.read(userSearchProvider.notifier).clear();
+    } else {
+      ref.read(bookSearchProvider.notifier).clear();
+    }
+  }
+
+  void _onTabChanged(_SearchTab tab) {
+    if (tab == _tab) return;
+    HapticFeedback.selectionClick();
+    setState(() => _tab = tab);
+    // 두 컨트롤러 모두 초기화 후, 현재 입력 있으면 새 탭으로 재검색
+    ref.read(bookSearchProvider.notifier).clear();
+    ref.read(userSearchProvider.notifier).clear();
+    final q = _controller.text.trim();
+    if (q.isNotEmpty) {
+      _runSearch(q);
+    } else if (tab == _SearchTab.user && _userScope != UserSearchScope.all) {
+      ref.read(userSearchProvider.notifier).search('', scope: _userScope);
+    }
+  }
+
+  void _onUserScopeChanged(UserSearchScope scope) {
+    if (scope == _userScope) return;
+    HapticFeedback.selectionClick();
+    setState(() => _userScope = scope);
+    ref.read(userSearchProvider.notifier).setScope(scope);
   }
 
   void _onClear() {
     _controller.clear();
-    ref.read(bookSearchProvider.notifier).clear();
+    _clearActive();
     _focusNode.requestFocus();
   }
 
@@ -117,45 +174,518 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final searchState = ref.watch(bookSearchProvider);
-
     return Scaffold(
       backgroundColor: context.appBg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── 검색 바 ──────────────────────────────────────────────
             _SearchBar(
               controller: _controller,
               focusNode: _focusNode,
               onChanged: _onChanged,
               onClear: _onClear,
-              onBarcode: () {
-                HapticFeedback.selectionClick();
-                context.push(AppConstants.routeBarcode);
-              },
+              onBarcode: _tab == _SearchTab.user
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      context.push(AppConstants.routeBarcode);
+                    },
             ),
-
-            // ── 결과 영역 ─────────────────────────────────────────────
-            Expanded(
-              child: searchState.when(
-                loading: () => const _ShimmerList(),
-                error: (error, _) => _ErrorView(
-                  message: error.toString().replaceFirst('Exception: ', ''),
-                  onRetry: () => ref
-                      .read(bookSearchProvider.notifier)
-                      .search(_controller.text),
-                ),
-                data: (books) {
-                  if (_controller.text.trim().isEmpty) {
-                    return const _IdlePrompt();
-                  }
-                  if (books.isEmpty) {
-                    return _EmptyResult(query: _controller.text.trim());
-                  }
-                  return _ResultList(books: books, onTap: _onBookTap);
-                },
+            const SizedBox(height: 12),
+            _TabBar(current: _tab, onChanged: _onTabChanged),
+            if (_tab == _SearchTab.user) ...[
+              const SizedBox(height: 8),
+              _UserScopeChips(
+                current: _userScope,
+                onChanged: _onUserScopeChanged,
               ),
+            ],
+            Expanded(
+              child: _tab == _SearchTab.user
+                  ? _UserResultArea(
+                      query: _controller.text,
+                      scope: _userScope,
+                    )
+                  : _BookResultArea(
+                      query: _controller.text,
+                      onTap: _onBookTap,
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 탭 바 ───────────────────────────────────────────────────────────────────
+
+class _TabBar extends StatelessWidget {
+  final _SearchTab current;
+  final ValueChanged<_SearchTab> onChanged;
+
+  const _TabBar({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      (_SearchTab.book, '책'),
+      (_SearchTab.author, '작가'),
+      (_SearchTab.user, '유저'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: items.map((e) {
+          final isSelected = e.$1 == current;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onChanged(e.$1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.center,
+                decoration: AppTheme.smoothPill(
+                  color: isSelected
+                      ? context.appPrimaryAccent
+                      : context.appCard,
+                  side: BorderSide(
+                    color: isSelected
+                        ? context.appPrimaryAccent
+                        : context.appBorder,
+                  ),
+                ),
+                child: Text(
+                  e.$2,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : context.appTextSecondary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ─── 유저 탭 하위 칩 (전체 / 팔로잉 / 팔로워) ──────────────────────────────
+
+class _UserScopeChips extends StatelessWidget {
+  final UserSearchScope current;
+  final ValueChanged<UserSearchScope> onChanged;
+
+  const _UserScopeChips({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      (UserSearchScope.all, '전체'),
+      (UserSearchScope.following, '팔로잉'),
+      (UserSearchScope.followers, '팔로워'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: items.map((e) {
+          final isSelected = e.$1 == current;
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: GestureDetector(
+              onTap: () => onChanged(e.$1),
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                alignment: Alignment.center,
+                decoration: AppTheme.smoothPill(
+                  color: isSelected
+                      ? context.appPrimaryAccent.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  side: BorderSide(
+                    color: isSelected
+                        ? context.appPrimaryAccent
+                        : context.appBorder,
+                  ),
+                ),
+                child: Text(
+                  e.$2,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? context.appPrimaryAccent
+                        : context.appTextSecondary,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ─── 책/작가 결과 영역 ────────────────────────────────────────────────────
+
+class _BookResultArea extends ConsumerWidget {
+  final String query;
+  final Future<void> Function(AladinBook) onTap;
+
+  const _BookResultArea({required this.query, required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(bookSearchProvider);
+    return state.when(
+      loading: () => const _ShimmerList(),
+      error: (error, _) => _ErrorView(
+        message: error.toString().replaceFirst('Exception: ', ''),
+        onRetry: () =>
+            ref.read(bookSearchProvider.notifier).search(query),
+      ),
+      data: (books) {
+        if (query.trim().isEmpty) return const _IdlePrompt();
+        if (books.isEmpty) return _EmptyResult(query: query.trim());
+        return _ResultList(books: books, onTap: onTap);
+      },
+    );
+  }
+}
+
+// ─── 유저 결과 영역 ───────────────────────────────────────────────────────
+
+class _UserResultArea extends ConsumerWidget {
+  final String query;
+  final UserSearchScope scope;
+
+  const _UserResultArea({required this.query, required this.scope});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(userSearchProvider);
+    return state.when(
+      loading: () => const _ShimmerList(),
+      error: (error, _) => _ErrorView(
+        message: error.toString().replaceFirst('Exception: ', ''),
+        onRetry: () => ref
+            .read(userSearchProvider.notifier)
+            .search(query, scope: scope),
+      ),
+      data: (users) {
+        if (users.isEmpty) {
+          if (scope == UserSearchScope.all && query.trim().isEmpty) {
+            return const _UserIdlePrompt();
+          }
+          return _UserEmptyResult(scope: scope, query: query.trim());
+        }
+        return _UserResultList(users: users);
+      },
+    );
+  }
+}
+
+// ─── 유저 결과 리스트 ────────────────────────────────────────────────────
+
+class _UserResultList extends StatelessWidget {
+  final List<UserProfile> users;
+  const _UserResultList({required this.users});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      itemCount: users.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (_, i) => _UserCard(profile: users[i]),
+    );
+  }
+}
+
+class _UserCard extends ConsumerStatefulWidget {
+  final UserProfile profile;
+  const _UserCard({required this.profile});
+
+  @override
+  ConsumerState<_UserCard> createState() => _UserCardState();
+}
+
+class _UserCardState extends ConsumerState<_UserCard> {
+  bool? _isFollowing;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFollowState();
+  }
+
+  Future<void> _loadFollowState() async {
+    final me = Supabase.instance.client.auth.currentUser?.id;
+    if (me == null || me == widget.profile.id) return;
+    final following =
+        await ref.read(followRepositoryProvider).isFollowing(widget.profile.id);
+    if (!mounted) return;
+    setState(() => _isFollowing = following);
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_busy) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _busy = true);
+    try {
+      final repo = ref.read(followRepositoryProvider);
+      if (_isFollowing == true) {
+        await repo.unfollow(widget.profile.id);
+        if (!mounted) return;
+        setState(() => _isFollowing = false);
+      } else {
+        await repo.follow(widget.profile.id);
+        if (!mounted) return;
+        setState(() => _isFollowing = true);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.profile;
+    final me = Supabase.instance.client.auth.currentUser?.id;
+    final isMe = me == p.id;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: AppTheme.radiusLG,
+        side: BorderSide(color: context.appBorder),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: context.appCardElevated,
+            backgroundImage: (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
+                ? NetworkImage(p.avatarUrl!)
+                : null,
+            child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
+                ? Icon(Icons.person_rounded,
+                    color: context.appTextTertiary, size: 22)
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  p.displayName,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: context.appTextPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '@${p.username}',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    color: context.appTextTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (p.bio != null && p.bio!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    p.bio!,
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 12,
+                      color: context.appTextSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (!isMe) ...[
+            const SizedBox(width: 8),
+            _FollowButton(
+              isFollowing: _isFollowing ?? false,
+              loaded: _isFollowing != null,
+              busy: _busy,
+              onTap: _toggleFollow,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FollowButton extends StatelessWidget {
+  final bool isFollowing;
+  final bool loaded;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _FollowButton({
+    required this.isFollowing,
+    required this.loaded,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!loaded) {
+      return const SizedBox(width: 72, height: 32);
+    }
+    final label = isFollowing ? '팔로잉' : '팔로우';
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: busy ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          alignment: Alignment.center,
+          decoration: AppTheme.smoothBox(
+            color: isFollowing ? context.appCardElevated : context.appPrimaryAccent,
+            radius: AppTheme.radiusSM,
+            side: BorderSide(
+              color: isFollowing ? context.appBorder : context.appPrimaryAccent,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isFollowing ? context.appTextSecondary : Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 유저 탭 빈 상태 ─────────────────────────────────────────────────────
+
+class _UserIdlePrompt extends StatelessWidget {
+  const _UserIdlePrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.people_outline_rounded,
+              color: context.appTextTertiary, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            '유저를 검색해보세요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: context.appTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '닉네임 · 사용자 이름으로 찾을 수 있어요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13,
+              color: context.appTextTertiary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserEmptyResult extends StatelessWidget {
+  final UserSearchScope scope;
+  final String query;
+
+  const _UserEmptyResult({required this.scope, required this.query});
+
+  @override
+  Widget build(BuildContext context) {
+    final (title, sub) = switch (scope) {
+      UserSearchScope.all => (
+          query.isEmpty ? '유저를 검색해보세요' : '"$query"',
+          '검색 결과가 없어요',
+        ),
+      UserSearchScope.following => (
+          query.isEmpty ? '아직 팔로우하는 유저가 없어요' : '"$query"',
+          query.isEmpty
+              ? '관심 있는 사용자를 팔로우해보세요'
+              : '팔로잉 중에서 결과가 없어요',
+        ),
+      UserSearchScope.followers => (
+          query.isEmpty ? '아직 팔로워가 없어요' : '"$query"',
+          query.isEmpty
+              ? '활동을 통해 팔로워를 모아보세요'
+              : '팔로워 중에서 결과가 없어요',
+        ),
+    };
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded,
+                color: context.appTextTertiary, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: context.appTextPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              sub,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 13,
+                color: context.appTextSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -171,7 +701,7 @@ class _SearchBar extends StatelessWidget {
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
-  final VoidCallback onBarcode;
+  final VoidCallback? onBarcode;
 
   const _SearchBar({
     required this.controller,
@@ -279,33 +809,33 @@ class _SearchBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-
-          // 바코드 스캔 버튼
-          Semantics(
-            button: true,
-            label: 'ISBN 바코드 스캔',
-            child: GestureDetector(
-              onTap: onBarcode,
-              child: Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: ShapeDecoration(
-                  color: context.appCard,
-                  shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
-                    side: BorderSide(color: context.appBorder),
+          if (onBarcode != null) ...[
+            const SizedBox(width: 8),
+            Semantics(
+              button: true,
+              label: 'ISBN 바코드 스캔',
+              child: GestureDetector(
+                onTap: onBarcode,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: ShapeDecoration(
+                    color: context.appCard,
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+                      side: BorderSide(color: context.appBorder),
+                    ),
                   ),
-                ),
-                child: Icon(
-                  Icons.qr_code_scanner_rounded,
-                  color: context.appTextSecondary,
-                  size: 22,
+                  child: Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: context.appTextSecondary,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
