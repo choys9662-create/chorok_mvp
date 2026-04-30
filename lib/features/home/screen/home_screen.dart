@@ -76,15 +76,16 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollCtrl = ref.read(tabScrollControllersProvider)[0];
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _HomeAppBar(),
-            Expanded(
-              child: CustomScrollView(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(height: topPad),
+          const _HomeAppBar(),
+          Expanded(
+            child: CustomScrollView(
                 controller: scrollCtrl,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -127,7 +128,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -73,15 +73,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          controller: _scrollCtrl,
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.screenPadding, 20,
-            AppTheme.screenPadding, 40,
-          ),
+      body: ListView(
+        controller: _scrollCtrl,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          AppTheme.screenPadding, topPad + 20,
+          AppTheme.screenPadding, 40,
+        ),
           children: [
             Text('분석', style: AppTheme.headingLarge.copyWith(color: context.appTextPrimary)),
             const SizedBox(height: 16),
@@ -92,8 +92,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 : _tab == 1
                     ? _buildMonthContent()
                     : _buildYearContent()),
-          ],
-        ),
+        ],
       ),
     );
   }

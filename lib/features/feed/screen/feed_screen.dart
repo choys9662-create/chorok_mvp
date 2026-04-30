@@ -167,17 +167,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final groups = _overlapGroups;
     final overlapIds = _overlapSentenceIds;
     final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
+    final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ─── 헤더 (고정) ──────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding, 20,
-                AppTheme.screenPadding, 12,
-              ),
+      body: Column(
+        children: [
+          SizedBox(height: topPad),
+          // ─── 헤더 (고정) ──────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding, 20,
+              AppTheme.screenPadding, 12,
+            ),
               child: Row(
                 children: [
                   if (context.canPop()) ...[
@@ -325,7 +326,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               ),
             ),
           ],
-        ),
       ),
     );
   }

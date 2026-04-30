@@ -163,28 +163,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget build(BuildContext context) {
     final bool isSearchActive = _searchController.text.isNotEmpty;
 
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appSurface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _AppBarArea(
-              searchController: _searchController,
-              focusNode: _searchFocusNode,
-              isSearchFocused: _isSearchFocused,
-              onDismiss: _dismissSearch,
-            ),
-            Expanded(
-              child: isSearchActive
-                  ? _SearchResultsView(books: _filteredBooks)
-                  : _MainContentView(
-                      selectedCategoryIndex: _selectedCategoryIndex,
-                      onCategorySelected: _onCategorySelected,
-                      filteredBooks: _categoryFilteredBooks,
-                    ),
-            ),
-          ],
-        ),
+      body: Column(
+        children: [
+          SizedBox(height: topPad),
+          _AppBarArea(
+            searchController: _searchController,
+            focusNode: _searchFocusNode,
+            isSearchFocused: _isSearchFocused,
+            onDismiss: _dismissSearch,
+          ),
+          Expanded(
+            child: isSearchActive
+                ? _SearchResultsView(books: _filteredBooks)
+                : _MainContentView(
+                    selectedCategoryIndex: _selectedCategoryIndex,
+                    onCategorySelected: _onCategorySelected,
+                    filteredBooks: _categoryFilteredBooks,
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -315,13 +315,18 @@ class _SearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              readOnly: true,
+              showCursor: false,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                context.push(AppConstants.routeSearch);
+              },
               style: AppTheme.bodyMedium.copyWith(
                 fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
               ),
-              cursorColor: AppTheme.accent,
               decoration: InputDecoration(
-                hintText: '책 제목, 저자 검색...',
+                hintText: '책, 작가, 유저 검색',
                 hintStyle: AppTheme.bodyMedium.copyWith(
                   fontFamily: 'Pretendard',
                   color: context.appTextTertiary,
@@ -332,22 +337,7 @@ class _SearchBar extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.text.isNotEmpty) ...[
-            GestureDetector(
-              onTap: onDismiss,
-              child: Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 18,
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ),
-          ] else
-            const SizedBox(width: 16),
+          const SizedBox(width: 16),
         ],
       ),
     );

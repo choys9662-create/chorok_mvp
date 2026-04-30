@@ -59,21 +59,22 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(choseoListProvider);
 
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── 상단 바 ──────────────────────────────────────────────
-            _TopBar(
-              searchActive: _searchActive,
-              searchCtrl: _searchCtrl,
-              focusNode: _focusNode,
-              totalCount: state.items.length,
-              onBack: () => Navigator.of(context).pop(),
-              onToggleSearch: _toggleSearch,
-              onSearchChanged: _onSearchChanged,
-            ),
+      body: Column(
+        children: [
+          SizedBox(height: topPad),
+          // ── 상단 바 ──────────────────────────────────────────────
+          _TopBar(
+            searchActive: _searchActive,
+            searchCtrl: _searchCtrl,
+            focusNode: _focusNode,
+            totalCount: state.items.length,
+            onBack: () => Navigator.of(context).pop(),
+            onToggleSearch: _toggleSearch,
+            onSearchChanged: _onSearchChanged,
+          ),
 
             // ── 탭 바 ─────────────────────────────────────────────────
             _ChoseoTabBar(controller: _tabCtrl),
@@ -95,7 +96,6 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
                     ),
             ),
           ],
-        ),
       ),
     );
   }

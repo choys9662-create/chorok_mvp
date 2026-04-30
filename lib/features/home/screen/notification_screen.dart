@@ -169,14 +169,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final unread = _notifications.where((n) => !n.isRead).length;
 
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appSurface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ─── 앱바 ───────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
+      body: Column(
+        children: [
+          SizedBox(height: topPad),
+          // ─── 앱바 ───────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
               child: Row(
                 children: [
                   // 뒤로가기
@@ -355,7 +356,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
               }),
             ),
           ],
-        ),
       ),
     );
   }

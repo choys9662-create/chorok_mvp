@@ -174,45 +174,45 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _SearchBar(
-              controller: _controller,
-              focusNode: _focusNode,
-              onChanged: _onChanged,
-              onClear: _onClear,
-              onBarcode: _tab == _SearchTab.user
-                  ? null
-                  : () {
-                      HapticFeedback.selectionClick();
-                      context.push(AppConstants.routeBarcode);
-                    },
-            ),
-            const SizedBox(height: 12),
-            _TabBar(current: _tab, onChanged: _onTabChanged),
-            if (_tab == _SearchTab.user) ...[
-              const SizedBox(height: 8),
-              _UserScopeChips(
-                current: _userScope,
-                onChanged: _onUserScopeChanged,
-              ),
-            ],
-            Expanded(
-              child: _tab == _SearchTab.user
-                  ? _UserResultArea(
-                      query: _controller.text,
-                      scope: _userScope,
-                    )
-                  : _BookResultArea(
-                      query: _controller.text,
-                      onTap: _onBookTap,
-                    ),
+      body: Column(
+        children: [
+          SizedBox(height: topPad),
+          _SearchBar(
+            controller: _controller,
+            focusNode: _focusNode,
+            onChanged: _onChanged,
+            onClear: _onClear,
+            onBarcode: _tab == _SearchTab.user
+                ? null
+                : () {
+                    HapticFeedback.selectionClick();
+                    context.push(AppConstants.routeBarcode);
+                  },
+          ),
+          const SizedBox(height: 12),
+          _TabBar(current: _tab, onChanged: _onTabChanged),
+          if (_tab == _SearchTab.user) ...[
+            const SizedBox(height: 8),
+            _UserScopeChips(
+              current: _userScope,
+              onChanged: _onUserScopeChanged,
             ),
           ],
-        ),
+          Expanded(
+            child: _tab == _SearchTab.user
+                ? _UserResultArea(
+                    query: _controller.text,
+                    scope: _userScope,
+                  )
+                : _BookResultArea(
+                    query: _controller.text,
+                    onTap: _onBookTap,
+                  ),
+          ),
+        ],
       ),
     );
   }

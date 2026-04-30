@@ -75,12 +75,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,
-      body: SafeArea(
-        child: NestedScrollView(
+      body: NestedScrollView(
           controller: ref.read(tabScrollControllersProvider)[3],
           headerSliverBuilder: (context, _) => [
+            SliverToBoxAdapter(child: SizedBox(height: topPad)),
             // ── 프로필 + 설정 ───────────────────────────────────
             SliverToBoxAdapter(
               child: Consumer(
@@ -226,7 +227,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 }
