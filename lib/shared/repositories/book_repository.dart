@@ -361,6 +361,14 @@ class BookRepository {
     );
   }
 
+  Future<void> deleteByBookId(String bookId) async {
+    await _db.delete(
+      'books',
+      where: 'book_id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
   // ── 완독 회고 저장 ────────────────────────────────────────────────────────
 
   Future<IsarBookReflection> saveReflection({

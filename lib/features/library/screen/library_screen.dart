@@ -8,6 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
@@ -18,6 +19,8 @@ import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
 import '../widget/library_calendar_view.dart';
 import '../widget/library_stats_view.dart';
+
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 뷰 모드 / 정렬 옵션 ──────────────────────────────────────────────────
 enum _LibraryViewMode { grid, list }
@@ -58,62 +61,6 @@ String? _estimateCompletion(Book book) {
   return '${date.month}월 ${date.day}일 완독 예상';
 }
 
-// ─── 목업 데이터 ──────────────────────────────────────────────────────────
-final _kBooks = [
-  Book(
-    id: '1',
-    title: '채식주의자',
-    author: '한강',
-    status: ReadingStatus.reading,
-    totalPages: 300,
-    currentPage: 186,
-    totalReadingHours: 5.2,
-    savedSentences: const ['나는 채식주의자가 되기로 했다.', '꿈 때문에.'],
-  ),
-  Book(
-    id: '2',
-    title: '82년생 김지영',
-    author: '조남주',
-    status: ReadingStatus.completed,
-    totalPages: 190,
-    currentPage: 190,
-    totalReadingHours: 4.1,
-  ),
-  Book(
-    id: '3',
-    title: '아몬드',
-    author: '손원평',
-    status: ReadingStatus.completed,
-    totalPages: 264,
-    currentPage: 264,
-    totalReadingHours: 6.3,
-  ),
-  Book(
-    id: '4',
-    title: '흰',
-    author: '한강',
-    status: ReadingStatus.wantToRead,
-    totalPages: 160,
-    currentPage: 0,
-  ),
-  Book(
-    id: '5',
-    title: '지구 끝의 온실',
-    author: '김초엽',
-    status: ReadingStatus.wantToRead,
-    totalPages: 304,
-    currentPage: 0,
-  ),
-  Book(
-    id: '6',
-    title: '파친코',
-    author: '이민진',
-    status: ReadingStatus.reading,
-    totalPages: 688,
-    currentPage: 234,
-    totalReadingHours: 8.7,
-  ),
-];
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -266,15 +213,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 child: IndexedStack(
                   index: _viewIndex,
                   children: [
-                    _LibraryTab(
-                      books: _kBooks,
-                      onAddBook: () => _showAddBookSheet(context),
+                    Consumer(
+                      builder: (ctx, r, _) {
+                        final books = r.watch(libraryProvider);
+                        return _LibraryTab(
+                          books: books,
+                          onAddBook: () => ctx.push(AppConstants.routeSearch),
+                        );
+                      },
                     ),
                     LibraryStatsView(
                       scrollController: ref.read(tabScrollControllersProvider)[5],
                     ),
                     LibraryCalendarView(
-                      logs: mockReadingLogs,
+                      logs: _useMock ? mockReadingLogs : const [],
                       scrollController: ref.read(tabScrollControllersProvider)[4],
                     ),
                   ],
@@ -284,18 +236,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showAddBookSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const _AddBookSheet(),
     );
   }
 }
@@ -354,7 +294,8 @@ class _LibraryTabState extends State<_LibraryTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
-    final todayMinutes = mockReadingLogs
+    final logs = _useMock ? mockReadingLogs : const <ReadingLog>[];
+    final todayMinutes = logs
         .where(
           (l) =>
               l.date.year == now.year &&
@@ -369,6 +310,7 @@ class _LibraryTabState extends State<_LibraryTab> {
     return CustomScrollView(
       slivers: [
         // ── 이번 달 성과 뱃지 ──────────────────────────────────────
+        if (_useMock)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -724,25 +666,19 @@ class _MonthlyAchievementCard extends StatelessWidget {
 }
 
 // ─── 읽고 싶은 책 섹션 ────────────────────────────────────────────────────────
-typedef _LibraryWishlistBook = ({
-  String title,
-  String author,
-  int addedDays,
-  int gradientIndex,
-  int totalPages,
-});
 
-const List<_LibraryWishlistBook> _kLibraryWishlistBooks = [
-  (title: '소년이 온다', author: '한강', addedDays: 3, gradientIndex: 3, totalPages: 216),
-  (title: '불편한 편의점', author: '김호연', addedDays: 7, gradientIndex: 6, totalPages: 312),
-  (title: '달러구트 꿈 백화점', author: '이미예', addedDays: 14, gradientIndex: 1, totalPages: 304),
-];
-
-class _LibraryWishlistSection extends StatelessWidget {
+class _LibraryWishlistSection extends ConsumerWidget {
   const _LibraryWishlistSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final books = ref
+        .watch(libraryProvider)
+        .where((b) => b.status == ReadingStatus.wantToRead)
+        .toList();
+
+    if (books.isEmpty) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Column(
@@ -751,7 +687,7 @@ class _LibraryWishlistSection extends StatelessWidget {
           ChorokSectionHeader(
             title: '읽고 싶은 책',
             trailing: Text(
-              '${_kLibraryWishlistBooks.length}권',
+              '${books.length}권',
               style: AppTheme.captionLarge.copyWith(
                 color: context.appPrimaryAccent,
                 fontWeight: FontWeight.w600,
@@ -762,8 +698,8 @@ class _LibraryWishlistSection extends StatelessWidget {
           ChorokCard(
             padding: EdgeInsets.zero,
             child: Column(
-              children: _kLibraryWishlistBooks.asMap().entries.map((e) {
-                final isLast = e.key == _kLibraryWishlistBooks.length - 1;
+              children: books.asMap().entries.map((e) {
+                final isLast = e.key == books.length - 1;
                 return Column(
                   children: [
                     _WishlistListCard(book: e.value),
@@ -781,7 +717,7 @@ class _LibraryWishlistSection extends StatelessWidget {
 }
 
 class _WishlistListCard extends StatefulWidget {
-  final _LibraryWishlistBook book;
+  final Book book;
   const _WishlistListCard({required this.book});
 
   @override
@@ -794,9 +730,8 @@ class _WishlistListCardState extends State<_WishlistListCard> {
   @override
   Widget build(BuildContext context) {
     final b = widget.book;
-    final gradColors =
-        AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
-    final daysText = b.addedDays == 0 ? '오늘 추가' : '${b.addedDays}일 전 추가';
+    final gradColors = AppTheme.coverGradients[
+        b.id.hashCode.abs() % AppTheme.coverGradients.length];
 
     return GestureDetector(
       onTapDown: (_) {
@@ -849,13 +784,6 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                           color: context.appTextSecondary,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        daysText,
-                        style: AppTheme.captionSmall.copyWith(
-                          color: context.appTextTertiary,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -880,7 +808,7 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                           AppConstants.routeSession,
                           extra: SessionExtra(
                             goal: goal,
-                            bookId: b.title.hashCode.toString(),
+                            bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
                             startPage: 0,
@@ -1825,102 +1753,6 @@ class _SortSheet extends StatelessWidget {
 }
 
 // ─── 책 추가 바텀시트 ─────────────────────────────────────────────────────
-class _AddBookSheet extends StatefulWidget {
-  const _AddBookSheet();
-
-  @override
-  State<_AddBookSheet> createState() => _AddBookSheetState();
-}
-
-class _AddBookSheetState extends State<_AddBookSheet> {
-  final _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.space2XL),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ChorokSheetHandle(),
-            const SizedBox(height: AppTheme.spaceXL),
-            Text(
-              '책 추가',
-              style: AppTheme.headingMedium.copyWith(
-                color: context.appTextPrimary,
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceLG),
-            TextField(
-              controller: _searchController,
-              autofocus: true,
-              style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: '책 제목, 저자, ISBN으로 검색',
-                hintStyle: AppTheme.bodyMedium.copyWith(
-                  color: context.appTextTertiary,
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: context.appTextTertiary,
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: AppTheme.accent,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('바코드 스캔 기능은 출시 예정이에요'),
-                        backgroundColor: AppTheme.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
-                filled: true,
-                fillColor: context.appCardElevated,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: context.appPrimaryAccent),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            Center(
-              child: Text(
-                '알라딘 · 네이버 도서 검색 연동 (출시 예정)',
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceXL),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 책 상세 바텀시트 ─────────────────────────────────────────────────────
 void _showBookDetail(BuildContext context, Book book) {
@@ -1935,16 +1767,16 @@ void _showBookDetail(BuildContext context, Book book) {
   );
 }
 
-class _BookDetailSheet extends StatefulWidget {
+class _BookDetailSheet extends ConsumerStatefulWidget {
   final Book book;
   final BuildContext outerContext;
   const _BookDetailSheet({required this.book, required this.outerContext});
 
   @override
-  State<_BookDetailSheet> createState() => _BookDetailSheetState();
+  ConsumerState<_BookDetailSheet> createState() => _BookDetailSheetState();
 }
 
-class _BookDetailSheetState extends State<_BookDetailSheet> {
+class _BookDetailSheetState extends ConsumerState<_BookDetailSheet> {
   late int _currentPage;
   late TextEditingController _pageController;
 
@@ -1974,10 +1806,26 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
 
   void _savePage(BuildContext context) {
     HapticFeedback.heavyImpact();
+    ref
+        .read(libraryProvider.notifier)
+        .updateCurrentPage(widget.book.id, _currentPage);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${widget.book.title} — $_currentPage쪽으로 업데이트했어요'),
+        backgroundColor: AppTheme.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _deleteBook(BuildContext context) {
+    HapticFeedback.selectionClick();
+    ref.read(libraryProvider.notifier).deleteBook(widget.book.id);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${widget.book.title}을(를) 삭제했어요'),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
       ),
@@ -2305,22 +2153,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               ),
               const SizedBox(width: 12),
               IconButton(
-                onPressed: () {
-                  HapticFeedback.selectionClick();
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${book.title}을(를) 삭제했어요'),
-                      backgroundColor: AppTheme.primary,
-                      behavior: SnackBarBehavior.floating,
-                      action: SnackBarAction(
-                        label: '취소',
-                        textColor: Colors.white,
-                        onPressed: () {},
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => _deleteBook(context),
                 icon: const Icon(Icons.delete_outline_rounded),
                 style: IconButton.styleFrom(
                   foregroundColor: context.appTextTertiary,

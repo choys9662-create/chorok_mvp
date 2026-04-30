@@ -64,6 +64,44 @@ class LibraryNotifier extends Notifier<List<Book>> {
     return true;
   }
 
+  void updateCurrentPage(String bookId, int newPage) {
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+    final old = state[idx];
+    final clamped = newPage.clamp(0, old.totalPages);
+    final updated = Book(
+      id: old.id,
+      title: old.title,
+      author: old.author,
+      isbn: old.isbn,
+      coverUrl: old.coverUrl,
+      currentPage: clamped,
+      totalPages: old.totalPages,
+      status: clamped >= old.totalPages && old.totalPages > 0
+          ? ReadingStatus.completed
+          : old.status,
+      totalReadingHours: old.totalReadingHours,
+      savedSentences: old.savedSentences,
+    );
+    state = [...state]..[idx] = updated;
+    if (_useMock) return;
+    if (kIsWeb) {
+      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    } else {
+      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+    }
+  }
+
+  void deleteBook(String bookId) {
+    state = state.where((b) => b.id != bookId).toList();
+    if (_useMock) return;
+    if (kIsWeb) {
+      ref.read(supabaseBookRepositoryProvider).deleteByBookId(bookId);
+    } else {
+      ref.read(bookRepositoryProvider)?.deleteByBookId(bookId);
+    }
+  }
+
   bool containsIsbn(String? isbn13) {
     if (isbn13 == null || isbn13.isEmpty) return false;
     return state.any((b) => b.isbn == isbn13);

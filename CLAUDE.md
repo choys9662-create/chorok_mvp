@@ -57,3 +57,7 @@ Presentation / Logic 계층 분리, 정적 위젯에 const 적용
 
 DESIGN.md 규칙은 추가 전용. 삭제·완화는 사용자 승인 필요.
 갱신 후 확인: 기존 규칙과 충돌 없는지, §15에 기록됐는지, claude-progress.txt에 알림 남겼는지.
+
+## 앱 환경 명칭
+- **디자인 앱** (또는 "디자인") = USE_MOCK=true 빌드 → chorok-d1414.web.app
+- **테스트 앱** (또는 "테스트") = USE_MOCK=false 빌드 → chorok-real.web.app

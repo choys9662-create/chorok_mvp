@@ -53,6 +53,16 @@ class SupabaseBookRepository {
     );
   }
 
+  Future<void> deleteByBookId(String bookId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client
+        .from('books')
+        .delete()
+        .eq('user_id', userId)
+        .eq('book_id', bookId);
+  }
+
   Book _bookFromRow(Map<String, dynamic> r) {
     return Book(
       id: r['book_id'] as String,
