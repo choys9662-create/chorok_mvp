@@ -184,53 +184,44 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          ],
-          body: Column(
-            children: [
-              // ── 세그먼트 토글 (스크롤 후 상단 고정) ────────────
-              ColoredBox(
-                color: context.appBg,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppTheme.screenPadding,
-                    0,
-                    AppTheme.screenPadding,
-                    4,
-                  ),
-                  child: SegmentToggle(
-                    labels: const ['서재', '통계', '캘린더'],
-                    selectedIndex: _viewIndex,
-                    onChanged: (i) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _viewIndex = i);
-                    },
-                  ),
+            // ── 세그먼트 토글 — 헤더와 함께 스크롤 ────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  0,
+                  AppTheme.screenPadding,
+                  4,
+                ),
+                child: SegmentToggle(
+                  labels: const ['서재', '통계', '캘린더'],
+                  selectedIndex: _viewIndex,
+                  onChanged: (i) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _viewIndex = i);
+                  },
                 ),
               ),
-
-              // ── 콘텐츠 ────────────────────────────────────────
-              Expanded(
-                child: IndexedStack(
-                  index: _viewIndex,
-                  children: [
-                    Consumer(
-                      builder: (ctx, r, _) {
-                        final books = r.watch(libraryProvider);
-                        return _LibraryTab(
-                          books: books,
-                          onAddBook: () => ctx.push(AppConstants.routeSearch),
-                        );
-                      },
-                    ),
-                    LibraryStatsView(
-                      scrollController: ref.read(tabScrollControllersProvider)[5],
-                    ),
-                    LibraryCalendarView(
-                      logs: _useMock ? mockReadingLogs : const [],
-                      scrollController: ref.read(tabScrollControllersProvider)[4],
-                    ),
-                  ],
-                ),
+            ),
+          ],
+          body: IndexedStack(
+            index: _viewIndex,
+            children: [
+              Consumer(
+                builder: (ctx, r, _) {
+                  final books = r.watch(libraryProvider);
+                  return _LibraryTab(
+                    books: books,
+                    onAddBook: () => ctx.push(AppConstants.routeSearch),
+                  );
+                },
+              ),
+              LibraryStatsView(
+                scrollController: ref.read(tabScrollControllersProvider)[5],
+              ),
+              LibraryCalendarView(
+                logs: _useMock ? mockReadingLogs : const [],
+                scrollController: ref.read(tabScrollControllersProvider)[4],
               ),
             ],
           ),
