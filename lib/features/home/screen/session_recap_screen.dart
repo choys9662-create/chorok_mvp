@@ -92,6 +92,16 @@ int _calcScore(int seconds, int sentenceCount) {
   return (45 + timePts + sentPts).clamp(0, 100);
 }
 
+String _evalText(int score, int sentenceCount) {
+  if (score >= 90) return '오늘은 정말 깊이 있는 독서를 했어요.\n최고의 집중력을 보여줬어요!';
+  if (score >= 75) return '훌륭한 독서 세션이었어요.\n꾸준히 이 페이스를 유지해봐요.';
+  if (score >= 60) {
+    if (sentenceCount > 0) return '좋은 독서였어요. 수집한 문장들이\n피드에 올라갔어요!';
+    return '좋은 시작이에요. 다음엔 문장도\n한 번 수집해봐요!';
+  }
+  return '짧지만 의미 있는 독서였어요.\n오늘도 잘 했어요.';
+}
+
 
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
 class SessionRecapScreen extends ConsumerStatefulWidget {
@@ -126,6 +136,15 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 
   // 집중도 기반 인사이트
+  String get _focusInsightText {
+    final exits = widget.data.exitCount;
+    final focus = _focusPercent;
+    if (exits == 0) return '한 번도 이탈하지 않은 완벽한 집중이에요! 🎯';
+    if (focus >= 90) return '대단해요! 거의 완벽한 집중을 유지했어요 ✨';
+    if (focus >= 70) return '좋은 집중력이에요. 이탈이 있었지만 금방 돌아왔어요 👍';
+    if (focus >= 50) return '집중과 이탈이 반반이었어요. 다음엔 더 잘할 수 있어요 💪';
+    return '오늘은 집중이 쉽지 않았지만, 책을 펼친 것만으로도 훌륭해요 🌱';
+  }
 
   Future<void> _share() async {
     HapticFeedback.selectionClick();
@@ -359,7 +378,27 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 공유 캡처 영역
+                        // 1. 기존 리캡 컴포넌트 뷰
+                        _SessionHeroCard(
+                          bookTitle: widget.data.bookTitle,
+                          bookAuthor: widget.data.bookAuthor,
+                          timeText: _timeText,
+                          sentenceCount: widget.data.sentences.length,
+                        ),
+                        const SizedBox(height: 16),
+                        _FocusGaugeCard(
+                          focusPercent: _focusPercent,
+                          exitCount: widget.data.exitCount,
+                          insightText: _focusInsightText,
+                        ),
+                        const SizedBox(height: 16),
+                        _ScoreCard(
+                          score: _score,
+                          evalText: _evalText(_score, widget.data.sentences.length),
+                        ),
+                        const SizedBox(height: 40),
+                        
+                        // 2. 공유용 영수증 캡처 영역 (새 버전)
                         RepaintBoundary(
                           key: _shareKey,
                           child: Container(
@@ -1610,3 +1649,94 @@ class _ReceiptRow extends StatelessWidget {
     );
   }
 }
+
+// ─── 세션 히어로 카드 (이전 버전) ───────────────────────────────────────────
+class _SessionHeroCard extends StatelessWidget {
+  final String bookTitle;
+  final String bookAuthor;
+  final String timeText;
+  final int sentenceCount;
+
+  const _SessionHeroCard({
+    required this.bookTitle,
+    required this.bookAuthor,
+    required this.timeText,
+    required this.sentenceCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.smoothBox(
+        gradient: AppTheme.greenCardGradient,
+        radius: 20,
+        side: BorderSide(
+            color: context.appPrimaryAccent.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 72,
+            decoration: ShapeDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                side: const BorderSide(color: Colors.white24),
+              ),
+            ),
+            child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(bookTitle, style: AppTheme.headingSmall.copyWith(color: Colors.white)),
+                const SizedBox(height: 2),
+                Text(bookAuthor, style: AppTheme.captionLarge.copyWith(color: Colors.white.withValues(alpha: 0.75))),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _HeroPill(icon: Icons.schedule_rounded, label: timeText),
+                    const SizedBox(width: 8),
+                    if (sentenceCount > 0)
+                      _HeroPill(icon: Icons.format_quote_rounded, label: '$sentenceCount문장'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _HeroPill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: AppTheme.smoothBox(
+        color: Colors.white.withValues(alpha: 0.15),
+        radius: 12,
+        side: const BorderSide(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(label, style: AppTheme.captionSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
