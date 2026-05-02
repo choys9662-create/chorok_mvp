@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -25,7 +24,7 @@ class CloudVisionOcrService implements OcrService {
     if (_apiKey.isEmpty) return null;
 
     try {
-      final bytes = await File(photo.path).readAsBytes();
+      final bytes = await photo.readAsBytes();
       final base64Image = base64Encode(bytes);
 
       final response = await _httpClient.post(

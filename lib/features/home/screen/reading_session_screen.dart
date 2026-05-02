@@ -12,6 +12,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 // import '../../../core/services/db_service.dart'; // 로그인 활성화 후 주석 해제
+import '../../../core/services/ocr_service.dart';
+import '../../../core/services/stt_service.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../widget/chosu_sheet.dart';
 import '../../timer/widget/session_goal_sheet.dart';
@@ -87,19 +89,46 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
-    // TODO: ML Kit OCR 활성화 후 구현
     setState(() => _isOcrLoading = true);
-    await Future.delayed(const Duration(milliseconds: 300));
+    final text = await ref.read(ocrServiceProvider).extractTextFromCamera();
     if (!mounted) return;
     setState(() => _isOcrLoading = false);
+    if (text != null && text.isNotEmpty) {
+      _openChosuSheet(initialText: text);
+    }
   }
 
-  void _toggleRecording() {
-    // TODO: STT 서비스 활성화 후 구현
-    setState(() {
-      _isRecording = !_isRecording;
-      if (!_isRecording) _recognizedText = '';
-    });
+  Future<void> _toggleRecording() async {
+    final stt = ref.read(sttServiceProvider);
+    if (_isRecording) {
+      await stt.stop();
+      if (!mounted) return;
+      setState(() => _isRecording = false);
+      if (_recognizedText.isNotEmpty) {
+        final text = _recognizedText;
+        _recognizedText = '';
+        _openChosuSheet(initialText: text);
+      }
+    } else {
+      final initialized = await stt.initialize();
+      if (!initialized && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('마이크를 사용할 수 없습니다.', style: TextStyle(fontFamily: 'Pretendard'))),
+        );
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _isRecording = true;
+        _recognizedText = '';
+      });
+      await stt.listen(
+        listenFor: const Duration(seconds: 30),
+        onResult: (text) {
+          if (mounted) setState(() => _recognizedText = text);
+        },
+      );
+    }
   }
 
   @override

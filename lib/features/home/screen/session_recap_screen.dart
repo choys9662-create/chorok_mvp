@@ -92,15 +92,6 @@ int _calcScore(int seconds, int sentenceCount) {
   return (45 + timePts + sentPts).clamp(0, 100);
 }
 
-String _evalText(int score, int sentenceCount) {
-  if (score >= 90) return '오늘은 정말 깊이 있는 독서를 했어요.\n최고의 집중력을 보여줬어요!';
-  if (score >= 75) return '훌륭한 독서 세션이었어요.\n꾸준히 이 페이스를 유지해봐요.';
-  if (score >= 60) {
-    if (sentenceCount > 0) return '좋은 독서였어요. 수집한 문장들이\n피드에 올라갔어요!';
-    return '좋은 시작이에요. 다음엔 문장도\n한 번 수집해봐요!';
-  }
-  return '짧지만 의미 있는 독서였어요.\n오늘도 잘 했어요.';
-}
 
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
 class SessionRecapScreen extends ConsumerStatefulWidget {
@@ -135,15 +126,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 
   // 집중도 기반 인사이트
-  String get _focusInsightText {
-    final exits = widget.data.exitCount;
-    final focus = _focusPercent;
-    if (exits == 0) return '한 번도 이탈하지 않은 완벽한 집중이에요! 🎯';
-    if (focus >= 90) return '대단해요! 거의 완벽한 집중을 유지했어요 ✨';
-    if (focus >= 70) return '좋은 집중력이에요. 이탈이 있었지만 금방 돌아왔어요 👍';
-    if (focus >= 50) return '집중과 이탈이 반반이었어요. 다음엔 더 잘할 수 있어요 💪';
-    return '오늘은 집중이 쉽지 않았지만, 책을 펼친 것만으로도 훌륭해요 🌱';
-  }
 
   Future<void> _share() async {
     HapticFeedback.selectionClick();
@@ -380,33 +362,67 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         // 공유 캡처 영역
                         RepaintBoundary(
                           key: _shareKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // 세션 히어로 카드
-                              _SessionHeroCard(
-                                bookTitle: widget.data.bookTitle,
-                                bookAuthor: widget.data.bookAuthor,
-                                timeText: _timeText,
-                                sentenceCount: widget.data.sentences.length,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // 집중도 게이지 카드
-                              _FocusGaugeCard(
-                                focusPercent: _focusPercent,
-                                exitCount: widget.data.exitCount,
-                                insightText: _focusInsightText,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // 점수 카드
-                              _ScoreCard(
-                                score: _score,
-                                evalText: _evalText(
-                                    _score, widget.data.sentences.length),
-                              ),
-                            ],
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F7F1),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 8)),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('C H O R O K', style: TextStyle(color: Colors.black87, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 8)),
+                                const SizedBox(height: 4),
+                                const Text('READING RECEIPT', style: TextStyle(color: Colors.black54, fontSize: 12, letterSpacing: 3)),
+                                const SizedBox(height: 24),
+                                const _DashedDivider(),
+                                const SizedBox(height: 24),
+                                
+                                Text(widget.data.bookTitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Pretendard')),
+                                const SizedBox(height: 8),
+                                Text(widget.data.bookAuthor, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 15, fontFamily: 'Pretendard')),
+                                const SizedBox(height: 24),
+                                const _DashedDivider(),
+                                const SizedBox(height: 24),
+                                
+                                _ReceiptRow('DATE', '${DateTime.now().year}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().day.toString().padLeft(2, '0')}'),
+                                const SizedBox(height: 8),
+                                _ReceiptRow('TIME', _timeText),
+                                const SizedBox(height: 8),
+                                _ReceiptRow('FOCUS', '${_focusPercent.toInt()}%'),
+                                const SizedBox(height: 8),
+                                _ReceiptRow('SCORE', '$_score PTS'),
+                                const SizedBox(height: 24),
+                                const _DashedDivider(),
+                                const SizedBox(height: 24),
+                                
+                                if (widget.data.sentences.isNotEmpty) ...[
+                                  Text(
+                                    '"${widget.data.sentences.first.content}"', 
+                                    textAlign: TextAlign.center, 
+                                    style: const TextStyle(color: Colors.black87, fontSize: 15, fontStyle: FontStyle.italic, height: 1.5, fontFamily: 'Pretendard'),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  const _DashedDivider(),
+                                  const SizedBox(height: 24),
+                                ],
+                                
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(40, (index) => Container(
+                                    width: (index * 7 % 3 + 1) * 1.2,
+                                    height: 45,
+                                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                    color: Colors.black87,
+                                  )),
+                                ),
+                                const SizedBox(height: 12),
+                                const Text('THANK YOU FOR READING', style: TextStyle(color: Colors.black54, fontSize: 10, letterSpacing: 2)),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -461,110 +477,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 }
 
-// ─── 세션 히어로 카드 ─────────────────────────────────────────────────
-class _SessionHeroCard extends StatelessWidget {
-  final String bookTitle;
-  final String bookAuthor;
-  final String timeText;
-  final int sentenceCount;
-
-  const _SessionHeroCard({
-    required this.bookTitle,
-    required this.bookAuthor,
-    required this.timeText,
-    required this.sentenceCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        gradient: AppTheme.greenCardGradient,
-        radius: 20,
-        side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          // 책 아이콘
-          Container(
-            width: 56,
-            height: 72,
-            decoration: ShapeDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-                side: const BorderSide(color: Colors.white24),
-              ),
-            ),
-            child: const Icon(Icons.menu_book_rounded,
-                color: Colors.white, size: 26),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(bookTitle,
-                    style: AppTheme.headingSmall
-                        .copyWith(color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(bookAuthor,
-                    style: AppTheme.captionLarge
-                        .copyWith(color: Colors.white.withValues(alpha: 0.75))),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _HeroPill(
-                      icon: Icons.schedule_rounded,
-                      label: timeText,
-                    ),
-                    const SizedBox(width: 8),
-                    if (sentenceCount > 0)
-                      _HeroPill(
-                        icon: Icons.format_quote_rounded,
-                        label: '$sentenceCount문장',
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const _HeroPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: AppTheme.smoothBox(
-        color: Colors.white.withValues(alpha: 0.15),
-        radius: 12,
-        side: const BorderSide(color: Colors.white24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(label,
-              style: AppTheme.captionSmall.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── 점수 카드 ────────────────────────────────────────────────────────
 class _ScoreCard extends StatefulWidget {
@@ -1655,4 +1567,46 @@ class _FocusArcPainter extends CustomPainter {
   @override
   bool shouldRepaint(_FocusArcPainter old) =>
       old.progress != progress || old.color != color;
+}
+
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider();
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final boxWidth = constraints.constrainWidth();
+        const dashWidth = 5.0;
+        const dashHeight = 1.0;
+        final dashCount = (boxWidth / (2 * dashWidth)).floor();
+        return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
+          children: List.generate(dashCount, (_) {
+            return const SizedBox(
+              width: dashWidth,
+              height: dashHeight,
+              child: DecoratedBox(decoration: BoxDecoration(color: Colors.black26)),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class _ReceiptRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _ReceiptRow(this.label, this.value);
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13, letterSpacing: 1, fontWeight: FontWeight.w600)),
+        Text(value, style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Pretendard')),
+      ],
+    );
+  }
 }
