@@ -164,7 +164,8 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
 
     return CustomScrollView(
       controller: widget.scrollController,
-      physics: const AlwaysScrollableScrollPhysics(),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
