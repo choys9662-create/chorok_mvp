@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +50,29 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
   late final AnimationController _moveCtrl;
-  bool _showControls = false;
+  bool _isUiVisible = true;
+  Timer? _uiHideTimer;
+
+  void _resetUiTimer() {
+    setState(() => _isUiVisible = true);
+    _uiHideTimer?.cancel();
+    _uiHideTimer = Timer(const Duration(seconds: 4), () {
+      final t = ref.read(timerProvider);
+      if (mounted && t.isRunning) {
+        setState(() => _isUiVisible = false);
+      }
+    });
+  }
+
+  void _openReadersSheet() {
+    _uiHideTimer?.cancel();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => const _ReadersSheet(),
+    ).then((_) => _resetUiTimer());
+  }
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
 
@@ -82,6 +105,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void initState() {
     super.initState();
+    _resetUiTimer();
     _sessionStartedAt = DateTime.now();
     WidgetsBinding.instance.addObserver(this);
 
@@ -145,6 +169,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   @override
   void dispose() {
+    _uiHideTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
     _pulseCtrl.dispose();
@@ -221,7 +246,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   Widget build(BuildContext context) {
     final timer = ref.watch(timerProvider);
-    final ctrl = ref.read(timerProvider.notifier);
 
     return Theme(
       data: AppTheme.dark,
@@ -258,36 +282,67 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             ),
 
             // ③ UI 레이어
-            SafeArea(
-              minimum: const EdgeInsets.only(top: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ─ 상단 정보 바 ──────────────────────────────
-                  _TopBar(
-                    timer: timer,
-                    chosuCount: _collectedSentences.length,
-                    exitCount: _exitCount,
-                    onMenuTap: () => setState(() => _showControls = true),
-                    onSetGoalTap: _openGoalSheet,
-                  ),
+            GestureDetector(
+              onTap: _resetUiTimer,
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedOpacity(
+                opacity: _isUiVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 600),
+                child: SafeArea(
+                  minimum: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ─ 상단 정보 바 ──────────────────────────────
+                      IgnorePointer(
+                        ignoring: !_isUiVisible,
+                        child: _TopBar(
+                          timer: timer,
+                          chosuCount: _collectedSentences.length,
+                          exitCount: _exitCount,
+                          onTogglePause: () {
+                            HapticFeedback.mediumImpact();
+                            final ctrl = ref.read(timerProvider.notifier);
+                            timer.isPaused ? ctrl.resume() : ctrl.pause();
+                            _resetUiTimer();
+                          },
+                          onStopPress: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('꾹 눌러서 세션을 종료하세요', style: TextStyle(fontFamily: 'Pretendard')),
+                                duration: Duration(milliseconds: 1500),
+                                backgroundColor: Color(0xFF1A3D2B),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          onStopLongPress: _onStop,
+                          onSetGoalTap: _openGoalSheet,
+                          onReadersTap: _openReadersSheet,
+                        ),
+                      ),
+                      
+                      // ─ 가운데 투명 영역 ──────
+                      const Spacer(),
 
-                  // ─ 가운데 투명 영역 (반딧불이 가림 없이) ──────
-                  const Spacer(),
-
-                  // ─ 하단 책 정보 + 초서 액션 바 ───────────────
-                  _BottomArea(
-                    chosuCount: _collectedSentences.length,
-                    bookTitle: widget.bookTitle,
-                    bookAuthor: widget.bookAuthor,
-                    onOcrTap: _openOcr,
-                    onRecordTap: _toggleRecording,
-                    isRecording: _isRecording,
-                    isOcrLoading: _isOcrLoading,
-                    onTypeSentence: (text) =>
-                        _openChosuSheet(initialText: text),
+                      // ─ 하단 책 정보 + 초서 액션 바 ───────────────
+                      IgnorePointer(
+                        ignoring: !_isUiVisible,
+                        child: _BottomArea(
+                          chosuCount: _collectedSentences.length,
+                          bookTitle: widget.bookTitle,
+                          bookAuthor: widget.bookAuthor,
+                          onOcrTap: _openOcr,
+                          onRecordTap: _toggleRecording,
+                          isRecording: _isRecording,
+                          isOcrLoading: _isOcrLoading,
+                          onTypeSentence: (text) =>
+                              _openChosuSheet(initialText: text),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
 
@@ -296,15 +351,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               _RecordingOverlay(
                 recognizedText: _recognizedText,
                 onStop: _toggleRecording,
-              ),
-
-            // ⑤ 컨트롤 오버레이
-            if (_showControls)
-              _ControlsOverlay(
-                timer: timer,
-                ctrl: ctrl,
-                onDismiss: () => setState(() => _showControls = false),
-                onStop: _onStop,
               ),
           ],
         ),
@@ -319,15 +365,21 @@ class _TopBar extends StatelessWidget {
   final TimerData timer;
   final int chosuCount;
   final int exitCount;
-  final VoidCallback onMenuTap;
+  final VoidCallback onTogglePause;
+  final VoidCallback onStopPress;
+  final VoidCallback onStopLongPress;
   final VoidCallback onSetGoalTap;
+  final VoidCallback onReadersTap;
 
   const _TopBar({
     required this.timer,
     required this.chosuCount,
     required this.exitCount,
-    required this.onMenuTap,
+    required this.onTogglePause,
+    required this.onStopPress,
+    required this.onStopLongPress,
     required this.onSetGoalTap,
+    required this.onReadersTap,
   });
 
   @override
@@ -387,11 +439,23 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                '42명 함께 읽는 중',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.5),
+              GestureDetector(
+                onTap: onReadersTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Row(
+                    children: [
+                      Text(
+                        '42명 함께 읽는 중',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                    ],
+                  ),
                 ),
               ),
               const Spacer(),
@@ -418,37 +482,52 @@ class _TopBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
               ],
-              // 일시정지/메뉴 버튼 — 존재를 알리되 눈에 안 띄게
+              // 일시정지 버튼
               GestureDetector(
-                onTap: onMenuTap,
+                onTap: onTogglePause,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  width: 36,
+                  height: 36,
                   decoration: AppTheme.smoothBox(
-                    color: Colors.white.withValues(alpha: 0.09),
+                    color: timer.isPaused ? _kGreen.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.09),
                     radius: 10,
                     side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: timer.isPaused ? _kGreen.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Icon(
+                    timer.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                    color: timer.isPaused ? _kGreen : Colors.white.withValues(alpha: 0.65),
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // 종료 버튼 (길게 누르기)
+              GestureDetector(
+                onTap: onStopPress,
+                onLongPress: onStopLongPress,
+                child: Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: AppTheme.smoothBox(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    radius: 10,
+                    side: BorderSide(
+                      color: Colors.red.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        timer.isPaused
-                            ? Icons.play_arrow_rounded
-                            : Icons.pause_rounded,
-                        color: Colors.white.withValues(alpha: 0.65),
-                        size: 16,
-                      ),
+                      Icon(Icons.stop_rounded, color: Colors.red.withValues(alpha: 0.8), size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        timer.isPaused ? '재개' : '일시정지',
+                        '종료',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: Colors.red.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -1093,255 +1172,6 @@ class _GlowOrb extends StatelessWidget {
   }
 }
 
-// ─── 컨트롤 오버레이 (일시정지/종료) ─────────────────────────────────
-class _ControlsOverlay extends StatelessWidget {
-  final TimerData timer;
-  final TimerNotifier ctrl;
-  final VoidCallback onDismiss;
-  final Future<void> Function() onStop;
-
-  const _ControlsOverlay({
-    required this.timer,
-    required this.ctrl,
-    required this.onDismiss,
-    required this.onStop,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onDismiss,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.6),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // 닫기 버튼
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GestureDetector(
-                    onTap: onDismiss,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              // 일시정지/재개
-              GestureDetector(
-                onTap: () {
-                  if (timer.isRunning) {
-                    ctrl.pause();
-                  } else {
-                    ctrl.resume();
-                  }
-                  onDismiss();
-                },
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF1A3D2B).withValues(alpha: 0.9),
-                    border: Border.all(color: _kGreen.withValues(alpha: 0.5)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _kGreen.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    timer.isRunning
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                    color: _kGreen,
-                    size: 30,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                timer.isRunning ? '일시정지' : '재개',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              const SizedBox(height: 32),
-              // 밀어서 종료
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48),
-                child: GestureDetector(
-                  onTap: () {}, // 이벤트 전파 차단
-                  child: _SlideToExit(onExit: onStop),
-                ),
-              ),
-              const SizedBox(height: 56),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── 밀어서 종료 슬라이더 ─────────────────────────────────────────────
-class _SlideToExit extends StatefulWidget {
-  final Future<void> Function() onExit;
-  const _SlideToExit({required this.onExit});
-
-  @override
-  State<_SlideToExit> createState() => _SlideToExitState();
-}
-
-class _SlideToExitState extends State<_SlideToExit>
-    with SingleTickerProviderStateMixin {
-  double _drag = 0;
-  late final AnimationController _snapCtrl;
-  bool _triggered = false;
-
-  static const _handle = 50.0;
-  static const _threshold = 0.75;
-
-  @override
-  void initState() {
-    super.initState();
-    _snapCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-  }
-
-  @override
-  void dispose() {
-    _snapCtrl.dispose();
-    super.dispose();
-  }
-
-  double _maxDrag(double w) => w - _handle;
-  double _prog(double w) => (_drag / _maxDrag(w)).clamp(0.0, 1.0);
-
-  void _onUpdate(DragUpdateDetails d, double w) {
-    if (_triggered) return;
-    _snapCtrl.stop();
-    setState(() => _drag = (_drag + d.delta.dx).clamp(0.0, _maxDrag(w)));
-  }
-
-  void _onEnd(DragEndDetails d, double w) {
-    if (_triggered) return;
-    if (_prog(w) >= _threshold) {
-      _triggered = true;
-      HapticFeedback.mediumImpact();
-      widget.onExit();
-    } else {
-      final anim = Tween<double>(
-        begin: _drag,
-        end: 0,
-      ).animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.elasticOut));
-      anim.addListener(() => setState(() => _drag = anim.value));
-      _snapCtrl.forward(from: 0);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth;
-        final p = _prog(w);
-
-        return SizedBox(
-          height: _handle,
-          child: Stack(
-            children: [
-              Container(
-                height: _handle,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(_handle / 2),
-                  border: Border.all(
-                    color: Color.lerp(
-                      Colors.white.withValues(alpha: 0.12),
-                      Colors.red.withValues(alpha: 0.5),
-                      p,
-                    )!,
-                  ),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: p,
-                child: Container(
-                  height: _handle,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(_handle / 2),
-                    color: Colors.red.withValues(alpha: 0.10 + p * 0.15),
-                  ),
-                ),
-              ),
-              Center(
-                child: Text(
-                  '밀어서 종료',
-                  style: TextStyle(
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.22 + 0.2 * p),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: _drag,
-                top: 0,
-                child: GestureDetector(
-                  onHorizontalDragUpdate: (d) => _onUpdate(d, w),
-                  onHorizontalDragEnd: (d) => _onEnd(d, w),
-                  child: Container(
-                    width: _handle,
-                    height: _handle,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.lerp(
-                        Colors.white.withValues(alpha: 0.14),
-                        Colors.red.withValues(alpha: 0.75),
-                        p,
-                      ),
-                      boxShadow: p > 0.15
-                          ? [
-                              BoxShadow(
-                                color: Colors.red.withValues(alpha: 0.3 * p),
-                                blurRadius: 14,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Icon(
-                      Icons.stop_rounded,
-                      color: Colors.white.withValues(alpha: 0.5 + 0.5 * p),
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
 // ─── 녹음 오버레이 (STT 활성화 후 구현) ─────────────────────────────────
 class _RecordingOverlay extends StatelessWidget {
   final String recognizedText;
@@ -1387,6 +1217,149 @@ class _RecordingOverlay extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 접속 중인 독자 목록 ──────────────────────────────────────────────
+class _ReadersSheet extends StatelessWidget {
+  const _ReadersSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    // 목업 데이터
+    final readers = [
+      (name: '책벌레수진', book: '채식주의자', time: '1h 20m'),
+      (name: '밤의여행자', book: '이방인', time: '45m'),
+      (name: '초록잎', book: '데미안', time: '2h 10m'),
+      (name: '달빛독서', book: '채식주의자', time: '15m'),
+      (name: 'seoulreader', book: '모순', time: '55m'),
+      (name: '북크리에이터', book: '도둑맞은 집중력', time: '3h 5m'),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0F0C),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00FF00),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: const Color(0xFF00FF00).withValues(alpha: 0.5), blurRadius: 8),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    '지금 함께 읽는 사람들',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '총 42명',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: const Color(0xFF00FF00).withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: readers.length,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemBuilder: (context, i) {
+                  final r = readers[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: AppTheme.smoothBox(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        radius: 16,
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.white.withValues(alpha: 0.1),
+                            child: const Icon(Icons.person_rounded, color: Colors.white54, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r.name,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  r.book,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            r.time,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: const Color(0xFF00FF00).withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );
