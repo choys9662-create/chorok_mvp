@@ -1,0 +1,201 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/gradient_text.dart';
+import '../../timer/controller/timer_controller.dart';
+import 'home_helpers.dart';
+import 'package:figma_squircle/figma_squircle.dart';
+class WeeklyStatusCard extends ConsumerWidget {
+  const WeeklyStatusCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final timer = ref.watch(timerProvider);
+
+    // 오늘 요일 (월=0)
+    final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
+    // 오늘 값은 타이머 실시간 반영
+    final todayMin = timer.seconds ~/ 60;
+
+    const goalMin = 30;
+    final weekTotal =
+        kWeeklyMinutes.sublist(0, todayIndex).fold<int>(0, (a, b) => a + b) +
+        todayMin;
+    final daysAchieved =
+        kWeeklyMinutes
+            .sublist(0, todayIndex)
+            .where((m) => m >= goalMin)
+            .length +
+        (todayMin >= goalMin ? 1 : 0);
+    final maxMin = [
+      ...kWeeklyMinutes,
+      todayMin,
+    ].fold<int>(goalMin, (a, b) => a > b ? a : b);
+
+    final weekTotalText = weekTotal >= 60
+        ? '${weekTotal ~/ 60}시간 ${weekTotal % 60}분'
+        : '$weekTotal분';
+
+    // 오늘 인사이트 (목업 mockup exitCount=0 기준)
+    final insight = todayInsightText(todayMin, 0);
+
+    return ChorokCard(
+      borderColor: context.appBorder,
+      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── 헤더: 라벨 + 뱃지 + 독서 시작 버튼 ──────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '이번 주',
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: ShapeDecoration(
+                  color: context.primaryBg(0.08),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 8,
+                      cornerSmoothing: 0.6,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  '$daysAchieved일 달성',
+                  style: AppTheme.captionSmall.copyWith(
+                    fontFamily: 'Pretendard',
+                    color: context.appPrimaryAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // ── 주간 총 시간 ──────────────────────────────────────
+          GradientText(
+            weekTotalText,
+            style: AppTheme.displayLarge.copyWith(fontSize: 28),
+            gradient: AppTheme.greenGradientVertical,
+          ),
+          const SizedBox(height: 20),
+          // ── 주간 바 차트 (풀 너비) ────────────────────────────
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.go(AppConstants.routeAnalytics);
+            },
+            child: SizedBox(
+              height: 72,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(7, (i) {
+                  final min = i == todayIndex ? todayMin : kWeeklyMinutes[i];
+                  final ratio = maxMin > 0
+                      ? (min / maxMin).clamp(0.0, 1.0)
+                      : 0.0;
+                  final isToday = i == todayIndex;
+                  final isFuture = i > todayIndex;
+                  final achieved = min >= goalMin;
+
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: i < 6 ? 4 : 0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: FractionallySizedBox(
+                                heightFactor: isFuture
+                                    ? 0.08
+                                    : (ratio < 0.08 ? 0.08 : ratio),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: isFuture ? context.appBorder : null,
+                                    gradient: isFuture
+                                        ? null
+                                        : LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: achieved
+                                                ? [
+                                                    AppTheme.primary,
+                                                    context.appPrimaryAccent,
+                                                  ]
+                                                : [
+                                                    AppTheme.primary.withValues(
+                                                      alpha: 0.5,
+                                                    ),
+                                                    AppTheme.primary.withValues(
+                                                      alpha: 0.3,
+                                                    ),
+                                                  ],
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            kWeekLabels[i],
+                            style: AppTheme.captionSmall.copyWith(
+                              fontFamily: 'Pretendard',
+                              color: isToday
+                                  ? context.appPrimaryAccent
+                                  : context.appTextTertiary,
+                              fontWeight: isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+          // ── 오늘의 인사이트 ───────────────────────────────────
+          if (insight.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: ShapeDecoration(
+                color: context.primaryBg(0.06),
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: AppTheme.radiusMD,
+                    cornerSmoothing: 0.6,
+                  ),
+                ),
+              ),
+              child: Text(
+                insight,
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
