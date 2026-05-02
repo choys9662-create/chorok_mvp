@@ -200,22 +200,6 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String content = '$day';
-    double fontSize = 11;
-    
-    if (minutes > 0) {
-      fontSize = 14;
-      if (minutes < 30) {
-        content = '🌱';
-      } else if (minutes < 60) {
-        content = '🌿';
-      } else if (minutes < 120) {
-        content = '🪴';
-      } else {
-        content = '🌳';
-      }
-    }
-
     return Container(
       decoration: BoxDecoration(
         color: color,
@@ -226,9 +210,9 @@ class _DayCell extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          content,
+          '$day',
           style: AppTheme.captionSmall.copyWith(
-            fontSize: fontSize,
+            fontSize: 11,
             color: color == const Color(0xFF2A2D2A) || color == const Color(0xFFE2EDE9)
                 ? _kLabel
                 : Colors.white,
@@ -251,34 +235,29 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final levels = [
-      (color: emptyColor, label: '없음', icon: ''),
-      (color: _kLv1,      label: '~30분', icon: '🌱'),
-      (color: _kLv2,      label: '~1h', icon: '🌿'),
-      (color: _kLv3,      label: '~2h', icon: '🪴'),
-      (color: lv4Color,   label: '2h+', icon: '🌳'),
+      (color: emptyColor, label: '없음'),
+      (color: _kLv1,      label: '~30분'),
+      (color: _kLv2,      label: '~1h'),
+      (color: _kLv3,      label: '~2h'),
+      (color: lv4Color,   label: '2h+'),
     ];
     return Row(
       children: [
-        Text('나만의 숲', style: AppTheme.captionSmall.copyWith(color: _kLabel)),
+        Text('독서량', style: AppTheme.captionSmall.copyWith(color: _kLabel)),
         const SizedBox(width: 8),
         ...levels.map((l) => Padding(
           padding: const EdgeInsets.only(right: 6),
           child: Row(
             children: [
-              if (l.icon.isNotEmpty) ...[
-                Text(l.icon, style: const TextStyle(fontSize: 10)),
-                const SizedBox(width: 2),
-              ] else ...[
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: l.color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: l.color,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(width: 3),
-              ],
+              ),
+              const SizedBox(width: 3),
               Text(
                 l.label,
                 style: AppTheme.captionSmall.copyWith(color: _kLabel, fontSize: 10),
