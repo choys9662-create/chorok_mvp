@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
-import '../widget/session_goal_sheet.dart';
 
 const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
@@ -242,19 +241,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
   Future<void> _startSession() async {
     HapticFeedback.mediumImpact();
-    final goal = await showModalBottomSheet<SessionGoal>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => SessionGoalSheet(
-        currentPage: widget.book.currentPage,
-        totalPages: widget.book.totalPages,
+    context.push(
+      AppConstants.routeSession,
+      extra: SessionExtra(
         bookTitle: widget.book.title,
+        bookAuthor: widget.book.author,
+        startPage: widget.book.currentPage,
+        totalPages: widget.book.totalPages,
       ),
     );
-    if (goal != null && mounted) {
-      context.push(AppConstants.routeSession, extra: goal);
-    }
   }
 
   @override

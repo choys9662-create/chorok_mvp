@@ -8,7 +8,6 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/models/reading_session.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import '../../../shared/models/session_goal.dart';
-import 'session_goal_sheet.dart';
 
 
 class WishlistSection extends ConsumerWidget {
@@ -203,21 +202,9 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                   child: GestureDetector(
                     onTap: () async {
                       HapticFeedback.mediumImpact();
-                      final goal = await showModalBottomSheet<SessionGoal>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => SessionGoalSheet(
-                          currentPage: 0,
-                          totalPages: b.totalPages,
-                          bookTitle: b.title,
-                        ),
-                      );
-                      if (goal != null && context.mounted) {
-                        context.push(
+                      context.push(
                           AppConstants.routeSession,
                           extra: SessionExtra(
-                            goal: goal,
                             bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
@@ -225,7 +212,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                             totalPages: b.totalPages,
                           ),
                         );
-                      }
                     },
                     child: Container(
                       height: 34,

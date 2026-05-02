@@ -13,6 +13,7 @@ import '../../../shared/models/session_goal.dart';
 // import '../../../core/services/db_service.dart'; // 로그인 활성화 후 주석 해제
 import '../../timer/controller/timer_controller.dart';
 import '../widget/chosu_sheet.dart';
+import '../../timer/widget/session_goal_sheet.dart';
 import 'session_recap_screen.dart';
 
 const _kGreen = Color(0xFF00FF00);
@@ -152,6 +153,23 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     super.dispose();
   }
 
+  Future<void> _openGoalSheet() async {
+    HapticFeedback.mediumImpact();
+    final goal = await showModalBottomSheet<SessionGoal>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SessionGoalSheet(
+        currentPage: widget.startPage,
+        totalPages: widget.totalPages,
+        bookTitle: widget.bookTitle,
+      ),
+    );
+    if (goal != null && mounted) {
+      ref.read(timerProvider.notifier).updateGoal(goal);
+    }
+  }
+
   // 초서 시트 열기 (공통)
   // ignore: unused_element
   Future<void> _openChosuSheet({String initialText = ''}) async {
@@ -251,6 +269,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     chosuCount: _collectedSentences.length,
                     exitCount: _exitCount,
                     onMenuTap: () => setState(() => _showControls = true),
+                    onSetGoalTap: _openGoalSheet,
                   ),
 
                   // ─ 가운데 투명 영역 (반딧불이 가림 없이) ──────
@@ -301,12 +320,14 @@ class _TopBar extends StatelessWidget {
   final int chosuCount;
   final int exitCount;
   final VoidCallback onMenuTap;
+  final VoidCallback onSetGoalTap;
 
   const _TopBar({
     required this.timer,
     required this.chosuCount,
     required this.exitCount,
     required this.onMenuTap,
+    required this.onSetGoalTap,
   });
 
   @override
@@ -473,15 +494,31 @@ class _TopBar extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.4),
                 ),
               ),
-              Text(
-                timer.goal != null && timer.goal!.type != SessionGoalType.free
-                    ? '목표 ${timer.goal!.label}'
-                    : '자유 독서',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: timer.goalReached
-                      ? _kGreen.withValues(alpha: 0.85)
-                      : Colors.white.withValues(alpha: 0.4),
+              GestureDetector(
+                onTap: onSetGoalTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        timer.goal != null && timer.goal!.type != SessionGoalType.free
+                            ? '목표 ${timer.goal!.label}'
+                            : '자유 독서 (목표 설정)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: timer.goalReached
+                              ? _kGreen.withValues(alpha: 0.85)
+                              : Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.edit_rounded, size: 12, color: Colors.white.withValues(alpha: 0.6)),
+                    ],
+                  ),
                 ),
               ),
             ],

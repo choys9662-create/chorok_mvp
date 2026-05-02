@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../features/home/widget/session_goal_sheet.dart';
 import '../../features/timer/controller/timer_controller.dart';
 import '../../shared/models/session_goal.dart';
 import '../providers/tab_scroll_controllers.dart';
@@ -22,29 +21,16 @@ class MainScaffold extends ConsumerWidget {
       context.push(AppConstants.routeSession);
       return;
     }
-    final goal = await showModalBottomSheet<SessionGoal>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SessionGoalSheet(
-        currentPage: 186,
-        totalPages: 300,
+    context.push(
+      AppConstants.routeSession,
+      extra: SessionExtra(
+        bookId: '1',
         bookTitle: '채식주의자',
+        bookAuthor: '한강',
+        startPage: 186,
+        totalPages: 300,
       ),
     );
-    if (goal != null && context.mounted) {
-      context.push(
-        AppConstants.routeSession,
-        extra: SessionExtra(
-          goal: goal,
-          bookId: '1',
-          bookTitle: '채식주의자',
-          bookAuthor: '한강',
-          startPage: 186,
-          totalPages: 300,
-        ),
-      );
-    }
   }
 
   @override

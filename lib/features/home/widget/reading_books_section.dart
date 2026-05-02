@@ -11,7 +11,6 @@ import '../../../shared/utils/reading_insight_engine.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import '../screen/book_detail_screen.dart';
 import '../../../shared/models/session_goal.dart';
-import 'session_goal_sheet.dart';
 
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
@@ -390,21 +389,9 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                   child: GestureDetector(
                     onTap: () async {
                       HapticFeedback.mediumImpact();
-                      final goal = await showModalBottomSheet<SessionGoal>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => SessionGoalSheet(
-                          currentPage: b.currentPage,
-                          totalPages: b.totalPages,
-                          bookTitle: b.title,
-                        ),
-                      );
-                      if (goal != null && context.mounted) {
-                        context.push(
+                      context.push(
                           AppConstants.routeSession,
                           extra: SessionExtra(
-                            goal: goal,
                             bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
@@ -412,7 +399,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                             totalPages: b.totalPages,
                           ),
                         );
-                      }
                     },
                     child: Container(
                       height: 36,

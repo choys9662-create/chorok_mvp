@@ -13,7 +13,6 @@ import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/sheet_handle.dart';
-import '../../home/widget/session_goal_sheet.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
@@ -751,21 +750,9 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                   child: GestureDetector(
                     onTap: () async {
                       HapticFeedback.mediumImpact();
-                      final goal = await showModalBottomSheet<SessionGoal>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => SessionGoalSheet(
-                          currentPage: 0,
-                          totalPages: b.totalPages,
-                          bookTitle: b.title,
-                        ),
-                      );
-                      if (goal != null && context.mounted) {
-                        context.push(
+                      context.push(
                           AppConstants.routeSession,
                           extra: SessionExtra(
-                            goal: goal,
                             bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
@@ -773,7 +760,6 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                             totalPages: b.totalPages,
                           ),
                         );
-                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

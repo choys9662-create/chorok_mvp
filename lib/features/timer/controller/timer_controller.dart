@@ -98,6 +98,10 @@ class TimerNotifier extends Notifier<TimerData> {
     state = state.copyWith(timerState: TimerState.paused);
   }
 
+  void updateGoal(SessionGoal goal) {
+    state = state.copyWith(goal: goal);
+  }
+
   void resume() {
     if (!state.isPaused) return;
     start();
