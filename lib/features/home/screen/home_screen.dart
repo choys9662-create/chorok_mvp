@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
@@ -14,6 +13,9 @@ import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
 import '../widget/session_goal_sheet.dart';
 import 'book_detail_screen.dart';
+import '../widget/feed_highlight_section.dart';
+import '../widget/time_capsule_section.dart';
+
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
@@ -23,9 +25,6 @@ const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
 
-final _timeCapsuleProvider = FutureProvider<IsarChoseo?>((ref) async {
-  return ref.read(bookRepositoryProvider)?.getTimeCapsuleChoseo();
-});
 
 // ─── 추천 책 목업 (커뮤니티 기반 추천 — 실데이터 연동 전 placeholder) ──────────
 
@@ -115,12 +114,12 @@ class HomeScreen extends ConsumerWidget {
                   // ⑤ 피드 하이라이트 (목업 전용 — 커뮤니티 기능 연동 전)
                   if (_useMock) ...[
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                    const SliverToBoxAdapter(child: _FeedHighlightSection()),
+                    const SliverToBoxAdapter(child: FeedHighlightSection()),
                   ],
                   // ⑥ 타임캡슐 문장 (sqflite 기반 — 목업 or 모바일)
                   if (_useMock) ...[
                     const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                    const SliverToBoxAdapter(child: _TimeCapsuleSection()),
+                    const SliverToBoxAdapter(child: TimeCapsuleSection()),
                   ],
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 ],
@@ -1306,267 +1305,10 @@ class _RecommendedBookCardState extends State<_RecommendedBookCard> {
 
 // ─── ④ 피드 하이라이트 ───────────────────────────────────────────────────
 
-class _HighlightSentence {
-  final String content;
-  final String bookTitle;
-  final String author;
-  final int recordCount;
-  final int empathyCount;
-  final bool isOverlap;
-  final int gradientIndex;
 
-  const _HighlightSentence({
-    required this.content,
-    required this.bookTitle,
-    required this.author,
-    required this.recordCount,
-    required this.empathyCount,
-    this.isOverlap = false,
-    this.gradientIndex = 0,
-  });
-}
 
-const _kHighlightSentences = [
-  _HighlightSentence(
-    content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
-    bookTitle: '채식주의자',
-    author: '한강',
-    recordCount: 142,
-    empathyCount: 384,
-    isOverlap: true,
-    gradientIndex: 0,
-  ),
-  _HighlightSentence(
-    content: '우리는 모두 누군가의 이민자다. 다만 시간이 다를 뿐.',
-    bookTitle: '파친코',
-    author: '이민진',
-    recordCount: 98,
-    empathyCount: 271,
-    isOverlap: false,
-    gradientIndex: 2,
-  ),
-  _HighlightSentence(
-    content: '사랑한다는 것은 서로의 고독을 인정하는 것이다.',
-    bookTitle: '노르웨이의 숲',
-    author: '무라카미 하루키',
-    recordCount: 214,
-    empathyCount: 512,
-    isOverlap: true,
-    gradientIndex: 4,
-  ),
-];
 
-class _FeedHighlightSection extends StatelessWidget {
-  const _FeedHighlightSection();
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 헤더
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.screenPadding,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '지금 많이 기록된 문장',
-                      style: AppTheme.headingSmall.copyWith(
-                        fontFamily: 'Pretendard',
-                        color: context.appTextPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '독자들이 가장 많이 수집한 문장이에요',
-                      style: AppTheme.captionLarge.copyWith(
-                        fontFamily: 'Pretendard',
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () => context.push('/feed'),
-                child: Text(
-                  '피드 보기 ›',
-                  style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        // 문장 카드 리스트
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.screenPadding,
-          ),
-          child: Column(
-            children: _kHighlightSentences
-                .asMap()
-                .entries
-                .map(
-                  (e) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: e.key < _kHighlightSentences.length - 1 ? 10 : 0,
-                    ),
-                    child: _HighlightCard(sentence: e.value),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HighlightCard extends StatelessWidget {
-  final _HighlightSentence sentence;
-  const _HighlightCard({required this.sentence});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '${sentence.bookTitle} 문장 보기',
-      button: true,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          context.push('/feed');
-        },
-        child: Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: AppTheme.radiusLG,
-            side: BorderSide(color: context.appBorder),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 문장 + 메타
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 겹문장 배지
-                        if (sentence.isOverlap)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: ShapeDecoration(
-                                color: context.appPrimaryAccent.withValues(
-                                  alpha: 0.08,
-                                ),
-                                shape: SmoothRectangleBorder(
-                                  borderRadius: SmoothBorderRadius(
-                                    cornerRadius: 6,
-                                    cornerSmoothing: 0.6,
-                                  ),
-                                  side: BorderSide(
-                                    color: context.appPrimaryAccent.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.join_inner_rounded,
-                                    size: 11,
-                                    color: context.appPrimaryAccent,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '겹문장 · ${sentence.recordCount}명 수집',
-                                    style: AppTheme.captionSmall.copyWith(
-                                      fontFamily: 'Pretendard',
-                                      color: context.appPrimaryAccent,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        // 문장 본문
-                        Text(
-                          '"${sentence.content}"',
-                          style: AppTheme.bodySmall.copyWith(
-                            fontFamily: 'Pretendard',
-                            color: context.appTextPrimary,
-                            fontStyle: FontStyle.italic,
-                            height: 1.6,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        // 책 정보 + 공감
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${sentence.bookTitle} · ${sentence.author}',
-                                style: AppTheme.captionSmall.copyWith(
-                                  fontFamily: 'Pretendard',
-                                  color: context.appTextTertiary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.favorite_rounded,
-                              size: 12,
-                              color: context.appAccentColor.withValues(
-                                alpha: 0.8,
-                              ),
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              '${sentence.empathyCount}',
-                              style: AppTheme.captionSmall.copyWith(
-                                fontFamily: 'Pretendard',
-                                color: context.appTextTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 공용: 진행 바 ────────────────────────────────────────────────────────
 
@@ -1643,123 +1385,6 @@ class _StreakBanner extends ConsumerWidget {
 
 // ─── 타임캡슐 문장 섹션 ───────────────────────────────────────────────────────
 
-class _TimeCapsuleSection extends ConsumerWidget {
-  const _TimeCapsuleSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final capsule = ref.watch(_timeCapsuleProvider);
-    return capsule.when(
-      loading: () => const SizedBox.shrink(),
-      error: (e, _) => const SizedBox.shrink(),
-      data: (choseo) {
-        if (choseo == null) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    const Text('⏳', style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 8),
-                    Text(
-                      '1년 전 오늘, 당신이 붙잡은 문장',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-                decoration: ShapeDecoration(
-                  color: context.appCard,
-                  shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(
-                      cornerRadius: AppTheme.radiusLG * 1.8,
-                      cornerSmoothing: 0.6,
-                    ),
-                    side: BorderSide(color: context.appBorder),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            width: 3,
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.greenGradientVertical,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '"${choseo.content}"',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: context.appTextPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '— ${choseo.bookTitle}  ·  ${choseo.bookAuthor}',
-                      style: AppTheme.captionLarge.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push(AppConstants.routeChoseoList);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.08,
-                          ),
-                          shape: StadiumBorder(
-                            side: BorderSide(color: context.appBorder),
-                          ),
-                        ),
-                        child: Text(
-                          '그때의 나는 무슨 생각을 했을까?',
-                          style: AppTheme.captionLarge.copyWith(
-                            color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 // ─── ④ 다음에 읽을 책 ────────────────────────────────────────────────────────
 
