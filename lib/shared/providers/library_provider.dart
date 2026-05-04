@@ -49,9 +49,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   bool addBook(Book book) {
-    final isDuplicate = state.any((b) =>
-        (book.isbn != null && book.isbn!.isNotEmpty && b.isbn == book.isbn) ||
-        (b.title == book.title && b.author == book.author));
+    final isDuplicate = book.isbn != null &&
+        book.isbn!.isNotEmpty &&
+        state.any((b) => b.isbn == book.isbn);
     if (isDuplicate) return false;
     state = [...state, book];
     if (_useMock) return true;

@@ -120,21 +120,33 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _onBookTap(AladinBook book) async {
     HapticFeedback.selectionClick();
+
+    // 이미 서재에 있으면 삭제
+    final lib = ref.read(libraryProvider);
+    final existing = book.isbn13 != null && book.isbn13!.isNotEmpty
+        ? lib.where((b) => b.isbn == book.isbn13).firstOrNull
+        : null;
+    if (existing != null) {
+      ref.read(libraryProvider.notifier).deleteBook(existing.id);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        _buildSnackBar('"${book.title}"을(를) 서재에서 삭제했어요', true),
+      );
+      return;
+    }
+
     final status = await showAddToLibrarySheet(context, book);
     if (status == null || !mounted) return;
 
-    final added =
-        ref.read(libraryProvider.notifier).addBook(book.toBook(status));
+    ref.read(libraryProvider.notifier).addBook(book.toBook(status));
 
     if (!mounted) return;
     final label = status == ReadingStatus.reading ? '읽는 중' : '읽고 싶어요';
-    final msg = added
-        ? '"${book.title}"을(를) $label에 추가했어요'
-        : '"${book.title}"은(는) 이미 서재에 있어요';
 
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
-      _buildSnackBar(msg, added),
+      _buildSnackBar('"${book.title}"을(를) $label에 추가했어요', true),
     );
   }
 
@@ -876,9 +888,9 @@ class _BookCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isInLibrary = ref.watch(
       libraryProvider.select((books) => books.any(
-            (b) =>
-                (book.isbn13 != null && b.isbn == book.isbn13) ||
-                (b.title == book.title && b.author == book.author),
+            (b) => book.isbn13 != null &&
+                book.isbn13!.isNotEmpty &&
+                b.isbn == book.isbn13,
           )),
     );
 
@@ -1043,35 +1055,42 @@ class _AddButtonState extends State<_AddButton> {
   @override
   Widget build(BuildContext context) {
     if (widget.isInLibrary) {
-      return Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: AppTheme.smoothBox(
-          color: context.appCardElevated,
-          radius: AppTheme.radiusSM,
-          side: BorderSide(color: context.appBorder, width: 1),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.check_rounded,
-              color: context.appPrimaryAccent,
-              size: 14,
+      return Semantics(
+        button: true,
+        label: '서재에서 삭제',
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: AppTheme.smoothBox(
+              color: context.appCardElevated,
+              radius: AppTheme.radiusSM,
+              side: BorderSide(color: context.appBorder, width: 1),
             ),
-            SizedBox(width: 4),
-            Text(
-              '서재에 있어요',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: context.appPrimaryAccent,
-                height: 1.4,
-              ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_rounded,
+                  color: context.appPrimaryAccent,
+                  size: 14,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  '서재에 있어요',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: context.appPrimaryAccent,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
