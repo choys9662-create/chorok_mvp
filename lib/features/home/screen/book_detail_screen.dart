@@ -74,6 +74,27 @@ class _ReadingMemo {
   });
 }
 
+/// 다른 독자가 같은 책에서 수집한 문장 + 생각
+class _OtherReaderSentence {
+  final String id;
+  final String content;
+  final int page;
+  final String username;
+  final String? thought;
+  final int empathyCount;
+  final DateTime savedAt;
+
+  const _OtherReaderSentence({
+    required this.id,
+    required this.content,
+    required this.page,
+    required this.username,
+    this.thought,
+    this.empathyCount = 0,
+    required this.savedAt,
+  });
+}
+
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
 List<_CollectedSentence> _buildMockSentences() => [
@@ -190,6 +211,53 @@ List<_ReadingMemo> _buildMockMemos() => [
       ),
     ];
 
+List<_OtherReaderSentence> _buildMockOtherReaders() => [
+      _OtherReaderSentence(
+        id: 'or1',
+        content: '그녀는 아무것도 원하지 않았다. 그것이 그녀의 유일한 소원이었다.',
+        page: 67,
+        username: 'seoulreader',
+        thought: '원하지 않는 것을 원한다는 역설. 이 한 문장에 영혜의 본질이 담겨 있다.',
+        empathyCount: 89,
+        savedAt: DateTime.now().subtract(const Duration(hours: 6)),
+      ),
+      _OtherReaderSentence(
+        id: 'or2',
+        content: '남편은 그녀의 변화를 이해하지 못했다. 이해하려고 하지도 않았다.',
+        page: 34,
+        username: 'bookworm_su',
+        thought: '"이해하지 못했다"와 "하지도 않았다"의 차이가 이 소설의 핵심. 무관심이 폭력이다.',
+        empathyCount: 124,
+        savedAt: DateTime.now().subtract(const Duration(hours: 12)),
+      ),
+      _OtherReaderSentence(
+        id: 'or3',
+        content: '꿈에서 본 얼굴은 자신의 것이었다.',
+        page: 12,
+        username: 'midnight_books',
+        thought: '자기 자신을 마주하는 꿈. 영혜의 변화는 외부가 아닌 내부에서 시작되었다.',
+        empathyCount: 56,
+        savedAt: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+      _OtherReaderSentence(
+        id: 'or4',
+        content: '피가 보이지 않는 음식만 먹겠다고 했다.',
+        page: 28,
+        username: 'hesse_lover',
+        empathyCount: 43,
+        savedAt: DateTime.now().subtract(const Duration(days: 2)),
+      ),
+      _OtherReaderSentence(
+        id: 'or5',
+        content: '그녀는 점점 사라져 갔다. 아니, 변해 갔다.',
+        page: 156,
+        username: 'leafy_reader',
+        thought: '"사라진다"와 "변한다"— 이 두 단어의 차이가 소설 전체의 시각을 결정한다.',
+        empathyCount: 71,
+        savedAt: DateTime.now().subtract(const Duration(hours: 3)),
+      ),
+    ];
+
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 
 class BookDetailScreen extends StatefulWidget {
@@ -206,12 +274,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   final Set<String> _expandedIds = {};
   late final List<_CollectedSentence> _sentences;
   late final List<_ReadingMemo> _memos;
+  late final List<_OtherReaderSentence> _otherReaders;
 
   @override
   void initState() {
     super.initState();
     _sentences = _useMock ? _buildMockSentences() : [];
     _memos = _useMock ? _buildMockMemos() : [];
+    _otherReaders = _useMock ? _buildMockOtherReaders() : [];
   }
 
   void _toggleExpansion(String id) {
@@ -312,6 +382,66 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               childCount: _sentences.length,
             ),
           ),
+
+          // ── 이 책의 인기 문장 (다른 독자) ───────────────────
+          if (_otherReaders.isNotEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  AppTheme.space2XL,
+                  AppTheme.screenPadding,
+                  AppTheme.spaceMD,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.people_outline_rounded,
+                      size: 20,
+                      color: context.appPrimaryAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '이 책의 인기 문장',
+                      style: AppTheme.headingSmall.copyWith(
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: AppTheme.smoothPill(
+                        color: context.appPrimaryAccent.withValues(alpha: 0.12),
+                      ),
+                      child: Text(
+                        '${_otherReaders.length}명이 수집',
+                        style: AppTheme.captionSmall.copyWith(
+                          color: context.appPrimaryAccent,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+                  itemCount: _otherReaders.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: EdgeInsets.only(
+                      right: index < _otherReaders.length - 1 ? 12 : 0,
+                    ),
+                    child: _OtherReaderCard(sentence: _otherReaders[index]),
+                  ),
+                ),
+              ),
+            ),
+          ],
 
           // ── 메모 헤더 ──────────────────────────────────────────
           SliverToBoxAdapter(
@@ -1321,6 +1451,134 @@ class _MenuTile extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── 다른 독자의 문장 카드 ──────────────────────────────────────────────
+
+class _OtherReaderCard extends StatelessWidget {
+  final _OtherReaderSentence sentence;
+
+  const _OtherReaderCard({required this.sentence});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = sentence;
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: AppTheme.radiusLG,
+        side: BorderSide(color: context.appBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── 페이지 번호 + 좋아요 ──────────────────────────
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: AppTheme.smoothPill(
+                  color: AppTheme.primary.withValues(alpha: 0.25),
+                ),
+                child: Text(
+                  'p.${s.page}',
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appPrimaryAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.favorite_rounded,
+                size: 12,
+                color: const Color(0xFFFF6B6B).withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${s.empathyCount}',
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // ── 인용 문장 ──────────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: context.appCardElevated,
+              borderRadius: BorderRadius.circular(8),
+              border: Border(
+                left: BorderSide(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.5),
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Text(
+              '"${s.content}"',
+              style: AppTheme.bodySmall.copyWith(
+                fontStyle: FontStyle.italic,
+                color: context.appTextPrimary,
+                height: 1.5,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          // ── 유저의 생각 ─────────────────────────────────────
+          if (s.thought != null && s.thought!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Expanded(
+              child: Text(
+                s.thought!,
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextSecondary,
+                  height: 1.4,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ] else
+            const Spacer(),
+
+          // ── 유저 정보 ──────────────────────────────────────
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 10,
+                backgroundColor:
+                    context.appPrimaryAccent.withValues(alpha: 0.12),
+                child: Text(
+                  s.username[0].toUpperCase(),
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appPrimaryAccent,
+                    fontSize: 9,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                s.username,
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
