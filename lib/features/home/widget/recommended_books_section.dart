@@ -153,6 +153,7 @@ class RecommendedBookCard extends StatefulWidget {
 
 class RecommendedBookCardState extends State<RecommendedBookCard> {
   bool _isPressed = false;
+  bool _isAdded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -314,35 +315,48 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                       const Spacer(),
                       // 서재에 추가 버튼
                       Semantics(
-                        label: '${b.title} 서재에 추가',
+                        label: _isAdded
+                            ? '${b.title} 서재에서 제거'
+                            : '${b.title} 서재에 추가',
                         button: true,
                         child: GestureDetector(
                           onTap: () {
                             HapticFeedback.mediumImpact();
+                            setState(() => _isAdded = !_isAdded);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${b.title}을(를) 읽고 싶은 책에 추가했어요'),
+                                content: Text(
+                                  _isAdded
+                                      ? '${b.title}을(를) 읽고 싶은 책에 추가했어요'
+                                      : '${b.title}을(를) 서재에서 제거했어요',
+                                ),
                                 backgroundColor: AppTheme.primary,
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
                           },
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
                             height: 32,
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              color: isDark
-                                  ? AppTheme.primary.withValues(alpha: 0.4)
-                                  : AppTheme.lightPrimaryAccent,
+                              color: _isAdded
+                                  ? context.appPrimaryAccent.withValues(alpha: 0.15)
+                                  : isDark
+                                      ? AppTheme.primary.withValues(alpha: 0.4)
+                                      : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
                                 borderRadius: SmoothBorderRadius(
                                   cornerRadius: 8,
                                   cornerSmoothing: 0.6,
                                 ),
                                 side: BorderSide(
-                                  color: context.appPrimaryAccent.withValues(
-                                    alpha: 0.2,
-                                  ),
+                                  color: _isAdded
+                                      ? context.appPrimaryAccent
+                                      : context.appPrimaryAccent.withValues(
+                                          alpha: 0.2,
+                                        ),
                                 ),
                               ),
                             ),
@@ -350,20 +364,26 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.add_rounded,
+                                  _isAdded
+                                      ? Icons.check_rounded
+                                      : Icons.add_rounded,
                                   size: 14,
-                                  color: isDark
+                                  color: _isAdded
                                       ? context.appPrimaryAccent
-                                      : Colors.white,
+                                      : isDark
+                                          ? context.appPrimaryAccent
+                                          : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '서재에 추가',
+                                  _isAdded ? '추가됨' : '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
                                     fontFamily: 'Pretendard',
-                                    color: isDark
+                                    color: _isAdded
                                         ? context.appPrimaryAccent
-                                        : Colors.white,
+                                        : isDark
+                                            ? context.appPrimaryAccent
+                                            : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
