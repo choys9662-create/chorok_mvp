@@ -75,6 +75,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       builder: (_) => const _ReadersSheet(),
     ).then((_) => _resetUiTimer());
   }
+
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
 
@@ -113,7 +114,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       final initialized = await stt.initialize();
       if (!initialized && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('마이크를 사용할 수 없습니다.', style: TextStyle(fontFamily: 'Pretendard'))),
+          const SnackBar(
+            content: Text(
+              '마이크를 사용할 수 없습니다.',
+              style: TextStyle(fontFamily: 'Pretendard'),
+            ),
+          ),
         );
         return;
       }
@@ -188,7 +194,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             backgroundColor: const Color(0xFF1A3D2B),
             behavior: SnackBarBehavior.floating,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+              borderRadius: SmoothBorderRadius(
+                cornerRadius: 12,
+                cornerSmoothing: 0.6,
+              ),
             ),
           ),
         );
@@ -282,109 +291,119 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         canPop: false,
         child: Scaffold(
           backgroundColor: context.appBg,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ① 배경
-            const _SessionBackground(),
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ① 배경
+              const _SessionBackground(),
 
-            // ② 반딧불이 + 중심 오브 — 화면 전체
-            AnimatedBuilder(
-              animation: Listenable.merge([_pulseAnim, _moveCtrl]),
-              builder: (_, _) => Stack(
-                fit: StackFit.expand,
-                children: [
-                  CustomPaint(
-                    painter: _FireflyPainter(
-                      pulse: _pulseAnim.value,
-                      time: _moveCtrl.value,
+              // ② 반딧불이 + 중심 오브 — 화면 전체
+              AnimatedBuilder(
+                animation: Listenable.merge([_pulseAnim, _moveCtrl]),
+                builder: (_, _) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CustomPaint(
+                      painter: _FireflyPainter(
+                        pulse: _pulseAnim.value,
+                        time: _moveCtrl.value,
+                      ),
                     ),
-                  ),
-                  Center(
-                    child: _GlowOrb(
-                      scale: _pulseAnim.value,
-                      isPaused: timer.isPaused,
+                    Center(
+                      child: _GlowOrb(
+                        scale: _pulseAnim.value,
+                        isPaused: timer.isPaused,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // ③ UI 레이어
-            GestureDetector(
-              onTap: _resetUiTimer,
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedOpacity(
-                opacity: _isUiVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 600),
-                child: SafeArea(
-                  minimum: const EdgeInsets.only(top: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ─ 상단 정보 바 ──────────────────────────────
-                      IgnorePointer(
-                        ignoring: !_isUiVisible,
-                        child: _TopBar(
-                          timer: timer,
-                          chosuCount: _collectedSentences.length,
-                          exitCount: _exitCount,
-                          onTogglePause: () {
-                            HapticFeedback.mediumImpact();
-                            final ctrl = ref.read(timerProvider.notifier);
-                            timer.isPaused ? ctrl.resume() : ctrl.pause();
-                            _resetUiTimer();
-                          },
-                          onStopPress: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('꾹 눌러서 세션을 종료하세요', style: TextStyle(fontFamily: 'Pretendard')),
-                                duration: Duration(milliseconds: 1500),
-                                backgroundColor: Color(0xFF1A3D2B),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          onStopLongPress: _onStop,
-                          onSetGoalTap: _openGoalSheet,
-                          onReadersTap: _openReadersSheet,
+              // ③ UI 레이어
+              GestureDetector(
+                onTap: _resetUiTimer,
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedOpacity(
+                  opacity: _isUiVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 600),
+                  child: SafeArea(
+                    minimum: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ─ 상단 정보 바 ──────────────────────────────
+                        IgnorePointer(
+                          ignoring: !_isUiVisible,
+                          child: _TopBar(
+                            timer: timer,
+                            chosuCount: _collectedSentences.length,
+                            exitCount: _exitCount,
+                            onTogglePause: () {
+                              HapticFeedback.mediumImpact();
+                              final ctrl = ref.read(timerProvider.notifier);
+                              timer.isPaused ? ctrl.resume() : ctrl.pause();
+                              _resetUiTimer();
+                            },
+                            onStopPress: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    '꾹 눌러서 세션을 종료하세요',
+                                    style: TextStyle(fontFamily: 'Pretendard'),
+                                  ),
+                                  duration: Duration(milliseconds: 1500),
+                                  backgroundColor: Color(0xFF1A3D2B),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            onStopLongPress: _onStop,
+                            onSetGoalTap: _openGoalSheet,
+                            onReadersTap: _openReadersSheet,
+                          ),
                         ),
-                      ),
-                      
-                      // ─ 가운데 투명 영역 ──────
-                      const Spacer(),
 
-                      // ─ 하단 책 정보 + 초서 액션 바 ───────────────
-                      IgnorePointer(
-                        ignoring: !_isUiVisible,
-                        child: _BottomArea(
-                          chosuCount: _collectedSentences.length,
-                          bookTitle: widget.bookTitle,
-                          bookAuthor: widget.bookAuthor,
-                          onOcrTap: _openOcr,
-                          onRecordTap: _toggleRecording,
-                          isRecording: _isRecording,
-                          isOcrLoading: _isOcrLoading,
-                          onTypeSentence: (text) =>
-                              _openChosuSheet(initialText: text),
+                        // ─ 중앙 타이머 (항상 보임) ──────────────
+                        Expanded(
+                          child: Center(
+                            child: _CenterTimer(
+                              timer: timer,
+                              onGoalTap: _openGoalSheet,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // ─ 하단 책 정보 + 초서 액션 바 ───────────────
+                        IgnorePointer(
+                          ignoring: !_isUiVisible,
+                          child: _BottomArea(
+                            chosuCount: _collectedSentences.length,
+                            bookTitle: widget.bookTitle,
+                            bookAuthor: widget.bookAuthor,
+                            onOcrTap: _openOcr,
+                            onRecordTap: _toggleRecording,
+                            isRecording: _isRecording,
+                            isOcrLoading: _isOcrLoading,
+                            onTypeSentence: (text) =>
+                                _openChosuSheet(initialText: text),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // ④ 녹음 오버레이 (STT 중일 때)
-            if (_isRecording)
-              _RecordingOverlay(
-                recognizedText: _recognizedText,
-                onStop: _toggleRecording,
-              ),
-          ],
+              // ④ 녹음 오버레이 (STT 중일 때)
+              if (_isRecording)
+                _RecordingOverlay(
+                  recognizedText: _recognizedText,
+                  onStop: _toggleRecording,
+                ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -471,7 +490,10 @@ class _TopBar extends StatelessWidget {
               GestureDetector(
                 onTap: onReadersTap,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -482,7 +504,11 @@ class _TopBar extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                     ],
                   ),
                 ),
@@ -518,15 +544,23 @@ class _TopBar extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: AppTheme.smoothBox(
-                    color: timer.isPaused ? _kGreen.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.09),
+                    color: timer.isPaused
+                        ? _kGreen.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.09),
                     radius: 10,
                     side: BorderSide(
-                      color: timer.isPaused ? _kGreen.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.12),
+                      color: timer.isPaused
+                          ? _kGreen.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Icon(
-                    timer.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                    color: timer.isPaused ? _kGreen : Colors.white.withValues(alpha: 0.65),
+                    timer.isPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.pause_rounded,
+                    color: timer.isPaused
+                        ? _kGreen
+                        : Colors.white.withValues(alpha: 0.65),
                     size: 18,
                   ),
                 ),
@@ -542,14 +576,16 @@ class _TopBar extends StatelessWidget {
                   decoration: AppTheme.smoothBox(
                     color: Colors.red.withValues(alpha: 0.15),
                     radius: 10,
-                    side: BorderSide(
-                      color: Colors.red.withValues(alpha: 0.3),
-                    ),
+                    side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.stop_rounded, color: Colors.red.withValues(alpha: 0.8), size: 16),
+                      Icon(
+                        Icons.stop_rounded,
+                        color: Colors.red.withValues(alpha: 0.8),
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '종료',
@@ -567,75 +603,214 @@ class _TopBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-
-          // 타이머
-          Text(
-            timer.formattedTime,
-            style: TextStyle(
-              fontSize: 46,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3,
-              color: Colors.white.withValues(alpha: 0.95),
-              shadows: [
-                Shadow(color: _kGreen.withValues(alpha: 0.18), blurRadius: 20),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // 진행 바 — 목표가 있으면 목표 대비, 없으면 45분 기본
-          _GradientProgressBar(
-            value: timer.goal?.type == SessionGoalType.time
-                ? (timer.seconds / timer.goal!.targetSeconds).clamp(0.0, 1.0)
-                : (timer.seconds % (45 * 60)) / (45 * 60),
-          ),
-          const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                timer.seconds < 60
-                    ? '${timer.seconds}초 경과'
-                    : '${timer.seconds ~/ 60}분 경과',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
-              GestureDetector(
-                onTap: onSetGoalTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        timer.goal != null && timer.goal!.type != SessionGoalType.free
-                            ? '목표 ${timer.goal!.label}'
-                            : '자유 독서 (목표 설정)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: timer.goalReached
-                              ? _kGreen.withValues(alpha: 0.85)
-                              : Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.edit_rounded, size: 12, color: Colors.white.withValues(alpha: 0.6)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
+}
+
+// ─── 중앙 타이머 (원형 프로그레스 + 대형 시계) ───────────────────────────
+class _CenterTimer extends StatelessWidget {
+  final TimerData timer;
+  final VoidCallback onGoalTap;
+
+  const _CenterTimer({required this.timer, required this.onGoalTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = timer.goal?.type == SessionGoalType.time
+        ? (timer.seconds / timer.goal!.targetSeconds).clamp(0.0, 1.0)
+        : (timer.seconds % (45 * 60)) / (45 * 60);
+
+    final ringSize = MediaQuery.of(context).size.width * 0.62;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ── 원형 프로그레스 + 타이머 ────────────────────────
+        SizedBox(
+          width: ringSize,
+          height: ringSize,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 배경 링
+              SizedBox(
+                width: ringSize,
+                height: ringSize,
+                child: CustomPaint(
+                  painter: _CircularProgressPainter(
+                    progress: progress,
+                    strokeWidth: 3,
+                    bgColor: Colors.white.withValues(alpha: 0.06),
+                    fgColor: _kGreen,
+                  ),
+                ),
+              ),
+              // 타이머 텍스트
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    timer.isPaused ? '일시정지' : '독서 중',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                      color: _kGreen.withValues(alpha: 0.7),
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    timer.formattedTime,
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 4,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      fontFamily: 'Pretendard',
+                      shadows: [
+                        Shadow(
+                          color: _kGreen.withValues(alpha: 0.15),
+                          blurRadius: 24,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    timer.seconds < 60
+                        ? '${timer.seconds}초'
+                        : '${timer.seconds ~/ 60}분 ${timer.seconds % 60}초',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 목표 칩 ──────────────────────────────────────
+        GestureDetector(
+          onTap: onGoalTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: AppTheme.smoothPill(
+              color: Colors.white.withValues(alpha: 0.06),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  timer.goalReached
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.flag_outlined,
+                  size: 14,
+                  color: timer.goalReached
+                      ? _kGreen
+                      : Colors.white.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  timer.goal != null &&
+                          timer.goal!.type != SessionGoalType.free
+                      ? '목표 ${timer.goal!.label}'
+                      : '자유 독서',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Pretendard',
+                    color: timer.goalReached
+                        ? _kGreen.withValues(alpha: 0.85)
+                        : Colors.white.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 원형 프로그레스 페인터 ────────────────────────────────────────────
+class _CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final double strokeWidth;
+  final Color bgColor;
+  final Color fgColor;
+
+  const _CircularProgressPainter({
+    required this.progress,
+    required this.strokeWidth,
+    required this.bgColor,
+    required this.fgColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // 배경 링
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = bgColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // 진행 아크
+    if (progress > 0) {
+      final sweepAngle = 2 * math.pi * progress;
+      final rect = Rect.fromCircle(center: center, radius: radius);
+
+      canvas.drawArc(
+        rect,
+        -math.pi / 2, // 12시 방향에서 시작
+        sweepAngle,
+        false,
+        Paint()
+          ..shader = SweepGradient(
+            startAngle: -math.pi / 2,
+            endAngle: -math.pi / 2 + sweepAngle,
+            colors: [
+              fgColor.withValues(alpha: 0.6),
+              fgColor,
+            ],
+          ).createShader(rect)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+
+      // 끝점 글로우
+      final endAngle = -math.pi / 2 + sweepAngle;
+      final endX = center.dx + radius * math.cos(endAngle);
+      final endY = center.dy + radius * math.sin(endAngle);
+      canvas.drawCircle(
+        Offset(endX, endY),
+        strokeWidth * 2,
+        Paint()
+          ..color = fgColor.withValues(alpha: 0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CircularProgressPainter old) =>
+      old.progress != progress;
 }
 
 // ─── 하단 영역 (책 정보 + 초서 액션 바) ──────────────────────────────
@@ -1067,36 +1242,6 @@ class _FireflyPainter extends CustomPainter {
       old.pulse != pulse || old.time != time;
 }
 
-// ─── 그라디언트 진행 바 ────────────────────────────────────────────────
-class _GradientProgressBar extends StatelessWidget {
-  final double value;
-  const _GradientProgressBar({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) => Container(
-        height: 3,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: constraints.maxWidth * value.clamp(0.0, 1.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 배경 ─────────────────────────────────────────────────────────────
 class _SessionBackground extends StatelessWidget {
@@ -1299,7 +1444,10 @@ class _ReadersSheet extends StatelessWidget {
                       color: const Color(0xFF00FF00),
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF00FF00).withValues(alpha: 0.5), blurRadius: 8),
+                        BoxShadow(
+                          color: const Color(0xFF00FF00).withValues(alpha: 0.5),
+                          blurRadius: 8,
+                        ),
                       ],
                     ),
                   ),
@@ -1330,7 +1478,10 @@ class _ReadersSheet extends StatelessWidget {
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: readers.length,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 itemBuilder: (context, i) {
                   final r = readers[i];
                   return Padding(
@@ -1345,8 +1496,14 @@ class _ReadersSheet extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: Colors.white.withValues(alpha: 0.1),
-                            child: const Icon(Icons.person_rounded, color: Colors.white54, size: 20),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.1,
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1376,7 +1533,9 @@ class _ReadersSheet extends StatelessWidget {
                             r.time,
                             style: TextStyle(
                               fontSize: 13,
-                              color: const Color(0xFF00FF00).withValues(alpha: 0.8),
+                              color: const Color(
+                                0xFF00FF00,
+                              ).withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
