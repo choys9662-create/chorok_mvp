@@ -26,6 +26,7 @@ import '../../features/search/barcode_scanner_screen.dart';
 import '../../features/library/choseo_list_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/achievements/screen/achievements_screen.dart';
+import '../../features/feed/screen/sentence_detail_screen.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
@@ -181,6 +182,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeAchievements,
         builder: (context, state) => const AchievementsScreen(),
+      ),
+
+      // 문장 상세
+      GoRoute(
+        path: AppConstants.routeSentenceDetail,
+        builder: (context, state) {
+          final data = state.extra as SentenceDetailExtra;
+          return SentenceDetailScreen(data: data);
+        },
       ),
 
       StatefulShellRoute.indexedStack(

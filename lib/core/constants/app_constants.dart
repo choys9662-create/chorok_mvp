@@ -18,6 +18,7 @@ class AppConstants {
   static const String routeOnboarding = '/onboarding';
   static const String routeSettings = '/settings';
   static const String routeAchievements = '/achievements';
+  static const String routeSentenceDetail = '/sentence-detail';
 
   // ─── 타이머 설정 ─────────────────────────────────────────────────
   static const int defaultReadingMinutes = 25; // 기본 독서 시간 (분)

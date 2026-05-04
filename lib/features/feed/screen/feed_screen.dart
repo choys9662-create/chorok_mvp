@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
+import 'sentence_detail_screen.dart';
 
 // ─── 트렌딩 책 목업 ───────────────────────────────────────────────────────────
 typedef _TrendingBook = ({
@@ -668,7 +670,21 @@ class _SentenceCardState extends State<_SentenceCard> {
     final s = widget.sentence;
     final overlap = widget.isOverlap;
 
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push(
+          AppConstants.routeSentenceDetail,
+          extra: SentenceDetailExtra(
+            sentenceContent: s.content,
+            bookTitle: s.bookTitle,
+            bookAuthor: s.bookAuthor,
+            collectorUsername: s.username,
+            collectorThought: s.thought,
+          ),
+        );
+      },
+      child: Container(
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
@@ -942,6 +958,7 @@ class _SentenceCardState extends State<_SentenceCard> {
           ),
         ],
       ),
+      ),  // GestureDetector child end
     );
   }
 }
