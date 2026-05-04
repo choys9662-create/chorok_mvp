@@ -45,24 +45,29 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     FeedSentence(
       id: '1',
       content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
+      thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'reader_jin',
       savedAt: DateTime.now().subtract(const Duration(minutes: 23)),
       empathyCount: 42,
+      commentCount: 3,
     ),
     FeedSentence(
       id: '6',
       content: '나는 채식주의자가 되기로 했다. 꿈 때문에. 어떤 꿈이었을까.',
+      thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'leafy_reader',
       savedAt: DateTime.now().subtract(const Duration(minutes: 45)),
       empathyCount: 28,
+      commentCount: 1,
     ),
     FeedSentence(
       id: '7',
       content: '채식주의자가 되기로 했다... 꿈 때문에',
+      thought: '채식이 곧 저항이고, 꿈이 곧 각성이다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'green_pages',
@@ -72,21 +77,25 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     FeedSentence(
       id: '2',
       content: '사람이 사람을 사랑한다는 것은 서로의 상처를 보듬는 일이다.',
+      thought: '사랑의 정의가 이렇게 아플 수 있다니. 지영이의 상처를 "보듬는" 사람은 결국 아무도 없었다는 게 더 아프다.',
       bookTitle: '82년생 김지영',
       bookAuthor: '조남주',
       username: 'bookworm_su',
       savedAt: DateTime.now().subtract(const Duration(hours: 1)),
       empathyCount: 87,
+      commentCount: 5,
       isLiked: true,
     ),
     FeedSentence(
       id: '3',
       content: '나는 괴물이 아니에요. 그냥 달라요.',
+      thought: '"다름"과 "틀림"의 경계에서 선재가 내뱉은 이 한마디가 소설 전체를 관통한다.',
       bookTitle: '아몬드',
       bookAuthor: '손원평',
       username: 'seoulreader',
       savedAt: DateTime.now().subtract(const Duration(hours: 3)),
       empathyCount: 156,
+      commentCount: 8,
     ),
     FeedSentence(
       id: '8',
@@ -100,6 +109,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     FeedSentence(
       id: '4',
       content: '우리는 모두 서로의 별빛을 먹고 산다.',
+      thought: '외로움의 반대가 사랑이 아니라 "연결"이라는 걸 이 문장이 증명한다.',
       bookTitle: '밤을 걷는 선비',
       bookAuthor: '이지운',
       username: 'midnight_books',
@@ -109,11 +119,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     FeedSentence(
       id: '5',
       content: '책은 단지 읽히는 것이 아니라, 느껴지는 것이다.',
+      thought: '헤세가 이 말을 했을 때, 그는 분명 데미안을 쓰면서 자기 자신을 느끼고 있었을 것이다.',
       bookTitle: '독서의 기쁨',
       bookAuthor: '헤르만 헤세',
       username: 'hesse_lover',
       savedAt: DateTime.now().subtract(const Duration(hours: 8)),
       empathyCount: 64,
+      commentCount: 2,
     ),
   ];
 
@@ -770,28 +782,80 @@ class _SentenceCardState extends State<_SentenceCard> {
                     ),
                   ),
                 ),
+                // ── 유저의 생각 ──────────────────────────────
+                if (s.thought != null && s.thought!.isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.spaceMD),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor:
+                            context.appPrimaryAccent.withValues(alpha: 0.12),
+                        child: Text(
+                          s.username[0].toUpperCase(),
+                          style: AppTheme.captionSmall
+                              .copyWith(color: context.appPrimaryAccent),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${s.username}의 생각',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: context.appTextTertiary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              s.thought!,
+                              style: AppTheme.bodySmall.copyWith(
+                                color: context.appTextPrimary,
+                                height: 1.5,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // 생각이 없으면 유저 이름만 표시
+                  const SizedBox(height: AppTheme.spaceSM),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor:
+                            context.appPrimaryAccent.withValues(alpha: 0.12),
+                        child: Text(
+                          s.username[0].toUpperCase(),
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appPrimaryAccent,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        s.username,
+                        style: AppTheme.captionLarge
+                            .copyWith(color: context.appTextTertiary),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: AppTheme.spaceMD),
 
-                // 유저 + 공감
+                // ── 좋아요 · 댓글 · 공유 ────────────────────────
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor:
-                          context.appPrimaryAccent.withValues(alpha: 0.12),
-                      child: Text(
-                        s.username[0].toUpperCase(),
-                        style: AppTheme.captionSmall
-                            .copyWith(color: context.appPrimaryAccent),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      s.username,
-                      style: AppTheme.captionLarge
-                          .copyWith(color: context.appTextSecondary),
-                    ),
-                    const Spacer(),
                     GestureDetector(
                       onTap: _toggleLike,
                       child: Row(
@@ -817,7 +881,26 @@ class _SentenceCardState extends State<_SentenceCard> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppTheme.spaceMD),
+                    if (s.commentCount > 0) ...[
+                      const SizedBox(width: AppTheme.spaceMD),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 14,
+                            color: context.appTextTertiary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '다른 생각 ${s.commentCount}',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const Spacer(),
                     GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();

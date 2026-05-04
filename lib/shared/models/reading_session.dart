@@ -100,22 +100,26 @@ extension ReadingStatusLabel on ReadingStatus {
 class FeedSentence {
   final String id;
   final String content;
+  final String? thought; // 유저의 생각/해석
   final String bookTitle;
   final String bookAuthor;
   final String username;
   final DateTime savedAt;
   final int empathyCount;
+  final int commentCount; // 같은 문장에 대한 다른 생각 수
   final bool isLiked;
   final bool isOverlap; // 겹문장 여부
 
   const FeedSentence({
     required this.id,
     required this.content,
+    this.thought,
     required this.bookTitle,
     required this.bookAuthor,
     required this.username,
     required this.savedAt,
     this.empathyCount = 0,
+    this.commentCount = 0,
     this.isLiked = false,
     this.isOverlap = false,
   });
