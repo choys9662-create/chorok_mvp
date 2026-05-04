@@ -27,9 +27,35 @@ class SupabaseBookRepository {
   }
 
   /// 책을 upsert. 같은 (user_id, book_id) 조합이면 덮어쓴다.
+  /// isbn이 있으면 global_books에도 자동 등록.
   Future<void> saveFromBook(Book book) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
+
+    // global_books에 upsert (isbn13이 있을 때만)
+    String? globalBookId;
+    if (book.isbn != null && book.isbn!.isNotEmpty) {
+      try {
+        final gbRow = await _client
+            .from('global_books')
+            .upsert(
+              {
+                'isbn13': book.isbn,
+                'title': book.title,
+                'author': book.author,
+                'cover_url': book.coverUrl,
+                'total_pages': book.totalPages,
+              },
+              onConflict: 'isbn13',
+            )
+            .select('id')
+            .single();
+        globalBookId = gbRow['id'] as String?;
+      } catch (_) {
+        // global_books 테이블이 아직 없거나 에러 시 무시
+      }
+    }
+
     await _client.from('books').upsert(
       {
         'user_id': userId,
@@ -47,6 +73,7 @@ class SupabaseBookRepository {
         },
         'total_reading_hours': book.totalReadingHours,
         'saved_sentences': book.savedSentences,
+        'global_book_id': globalBookId,
         'updated_at': DateTime.now().toIso8601String(),
       },
       onConflict: 'user_id,book_id',
