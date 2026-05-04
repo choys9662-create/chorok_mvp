@@ -551,7 +551,7 @@ class _HeroSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            isCompleted ? '완독' : '완독 체크',
+                            '완독',
                             style: AppTheme.bodySmall.copyWith(
                               color: isCompleted
                                   ? AppTheme.accent
