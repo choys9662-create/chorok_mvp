@@ -84,6 +84,26 @@ class FollowRepository {
     }).toList();
   }
 
+  /// 맞팔 (내가 팔로우하고 나를 팔로우하는) 수 반환
+  Future<int> getMutualFollowCount() async {
+    final me = _meId;
+    if (me == null) return 0;
+    final followingRows = await _client
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', me);
+    final ids = (followingRows as List)
+        .map((r) => r['following_id'] as String)
+        .toList();
+    if (ids.isEmpty) return 0;
+    final mutualRows = await _client
+        .from('follows')
+        .select('follower_id')
+        .inFilter('follower_id', ids)
+        .eq('following_id', me);
+    return (mutualRows as List).length;
+  }
+
   List<UserProfile> _extractProfiles(List rows, String key) {
     return rows
         .map((r) => r as Map<String, dynamic>)
