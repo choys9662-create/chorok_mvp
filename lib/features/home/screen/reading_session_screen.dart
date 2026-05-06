@@ -10,6 +10,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/models/user_profile.dart';
 // import '../../../core/services/db_service.dart'; // 로그인 활성화 후 주석 해제
 import '../../../core/services/ocr_service.dart';
 import '../../../core/services/stt_service.dart';
@@ -1113,21 +1114,14 @@ class _RecordingOverlay extends StatelessWidget {
   }
 }
 
-// ─── 접속 중인 독자 목록 ──────────────────────────────────────────────
-class _ReadersSheet extends StatelessWidget {
+// ─── 접속 중인 독자 목록 (맞팔 실 데이터 연동) ────────────────────────
+class _ReadersSheet extends ConsumerWidget {
   const _ReadersSheet();
 
   @override
-  Widget build(BuildContext context) {
-    // 목업 데이터
-    final readers = [
-      (name: '책벌레수진', book: '채식주의자', time: '1h 20m'),
-      (name: '밤의여행자', book: '이방인', time: '45m'),
-      (name: '초록잎', book: '데미안', time: '2h 10m'),
-      (name: '달빛독서', book: '채식주의자', time: '15m'),
-      (name: 'seoulreader', book: '모순', time: '55m'),
-      (name: '북크리에이터', book: '도둑맞은 집중력', time: '3h 5m'),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fireflyAsync = ref.watch(sessionFireflyProvider);
+    final mutuals = fireflyAsync.valueOrNull?.mutuals ?? const [];
 
     return Container(
       decoration: BoxDecoration(
@@ -1157,10 +1151,10 @@ class _ReadersSheet extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00FF00),
+                      color: _kGreen,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF00FF00).withValues(alpha: 0.5), blurRadius: 8),
+                        BoxShadow(color: _kGreen.withValues(alpha: 0.5), blurRadius: 8),
                       ],
                     ),
                   ),
@@ -1176,10 +1170,10 @@ class _ReadersSheet extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '총 42명',
+                    '맞팔 ${mutuals.length}명',
                     style: TextStyle(
                       fontSize: 14,
-                      color: const Color(0xFF00FF00).withValues(alpha: 0.8),
+                      color: _kGreen.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1187,70 +1181,143 @@ class _ReadersSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: readers.length,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemBuilder: (context, i) {
-                  final r = readers[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: AppTheme.smoothBox(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        radius: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.white.withValues(alpha: 0.1),
-                            child: const Icon(Icons.person_rounded, color: Colors.white54, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  r.name,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  r.book,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            r.time,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: const Color(0xFF00FF00).withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+            if (fireflyAsync.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+              )
+            else if (mutuals.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                child: Text(
+                  '아직 맞팔한 친구가 없어요\n친구와 함께 읽어보세요 🌿',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontFamily: 'Pretendard',
+                    height: 1.6,
+                  ),
+                ),
+              )
+            else
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: mutuals.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemBuilder: (context, i) {
+                    final u = mutuals[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _MutualReaderTile(user: u),
+                    );
+                  },
+                ),
               ),
-            ),
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MutualReaderTile extends StatelessWidget {
+  final UserProfile user;
+  const _MutualReaderTile({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.smoothBox(
+        color: Colors.white.withValues(alpha: 0.05),
+        radius: 16,
+      ),
+      child: Row(
+        children: [
+          // 아바타
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: _kGreen.withValues(alpha: 0.12),
+            backgroundImage:
+                user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+            child: user.avatarUrl == null
+                ? Text(
+                    (user.displayName.isNotEmpty
+                            ? user.displayName[0]
+                            : user.username[0])
+                        .toUpperCase(),
+                    style: TextStyle(
+                      color: _kGreen,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.displayName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '@${user.username}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 함께 읽는 중 뱃지
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: AppTheme.smoothPill(
+              color: _kGreen.withValues(alpha: 0.1),
+              side: BorderSide(color: _kGreen.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _kGreen,
+                    boxShadow: [
+                      BoxShadow(color: _kGreen.withValues(alpha: 0.6), blurRadius: 4),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '읽는 중',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: _kGreen.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
