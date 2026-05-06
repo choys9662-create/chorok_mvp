@@ -47,44 +47,44 @@ const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
 List<_ReaderThought> _buildMockThoughts() => [
-      _ReaderThought(
-        username: 'reader_jin',
-        thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        empathyCount: 42,
-      ),
-      _ReaderThought(
-        username: 'bookworm_su',
-        thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-        empathyCount: 28,
-        isLiked: true,
-      ),
-      _ReaderThought(
-        username: 'midnight_books',
-        thought: '"꿈 때문에"라는 짧은 이유가 오히려 강렬해요. 이유를 길게 설명하지 않는 게 영혜의 방식이다.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-        empathyCount: 56,
-      ),
-      _ReaderThought(
-        username: 'seoulreader',
-        thought: '채식이 곧 저항이고, 꿈이 곧 각성이다. 한강은 이 한 문장에 소설 전체를 압축했다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        empathyCount: 91,
-      ),
-      _ReaderThought(
-        username: 'hesse_lover',
-        thought: '데미안에서 "새는 알에서 나오려고 투쟁한다"와 같은 결의 문장. 각성은 항상 고통을 수반한다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        empathyCount: 34,
-      ),
-      _ReaderThought(
-        username: 'leafy_reader',
-        thought: '이 문장을 처음 읽었을 때 "왜?"라고 물었다. 마지막에 다시 읽었을 때 더 이상 묻지 않았다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        empathyCount: 67,
-      ),
-    ];
+  _ReaderThought(
+    username: 'reader_jin',
+    thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
+    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+    empathyCount: 42,
+  ),
+  _ReaderThought(
+    username: 'bookworm_su',
+    thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
+    createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+    empathyCount: 28,
+    isLiked: true,
+  ),
+  _ReaderThought(
+    username: 'midnight_books',
+    thought: '"꿈 때문에"라는 짧은 이유가 오히려 강렬해요. 이유를 길게 설명하지 않는 게 영혜의 방식이다.',
+    createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+    empathyCount: 56,
+  ),
+  _ReaderThought(
+    username: 'seoulreader',
+    thought: '채식이 곧 저항이고, 꿈이 곧 각성이다. 한강은 이 한 문장에 소설 전체를 압축했다.',
+    createdAt: DateTime.now().subtract(const Duration(days: 1)),
+    empathyCount: 91,
+  ),
+  _ReaderThought(
+    username: 'hesse_lover',
+    thought: '데미안에서 "새는 알에서 나오려고 투쟁한다"와 같은 결의 문장. 각성은 항상 고통을 수반한다.',
+    createdAt: DateTime.now().subtract(const Duration(days: 2)),
+    empathyCount: 34,
+  ),
+  _ReaderThought(
+    username: 'leafy_reader',
+    thought: '이 문장을 처음 읽었을 때 "왜?"라고 물었다. 마지막에 다시 읽었을 때 더 이상 묻지 않았다.',
+    createdAt: DateTime.now().subtract(const Duration(days: 3)),
+    empathyCount: 67,
+  ),
+];
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 
@@ -169,8 +169,10 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding, 8,
-                      AppTheme.screenPadding, 0,
+                      AppTheme.screenPadding,
+                      8,
+                      AppTheme.screenPadding,
+                      0,
                     ),
                     child: Row(
                       children: [
@@ -187,7 +189,9 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                               height: 40,
                               alignment: Alignment.center,
                               decoration: AppTheme.smoothBox(
-                                color: context.appSurface.withValues(alpha: 0.5),
+                                color: context.appSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                                 radius: AppTheme.radiusSM,
                               ),
                               child: Icon(
@@ -244,7 +248,9 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: AppTheme.smoothPill(
                                 color: AppTheme.primary.withValues(alpha: 0.25),
                               ),
@@ -291,12 +297,16 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding, 0,
-                      AppTheme.screenPadding, AppTheme.spaceLG,
+                      AppTheme.screenPadding,
+                      0,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceLG,
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: AppTheme.smoothBox(
                         color: context.appPrimaryAccent.withValues(alpha: 0.08),
                         radius: AppTheme.radiusMD,
@@ -392,7 +402,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                     ),
                     sliver: SliverList.separated(
                       itemCount: _thoughts.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const SizedBox(height: AppTheme.spaceMD),
                       itemBuilder: (context, index) => _ThoughtCard(
                         thought: _thoughts[index],
@@ -424,9 +434,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
             ),
             decoration: BoxDecoration(
               color: context.appBg,
-              border: Border(
-                top: BorderSide(color: context.appBorder),
-              ),
+              border: Border(top: BorderSide(color: context.appBorder)),
             ),
             child: Row(
               children: [
@@ -452,8 +460,9 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                           color: context.appTextTertiary,
                         ),
                         isCollapsed: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _submitThought(),
@@ -533,8 +542,9 @@ class _ThoughtCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor:
-                    context.appPrimaryAccent.withValues(alpha: 0.12),
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.12,
+                ),
                 child: Text(
                   t.username[0].toUpperCase(),
                   style: AppTheme.captionSmall.copyWith(

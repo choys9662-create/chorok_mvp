@@ -76,7 +76,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
-  int? _exitSeconds; // 이탈로 종료될 때 저장
+  int? _exitSeconds;
 
   // STT / OCR (추후 활성화 예정)
   bool _isRecording = false;
@@ -165,8 +165,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         ref.read(timerProvider.notifier).stop();
       }
     } else if (state == AppLifecycleState.resumed && _exitSeconds != null) {
-      _navigateToRecap(_exitSeconds!);
+      final seconds = _exitSeconds!;
       _exitSeconds = null;
+      _navigateToRecap(seconds);
     }
   }
 
@@ -197,7 +198,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     ref.read(timerProvider.notifier).resume();
   }
 
-  Future<void> _onStop() async {
+  void _onStop() {
     HapticFeedback.mediumImpact();
     final seconds = ref.read(timerProvider).seconds;
     ref.read(timerProvider.notifier).stop();
@@ -205,15 +206,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
 
   void _navigateToRecap(int seconds) {
-    // 점수 계산 (recap 화면과 동일한 공식)
-    final score =
-        (45 +
-                (_collectedSentences.length * 3).clamp(0, 15) +
-                (seconds ~/ 90).clamp(0, 40))
-            .clamp(0, 100);
-    // ignore: unused_local_variable — 로그인 활성화 후 DB 저장에 사용
-    final _ = score;
-
     if (!mounted) return;
     context.pushReplacement(
       AppConstants.routeRecap,
@@ -319,7 +311,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                         child: Center(child: _TimerDisplay(timer: timer)),
                       ),
 
-                      const Expanded(child: SizedBox()),
+                      const Spacer(),
 
                       // ─ 하단 책 정보 + 초서 액션 바 ───────────────
                       IgnorePointer(
@@ -497,6 +489,7 @@ class _TimerDisplay extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 3,
           color: Colors.white.withValues(alpha: 0.45),
+          fontFeatures: const [FontFeature.tabularFigures()],
           shadows: [
             Shadow(color: _kGreen.withValues(alpha: 0.15), blurRadius: 32),
           ],

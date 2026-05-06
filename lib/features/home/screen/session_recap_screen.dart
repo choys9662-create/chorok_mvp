@@ -52,10 +52,10 @@ class RecapData {
 // 특별한 순간 타입 — 실제 서비스에서는 서버 응답으로 대체
 enum _SentenceTag {
   resonance, // 많은 독자가 독립적으로 같은 문장을 발견
-  rare,      // 거의 아무도 발견하지 않은 희귀한 구절
-  peak,      // 이 책에서 가장 많이 수집된 문장
-  viral,     // 피드에서 폭발적으로 공유된 구절
-  normal,    // 일반 수집
+  rare, // 거의 아무도 발견하지 않은 희귀한 구절
+  peak, // 이 책에서 가장 많이 수집된 문장
+  viral, // 피드에서 폭발적으로 공유된 구절
+  normal, // 일반 수집
 }
 
 // MVP: 결정적 해시로 타입 배정
@@ -102,15 +102,13 @@ String _evalText(int score, int sentenceCount) {
   return '짧지만 의미 있는 독서였어요.\n오늘도 잘 했어요.';
 }
 
-
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
 class SessionRecapScreen extends ConsumerStatefulWidget {
   final RecapData data;
   const SessionRecapScreen({super.key, required this.data});
 
   @override
-  ConsumerState<SessionRecapScreen> createState() =>
-      _SessionRecapScreenState();
+  ConsumerState<SessionRecapScreen> createState() => _SessionRecapScreenState();
 }
 
 class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
@@ -150,7 +148,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     HapticFeedback.selectionClick();
     try {
       final boundary =
-          _shareKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+          _shareKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -158,10 +157,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/chorok_session.png');
       await file.writeAsBytes(bytes.buffer.asUint8List());
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: '$_timeText 독서 완료! 📚',
-      );
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], subject: '$_timeText 독서 완료! 📚');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -316,12 +314,18 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('독서 완료',
-                              style: AppTheme.captionLarge
-                                  .copyWith(color: context.appTextTertiary)),
-                          Text('오늘의 독서 리캡',
-                              style: AppTheme.headingLarge
-                                  .copyWith(color: context.appTextPrimary)),
+                          Text(
+                            '독서 완료',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                          Text(
+                            '오늘의 독서 리캡',
+                            style: AppTheme.headingLarge.copyWith(
+                              color: context.appTextPrimary,
+                            ),
+                          ),
                         ],
                       ),
                       const Spacer(),
@@ -336,7 +340,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             child: Text(
                               '건너뛰기',
                               style: AppTheme.captionLarge.copyWith(
@@ -362,8 +368,11 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             shape: BoxShape.circle,
                             border: Border.all(color: context.appBorder),
                           ),
-                          child: Icon(Icons.close_rounded,
-                              size: 18, color: context.appTextTertiary),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: context.appTextTertiary,
+                          ),
                         ),
                       ),
                     ],
@@ -394,10 +403,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         const SizedBox(height: 16),
                         _ScoreCard(
                           score: _score,
-                          evalText: _evalText(_score, widget.data.sentences.length),
+                          evalText: _evalText(
+                            _score,
+                            widget.data.sentences.length,
+                          ),
                         ),
                         const SizedBox(height: 40),
-                        
+
                         // 2. 공유용 영수증 캡처 영역 (새 버전)
                         RepaintBoundary(
                           key: _shareKey,
@@ -406,60 +418,123 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                               color: const Color(0xFFF9F7F1),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 8)),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
                               ],
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 32,
+                            ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('C H O R O K', style: TextStyle(color: Colors.black87, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: 8)),
+                                const Text(
+                                  'C H O R O K',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 8,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
-                                const Text('READING RECEIPT', style: TextStyle(color: Colors.black54, fontSize: 12, letterSpacing: 3)),
+                                const Text(
+                                  'READING RECEIPT',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 12,
+                                    letterSpacing: 3,
+                                  ),
+                                ),
                                 const SizedBox(height: 24),
                                 const _DashedDivider(),
                                 const SizedBox(height: 24),
-                                
-                                Text(widget.data.bookTitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black87, fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Pretendard')),
+
+                                Text(
+                                  widget.data.bookTitle,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    fontFamily: 'Pretendard',
+                                  ),
+                                ),
                                 const SizedBox(height: 8),
-                                Text(widget.data.bookAuthor, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 15, fontFamily: 'Pretendard')),
+                                Text(
+                                  widget.data.bookAuthor,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 15,
+                                    fontFamily: 'Pretendard',
+                                  ),
+                                ),
                                 const SizedBox(height: 24),
                                 const _DashedDivider(),
                                 const SizedBox(height: 24),
-                                
-                                _ReceiptRow('DATE', '${DateTime.now().year}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().day.toString().padLeft(2, '0')}'),
+
+                                _ReceiptRow(
+                                  'DATE',
+                                  '${DateTime.now().year}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().day.toString().padLeft(2, '0')}',
+                                ),
                                 const SizedBox(height: 8),
                                 _ReceiptRow('TIME', _timeText),
                                 const SizedBox(height: 8),
-                                _ReceiptRow('FOCUS', '${_focusPercent.toInt()}%'),
+                                _ReceiptRow(
+                                  'FOCUS',
+                                  '${_focusPercent.toInt()}%',
+                                ),
                                 const SizedBox(height: 8),
                                 _ReceiptRow('SCORE', '$_score PTS'),
                                 const SizedBox(height: 24),
                                 const _DashedDivider(),
                                 const SizedBox(height: 24),
-                                
+
                                 if (widget.data.sentences.isNotEmpty) ...[
                                   Text(
-                                    '"${widget.data.sentences.first.content}"', 
-                                    textAlign: TextAlign.center, 
-                                    style: const TextStyle(color: Colors.black87, fontSize: 15, fontStyle: FontStyle.italic, height: 1.5, fontFamily: 'Pretendard'),
+                                    '"${widget.data.sentences.first.content}"',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 15,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.5,
+                                      fontFamily: 'Pretendard',
+                                    ),
                                   ),
                                   const SizedBox(height: 24),
                                   const _DashedDivider(),
                                   const SizedBox(height: 24),
                                 ],
-                                
+
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: List.generate(40, (index) => Container(
-                                    width: (index * 7 % 3 + 1) * 1.2,
-                                    height: 45,
-                                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                                    color: Colors.black87,
-                                  )),
+                                  children: List.generate(
+                                    40,
+                                    (index) => Container(
+                                      width: (index * 7 % 3 + 1) * 1.2,
+                                      height: 45,
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 1.5,
+                                      ),
+                                      color: Colors.black87,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text('THANK YOU FOR READING', style: TextStyle(color: Colors.black54, fontSize: 10, letterSpacing: 2)),
+                                const Text(
+                                  'THANK YOU FOR READING',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 10,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -468,12 +543,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
                         // 수집 문장 분석
                         if (widget.data.sentences.isNotEmpty) ...[
-                          _SentencesSection(
-                              sentences: widget.data.sentences),
+                          _SentencesSection(sentences: widget.data.sentences),
                           const SizedBox(height: 12),
                           // 겹문장 힌트 카드
                           _OverlapHintCard(
-                              sentenceCount: widget.data.sentences.length),
+                            sentenceCount: widget.data.sentences.length,
+                          ),
                           const SizedBox(height: 16),
                         ] else ...[
                           _EmptySentenceCard(),
@@ -516,7 +591,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 }
 
-
 // ─── 점수 카드 ────────────────────────────────────────────────────────
 class _ScoreCard extends StatefulWidget {
   final int score;
@@ -536,9 +610,13 @@ class _ScoreCardState extends State<_ScoreCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200));
-    _progressAnim = Tween<double>(begin: 0, end: widget.score / 100)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _progressAnim = Tween<double>(
+      begin: 0,
+      end: widget.score / 100,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _ctrl.forward();
     });
@@ -571,21 +649,29 @@ class _ScoreCardState extends State<_ScoreCard>
         children: [
           Row(
             children: [
-              Text('세션 평가',
-                  style: AppTheme.captionLarge
-                      .copyWith(color: context.appTextTertiary)),
+              Text(
+                '세션 평가',
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: AppTheme.smoothBox(
                   color: context.appPrimaryAccent.withValues(alpha: 0.1),
                   radius: 12,
                 ),
-                child: Text(_scoreLabel,
-                    style: AppTheme.captionSmall.copyWith(
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  _scoreLabel,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appPrimaryAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
@@ -606,11 +692,18 @@ class _ScoreCardState extends State<_ScoreCard>
                           fontSize: 44,
                           fontWeight: FontWeight.w800,
                           height: 1.0,
-                          foreground: Theme.of(context).brightness == Brightness.dark
+                          foreground:
+                              Theme.of(context).brightness == Brightness.dark
                               ? (Paint()
-                                ..shader = const LinearGradient(
-                                  colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
-                                ).createShader(const Rect.fromLTWH(0, 0, 100, 60)))
+                                  ..shader =
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFF00FF00),
+                                          Color(0xFF00CC6A),
+                                        ],
+                                      ).createShader(
+                                        const Rect.fromLTWH(0, 0, 100, 60),
+                                      ))
                               : null,
                           color: Theme.of(context).brightness == Brightness.dark
                               ? null
@@ -618,11 +711,13 @@ class _ScoreCardState extends State<_ScoreCard>
                         ),
                       ),
                       Padding(
-                        padding:
-                            const EdgeInsets.only(bottom: 6, left: 2),
-                        child: Text('점',
-                            style: AppTheme.headingSmall.copyWith(
-                                color: context.appTextSecondary)),
+                        padding: const EdgeInsets.only(bottom: 6, left: 2),
+                        child: Text(
+                          '점',
+                          style: AppTheme.headingSmall.copyWith(
+                            color: context.appTextSecondary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -646,7 +741,9 @@ class _ScoreCardState extends State<_ScoreCard>
           Text(
             widget.evalText,
             style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextSecondary, height: 1.6),
+              color: context.appTextSecondary,
+              height: 1.6,
+            ),
           ),
         ],
       ),
@@ -666,32 +763,36 @@ class _SentencesSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('수집한 문장',
-                style: AppTheme.headingSmall
-                    .copyWith(color: context.appTextPrimary)),
+            Text(
+              '수집한 문장',
+              style: AppTheme.headingSmall.copyWith(
+                color: context.appTextPrimary,
+              ),
+            ),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: AppTheme.smoothBox(
                 color: context.appPrimaryAccent.withValues(alpha: 0.1),
                 radius: 10,
               ),
-              child: Text('${sentences.length}',
-                  style: AppTheme.captionSmall.copyWith(
-                      color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                '${sentences.length}',
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ...sentences.asMap().entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _SentenceAnalysisCard(
-                entry: e.value,
-                index: e.key,
-              ),
-            )),
+        ...sentences.asMap().entries.map(
+          (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _SentenceAnalysisCard(entry: e.value, index: e.key),
+          ),
+        ),
       ],
     );
   }
@@ -708,30 +809,30 @@ class _SentenceAnalysisCard extends StatelessWidget {
 
     final (Color tagColor, IconData tagIcon, String tagDesc) = switch (tag) {
       _SentenceTag.resonance => (
-          context.appPrimaryAccent,
-          Icons.people_rounded,
-          '${_resonanceCount(entry.content)}명의 독자가 이 문장에 밑줄을 그었어요',
-        ),
+        context.appPrimaryAccent,
+        Icons.people_rounded,
+        '${_resonanceCount(entry.content)}명의 독자가 이 문장에 밑줄을 그었어요',
+      ),
       _SentenceTag.rare => (
-          const Color(0xFF7B9EFF),
-          Icons.explore_rounded,
-          '이 문장을 발견한 독자는 아직 ${_rareCount(entry.content)}명뿐이에요',
-        ),
+        const Color(0xFF7B9EFF),
+        Icons.explore_rounded,
+        '이 문장을 발견한 독자는 아직 ${_rareCount(entry.content)}명뿐이에요',
+      ),
       _SentenceTag.peak => (
-          const Color(0xFFFB923C),
-          Icons.menu_book_rounded,
-          '이 책에서 가장 많이 수집된 문장이에요',
-        ),
+        const Color(0xFFFB923C),
+        Icons.menu_book_rounded,
+        '이 책에서 가장 많이 수집된 문장이에요',
+      ),
       _SentenceTag.viral => (
-          const Color(0xFFF87171),
-          Icons.local_fire_department_rounded,
-          '${_viralCount(entry.content)}명이 이 문장을 공유했어요',
-        ),
+        const Color(0xFFF87171),
+        Icons.local_fire_department_rounded,
+        '${_viralCount(entry.content)}명이 이 문장을 공유했어요',
+      ),
       _SentenceTag.normal => (
-          context.appTextTertiary,
-          Icons.format_quote_rounded,
-          '수집한 문장',
-        ),
+        context.appTextTertiary,
+        Icons.format_quote_rounded,
+        '수집한 문장',
+      ),
     };
 
     final isSpecial = tag != _SentenceTag.normal;
@@ -758,7 +859,10 @@ class _SentenceAnalysisCard extends StatelessWidget {
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius.only(
                   topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                  topRight: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
+                  topRight: SmoothRadius(
+                    cornerRadius: 15,
+                    cornerSmoothing: 0.6,
+                  ),
                 ),
               ),
             ),
@@ -767,12 +871,14 @@ class _SentenceAnalysisCard extends StatelessWidget {
                 Icon(tagIcon, size: 14, color: tagColor),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(tagDesc,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: tagColor,
-                        fontWeight: isSpecial ? FontWeight.w500 : FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    tagDesc,
+                    style: AppTheme.captionSmall.copyWith(
+                      color: tagColor,
+                      fontWeight: isSpecial ? FontWeight.w500 : FontWeight.w400,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -791,16 +897,16 @@ class _SentenceAnalysisCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.appCardElevated,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border(
-                      left: BorderSide(color: tagColor, width: 3),
+                    border: Border(left: BorderSide(color: tagColor, width: 3)),
+                  ),
+                  child: Text(
+                    '"${entry.content}"',
+                    style: AppTheme.bodyMedium.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: context.appTextPrimary,
+                      height: 1.6,
                     ),
                   ),
-                  child: Text('"${entry.content}"',
-                      style: AppTheme.bodyMedium.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: context.appTextPrimary,
-                        height: 1.6,
-                      )),
                 ),
                 // 내 생각 (있을 때만)
                 if (entry.thought.isNotEmpty) ...[
@@ -808,16 +914,20 @@ class _SentenceAnalysisCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.edit_note_rounded,
-                          size: 14,
-                          color: context.appAccentColor.withValues(alpha: 0.8)),
+                      Icon(
+                        Icons.edit_note_rounded,
+                        size: 14,
+                        color: context.appAccentColor.withValues(alpha: 0.8),
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(entry.thought,
-                            style: AppTheme.bodySmall.copyWith(
-                              color: context.appTextSecondary,
-                              height: 1.5,
-                            )),
+                        child: Text(
+                          entry.thought,
+                          style: AppTheme.bodySmall.copyWith(
+                            color: context.appTextSecondary,
+                            height: 1.5,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -840,27 +950,34 @@ class _EmptySentenceCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
-        side: BorderSide(
-            color: context.appBorder.withValues(alpha: 0.5)),
+        side: BorderSide(color: context.appBorder.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          Icon(Icons.format_quote_rounded,
-              color: context.appTextTertiary, size: 28),
+          Icon(
+            Icons.format_quote_rounded,
+            color: context.appTextTertiary,
+            size: 28,
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('다음엔 문장도 수집해봐요',
-                    style: AppTheme.bodySmall.copyWith(
-                        color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  '다음엔 문장도 수집해봐요',
+                  style: AppTheme.bodySmall.copyWith(
+                    color: context.appTextPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
-                    '문장 기록 버튼으로 마음에 드는 문장을\n저장하면 겹문장 분석을 볼 수 있어요',
-                    style: AppTheme.captionLarge
-                        .copyWith(color: context.appTextTertiary)),
+                  '문장 기록 버튼으로 마음에 드는 문장을\n저장하면 겹문장 분석을 볼 수 있어요',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -942,23 +1059,30 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon,
-              size: 16,
+          Icon(
+            icon,
+            size: 16,
+            color: highlight
+                ? context.appPrimaryAccent
+                : context.appTextTertiary,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: AppTheme.bodyLarge.copyWith(
               color: highlight
                   ? context.appPrimaryAccent
-                  : context.appTextTertiary),
-          const SizedBox(height: 4),
-          Text(value,
-              style: AppTheme.bodyLarge.copyWith(
-                color: highlight
-                    ? context.appPrimaryAccent
-                    : context.appTextPrimary,
-                fontWeight: FontWeight.w700,
-              )),
+                  : context.appTextPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: AppTheme.captionSmall
-                  .copyWith(color: context.appTextTertiary)),
+          Text(
+            label,
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+            ),
+          ),
         ],
       ),
     );
@@ -968,11 +1092,7 @@ class _StatItem extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 36,
-      color: context.appBorder,
-    );
+    return Container(width: 1, height: 36, color: context.appBorder);
   }
 }
 
@@ -1031,7 +1151,6 @@ class _RecapActions extends StatelessWidget {
   }
 }
 
-
 // ─── 페이지 기록 카드 ─────────────────────────────────────────────────
 class _PageRecordCard extends StatelessWidget {
   final TextEditingController controller;
@@ -1057,12 +1176,16 @@ class _PageRecordCard extends StatelessWidget {
           color: context.appCard,
           radius: AppTheme.radiusLG,
           side: BorderSide(
-              color: context.appPrimaryAccent.withValues(alpha: 0.3)),
+            color: context.appPrimaryAccent.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.check_circle_rounded,
-                color: context.appPrimaryAccent, size: 20),
+            Icon(
+              Icons.check_circle_rounded,
+              color: context.appPrimaryAccent,
+              size: 20,
+            ),
             SizedBox(width: 12),
             Text(
               '페이지 기록이 저장됐어요',
@@ -1091,8 +1214,11 @@ class _PageRecordCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.bookmark_rounded,
-                  color: context.appPrimaryAccent, size: 18),
+              Icon(
+                Icons.bookmark_rounded,
+                color: context.appPrimaryAccent,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 '오늘 몇 쪽까지 읽었나요?',
@@ -1230,7 +1356,8 @@ class _CompletionDialog extends StatelessWidget {
           color: context.appCard,
           radius: AppTheme.radiusXL,
           side: BorderSide(
-              color: context.appPrimaryAccent.withValues(alpha: 0.25)),
+            color: context.appPrimaryAccent.withValues(alpha: 0.25),
+          ),
           shadows: [
             BoxShadow(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),
@@ -1396,9 +1523,7 @@ class _OverlapHintCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const TextSpan(
-                        text: '의 문장을 다른 독자도 기록했어요',
-                      ),
+                      const TextSpan(text: '의 문장을 다른 독자도 기록했어요'),
                     ],
                   ),
                 ),
@@ -1449,8 +1574,10 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    _anim = Tween<double>(begin: 0, end: widget.focusPercent / 100)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _anim = Tween<double>(
+      begin: 0,
+      end: widget.focusPercent / 100,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _ctrl.forward();
     });
@@ -1516,14 +1643,17 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
                   children: [
                     Text(
                       '집중도',
-                      style: AppTheme.captionLarge
-                          .copyWith(color: context.appTextTertiary),
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                      ),
                     ),
                     if (widget.exitCount > 0) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: AppTheme.smoothBox(
                           color: context.appCardElevated,
                           radius: 8,
@@ -1625,7 +1755,9 @@ class _DashedDivider extends StatelessWidget {
             return const SizedBox(
               width: dashWidth,
               height: dashHeight,
-              child: DecoratedBox(decoration: BoxDecoration(color: Colors.black26)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.black26),
+              ),
             );
           }),
         );
@@ -1643,8 +1775,24 @@ class _ReceiptRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13, letterSpacing: 1, fontWeight: FontWeight.w600)),
-        Text(value, style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Pretendard')),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.black54,
+            fontSize: 13,
+            letterSpacing: 1,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Pretendard',
+          ),
+        ),
       ],
     );
   }
@@ -1672,7 +1820,8 @@ class _SessionHeroCard extends StatelessWidget {
         gradient: AppTheme.greenCardGradient,
         radius: 20,
         side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.2)),
+          color: context.appPrimaryAccent.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -1682,27 +1831,45 @@ class _SessionHeroCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: Colors.white.withValues(alpha: 0.12),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 8,
+                  cornerSmoothing: 0.6,
+                ),
                 side: const BorderSide(color: Colors.white24),
               ),
             ),
-            child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 26),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(bookTitle, style: AppTheme.headingSmall.copyWith(color: Colors.white)),
+                Text(
+                  bookTitle,
+                  style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                ),
                 const SizedBox(height: 2),
-                Text(bookAuthor, style: AppTheme.captionLarge.copyWith(color: Colors.white.withValues(alpha: 0.75))),
+                Text(
+                  bookAuthor,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: Colors.white.withValues(alpha: 0.75),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     _HeroPill(icon: Icons.schedule_rounded, label: timeText),
                     const SizedBox(width: 8),
                     if (sentenceCount > 0)
-                      _HeroPill(icon: Icons.format_quote_rounded, label: '$sentenceCount문장'),
+                      _HeroPill(
+                        icon: Icons.format_quote_rounded,
+                        label: '$sentenceCount문장',
+                      ),
                   ],
                 ),
               ],
@@ -1733,10 +1900,15 @@ class _HeroPill extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: Colors.white),
           const SizedBox(width: 4),
-          Text(label, style: AppTheme.captionSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: AppTheme.captionSmall.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 }
-

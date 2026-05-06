@@ -52,13 +52,20 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
       };
 
   static Future<List<AladinBook>> _invoke(Map<String, dynamic> body) async {
-    final res = await Supabase.instance.client.functions.invoke(
-      'aladin-search',
-      body: body,
-    );
-    final data = res.data as Map<String, dynamic>;
-    final items = data['item'] as List<dynamic>? ?? [];
-    return items.cast<Map<String, dynamic>>().map(AladinBook.fromJson).toList();
+    try {
+      final res = await Supabase.instance.client.functions.invoke(
+        'aladin-search',
+        body: body,
+      );
+      final data = res.data as Map<String, dynamic>;
+      final items = data['item'] as List<dynamic>? ?? [];
+      return items.cast<Map<String, dynamic>>().map(AladinBook.fromJson).toList();
+    } catch (e) {
+      if (e is FunctionException) {
+        throw Exception('검색 서버 에러 (${e.status}): ${e.details ?? e.toString()}');
+      }
+      throw Exception('검색 중 오류가 발생했습니다: $e');
+    }
   }
 }
 

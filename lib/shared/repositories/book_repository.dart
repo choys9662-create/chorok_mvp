@@ -341,6 +341,17 @@ class BookRepository {
     return rows.map(IsarReadingSession.fromMap).toList();
   }
 
+  Future<List<Map<String, dynamic>>> getAllReadingLogs() async {
+    return _db.rawQuery('''
+      SELECT rs.started_at, rs.duration_seconds, rs.pages_read,
+             COALESCE(b.title, '알 수 없는 책') AS book_title,
+             COALESCE(b.author, '') AS book_author
+      FROM reading_sessions rs
+      LEFT JOIN books b ON rs.book_id = b.book_id
+      ORDER BY rs.started_at DESC
+    ''');
+  }
+
   // ── 앱 Book 모델 → DB upsert ──────────────────────────────────────────────
 
   Future<IsarBook> saveFromBook(Book book) {

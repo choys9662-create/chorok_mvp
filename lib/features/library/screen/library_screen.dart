@@ -1,8 +1,10 @@
 import 'package:figma_squircle/figma_squircle.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,6 +24,42 @@ import '../widget/book_detail_sheet.dart';
 import '../widget/today_goal_banner.dart';
 
 const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
+final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
+  if (_useMock) return const [];
+  if (kIsWeb) {
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return const [];
+    final rows = await client
+        .from('reading_sessions')
+        .select('ended_at, started_at, duration_seconds, books(title, author)')
+        .eq('user_id', userId)
+        .order('ended_at', ascending: false);
+    return (rows as List).map<ReadingLog>((r) {
+      final book = r['books'] as Map<String, dynamic>?;
+      final secs = (r['duration_seconds'] as num?)?.toInt() ?? 0;
+      final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
+      return (
+        date: dateStr != null ? DateTime.parse(dateStr) : DateTime.now(),
+        bookTitle: book?['title'] as String? ?? '알 수 없는 책',
+        bookAuthor: book?['author'] as String? ?? '',
+        minutes: (secs / 60).round(),
+        pages: 0,
+      );
+    }).toList();
+  }
+  final repo = ref.read(bookRepositoryProvider);
+  if (repo == null) return const [];
+  final rows = await repo.getAllReadingLogs();
+  return rows.map<ReadingLog>((r) => (
+    date: DateTime.parse(r['started_at'] as String),
+    bookTitle: r['book_title'] as String,
+    bookAuthor: r['book_author'] as String,
+    minutes: ((r['duration_seconds'] as num?)?.toInt() ?? 0) ~/ 60,
+    pages: (r['pages_read'] as num?)?.toInt() ?? 0,
+  )).toList();
+});
 
 // ─── 뷰 모드 / 정렬 옵션 ──────────────────────────────────────────────────
 enum _LibraryViewMode { grid, list }
@@ -175,16 +213,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 Consumer(
                   builder: (ctx, r, _) {
                     final books = r.watch(libraryProvider);
+                    final logs = _useMock
+                        ? mockReadingLogs
+                        : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
                     return _LibraryTab(
                       books: books,
+                      logs: logs,
                       onAddBook: () => ctx.push(AppConstants.routeSearch),
                     );
                   },
                 ),
                 const LibraryStatsView(scrollController: null),
-                LibraryCalendarView(
-                  logs: _useMock ? mockReadingLogs : const [],
-                  scrollController: null,
+                Consumer(
+                  builder: (ctx2, r, child) {
+                    final logs = _useMock
+                        ? mockReadingLogs
+                        : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
+                    return LibraryCalendarView(
+                      logs: logs,
+                      scrollController: null,
+                    );
+                  },
                 ),
               ],
             ),
@@ -200,10 +249,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 // ════════════════════════════════════════════════════════════════════════════
 class _LibraryTab extends StatefulWidget {
   final List<Book> books;
+  final List<ReadingLog> logs;
   final VoidCallback onAddBook;
 
   const _LibraryTab({
     required this.books,
+    required this.logs,
     required this.onAddBook,
   });
 
@@ -249,7 +300,7 @@ class _LibraryTabState extends State<_LibraryTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
-    final logs = _useMock ? mockReadingLogs : const <ReadingLog>[];
+    final logs = widget.logs;
     final todayMinutes = logs
         .where(
           (l) =>

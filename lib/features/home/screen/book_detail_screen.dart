@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 
 const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
@@ -295,9 +296,47 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     });
   }
 
-  void _toggleCompletion() {
+  Future<void> _toggleCompletion() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isCompleted = !_isCompleted);
+    if (_isCompleted) {
+      // 이미 완독 상태인 경우 취소 처리 (단순 토글)
+      setState(() => _isCompleted = false);
+      return;
+    }
+
+    // 완독 체크 시 축하 다이얼로그 표시
+    await _showCompletionDialog();
+  }
+
+  Future<void> _showCompletionDialog() async {
+    HapticFeedback.heavyImpact();
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _CompletionDialog(
+        bookTitle: widget.book.title,
+        onReflect: () {
+          Navigator.of(context).pop();
+          setState(() => _isCompleted = true);
+          context.push(
+            AppConstants.routeReflection,
+            extra: Book(
+              id: '', // 상세 데이터에 ID가 없는 경우 빈 문자열
+              title: widget.book.title,
+              author: widget.book.author,
+              totalPages: widget.book.totalPages,
+              currentPage: widget.book.totalPages,
+              status: ReadingStatus.completed,
+            ),
+          );
+        },
+        onLater: () {
+          Navigator.of(context).pop();
+          setState(() => _isCompleted = true);
+        },
+      ),
+    );
   }
 
   void _showMenu() {
@@ -1579,6 +1618,142 @@ class _OtherReaderCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+// ─── 완독 축하 다이얼로그 ─────────────────────────────────────────────
+
+class _CompletionDialog extends StatelessWidget {
+  final String bookTitle;
+  final VoidCallback onReflect;
+  final VoidCallback onLater;
+
+  const _CompletionDialog({
+    required this.bookTitle,
+    required this.onReflect,
+    required this.onLater,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: AppTheme.radiusXL,
+          side: BorderSide(
+            color: context.appPrimaryAccent.withValues(alpha: 0.25),
+          ),
+          shadows: [
+            BoxShadow(
+              color: context.appPrimaryAccent.withValues(alpha: 0.08),
+              blurRadius: 40,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 아이콘
+            Container(
+              width: 72,
+              height: 72,
+              decoration: AppTheme.smoothBox(
+                gradient: AppTheme.greenGradient,
+                radius: AppTheme.radiusLG,
+              ),
+              child: const Icon(
+                Icons.auto_stories_rounded,
+                color: AppTheme.darkBg,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Text(
+              '완독을 축하해요! 🎉',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: context.appTextPrimary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: context.appTextSecondary,
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // 감상 남기기
+            Semantics(
+              button: true,
+              label: '감상 남기기',
+              child: GestureDetector(
+                onTap: onReflect,
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: AppTheme.smoothBox(
+                    gradient: AppTheme.greenGradient,
+                    radius: AppTheme.radiusMD,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '감상 남기기',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.darkBg,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 나중에
+            Semantics(
+              button: true,
+              label: '나중에',
+              child: GestureDetector(
+                onTap: onLater,
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '나중에',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: context.appTextTertiary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
