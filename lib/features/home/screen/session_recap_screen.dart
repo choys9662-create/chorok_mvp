@@ -217,7 +217,16 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      if (repo == null) return;
+      if (repo == null) {
+        // DB 미초기화 (목업 모드 등) — 저장 없이 완료 처리
+        if (!mounted) return;
+        setState(() {
+          _isSavingPage = false;
+          _pageRecorded = true;
+        });
+        return;
+      }
+
       final result = await repo.updateProgress(
         bookId: bookId,
         newCurrentPage: newPage,

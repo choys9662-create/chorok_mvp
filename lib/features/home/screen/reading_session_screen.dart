@@ -134,6 +134,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _sessionStartedAt = DateTime.now();
     WidgetsBinding.instance.addObserver(this);
 
+    // 상태바 븰색 제거 (트랜스페런트 + 라이트 아이콘)
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.dark,        // iOS: light icons
+        statusBarIconBrightness: Brightness.light,   // Android: light icons
+      ),
+    );
+
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -180,6 +189,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _pulseCtrl.dispose();
     _moveCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     super.dispose();
   }
 
