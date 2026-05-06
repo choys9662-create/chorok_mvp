@@ -16,6 +16,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
@@ -220,6 +221,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       if (repo == null) {
         // DB 미초기화 (목업 모드 등) — 저장 없이 완료 처리
         if (!mounted) return;
+        // 동일하게 인메모리 상태도 갱신
+        ref.read(libraryProvider.notifier).updateCurrentPage(bookId, newPage);
         setState(() {
           _isSavingPage = false;
           _pageRecorded = true;
@@ -251,6 +254,10 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       }
 
       if (!mounted) return;
+
+      // libraryProvider 인메모리 상태 즉시 반영 (홈/서재 화면 기닥 없이 업데이트)
+      ref.read(libraryProvider.notifier).updateCurrentPage(bookId, newPage);
+
       setState(() {
         _isSavingPage = false;
         _pageRecorded = true;
