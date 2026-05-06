@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +16,6 @@ import '../../../core/services/stt_service.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
-import '../../timer/widget/session_goal_sheet.dart';
 import 'session_recap_screen.dart';
 
 const _kGreen = Color(0xFF00FF00);
@@ -78,11 +76,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
-
-  // 이탈 추적
-  int _exitCount = 0;
-  int _exitDurationSeconds = 0;
-  DateTime? _exitStartedAt;
+  int? _exitSeconds; // 이탈로 종료될 때 저장
 
   // STT / OCR (추후 활성화 예정)
   bool _isRecording = false;
@@ -165,35 +159,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      _exitStartedAt = DateTime.now();
-      if (ref.read(timerProvider).isRunning) {
-        ref.read(timerProvider.notifier).pause();
+      final t = ref.read(timerProvider);
+      if (t.isRunning || t.isPaused) {
+        _exitSeconds = t.seconds;
+        ref.read(timerProvider.notifier).stop();
       }
-    } else if (state == AppLifecycleState.resumed && _exitStartedAt != null) {
-      final elapsed = DateTime.now().difference(_exitStartedAt!).inSeconds;
-      _exitStartedAt = null;
-      setState(() {
-        _exitCount++;
-        _exitDurationSeconds += elapsed;
-      });
-      ref.read(timerProvider.notifier).resume();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              '다시 돌아왔어요 👋',
-              style: TextStyle(fontFamily: 'Pretendard', fontSize: 14),
-            ),
-            duration: const Duration(milliseconds: 1500),
-            backgroundColor: const Color(0xFF1A3D2B),
-            behavior: SnackBarBehavior.floating,
-            shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-            ),
-          ),
-        );
-      }
+    } else if (state == AppLifecycleState.resumed && _exitSeconds != null) {
+      _navigateToRecap(_exitSeconds!);
+      _exitSeconds = null;
     }
   }
 
@@ -206,23 +179,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _moveCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
-  }
-
-  Future<void> _openGoalSheet() async {
-    HapticFeedback.mediumImpact();
-    final goal = await showModalBottomSheet<SessionGoal>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => SessionGoalSheet(
-        currentPage: widget.startPage,
-        totalPages: widget.totalPages,
-        bookTitle: widget.bookTitle,
-      ),
-    );
-    if (goal != null && mounted) {
-      ref.read(timerProvider.notifier).updateGoal(goal);
-    }
   }
 
   // 초서 시트 열기 (공통)
@@ -245,7 +201,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     HapticFeedback.mediumImpact();
     final seconds = ref.read(timerProvider).seconds;
     ref.read(timerProvider.notifier).stop();
+    _navigateToRecap(seconds);
+  }
 
+  void _navigateToRecap(int seconds) {
     // 점수 계산 (recap 화면과 동일한 공식)
     final score =
         (45 +
@@ -267,8 +226,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         startPage: widget.startPage,
         totalPages: widget.totalPages,
         sessionStartedAt: _sessionStartedAt,
-        exitCount: _exitCount,
-        exitDurationSeconds: _exitDurationSeconds,
       ),
     );
   }
@@ -334,7 +291,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                         ignoring: !_isUiVisible,
                         child: _TopBar(
                           timer: timer,
-                          exitCount: _exitCount,
                           readersCount: readersCount,
                           onTogglePause: () {
                             HapticFeedback.mediumImpact();
@@ -357,18 +313,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                         ),
                       ),
 
-                      // ─ 중앙 타이머 ──────────────────────────────────
-                      Expanded(
-                        child: Center(
-                          child: IgnorePointer(
-                            ignoring: !_isUiVisible,
-                            child: _CenterTimerContent(
-                              timer: timer,
-                              onSetGoalTap: _openGoalSheet,
-                            ),
-                          ),
-                        ),
+                      // ─ 타이머 숫자 ──────────────────────────────────
+                      IgnorePointer(
+                        ignoring: !_isUiVisible,
+                        child: Center(child: _TimerDisplay(timer: timer)),
                       ),
+
+                      const Expanded(child: SizedBox()),
 
                       // ─ 하단 책 정보 + 초서 액션 바 ───────────────
                       IgnorePointer(
@@ -408,7 +359,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 // ─── 상단 컨트롤 바 (얇은 HUD) ────────────────────────────────────────
 class _TopBar extends StatelessWidget {
   final TimerData timer;
-  final int exitCount;
   final int readersCount;
   final VoidCallback onTogglePause;
   final VoidCallback onStopPress;
@@ -417,7 +367,6 @@ class _TopBar extends StatelessWidget {
 
   const _TopBar({
     required this.timer,
-    required this.exitCount,
     required this.readersCount,
     required this.onTogglePause,
     required this.onStopPress,
@@ -477,20 +426,6 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          if (exitCount > 0) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: AppTheme.smoothPill(
-                color: Colors.white.withValues(alpha: 0.07),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-              ),
-              child: Text(
-                '이탈 $exitCount회',
-                style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.45)),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
           GestureDetector(
             onTap: onTogglePause,
             child: Container(
@@ -546,84 +481,27 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-// ─── 중앙 타이머 (오브 위 오버레이) ─────────────────────────────────────
-class _CenterTimerContent extends StatelessWidget {
+// ─── 타이머 숫자 (상단 배치) ──────────────────────────────────────────
+class _TimerDisplay extends StatelessWidget {
   final TimerData timer;
-  final VoidCallback onSetGoalTap;
-
-  const _CenterTimerContent({
-    required this.timer,
-    required this.onSetGoalTap,
-  });
+  const _TimerDisplay({required this.timer});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          timer.formattedTime,
-          style: TextStyle(
-            fontSize: 60,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 3,
-            color: Colors.white.withValues(alpha: 0.95),
-            shadows: [
-              Shadow(color: _kGreen.withValues(alpha: 0.25), blurRadius: 32),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: 200,
-          child: _GradientProgressBar(
-            value: timer.goal?.type == SessionGoalType.time
-                ? (timer.seconds / timer.goal!.targetSeconds).clamp(0.0, 1.0)
-                : (timer.seconds % (45 * 60)) / (45 * 60),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              timer.seconds < 60
-                  ? '${timer.seconds}초 경과'
-                  : '${timer.seconds ~/ 60}분 경과',
-              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.4)),
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: onSetGoalTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      timer.goal != null && timer.goal!.type != SessionGoalType.free
-                          ? '목표 ${timer.goal!.label}'
-                          : '자유 독서 (목표 설정)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: timer.goalReached
-                            ? _kGreen.withValues(alpha: 0.85)
-                            : Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.edit_rounded, size: 12, color: Colors.white.withValues(alpha: 0.6)),
-                  ],
-                ),
-              ),
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        timer.formattedTime,
+        style: TextStyle(
+          fontSize: 60,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 3,
+          color: Colors.white.withValues(alpha: 0.45),
+          shadows: [
+            Shadow(color: _kGreen.withValues(alpha: 0.15), blurRadius: 32),
           ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -1086,37 +964,6 @@ class _FireflyPainter extends CustomPainter {
       old.time != time ||
       old.mutualCount != mutualCount ||
       old.nearbyCount != nearbyCount;
-}
-
-// ─── 그라디언트 진행 바 ────────────────────────────────────────────────
-class _GradientProgressBar extends StatelessWidget {
-  final double value;
-  const _GradientProgressBar({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) => Container(
-        height: 3,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: constraints.maxWidth * value.clamp(0.0, 1.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─── 배경 ─────────────────────────────────────────────────────────────
