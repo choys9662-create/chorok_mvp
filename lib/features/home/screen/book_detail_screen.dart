@@ -18,6 +18,7 @@ class BookDetailExtra {
   final int totalPages;
   final String lastRead;
   final int gradientIndex;
+  final List<String> savedSentences;
 
   const BookDetailExtra({
     required this.title,
@@ -26,6 +27,7 @@ class BookDetailExtra {
     required this.totalPages,
     required this.lastRead,
     required this.gradientIndex,
+    this.savedSentences = const [],
   });
 
   double get progress => totalPages > 0 ? currentPage / totalPages : 0.0;
@@ -280,9 +282,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _sentences = _useMock ? _buildMockSentences() : [];
+    _sentences = _useMock
+        ? _buildMockSentences()
+        : _savedToCollected(widget.book.savedSentences);
     _memos = _useMock ? _buildMockMemos() : [];
     _otherReaders = _useMock ? _buildMockOtherReaders() : [];
+  }
+
+  List<_CollectedSentence> _savedToCollected(List<String> saved) {
+    return saved.asMap().entries.map((e) => _CollectedSentence(
+      id: 'saved_${e.key}',
+      content: e.value,
+      page: 0,
+      collectedAt: DateTime.now(),
+    )).toList();
   }
 
   void _toggleExpansion(String id) {

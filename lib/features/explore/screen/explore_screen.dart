@@ -1,7 +1,9 @@
 import 'package:figma_squircle/figma_squircle.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
@@ -106,6 +108,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedCategoryIndex = 0;
   bool _isSearchFocused = false;
+  List<_BookData> _allBooks = _useMock ? _kMockBooks : const [];
   List<_BookData> _filteredBooks = _useMock ? _kMockBooks : const [];
   late final FocusNode _searchFocusNode;
 
@@ -117,6 +120,30 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchFocusNode.addListener(() {
       setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
     });
+    if (!_useMock && kIsWeb) _loadGlobalBooks();
+  }
+
+  Future<void> _loadGlobalBooks() async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('global_books')
+          .select('title, author, publisher, sentence_count, reader_count, category')
+          .order('reader_count', ascending: false)
+          .limit(50);
+      if (!mounted) return;
+      final books = (rows as List).map<_BookData>((r) => _BookData(
+        title: r['title'] as String? ?? '',
+        author: r['author'] as String? ?? '',
+        publisher: r['publisher'] as String? ?? '',
+        sentenceCount: (r['sentence_count'] as num?)?.toInt() ?? 0,
+        readerCount: (r['reader_count'] as num?)?.toInt() ?? 0,
+        genre: r['category'] as String? ?? '기타',
+      )).where((b) => b.title.isNotEmpty).toList();
+      setState(() {
+        _allBooks = books;
+        _filteredBooks = books;
+      });
+    } catch (_) {}
   }
 
   @override
@@ -130,9 +157,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredBooks = _useMock ? _kMockBooks : const [];
+        _filteredBooks = _allBooks;
       } else {
-        _filteredBooks = (_useMock ? _kMockBooks : const <_BookData>[]).where((b) {
+        _filteredBooks = _allBooks.where((b) {
           return b.title.toLowerCase().contains(query) ||
               b.author.toLowerCase().contains(query);
         }).toList();
@@ -144,7 +171,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     HapticFeedback.selectionClick();
     _searchFocusNode.unfocus();
     _searchController.clear();
-    setState(() => _filteredBooks = _kMockBooks);
+    setState(() => _filteredBooks = _allBooks);
   }
 
   void _onCategorySelected(int index) {
@@ -153,10 +180,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   List<_BookData> get _categoryFilteredBooks {
-    if (!_useMock) return const [];
-    if (_selectedCategoryIndex == 0) return _kMockBooks;
+    if (_selectedCategoryIndex == 0) return _allBooks;
     final category = _kCategories[_selectedCategoryIndex];
-    return _kMockBooks.where((b) => b.genre == category).toList();
+    return _allBooks.where((b) => b.genre == category).toList();
   }
 
   @override

@@ -266,6 +266,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
             totalPages: b.totalPages,
             lastRead: '최근 읽음',
             gradientIndex: gradIdx,
+            savedSentences: b.savedSentences,
           ),
         );
       },
