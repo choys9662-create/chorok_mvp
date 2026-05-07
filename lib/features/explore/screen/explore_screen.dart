@@ -341,12 +341,7 @@ class _SearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              readOnly: true,
-              showCursor: false,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                context.push(AppConstants.routeSearch);
-              },
+              onTap: () => HapticFeedback.selectionClick(),
               style: AppTheme.bodyMedium.copyWith(
                 fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
