@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/library_provider.dart';
 
 const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
 class BookDetailExtra {
+  final String bookId;
   final String title;
   final String author;
   final int currentPage;
@@ -21,6 +24,7 @@ class BookDetailExtra {
   final List<String> savedSentences;
 
   const BookDetailExtra({
+    required this.bookId,
     required this.title,
     required this.author,
     required this.currentPage,
@@ -357,7 +361,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _MenuSheet(),
+      builder: (_) => _MenuSheet(
+        bookId: widget.book.bookId,
+        bookTitle: widget.book.title,
+      ),
     );
   }
 
@@ -505,11 +512,19 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   HapticFeedback.selectionClick();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('메모 작성 기능은 곧 지원돼요'),
-                      backgroundColor: AppTheme.primary,
+                      content: Text(
+                        '메모 작성 기능은 곧 지원돼요',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      backgroundColor: context.appCardElevated,
                       behavior: SnackBarBehavior.floating,
-                      shape:
-                          AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                      shape: AppTheme.smoothShape(
+                        radius: AppTheme.radiusMD,
+                        side: BorderSide(color: context.appBorder),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                       duration: const Duration(seconds: 2),
                     ),
                   );
@@ -1366,11 +1381,40 @@ class _MemoCard extends StatelessWidget {
 
 // ─── 메뉴 시트 ───────────────────────────────────────────────────────────
 
-class _MenuSheet extends StatelessWidget {
-  const _MenuSheet();
+class _MenuSheet extends ConsumerWidget {
+  final String bookId;
+  final String bookTitle;
+
+  const _MenuSheet({required this.bookId, required this.bookTitle});
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    Navigator.pop(context); // 시트 닫기
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('서재에서 제거'),
+        content: Text('\'$bookTitle\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('제거'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+    ref.read(libraryProvider.notifier).deleteBook(bookId);
+    context.go('/home');
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.all(AppTheme.screenPadding),
       decoration: AppTheme.smoothBox(
@@ -1398,10 +1442,19 @@ class _MenuSheet extends StatelessWidget {
               HapticFeedback.selectionClick();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('책 정보 수정 기능은 곧 지원돼요'),
-                  backgroundColor: AppTheme.primary,
+                  content: Text(
+                    '책 정보 수정 기능은 곧 지원돼요',
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appTextPrimary,
+                    ),
+                  ),
+                  backgroundColor: context.appCardElevated,
                   behavior: SnackBarBehavior.floating,
-                  shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                  shape: AppTheme.smoothShape(
+                    radius: AppTheme.radiusMD,
+                    side: BorderSide(color: context.appBorder),
+                  ),
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -1442,19 +1495,7 @@ class _MenuSheet extends StatelessWidget {
             icon: Icons.delete_outline_rounded,
             label: '서재에서 제거',
             color: const Color(0xFFCF6679),
-            onTap: () {
-              Navigator.pop(context);
-              HapticFeedback.heavyImpact();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('서재 제거 기능은 곧 지원돼요'),
-                  backgroundColor: AppTheme.primary,
-                  behavior: SnackBarBehavior.floating,
-                  shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
+            onTap: () => _confirmDelete(context, ref),
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
         ],

@@ -260,6 +260,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
         context.push(
           AppConstants.routeBookDetail,
           extra: BookDetailExtra(
+            bookId: b.id,
             title: b.title,
             author: b.author,
             currentPage: b.currentPage,
