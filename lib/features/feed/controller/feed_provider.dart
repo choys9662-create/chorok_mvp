@@ -26,7 +26,7 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
   Future<List<FeedSentence>> _load() async {
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return const [];
-    final all = await repo.getAllChoseo();
+    final all = await repo.getAllChoseo(limit: 50);
     return all.map(_toFeedSentence).toList();
   }
 

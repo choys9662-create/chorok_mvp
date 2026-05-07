@@ -12,6 +12,7 @@ class IsarBook {
   final int currentPage;
   final int totalPages;
   final IsarReadingStatus status;
+  final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,6 +26,7 @@ class IsarBook {
     this.currentPage = 0,
     this.totalPages = 0,
     this.status = IsarReadingStatus.reading,
+    this.completedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,6 +36,7 @@ class IsarBook {
     int? currentPage,
     int? totalPages,
     IsarReadingStatus? status,
+    DateTime? completedAt,
     DateTime? updatedAt,
   }) {
     return IsarBook(
@@ -46,6 +49,7 @@ class IsarBook {
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       status: status ?? this.status,
+      completedAt: completedAt ?? this.completedAt,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -60,6 +64,7 @@ class IsarBook {
         'current_page': currentPage,
         'total_pages': totalPages,
         'status': status.name,
+        'completed_at': completedAt?.toIso8601String(),
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
@@ -77,6 +82,9 @@ class IsarBook {
           (e) => e.name == (m['status'] as String? ?? 'reading'),
           orElse: () => IsarReadingStatus.reading,
         ),
+        completedAt: m['completed_at'] != null
+            ? DateTime.tryParse(m['completed_at'] as String)
+            : null,
         createdAt: DateTime.parse(m['created_at'] as String),
         updatedAt: DateTime.parse(m['updated_at'] as String),
       );

@@ -151,12 +151,12 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   @override
   Future<AnalyticsState> build() async {
     if (_useMock) return const AnalyticsState();
-    return _load();
+    final repo = ref.watch(bookRepositoryProvider);
+    if (repo == null) return const AnalyticsState();
+    return _load(repo);
   }
 
-  Future<AnalyticsState> _load() async {
-    final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return const AnalyticsState();
+  Future<AnalyticsState> _load(BookRepository repo) async {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -183,19 +183,20 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
 
     // ─── Parallel queries ─────────────────────────────────────────────────
     final results = await Future.wait([
-      repo.getSessionsInRange(weekStart, weekEnd),           // 0
-      repo.getSessionsInRange(prevWeekStart, weekStart),     // 1
-      repo.getReadingLogsInRange(weekStart, weekEnd),        // 2
-      repo.getChoseoInRange(weekStart, weekEnd),             // 3
-      repo.getSessionsInRange(monthStart, nextMonthStart),   // 4
-      repo.getSessionsInRange(prevMonthStart, monthStart),   // 5
-      repo.getChoseoInRange(monthStart, nextMonthStart),     // 6
-      repo.getSessionsInRange(yearStart, yearEnd),           // 7
-      repo.getChoseoInRange(yearStart, yearEnd),             // 8
-      repo.getHeatmapDataForYear(now.year),                  // 9
-      repo.getMonthlyMinutesForYear(now.year),               // 10
-      repo.getBooksByStatus(IsarReadingStatus.completed),    // 11
-      repo.getAllReadingLogs(),                               // 12
+      repo.getSessionsInRange(weekStart, weekEnd),              // 0
+      repo.getSessionsInRange(prevWeekStart, weekStart),        // 1
+      repo.getReadingLogsInRange(weekStart, weekEnd),           // 2
+      repo.getChoseoInRange(weekStart, weekEnd),                // 3
+      repo.getSessionsInRange(monthStart, nextMonthStart),      // 4
+      repo.getSessionsInRange(prevMonthStart, monthStart),      // 5
+      repo.getChoseoInRange(monthStart, nextMonthStart),        // 6
+      repo.getSessionsInRange(yearStart, yearEnd),              // 7
+      repo.getChoseoInRange(yearStart, yearEnd),                // 8
+      repo.getHeatmapDataForYear(now.year),                     // 9
+      repo.getMonthlyMinutesForYear(now.year),                  // 10
+      repo.getBooksByStatus(IsarReadingStatus.completed),       // 11
+      repo.getAllReadingLogs(),                                  // 12
+      repo.getCompletedBooksInRange(weekStart, weekEnd),        // 13
     ]);
 
     final weekSess = results[0] as List<IsarReadingSession>;
@@ -211,6 +212,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final yearMonthlyMinutes = results[10] as List<int>;
     final completedBooks = results[11] as List<IsarBook>;
     final allLogs = results[12] as List<Map<String, dynamic>>;
+    final weekCompletedBooks = results[13] as List<IsarBook>;
 
     // ─── Week 집계 ────────────────────────────────────────────────────────
     final weekTotal = weekSess.fold(0, (s, r) => s + r.durationSeconds);
@@ -279,7 +281,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       totalSeconds: weekTotal,
       choseoCount: weekChoseo.length,
       focusScore: wFocus,
-      completedCount: completedBooks.length,
+      completedCount: weekCompletedBooks.length,
       readDays: weekDaySet.length,
       periodDays: 7,
     );
@@ -323,8 +325,10 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   }
 
   Future<void> refresh() async {
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return;
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
+    state = await AsyncValue.guard(() => _load(repo));
   }
 }
 

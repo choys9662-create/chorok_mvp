@@ -43,7 +43,7 @@ Future<Database> openAppDatabase() async {
 
   return openDatabase(
     path,
-    version: 4,
+    version: 5,
     onCreate: (db, version) async {
       await _createAllTables(db);
     },
@@ -86,6 +86,10 @@ Future<Database> openAppDatabase() async {
         // choseo에 reflection 컬럼 추가
         await db.execute('ALTER TABLE choseo ADD COLUMN reflection TEXT');
       }
+      if (oldVersion < 5) {
+        // books에 완독 일시 컬럼 추가
+        await db.execute('ALTER TABLE books ADD COLUMN completed_at TEXT');
+      }
     },
   );
 }
@@ -102,6 +106,7 @@ Future<void> _createAllTables(Database db) async {
       current_page INTEGER NOT NULL DEFAULT 0,
       total_pages  INTEGER NOT NULL DEFAULT 0,
       status       TEXT    NOT NULL DEFAULT 'reading',
+      completed_at TEXT,
       created_at   TEXT    NOT NULL,
       updated_at   TEXT    NOT NULL
     )
@@ -244,11 +249,13 @@ class BookRepository {
         justCompleted = true;
       }
 
+      final completedAt = justCompleted ? DateTime.now() : existing.completedAt;
       await _db.update(
         'books',
         {
           'current_page': newCurrentPage,
           'status': newStatus.name,
+          if (justCompleted) 'completed_at': completedAt!.toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
         },
         where: 'book_id = ?',
@@ -258,6 +265,7 @@ class BookRepository {
       updatedBook = existing.copyWith(
         currentPage: newCurrentPage,
         status: newStatus,
+        completedAt: completedAt,
         updatedAt: DateTime.now(),
       );
 
@@ -451,8 +459,8 @@ class BookRepository {
     return choseo;
   }
 
-  Future<List<IsarChoseo>> getAllChoseo() async {
-    final rows = await _db.query('choseo', orderBy: 'created_at DESC');
+  Future<List<IsarChoseo>> getAllChoseo({int? limit}) async {
+    final rows = await _db.query('choseo', orderBy: 'created_at DESC', limit: limit);
     return rows.map(IsarChoseo.fromMap).toList();
   }
 
@@ -567,9 +575,17 @@ class BookRepository {
     return total / days;
   }
 
-  // ── 독서 스트릭 계산 ──────────────────────────────────────────────────────
-
   // ── 날짜 범위 조회 ────────────────────────────────────────────────────────
+
+  Future<List<IsarBook>> getCompletedBooksInRange(
+      DateTime from, DateTime to) async {
+    final rows = await _db.query(
+      'books',
+      where: 'completed_at >= ? AND completed_at < ?',
+      whereArgs: [from.toIso8601String(), to.toIso8601String()],
+    );
+    return rows.map(IsarBook.fromMap).toList();
+  }
 
   Future<List<IsarReadingSession>> getSessionsInRange(
       DateTime from, DateTime to) async {
