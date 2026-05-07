@@ -71,9 +71,14 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.book.title} — $_currentPage쪽으로 업데이트했어요'),
+        content: Text(
+          '${widget.book.title} — $_currentPage쪽으로 업데이트했어요',
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       ),
     );
   }
@@ -104,9 +109,14 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.book.title}을(를) 서재에서 제거했어요'),
+        content: Text(
+          '${widget.book.title}을(를) 서재에서 제거했어요',
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       ),
     );
   }
@@ -426,7 +436,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     backgroundColor: AppTheme.primary,
                     foregroundColor: isDark ? AppTheme.primaryLight : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: AppTheme.smoothShape(radius: 12),
+                    shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
                   ),
                 ),
               ),

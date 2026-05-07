@@ -171,9 +171,17 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
         setState(() => _isPressed = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${b.title} 상세 정보 (곧 지원)'),
-            backgroundColor: AppTheme.primary,
+            content: Text(
+              '${b.title} 상세 정보 (곧 지원)',
+              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
+            ),
+            backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
+            shape: AppTheme.smoothShape(
+              radius: AppTheme.radiusMD,
+              side: BorderSide(color: context.appBorder),
+            ),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           ),
         );
       },
@@ -329,9 +337,12 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                   _isAdded
                                       ? '${b.title}을(를) 읽고 싶은 책에 추가했어요'
                                       : '${b.title}을(를) 서재에서 제거했어요',
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                                 backgroundColor: AppTheme.primary,
                                 behavior: SnackBarBehavior.floating,
+                                shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                               ),
                             );
                           },
