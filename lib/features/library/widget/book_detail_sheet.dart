@@ -78,13 +78,33 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     );
   }
 
-  void _deleteBook(BuildContext context) {
+  Future<void> _deleteBook(BuildContext context) async {
     HapticFeedback.selectionClick();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('서재에서 제거'),
+        content: Text('\'${widget.book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('제거'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (!context.mounted) return;
     ref.read(libraryProvider.notifier).deleteBook(widget.book.id);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.book.title}을(를) 삭제했어요'),
+        content: Text('${widget.book.title}을(를) 서재에서 제거했어요'),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
       ),

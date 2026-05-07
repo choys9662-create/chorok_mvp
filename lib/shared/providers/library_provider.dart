@@ -68,7 +68,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final idx = state.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
     final old = state[idx];
-    final clamped = newPage.clamp(0, old.totalPages);
+    final clamped = old.totalPages > 0 ? newPage.clamp(0, old.totalPages) : newPage;
     final updated = Book(
       id: old.id,
       title: old.title,

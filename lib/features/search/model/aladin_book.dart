@@ -8,6 +8,7 @@ class AladinBook {
   final String? coverUrl;
   final String? isbn13;
   final String? description;
+  final int totalPages;
 
   const AladinBook({
     required this.title,
@@ -16,6 +17,7 @@ class AladinBook {
     this.coverUrl,
     this.isbn13,
     this.description,
+    this.totalPages = 0,
   });
 
   factory AladinBook.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,9 @@ class AladinBook {
         .first
         .trim();
 
+    final subInfo = json['subInfo'] as Map<String, dynamic>?;
+    final totalPages = (subInfo?['itemPage'] as num?)?.toInt() ?? 0;
+
     return AladinBook(
       title: title.isEmpty ? (json['title'] as String? ?? '') : title,
       author: author.isEmpty ? rawAuthor : author,
@@ -40,6 +45,7 @@ class AladinBook {
       coverUrl: json['cover'] as String?,
       isbn13: json['isbn13'] as String?,
       description: json['description'] as String?,
+      totalPages: totalPages,
     );
   }
 
@@ -54,6 +60,7 @@ class AladinBook {
       coverUrl: coverUrl,
       isbn: isbn13,
       status: status,
+      totalPages: totalPages,
     );
   }
 }
