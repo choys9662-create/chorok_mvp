@@ -9,9 +9,12 @@ import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
+import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
-// ─── 트렌딩 책 목업 ───────────────────────────────────────────────────────────
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
+// ─── 트렌딩 책 ───────────────────────────────────────────────────────────────
 typedef _TrendingBook = ({
   String title,
   String author,
@@ -19,13 +22,32 @@ typedef _TrendingBook = ({
   int gradientIndex,
 });
 
-const List<_TrendingBook> _kTrendingBooks = [
+const List<_TrendingBook> _kMockTrendingBooks = [
   (title: '채식주의자', author: '한강', sentenceCount: 142, gradientIndex: 0),
   (title: '파친코', author: '이민진', sentenceCount: 98, gradientIndex: 2),
   (title: '아몬드', author: '손원평', sentenceCount: 87, gradientIndex: 4),
   (title: '소년이 온다', author: '한강', sentenceCount: 76, gradientIndex: 3),
   (title: '82년생 김지영', author: '조남주', sentenceCount: 61, gradientIndex: 1),
 ];
+
+List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
+  final counts = <String, ({String author, int count})>{};
+  for (final s in sentences) {
+    final existing = counts[s.bookTitle];
+    counts[s.bookTitle] = (
+      author: s.bookAuthor,
+      count: (existing?.count ?? 0) + 1,
+    );
+  }
+  final sorted = counts.entries.toList()
+    ..sort((a, b) => b.value.count.compareTo(a.value.count));
+  return sorted.take(5).toList().asMap().entries.map((e) => (
+        title: e.value.key,
+        author: e.value.value.author,
+        sentenceCount: e.value.value.count,
+        gradientIndex: e.key,
+      )).toList();
+}
 
 /// 피드 스크린: 소식(소셜 활동) & 발견(문장 탐색)
 class FeedScreen extends ConsumerStatefulWidget {
@@ -37,13 +59,10 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 enum _FeedFilter { latest, popular, overlap }
 
-// ─── 상태 ──────────────────────────────────────────────────────────────
-class _FeedScreenState extends ConsumerState<FeedScreen> {
-  _FeedFilter _filter = _FeedFilter.latest;
-  bool _isRefreshing = false;
-
-  // ── 목업 데이터: 겹문장 알고리즘 테스트를 위해 유사한 문장 포함 ────────
-  List<FeedSentence> get _sentences => [
+// ─── 목업 문장 (USE_MOCK=true 전용) ──────────────────────────────────────────
+List<FeedSentence> _kMockSentences() {
+  final now = DateTime.now();
+  return [
     FeedSentence(
       id: '1',
       content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
@@ -51,7 +70,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'reader_jin',
-      savedAt: DateTime.now().subtract(const Duration(minutes: 23)),
+      savedAt: now.subtract(const Duration(minutes: 23)),
       empathyCount: 42,
       commentCount: 3,
     ),
@@ -62,7 +81,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'leafy_reader',
-      savedAt: DateTime.now().subtract(const Duration(minutes: 45)),
+      savedAt: now.subtract(const Duration(minutes: 45)),
       empathyCount: 28,
       commentCount: 1,
     ),
@@ -73,7 +92,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '채식주의자',
       bookAuthor: '한강',
       username: 'green_pages',
-      savedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      savedAt: now.subtract(const Duration(hours: 2)),
       empathyCount: 15,
     ),
     FeedSentence(
@@ -83,7 +102,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '82년생 김지영',
       bookAuthor: '조남주',
       username: 'bookworm_su',
-      savedAt: DateTime.now().subtract(const Duration(hours: 1)),
+      savedAt: now.subtract(const Duration(hours: 1)),
       empathyCount: 87,
       commentCount: 5,
       isLiked: true,
@@ -95,18 +114,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '아몬드',
       bookAuthor: '손원평',
       username: 'seoulreader',
-      savedAt: DateTime.now().subtract(const Duration(hours: 3)),
+      savedAt: now.subtract(const Duration(hours: 3)),
       empathyCount: 156,
       commentCount: 8,
-    ),
-    FeedSentence(
-      id: '8',
-      content: '나는 괴물이 아니에요. 그냥 달라요. 그뿐이에요.',
-      bookTitle: '아몬드',
-      bookAuthor: '손원평',
-      username: 'midnight_books',
-      savedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      empathyCount: 34,
     ),
     FeedSentence(
       id: '4',
@@ -115,7 +125,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '밤을 걷는 선비',
       bookAuthor: '이지운',
       username: 'midnight_books',
-      savedAt: DateTime.now().subtract(const Duration(hours: 5)),
+      savedAt: now.subtract(const Duration(hours: 5)),
       empathyCount: 23,
     ),
     FeedSentence(
@@ -125,15 +135,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       bookTitle: '독서의 기쁨',
       bookAuthor: '헤르만 헤세',
       username: 'hesse_lover',
-      savedAt: DateTime.now().subtract(const Duration(hours: 8)),
+      savedAt: now.subtract(const Duration(hours: 8)),
       empathyCount: 64,
       commentCount: 2,
     ),
   ];
+}
 
-  // ── 겹문장 그룹 (OverlapDetector 알고리즘으로 동적 계산) ────────────
-  List<OverlapGroup> get _overlapGroups {
-    final entries = _sentences
+// ─── 상태 ──────────────────────────────────────────────────────────────
+class _FeedScreenState extends ConsumerState<FeedScreen> {
+  _FeedFilter _filter = _FeedFilter.latest;
+  bool _isRefreshing = false;
+
+  List<OverlapGroup> _overlapGroups(List<FeedSentence> sentences) {
+    final entries = sentences
         .map((s) => SentenceEntry(
               id: s.id,
               content: s.content,
@@ -144,10 +159,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return OverlapDetector.findGroups(entries);
   }
 
-  // ── 겹문장에 속한 문장 ID (개별 카드에서 겹문장 표시용) ────────────
-  Set<String> get _overlapSentenceIds {
+  Set<String> _overlapSentenceIds(List<OverlapGroup> groups) {
     final ids = <String>{};
-    for (final group in _overlapGroups) {
+    for (final group in groups) {
       for (final m in group.members) {
         ids.add(m.sentenceId);
       }
@@ -155,31 +169,40 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return ids;
   }
 
-  List<FeedSentence> get _filteredSentences {
-    final all = _sentences;
+  List<FeedSentence> _filtered(List<FeedSentence> all) {
     switch (_filter) {
       case _FeedFilter.latest:
         return all;
       case _FeedFilter.popular:
-        return [...all]..sort(
-            (a, b) => b.empathyCount.compareTo(a.empathyCount));
+        return [...all]..sort((a, b) => b.empathyCount.compareTo(a.empathyCount));
       case _FeedFilter.overlap:
-        return []; // 겹문장 탭은 그룹 뷰 사용
+        return [];
     }
   }
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
     setState(() => _isRefreshing = true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    if (!_useMock) {
+      await ref.read(feedProvider.notifier).refresh();
+    } else {
+      await Future.delayed(const Duration(milliseconds: 800));
+    }
     if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredSentences;
-    final groups = _overlapGroups;
-    final overlapIds = _overlapSentenceIds;
+    final sentences = _useMock
+        ? _kMockSentences()
+        : (ref.watch(feedProvider).valueOrNull ?? const <FeedSentence>[]);
+    final trendingBooks = _useMock
+        ? _kMockTrendingBooks
+        : _trendingFromSentences(sentences);
+
+    final filtered = _filtered(sentences);
+    final groups = _overlapGroups(sentences);
+    final overlapIds = _overlapSentenceIds(groups);
     final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
     final topPad = MediaQuery.of(context).padding.top;
 
@@ -289,7 +312,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ),
                     ),
                     if (_filter != _FeedFilter.overlap) ...[
-                      const SliverToBoxAdapter(child: _TrendingBooksSection()),
+                      SliverToBoxAdapter(child: _TrendingBooksSection(books: trendingBooks)),
                       SliverToBoxAdapter(
                         child: Divider(height: 1, color: context.appBorder),
                       ),
@@ -437,10 +460,12 @@ class _ActivityBanner extends StatelessWidget {
 
 // ─── 트렌딩 책 섹션 ───────────────────────────────────────────────────────────
 class _TrendingBooksSection extends StatelessWidget {
-  const _TrendingBooksSection();
+  final List<_TrendingBook> books;
+  const _TrendingBooksSection({required this.books});
 
   @override
   Widget build(BuildContext context) {
+    if (books.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -463,13 +488,13 @@ class _TrendingBooksSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-            itemCount: _kTrendingBooks.length,
+            itemCount: books.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.only(
-                  right: index < _kTrendingBooks.length - 1 ? 10 : 0,
+                  right: index < books.length - 1 ? 10 : 0,
                 ),
-                child: _TrendingBookCard(book: _kTrendingBooks[index]),
+                child: _TrendingBookCard(book: books[index]),
               );
             },
           ),

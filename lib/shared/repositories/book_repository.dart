@@ -569,6 +569,82 @@ class BookRepository {
 
   // ── 독서 스트릭 계산 ──────────────────────────────────────────────────────
 
+  // ── 날짜 범위 조회 ────────────────────────────────────────────────────────
+
+  Future<List<IsarReadingSession>> getSessionsInRange(
+      DateTime from, DateTime to) async {
+    final rows = await _db.query(
+      'reading_sessions',
+      where: 'started_at >= ? AND started_at < ?',
+      whereArgs: [from.toIso8601String(), to.toIso8601String()],
+      orderBy: 'started_at DESC',
+    );
+    return rows.map(IsarReadingSession.fromMap).toList();
+  }
+
+  Future<List<IsarChoseo>> getChoseoInRange(DateTime from, DateTime to) async {
+    final rows = await _db.query(
+      'choseo',
+      where: 'created_at >= ? AND created_at < ?',
+      whereArgs: [from.toIso8601String(), to.toIso8601String()],
+      orderBy: 'created_at DESC',
+    );
+    return rows.map(IsarChoseo.fromMap).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getReadingLogsInRange(
+      DateTime from, DateTime to) async {
+    return _db.rawQuery('''
+      SELECT rs.started_at, rs.duration_seconds, rs.pages_read,
+             COALESCE(b.title, '알 수 없는 책') AS book_title,
+             COALESCE(b.author, '') AS book_author
+      FROM reading_sessions rs
+      LEFT JOIN books b ON rs.book_id = b.book_id
+      WHERE rs.started_at >= ? AND rs.started_at < ?
+      ORDER BY rs.started_at DESC
+    ''', [from.toIso8601String(), to.toIso8601String()]);
+  }
+
+  // 날짜별 독서 분(分) 맵 (히트맵 데이터)
+  Future<Map<DateTime, int>> getHeatmapDataForYear(int year) async {
+    final from = DateTime(year, 1, 1).toIso8601String();
+    final to = DateTime(year + 1, 1, 1).toIso8601String();
+    final rows = await _db.rawQuery('''
+      SELECT date(started_at) as day, SUM(duration_seconds) as total
+      FROM reading_sessions
+      WHERE started_at >= ? AND started_at < ?
+      GROUP BY date(started_at)
+    ''', [from, to]);
+    final result = <DateTime, int>{};
+    for (final row in rows) {
+      final day = DateTime.parse(row['day'] as String);
+      result[DateTime(day.year, day.month, day.day)] =
+          ((row['total'] as int?) ?? 0) ~/ 60;
+    }
+    return result;
+  }
+
+  // 월별 독서 시간(분) 12개 배열 (1월=인덱스 0)
+  Future<List<int>> getMonthlyMinutesForYear(int year) async {
+    final from = DateTime(year, 1, 1).toIso8601String();
+    final to = DateTime(year + 1, 1, 1).toIso8601String();
+    final rows = await _db.rawQuery('''
+      SELECT CAST(strftime('%m', started_at) AS INTEGER) as month,
+             SUM(duration_seconds) as total
+      FROM reading_sessions
+      WHERE started_at >= ? AND started_at < ?
+      GROUP BY month
+    ''', [from, to]);
+    final result = List<int>.filled(12, 0);
+    for (final row in rows) {
+      final idx = (row['month'] as int) - 1;
+      result[idx] = ((row['total'] as int?) ?? 0) ~/ 60;
+    }
+    return result;
+  }
+
+  // ── 독서 스트릭 계산 ──────────────────────────────────────────────────────
+
   /// 오늘부터 역순으로 연속 독서 일수 반환
   Future<int> getReadingStreak() async {
     final rows = await _db.rawQuery(
