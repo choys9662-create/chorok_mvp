@@ -125,7 +125,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final lib = ref.read(libraryProvider);
     final existing = book.isbn13 != null && book.isbn13!.isNotEmpty
         ? lib.where((b) => b.isbn == book.isbn13).firstOrNull
-        : null;
+        : lib.where((b) => b.title == book.title && b.author == book.author).firstOrNull;
     if (existing != null) {
       ref.read(libraryProvider.notifier).deleteBook(existing.id);
       if (!mounted) return;
@@ -139,14 +139,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final status = await showAddToLibrarySheet(context, book);
     if (status == null || !mounted) return;
 
-    ref.read(libraryProvider.notifier).addBook(book.toBook(status));
+    final added = ref.read(libraryProvider.notifier).addBook(book.toBook(status));
 
     if (!mounted) return;
     final label = status == ReadingStatus.reading ? '읽는 중' : '읽고 싶어요';
 
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
-      _buildSnackBar('"${book.title}"을(를) $label에 추가했어요', true),
+      _buildSnackBar(
+        added
+            ? '"${book.title}"을(를) $label에 추가했어요'
+            : '"${book.title}"은(는) 이미 서재에 있어요',
+        added,
+      ),
     );
   }
 
@@ -887,11 +892,12 @@ class _BookCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isInLibrary = ref.watch(
-      libraryProvider.select((books) => books.any(
-            (b) => book.isbn13 != null &&
-                book.isbn13!.isNotEmpty &&
-                b.isbn == book.isbn13,
-          )),
+      libraryProvider.select((books) {
+        if (book.isbn13 != null && book.isbn13!.isNotEmpty) {
+          return books.any((b) => b.isbn == book.isbn13);
+        }
+        return books.any((b) => b.title == book.title && b.author == book.author);
+      }),
     );
 
     return Semantics(

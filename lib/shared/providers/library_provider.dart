@@ -39,13 +39,19 @@ class LibraryNotifier extends Notifier<List<Book>> {
     if (kIsWeb) {
       // 웹: 로그인된 사용자의 책을 Supabase에서 불러옴
       final repo = ref.read(supabaseBookRepositoryProvider);
-      state = await repo.getAllBooks();
+      final loaded = await repo.getAllBooks();
+      // _loadFromDb 대기 중 addBook으로 추가된 책 보존
+      final extra = state.where((b) => !loaded.any((lb) => lb.id == b.id)).toList();
+      state = [...loaded, ...extra];
       return;
     }
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return;
     final rows = await repo.getAllBooks();
-    state = rows.map(_fromIsarBook).toList();
+    final loaded = rows.map(_fromIsarBook).toList();
+    // _loadFromDb 대기 중 addBook으로 추가된 책 보존
+    final extra = state.where((b) => !loaded.any((lb) => lb.id == b.id)).toList();
+    state = [...loaded, ...extra];
   }
 
   bool addBook(Book book) {

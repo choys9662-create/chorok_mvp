@@ -207,36 +207,34 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 },
               ),
             ),
-            IndexedStack(
-              index: _viewIndex,
-              children: [
-                Consumer(
-                  builder: (ctx, r, _) {
-                    final books = r.watch(libraryProvider);
-                    final logs = _useMock
-                        ? mockReadingLogs
-                        : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
-                    return _LibraryTab(
-                      books: books,
-                      logs: logs,
-                      onAddBook: () => ctx.push(AppConstants.routeSearch),
-                    );
-                  },
-                ),
-                const LibraryStatsView(scrollController: null),
-                Consumer(
-                  builder: (ctx2, r, child) {
-                    final logs = _useMock
-                        ? mockReadingLogs
-                        : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
-                    return LibraryCalendarView(
-                      logs: logs,
-                      scrollController: null,
-                    );
-                  },
-                ),
-              ],
-            ),
+            if (_viewIndex == 0)
+              Consumer(
+                builder: (ctx, r, _) {
+                  final books = r.watch(libraryProvider);
+                  final logs = _useMock
+                      ? mockReadingLogs
+                      : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
+                  return _LibraryTab(
+                    books: books,
+                    logs: logs,
+                    onAddBook: () => ctx.push(AppConstants.routeSearch),
+                  );
+                },
+              )
+            else if (_viewIndex == 1)
+              const LibraryStatsView(scrollController: null)
+            else
+              Consumer(
+                builder: (ctx2, r, child) {
+                  final logs = _useMock
+                      ? mockReadingLogs
+                      : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
+                  return LibraryCalendarView(
+                    logs: logs,
+                    scrollController: null,
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -549,9 +547,11 @@ class _LibraryTabState extends State<_LibraryTab> {
 
         // ── 책 그리드 / 리스트 / 빈 상태 ─────────────────────────────
         if (_filteredBooks.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: _EmptyShelf(status: _selectedStatus),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 260,
+              child: _EmptyShelf(status: _selectedStatus),
+            ),
           )
         else if (_viewMode == _LibraryViewMode.grid)
           SliverPadding(

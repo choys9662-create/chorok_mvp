@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-// ─── 목업 데이터 (DB가 비어 있을 때 표시) ──────────────────────────────────────
+const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
+
+// ─── 목업 데이터 (USE_MOCK=true 전용) ──────────────────────────────────────────
 final _kMockChoseo = [
   IsarChoseo(
     choseoId: 'mock_1',
@@ -118,8 +120,7 @@ class ChoseoListNotifier extends Notifier<ChoseoListState> {
   Future<void> load() async {
     final repo = ref.read(bookRepositoryProvider);
     final rows = await repo?.getAllChoseo() ?? [];
-    // DB가 비어 있으면 목업 데이터로 채움
-    final items = rows.isEmpty ? _kMockChoseo : rows;
+    final items = (_useMock && rows.isEmpty) ? _kMockChoseo : rows;
     state = state.copyWith(items: items, isLoading: false);
   }
 
@@ -138,6 +139,5 @@ final choseoListProvider =
 final choseoCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.read(bookRepositoryProvider);
   final count = await repo?.getChoseoCount() ?? 0;
-  // DB가 비어 있으면 목업 개수 반환
-  return count == 0 ? _kMockChoseo.length : count;
+  return (_useMock && count == 0) ? _kMockChoseo.length : count;
 });
