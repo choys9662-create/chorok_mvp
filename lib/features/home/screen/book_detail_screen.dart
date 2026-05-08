@@ -1388,7 +1388,6 @@ class _MenuSheet extends ConsumerWidget {
   const _MenuSheet({required this.bookId, required this.bookTitle});
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    Navigator.pop(context); // 시트 닫기
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1410,6 +1409,8 @@ class _MenuSheet extends ConsumerWidget {
     if (confirmed != true) return;
     if (!context.mounted) return;
     ref.read(libraryProvider.notifier).deleteBook(bookId);
+    Navigator.pop(context); // 시트 닫기
+    if (!context.mounted) return;
     context.go('/home');
   }
 

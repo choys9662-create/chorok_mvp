@@ -96,6 +96,15 @@ class _AddToLibrarySheet extends StatelessWidget {
               sublabel: '나중에 읽을 책으로 저장할게요',
               status: ReadingStatus.wantToRead,
             ),
+            const SizedBox(height: 12),
+
+            // 읽었어요
+            _StatusTile(
+              icon: Icons.check_circle_rounded,
+              label: '읽었어요',
+              sublabel: '이미 읽은 책으로 기록할게요',
+              status: ReadingStatus.completed,
+            ),
             const SizedBox(height: 16),
 
             // 취소
