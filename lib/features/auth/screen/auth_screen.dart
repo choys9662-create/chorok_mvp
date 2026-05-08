@@ -15,11 +15,9 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../main.dart';
 
-// ─── 디자인 토큰 ────────────────────────────────────────────────────────────
-const _kGreen = Color(0xFF00FF66);
-const _kBg = Color(0xFF060B07);
-const _kSurface = Color(0xFF0D1A10);
-const _kBorder = Color(0xFF1A3320);
+// ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
+const _kBg = Color(0xFF121212); // AppTheme.darkBg
+const _kBorder = Color(0xFF2C2C2C); // AppTheme.darkBorder
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
 final _googleSignIn = GoogleSignIn(
@@ -34,22 +32,8 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tab;
+class _AuthScreenState extends State<AuthScreen> {
   bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tab.dispose();
-    super.dispose();
-  }
 
   void _setLoading(bool v) {
     if (mounted) setState(() => _loading = v);
@@ -98,42 +82,6 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-  // ── 이메일 회원가입 ───────────────────────────────────────────────
-  Future<void> _signUp(String email, String password, String username) async {
-    _setLoading(true);
-    try {
-      final res = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {'username': username, 'display_name': username},
-      );
-      if (!mounted) return;
-      // 이메일 확인 없이 즉시 세션이 생성된 경우 바로 이동
-      if (res.session != null) {
-        context.go(AppConstants.routeHome);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              '가입 확인 이메일을 보냈어요. 메일함을 확인해주세요 ✉️',
-              style: TextStyle(fontFamily: 'Pretendard'),
-            ),
-            backgroundColor: Color(0xFF0D2010),
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 5),
-          ),
-        );
-        _tab.animateTo(0);
-      }
-    } on AuthException catch (e) {
-      _showError(e.message);
-    } catch (_) {
-      _showError('네트워크 연결을 확인해주세요.');
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   // ── Google 로그인 ─────────────────────────────────────────────────
   Future<void> _signInWithGoogle() async {
     HapticFeedback.mediumImpact();
@@ -141,10 +89,6 @@ class _AuthScreenState extends State<AuthScreen>
     _setLoading(true);
     try {
       if (kIsWeb) {
-        // 웹: Supabase OAuth redirect 플로우.
-        // Google 로그인 화면으로 리다이렉트 → 같은 origin으로 돌아옴 →
-        // Supabase 클라이언트가 URL의 code를 자동으로 세션으로 교환.
-        // 페이지가 새로 로드되므로 finally의 setState는 의미 없음.
         await supabase.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: Uri.base.origin,
@@ -173,7 +117,6 @@ class _AuthScreenState extends State<AuthScreen>
     } catch (e) {
       _showError('Google 로그인 중 오류가 발생했어요.');
     } finally {
-      // 웹은 redirect로 페이지가 새로 로드되므로 setState 호출 불필요
       if (!kIsWeb) _setLoading(false);
     }
   }
@@ -182,7 +125,6 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _signInWithApple() async {
     HapticFeedback.mediumImpact();
 
-    // Apple Sign In 가능 여부 확인
     final isAvailable = await SignInWithApple.isAvailable();
     if (!isAvailable) {
       _showError('이 기기에서는 Apple 로그인을 사용할 수 없어요.');
@@ -248,83 +190,85 @@ class _AuthScreenState extends State<AuthScreen>
       backgroundColor: _kBg,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight:
-                  MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top -
-                  MediaQuery.of(context).padding.bottom,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
+          child: Column(
+            children: [
+              const SizedBox(height: 48),
+              const _Logo(),
+              const SizedBox(height: 40),
+              // ── 소셜 로그인 ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    _SocialButton(
+                      onTap: _loading ? null : _signInWithGoogle,
+                      icon: _googleIcon,
+                      label: 'Google로 계속하기',
+                    ),
+                    const SizedBox(height: 12),
+                    _SocialButton(
+                      onTap: _loading ? null : _signInWithApple,
+                      icon: _appleIcon,
+                      label: 'Apple로 계속하기',
+                      dark: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // ── 구분선 ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(child: Container(height: 1, color: _kBorder)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        '또는 이메일로',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Container(height: 1, color: _kBorder)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // ── 로그인 폼 ──
+              _LoginForm(onSubmit: _signIn, loading: _loading),
+              const SizedBox(height: 24),
+              // ── 회원가입 링크 ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 48),
-                  const _Logo(),
-                  const SizedBox(height: 40),
-                  // ── 소셜 로그인 ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        _SocialButton(
-                          onTap: _loading ? null : _signInWithGoogle,
-                          icon: _googleIcon,
-                          label: 'Google로 계속하기',
-                        ),
-                        const SizedBox(height: 12),
-                        _SocialButton(
-                          onTap: _loading ? null : _signInWithApple,
-                          icon: _appleIcon,
-                          label: 'Apple로 계속하기',
-                          dark: true,
-                        ),
-                      ],
+                  Text(
+                    '계정이 없으신가요?',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 14,
+                      color: AppTheme.textTertiary,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  // ── 구분선 ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Expanded(child: Container(height: 1, color: _kBorder)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            '또는 이메일로',
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Container(height: 1, color: _kBorder)),
-                      ],
+                  TextButton(
+                    onPressed: () => context.push(AppConstants.routeSignUp),
+                    child: Text(
+                      '회원가입',
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryLight,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  // ── 이메일 탭 ──
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _AuthTabBar(controller: _tab),
-                  ),
-                  const SizedBox(height: 24),
-                  // ── 폼 ──
-                  SizedBox(
-                    height: 320,
-                    child: TabBarView(
-                      controller: _tab,
-                      children: [
-                        _LoginForm(onSubmit: _signIn, loading: _loading),
-                        _SignUpForm(onSubmit: _signUp, loading: _loading),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),
@@ -345,11 +289,10 @@ class _Logo extends StatelessWidget {
           height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _kSurface,
-            border: Border.all(color: _kBorder, width: 1),
+            gradient: AppTheme.greenGradient,
             boxShadow: [
               BoxShadow(
-                color: _kGreen.withValues(alpha: 0.15),
+                color: AppTheme.primaryLight.withValues(alpha: 0.25),
                 blurRadius: 32,
                 spreadRadius: 4,
               ),
@@ -362,7 +305,7 @@ class _Logo extends StatelessWidget {
                 fontFamily: 'Pretendard',
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: _kGreen,
+                color: Colors.white,
               ),
             ),
           ),
@@ -385,7 +328,7 @@ class _Logo extends StatelessWidget {
             fontFamily: 'Pretendard',
             fontSize: 13,
             fontWeight: FontWeight.w400,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: AppTheme.textSecondary,
             letterSpacing: 1.5,
           ),
         ),
@@ -420,8 +363,9 @@ class _SocialButton extends StatelessWidget {
           curve: Curves.easeOutCubic,
           height: 52,
           decoration: AppTheme.smoothBox(
-            color: dark ? Colors.white : _kSurface,
+            color: dark ? Colors.white : AppTheme.darkSurface,
             radius: 12,
+            side: dark ? BorderSide.none : BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -440,45 +384,6 @@ class _SocialButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── 탭 바 ───────────────────────────────────────────────────────────────────
-class _AuthTabBar extends StatelessWidget {
-  final TabController controller;
-  const _AuthTabBar({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: AppTheme.smoothBox(color: _kSurface, radius: 12),
-      child: TabBar(
-        controller: controller,
-        indicator: AppTheme.smoothBox(
-          color: _kGreen.withValues(alpha: 0.15),
-          radius: 10,
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerColor: Colors.transparent,
-        labelStyle: const TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Pretendard',
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        labelColor: _kGreen,
-        unselectedLabelColor: Colors.white38,
-        tabs: const [
-          Tab(text: '로그인'),
-          Tab(text: '회원가입'),
-        ],
       ),
     );
   }
@@ -526,7 +431,7 @@ class _LoginFormState extends State<_LoginForm> {
               onPressed: () => setState(() => _obscure = !_obscure),
               icon: Icon(
                 _obscure ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white24,
+                color: AppTheme.textTertiary,
                 size: 20,
               ),
             ),
@@ -538,77 +443,6 @@ class _LoginFormState extends State<_LoginForm> {
             onTap: () {
               HapticFeedback.mediumImpact();
               widget.onSubmit(_emailCtrl.text.trim(), _pwCtrl.text);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 회원가입 폼 ──────────────────────────────────────────────────────────────
-class _SignUpForm extends StatefulWidget {
-  final Future<void> Function(String email, String password, String username)
-  onSubmit;
-  final bool loading;
-  const _SignUpForm({required this.onSubmit, required this.loading});
-
-  @override
-  State<_SignUpForm> createState() => _SignUpFormState();
-}
-
-class _SignUpFormState extends State<_SignUpForm> {
-  final _emailCtrl = TextEditingController();
-  final _pwCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  bool _obscure = true;
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _pwCtrl.dispose();
-    _nameCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          _Field(controller: _nameCtrl, hint: '닉네임'),
-          const SizedBox(height: 12),
-          _Field(
-            controller: _emailCtrl,
-            hint: '이메일',
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 12),
-          _Field(
-            controller: _pwCtrl,
-            hint: '비밀번호 (6자 이상)',
-            obscure: _obscure,
-            suffix: IconButton(
-              onPressed: () => setState(() => _obscure = !_obscure),
-              icon: Icon(
-                _obscure ? Icons.visibility_off : Icons.visibility,
-                color: Colors.white24,
-                size: 20,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _SubmitButton(
-            label: '가입하기',
-            loading: widget.loading,
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              widget.onSubmit(
-                _emailCtrl.text.trim(),
-                _pwCtrl.text,
-                _nameCtrl.text.trim(),
-              );
             },
           ),
         ],
@@ -650,26 +484,26 @@ class _Field extends StatelessWidget {
         hintStyle: TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 15,
-          color: Colors.white.withValues(alpha: 0.3),
+          color: AppTheme.textTertiary,
         ),
         suffixIcon: suffix,
         filled: true,
-        fillColor: _kSurface,
+        fillColor: AppTheme.darkSurface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
         ),
       ),
     );
@@ -680,15 +514,19 @@ class _SubmitButton extends StatelessWidget {
   final String label;
   final bool loading;
   final VoidCallback onTap;
+  final bool enabled;
 
   const _SubmitButton({
     required this.label,
     required this.loading,
     required this.onTap,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = !enabled || loading;
+
     return Semantics(
       button: true,
       label: label,
@@ -696,33 +534,40 @@ class _SubmitButton extends StatelessWidget {
         width: double.infinity,
         height: 52,
         child: GestureDetector(
-          onTap: loading ? null : onTap,
+          onTap: isDisabled ? null : onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             decoration: AppTheme.smoothBox(
-              color: loading
-                  ? _kGreen.withValues(alpha: 0.15)
-                  : _kGreen.withValues(alpha: 0.22),
+              gradient: isDisabled
+                  ? LinearGradient(
+                      colors: [
+                        AppTheme.primaryLight.withValues(alpha: 0.2),
+                        AppTheme.accent.withValues(alpha: 0.2),
+                      ],
+                    )
+                  : AppTheme.greenGradient,
               radius: 12,
             ),
             child: Center(
               child: loading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: _kGreen.withValues(alpha: 0.8),
+                        color: Colors.white,
                       ),
                     )
                   : Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Pretendard',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: _kGreen,
+                        color: isDisabled
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : Colors.white,
                       ),
                     ),
             ),
