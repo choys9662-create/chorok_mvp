@@ -4,15 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart'; // ML Kit 임시 주석 처리
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/ocr_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
-// import '../../../core/services/db_service.dart'; // 로그인 활성화 후 주석 해제
-import '../../../core/services/ocr_service.dart';
 import '../../../core/services/stt_service.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
@@ -588,7 +586,6 @@ class _BottomArea extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                         height: 1.2,
-                        fontFamily: 'Pretendard',
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -597,7 +594,6 @@ class _BottomArea extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.50),
-                        fontFamily: 'Pretendard',
                       ),
                     ),
                   ],
@@ -711,14 +707,12 @@ class _ChosuActionBarState extends State<_ChosuActionBar> {
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white,
-                      fontFamily: 'Pretendard',
                     ),
                     decoration: InputDecoration(
                       hintText: '문장을 입력하세요...',
                       hintStyle: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.35),
-                        fontFamily: 'Pretendard',
                       ),
                       border: InputBorder.none,
                       isDense: true,
@@ -1097,7 +1091,6 @@ class _RecordingOverlay extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
-                  fontFamily: 'Pretendard',
                 ),
               ),
               if (recognizedText.isNotEmpty) ...[
@@ -1110,7 +1103,6 @@ class _RecordingOverlay extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
-                      fontFamily: 'Pretendard',
                       height: 1.6,
                     ),
                   ),
@@ -1175,7 +1167,6 @@ class _ReadersSheet extends ConsumerWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
-                      fontFamily: 'Pretendard',
                     ),
                   ),
                   const Spacer(),
@@ -1205,7 +1196,6 @@ class _ReadersSheet extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.4),
-                    fontFamily: 'Pretendard',
                     height: 1.6,
                   ),
                 ),
@@ -1278,7 +1268,6 @@ class _MutualReaderTile extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
-                    fontFamily: 'Pretendard',
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1287,7 +1276,6 @@ class _MutualReaderTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.4),
-                    fontFamily: 'Pretendard',
                   ),
                 ),
               ],
@@ -1321,7 +1309,6 @@ class _MutualReaderTile extends StatelessWidget {
                     fontSize: 11,
                     color: _kGreen.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Pretendard',
                   ),
                 ),
               ],

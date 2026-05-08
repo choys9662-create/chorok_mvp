@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
@@ -6,8 +7,6 @@ const Color _kLv1   = Color(0xFF0F6E56);
 const Color _kLv2   = Color(0xFF1D9E75);
 const Color _kLv3   = Color(0xFF3BC49A);
 const Color _kLabel = Color(0xFF7A8597);
-
-const _kDays = ['월', '화', '수', '목', '금', '토', '일'];
 
 /// 월간 독서 캘린더 히트맵 — 이전/다음 달 이동 가능
 class HeatmapCalendarWidget extends StatefulWidget {
@@ -110,7 +109,7 @@ class _DayOfWeekRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: _kDays.map((d) => Expanded(
+      children: AppConstants.weekdaysMonFirst.map((d) => Expanded(
         child: Center(
           child: Text(
             d,

@@ -84,6 +84,14 @@ class AppTheme {
     [Color(0xFF184230), Color(0xFF00E090)],
   ];
 
+  /// 문자열 키 → 책 표지 그라디언트 (hashCode 기반 안정 매핑)
+  static List<Color> coverGradientFor(String key) =>
+      coverGradients[key.hashCode.abs() % coverGradients.length];
+
+  /// 인덱스 → 책 표지 그라디언트 (음수/오버플로우 안전)
+  static List<Color> coverGradientByIndex(int index) =>
+      coverGradients[index.abs() % coverGradients.length];
+
   // ─── 다크 배경 (중립 다크 — DESIGN.md §1) ──────────────────────
   static const Color darkBg = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF1A1A1A);
@@ -265,7 +273,6 @@ class AppTheme {
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: 'Pretendard',
     colorScheme: ColorScheme(
       brightness: Brightness.dark,
       primary: primaryLight,
@@ -328,7 +335,6 @@ class AppTheme {
   static ThemeData get light => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    fontFamily: 'Pretendard',
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
       primary: primary,

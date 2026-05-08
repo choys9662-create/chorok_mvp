@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../main.dart';
+import '../util/auth_error.dart';
 
 // ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
 const _kBg = Color(0xFF121212); // AppTheme.darkBg
@@ -41,30 +42,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _localizeError(msg),
-          style: const TextStyle(fontFamily: 'Pretendard'),
-        ),
-        backgroundColor: const Color(0xFF1A0A0A),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  String _localizeError(String msg) {
-    final lower = msg.toLowerCase();
-    if (lower.contains('invalid login credentials')) {
-      return '이메일 또는 비밀번호가 올바르지 않아요.';
-    }
-    if (lower.contains('email not confirmed')) {
-      return '이메일 인증이 필요해요. 받은 편지함을 확인해주세요.';
-    }
-    if (lower.contains('user already registered')) return '이미 가입된 이메일이에요.';
-    if (lower.contains('password should be')) return '비밀번호는 6자 이상이어야 해요.';
-    if (lower.contains('network')) return '네트워크 연결을 확인해주세요.';
-    return msg;
+    showAuthError(context, msg);
   }
 
   // ── 이메일 로그인 ─────────────────────────────────────────────────
@@ -227,7 +205,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Text(
                         '또는 이메일로',
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
@@ -248,7 +225,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   Text(
                     '계정이 없으신가요?',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       color: AppTheme.textTertiary,
                     ),
@@ -258,7 +234,6 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Text(
                       '회원가입',
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryLight,
@@ -302,7 +277,6 @@ class _Logo extends StatelessWidget {
             child: Text(
               '초',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
@@ -314,7 +288,6 @@ class _Logo extends StatelessWidget {
         const Text(
           '초록',
           style: TextStyle(
-            fontFamily: 'Pretendard',
             fontSize: 24,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -325,7 +298,6 @@ class _Logo extends StatelessWidget {
         Text(
           '독서 몰입 플랫폼',
           style: TextStyle(
-            fontFamily: 'Pretendard',
             fontSize: 13,
             fontWeight: FontWeight.w400,
             color: AppTheme.textSecondary,
@@ -375,7 +347,6 @@ class _SocialButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: dark ? Colors.black : Colors.white,
@@ -474,7 +445,6 @@ class _Field extends StatelessWidget {
       obscureText: obscure,
       keyboardType: keyboardType,
       style: const TextStyle(
-        fontFamily: 'Pretendard',
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: Colors.white,
@@ -482,7 +452,6 @@ class _Field extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          fontFamily: 'Pretendard',
           fontSize: 15,
           color: AppTheme.textTertiary,
         ),
@@ -562,7 +531,6 @@ class _SubmitButton extends StatelessWidget {
                   : Text(
                       label,
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: isDisabled

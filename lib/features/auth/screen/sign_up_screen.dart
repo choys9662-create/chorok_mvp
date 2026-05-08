@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../main.dart';
+import '../util/auth_error.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -47,10 +48,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _pwCtrl.dispose();
-    _pwConfirmCtrl.dispose();
+    _nameCtrl
+      ..removeListener(_rebuild)
+      ..dispose();
+    _emailCtrl
+      ..removeListener(_rebuild)
+      ..dispose();
+    _pwCtrl
+      ..removeListener(_rebuild)
+      ..dispose();
+    _pwConfirmCtrl
+      ..removeListener(_rebuild)
+      ..dispose();
     super.dispose();
   }
 
@@ -160,31 +169,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         if (mounted) context.go(AppConstants.routeAuth);
       }
     } on AuthException catch (e) {
-      _showError(_localizeError(e.message));
+      if (mounted) showAuthError(context, e.message);
     } catch (_) {
-      _showError('네트워크 연결을 확인해주세요.');
+      if (mounted) showAuthError(context, 'network');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  String _localizeError(String msg) {
-    final lower = msg.toLowerCase();
-    if (lower.contains('user already registered')) return '이미 가입된 이메일이에요.';
-    if (lower.contains('password should be')) return '비밀번호는 6자 이상이어야 해요.';
-    if (lower.contains('network')) return '네트워크 연결을 확인해주세요.';
-    return msg;
-  }
-
-  void _showError(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: const TextStyle(fontFamily: 'Pretendard')),
-        backgroundColor: const Color(0xFF1A0A0A),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   @override
@@ -202,7 +192,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         title: const Text(
           '회원가입',
           style: TextStyle(
-            fontFamily: 'Pretendard',
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -326,7 +315,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontFamily: 'Pretendard',
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: Colors.white70,
@@ -417,13 +405,13 @@ class _ValidatedFieldState extends State<_ValidatedField> {
             obscureText: widget.obscure,
             keyboardType: widget.keyboardType,
             style: const TextStyle(
-              fontFamily: 'Pretendard', fontSize: 15,
+fontSize: 15,
               fontWeight: FontWeight.w400, color: Colors.white,
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
               hintStyle: TextStyle(
-                fontFamily: 'Pretendard', fontSize: 15,
+fontSize: 15,
                 color: AppTheme.textTertiary,
               ),
               suffixIcon: suffixWidget,
@@ -451,7 +439,7 @@ class _ValidatedFieldState extends State<_ValidatedField> {
           Text(
             widget.error!,
             style: const TextStyle(
-              fontFamily: 'Pretendard', fontSize: 12,
+fontSize: 12,
               color: Color(0xFFEF4444),
             ),
           ),
@@ -490,7 +478,7 @@ class _PasswordStrengthBar extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Text(label, style: TextStyle(
-          fontFamily: 'Pretendard', fontSize: 12,
+fontSize: 12,
           fontWeight: FontWeight.w500, color: color,
         )),
       ],
@@ -570,7 +558,6 @@ class _TermRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(label, style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: bold ? 14 : 13,
               fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
               color: bold ? Colors.white : AppTheme.textSecondary,
@@ -620,7 +607,7 @@ class _SubmitButton extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text(label, style: TextStyle(
-                    fontFamily: 'Pretendard', fontSize: 16,
+fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDisabled ? Colors.white.withValues(alpha: 0.4) : Colors.white,
                   )),

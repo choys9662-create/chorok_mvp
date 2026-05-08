@@ -38,8 +38,6 @@ int daysSinceLastRead(int todayIndex) {
 
 const List<int> kWeeklyMinutes = [42, 28, 55, 0, 35, 18, 0];
 
-const List<String> kWeekLabels = ['월', '화', '수', '목', '금', '토', '일'];
-
 String todayInsightText(int todayMinutes, int exitCount) {
   if (todayMinutes <= 0) return '';
   if (exitCount == 0 && todayMinutes >= 30) return '한 번도 안 나가셨어요. 완전한 몰입이었어요';

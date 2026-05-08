@@ -1,10 +1,11 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
 class ProfileHeader extends StatefulWidget {
@@ -29,26 +30,27 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6);
 
   String _name = '';
-  String _bio = _useMock ? '책 속에서 길을 찾는 중 🌿' : '';
-  final int _followers = _useMock ? 128 : 0;
-  final int _following = _useMock ? 64 : 0;
+  String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
+  final int _followers = kUseMock ? 128 : 0;
+  final int _following = kUseMock ? 64 : 0;
 
   @override
   void initState() {
     super.initState();
-    if (!_useMock) {
-      final meta = Supabase.instance.client.auth.currentUser?.userMetadata;
-      _name = (meta?['full_name'] as String?)?.trim().isNotEmpty == true
-          ? meta!['full_name'] as String
-          : (meta?['name'] as String?)?.trim().isNotEmpty == true
-              ? meta!['name'] as String
-              : Supabase.instance.client.auth.currentUser?.email
-                      ?.split('@')
-                      .first ??
-                  '사용자';
-    } else {
+    if (kUseMock) {
       _name = '이지현';
+      return;
     }
+    final user = Supabase.instance.client.auth.currentUser;
+    _name = _displayNameFromMeta(user?.userMetadata, user?.email);
+  }
+
+  static String _displayNameFromMeta(Map? meta, String? email) {
+    final fullName = (meta?['full_name'] as String?)?.trim();
+    if (fullName != null && fullName.isNotEmpty) return fullName;
+    final name = (meta?['name'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return email?.split('@').first ?? '사용자';
   }
 
   @override
@@ -114,14 +116,13 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                     Text(
                       _name,
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: context.appTextPrimary,
                         height: 1.4,
                       ),
                     ),
-                    if (_useMock) ...[
+                    if (kUseMock) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -200,7 +201,6 @@ class _ProfileHeaderState extends State<ProfileHeader> {
             child: Text(
               _bio.isEmpty ? '자기소개를 입력해보세요' : _bio,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 13,
                 color: _bio.isEmpty
                     ? context.appTextTertiary
@@ -234,7 +234,6 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       Text(
                         '${widget.streak}일 연속 독서 중',
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: context.appPrimaryAccent,
@@ -283,21 +282,11 @@ class _ProfileHeaderState extends State<ProfileHeader> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              const ChorokSheetHandle(),
               const SizedBox(height: 20),
               Text(
                 '프로필 편집',
                 style: TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: context.appTextPrimary,
@@ -334,7 +323,6 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   child: const Text(
                     '저장',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -395,7 +383,6 @@ class _StatItem extends StatelessWidget {
               Text(
                 '$count',
                 style: TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: context.appPrimaryAccent,
@@ -405,7 +392,6 @@ class _StatItem extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 12,
                   color: context.appTextSecondary,
                   height: 1.4,
@@ -443,14 +429,12 @@ class _SheetField extends StatelessWidget {
       controller: controller,
       maxLines: maxLines,
       style: TextStyle(
-        fontFamily: 'Pretendard',
         fontSize: 14,
         color: context.appTextPrimary,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          fontFamily: 'Pretendard',
           color: context.appTextTertiary,
           fontSize: 13,
         ),
@@ -503,16 +487,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
     return Column(
       children: [
         const SizedBox(height: 12),
-        Center(
-          child: Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: context.appBorder,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
+        const ChorokSheetHandle(),
         Padding(
           padding: const EdgeInsets.all(20),
           child: Text(
@@ -579,7 +554,6 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                         child: Text(
                           _followStates[i] ? '팔로잉' : '팔로우',
                           style: AppTheme.captionLarge.copyWith(
-                            fontFamily: 'Pretendard',
                             color: _followStates[i]
                                 ? context.appTextTertiary
                                 : context.appPrimaryAccent,

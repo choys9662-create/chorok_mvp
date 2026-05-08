@@ -1,12 +1,13 @@
+import 'dart:async';
+
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../shared/models/reading_session.dart';
-import '../../shared/providers/library_provider.dart';
 import '../search/controller/book_search_controller.dart';
+import '../search/util/add_book_flow.dart';
 import '../search/widget/add_to_library_sheet.dart';
 
 // ─── 색상 토큰 ────────────────────────────────────────────────────────────────
@@ -99,11 +100,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       if (!mounted) return;
 
       if (status != null) {
-        final added =
-            ref.read(libraryProvider.notifier).addBook(found.toBook(status));
-        final label = status == ReadingStatus.reading ? '읽는 중' : '읽고 싶어요';
+        final added = addBookAndFetchPages(ref, found, status);
         final msg = added
-            ? '"${found.title}"을(를) $label에 추가했어요'
+            ? '"${found.title}"을(를) ${readingStatusLabel(status)}에 추가했어요'
             : '"${found.title}"은(는) 이미 서재에 있어요';
         HapticFeedback.mediumImpact();
         if (mounted) {
@@ -149,7 +148,6 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             child: Text(
               message,
               style: const TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: _kTextPrimary,
@@ -280,7 +278,6 @@ class _ScanOverlay extends StatelessWidget {
               '책 뒷면의 바코드를 네모 안에 맞춰주세요\nISBN-13 (978, 979로 시작하는 13자리)',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
                 color: _kTextSecondary,
@@ -407,7 +404,6 @@ class _TopBar extends StatelessWidget {
             child: const Text(
               'ISBN 바코드 스캔',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: _kTextPrimary,
@@ -509,7 +505,6 @@ class _BottomStatus extends StatelessWidget {
                     child: Text(
                       statusMessage ?? '잠시 기다려주세요…',
                       style: const TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: _kTextPrimary,

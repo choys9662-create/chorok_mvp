@@ -167,7 +167,6 @@ class _TopBar extends StatelessWidget {
                         Text(
                           '내 문장',
                           style: TextStyle(
-                            fontFamily: 'Pretendard',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: context.appTextPrimary,
@@ -177,7 +176,6 @@ class _TopBar extends StatelessWidget {
                         Text(
                           '총 $totalCount개',
                           style: TextStyle(
-                            fontFamily: 'Pretendard',
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                             color: context.appTextTertiary,
@@ -247,7 +245,6 @@ class _SearchField extends StatelessWidget {
         focusNode: focusNode,
         onChanged: onChanged,
         style: TextStyle(
-          fontFamily: 'Pretendard',
           fontSize: 14,
           color: context.appTextPrimary,
           height: 1.4,
@@ -255,7 +252,6 @@ class _SearchField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: '문장 내용, 책 제목, 저자 검색',
           hintStyle: TextStyle(
-            fontFamily: 'Pretendard',
             fontSize: 14,
             color: context.appTextTertiary,
             height: 1.4,
@@ -299,13 +295,11 @@ class _ChoseoTabBar extends StatelessWidget {
         ),
         dividerColor: Colors.transparent,
         labelStyle: const TextStyle(
-          fontFamily: 'Pretendard',
           fontSize: 14,
           fontWeight: FontWeight.w600,
           height: 1.4,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Pretendard',
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.4,
@@ -361,9 +355,7 @@ class _BookGroupState extends State<_BookGroup> {
   @override
   Widget build(BuildContext context) {
     final author = widget.items.first.bookAuthor;
-    final colors = AppTheme.coverGradients[
-        widget.title.codeUnits.fold(0, (a, b) => a + b) %
-            AppTheme.coverGradients.length];
+    final colors = AppTheme.coverGradientFor(widget.title);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -409,7 +401,6 @@ class _BookGroupState extends State<_BookGroup> {
                               ? widget.title[0]
                               : '?',
                           style: const TextStyle(
-                            fontFamily: 'Pretendard',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -426,7 +417,6 @@ class _BookGroupState extends State<_BookGroup> {
                           Text(
                             widget.title,
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: context.appTextPrimary,
@@ -439,7 +429,6 @@ class _BookGroupState extends State<_BookGroup> {
                           Text(
                             author,
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 12,
                               color: context.appTextTertiary,
                               height: 1.4,
@@ -460,7 +449,6 @@ class _BookGroupState extends State<_BookGroup> {
                       child: Text(
                         '${widget.items.length}개',
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.appPrimaryAccent,
@@ -552,9 +540,7 @@ class _ChoseoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.coverGradients[
-        item.bookTitle.codeUnits.fold(0, (a, b) => a + b) %
-            AppTheme.coverGradients.length];
+    final colors = AppTheme.coverGradientFor(item.bookTitle);
 
     return Container(
       decoration: ShapeDecoration(
@@ -589,7 +575,6 @@ class _ChoseoCard extends StatelessWidget {
                       child: Text(
                         item.bookTitle.isNotEmpty ? item.bookTitle[0] : '?',
                         style: const TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -606,7 +591,6 @@ class _ChoseoCard extends StatelessWidget {
                         Text(
                           item.bookTitle,
                           style: TextStyle(
-                            fontFamily: 'Pretendard',
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: context.appTextPrimary,
@@ -618,7 +602,6 @@ class _ChoseoCard extends StatelessWidget {
                         Text(
                           item.bookAuthor,
                           style: TextStyle(
-                            fontFamily: 'Pretendard',
                             fontSize: 11,
                             color: context.appTextTertiary,
                             height: 1.4,
@@ -631,7 +614,6 @@ class _ChoseoCard extends StatelessWidget {
                   Text(
                     _relativeDate(item.createdAt),
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 11,
                       color: context.appTextTertiary,
                       height: 1.4,
@@ -650,7 +632,6 @@ class _ChoseoCard extends StatelessWidget {
                     Text(
                       'p. ${item.pageNumber}',
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 11,
                         color: context.appTextTertiary,
                         height: 1.4,
@@ -661,7 +642,6 @@ class _ChoseoCard extends StatelessWidget {
                   Text(
                     _relativeDate(item.createdAt),
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 11,
                       color: context.appTextTertiary,
                       height: 1.4,
@@ -690,7 +670,6 @@ class _ChoseoCard extends StatelessWidget {
                   child: Text(
                     item.content,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: context.appTextPrimary,
@@ -721,7 +700,6 @@ class _ChoseoCard extends StatelessWidget {
                     child: Text(
                       item.myThought!,
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
                         color: context.appTextSecondary,
@@ -759,7 +737,6 @@ class _EmptyView extends StatelessWidget {
           Text(
             '아직 기록한 문장이 없어요',
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 15,
               fontWeight: FontWeight.w500,
               color: context.appTextSecondary,
@@ -771,7 +748,6 @@ class _EmptyView extends StatelessWidget {
             '독서 세션 중 마음에 드는 문장을\n저장해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 13,
               color: context.appTextTertiary,
               height: 1.6,

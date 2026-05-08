@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -14,7 +15,6 @@ import '../widget/time_capsule_section.dart';
 
 import '../../../shared/providers/tab_scroll_controllers.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
 
@@ -47,10 +47,10 @@ class HomeScreen extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // 스트릭 배너 (2일 이상일 때만, 목업 or 모바일만)
-                  if (_useMock)
+                  if (kUseMock)
                     SliverToBoxAdapter(child: StreakBanner()),
                   // ① 이번 주 독서 현황 (목업 전용 — 실데이터 연동 전)
-                  if (_useMock) ...[
+                  if (kUseMock) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -62,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: ReadingBooksSection()),
                   // ③ 문장 기반 추천 (목업 전용 — AI 추천 연동 전)
-                  if (_useMock) ...[
+                  if (kUseMock) ...[
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     const SliverToBoxAdapter(child: RecommendedBooksSection()),
                   ],
@@ -70,12 +70,12 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   const SliverToBoxAdapter(child: WishlistSection()),
                   // ⑤ 피드 하이라이트 (목업 전용 — 커뮤니티 기능 연동 전)
-                  if (_useMock) ...[
+                  if (kUseMock) ...[
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
                     const SliverToBoxAdapter(child: FeedHighlightSection()),
                   ],
                   // ⑥ 타임캡슐 문장 (sqflite 기반 — 목업 or 모바일)
-                  if (_useMock) ...[
+                  if (kUseMock) ...[
                     const SliverToBoxAdapter(child: SizedBox(height: 8)),
                     const SliverToBoxAdapter(child: TimeCapsuleSection()),
                   ],

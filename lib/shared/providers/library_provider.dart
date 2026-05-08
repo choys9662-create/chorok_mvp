@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_flags.dart';
 import '../models/isar/isar_book.dart';
 import '../models/reading_session.dart';
 import '../repositories/book_repository.dart';
@@ -10,7 +11,6 @@ import '../repositories/supabase_book_repository.dart';
 /// 기본값 false:
 ///   - 모바일/데스크톱 → SQLite (BookRepository)
 ///   - 웹 → Supabase (SupabaseBookRepository)
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 Book _fromIsarBook(IsarBook b) => Book(
       id: b.bookId,
@@ -30,7 +30,7 @@ Book _fromIsarBook(IsarBook b) => Book(
 class LibraryNotifier extends Notifier<List<Book>> {
   @override
   List<Book> build() {
-    if (_useMock) return List.from(_kMockBooks);
+    if (kUseMock) return List.from(_kMockBooks);
     Future.microtask(_loadFromDb);
     return [];
   }
@@ -60,7 +60,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
         state.any((b) => b.isbn == book.isbn);
     if (isDuplicate) return false;
     state = [...state, book];
-    if (_useMock) return true;
+    if (kUseMock) return true;
     if (kIsWeb) {
       // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
       ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
@@ -90,7 +90,39 @@ class LibraryNotifier extends Notifier<List<Book>> {
       savedSentences: old.savedSentences,
     );
     state = [...state]..[idx] = updated;
-    if (_useMock) return;
+    if (kUseMock) return;
+    if (kIsWeb) {
+      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    } else {
+      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+    }
+  }
+
+  /// 책의 총 페이지 수 갱신.
+  ///
+  /// 알라딘 ItemSearch 응답에서 누락된 페이지 수를 ItemLookUp 보강 결과로 채우거나,
+  /// 사용자가 수동 입력했을 때 사용한다.
+  void updateTotalPages(String bookId, int totalPages) {
+    if (totalPages <= 0) return;
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+    final old = state[idx];
+    if (old.totalPages == totalPages) return;
+    final clampedCurrent = old.currentPage > totalPages ? totalPages : old.currentPage;
+    final updated = Book(
+      id: old.id,
+      title: old.title,
+      author: old.author,
+      isbn: old.isbn,
+      coverUrl: old.coverUrl,
+      currentPage: clampedCurrent,
+      totalPages: totalPages,
+      status: old.status,
+      totalReadingHours: old.totalReadingHours,
+      savedSentences: old.savedSentences,
+    );
+    state = [...state]..[idx] = updated;
+    if (kUseMock) return;
     if (kIsWeb) {
       ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
@@ -100,7 +132,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
   void deleteBook(String bookId) {
     state = state.where((b) => b.id != bookId).toList();
-    if (_useMock) return;
+    if (kUseMock) return;
     if (kIsWeb) {
       ref.read(supabaseBookRepositoryProvider).deleteByBookId(bookId);
     } else {

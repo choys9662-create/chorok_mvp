@@ -1,9 +1,13 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/analytics_provider.dart';
@@ -17,7 +21,6 @@ import '../widget/analytics_lists.dart';
 import '../widget/analytics_community_cards.dart';
 import '../widget/analytics_ui_elements.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── Mock 데이터 ─────────────────────────────────────────────────────────
 
@@ -63,13 +66,6 @@ String _mainUnit(int secs) {
   return '분';
 }
 
-String _fmtDur(int secs) {
-  final h = secs ~/ 3600;
-  final m = (secs % 3600) ~/ 60;
-  if (h > 0) return '$h시간 $m분';
-  if (m > 0) return '$m분';
-  return '$secs초';
-}
 
 String _pct(int curr, int prev) {
   if (prev == 0) return curr > 0 ? '+100%' : '0%';
@@ -106,7 +102,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     final AnalyticsState? a =
-        _useMock ? null : ref.watch(analyticsProvider).valueOrNull;
+        kUseMock ? null : ref.watch(analyticsProvider).valueOrNull;
 
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
@@ -155,7 +151,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final maxSessMin  = a?.weekMaxSessionMinutes  ?? 135;
     final avgSessMin  = a?.weekAvgSessionMinutes  ?? 38;
     final radar       = a?.weekRadar              ?? AnalyticsMockData.currentMonthRadar;
-    final prevRadar   = _useMock
+    final prevRadar   = kUseMock
         ? AnalyticsMockData.previousMonthRadar
         : const <double>[0.0, 0.0, 0.0, 0.0, 0.0];
     final sessions    = a?.weekSessions           ?? const [
@@ -213,7 +209,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       const SizedBox(height: AppTheme.spaceMD),
       ChorokCard(
         child: BarChart(
-          labels: const ['월', '화', '수', '목', '금', '토', '일'],
+          labels: AppConstants.weekdaysMonFirst,
           values: dailyMin,
           highlightIndex: now.weekday - 1,
         ),
@@ -224,7 +220,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       const SizedBox(height: AppTheme.spaceMD),
       ChorokCard(
         child: LineRhythmChart(
-          labels: const ['월', '화', '수', '목', '금', '토', '일'],
+          labels: AppConstants.weekdaysMonFirst,
           values: dailyMin,
           highlightIndex: now.weekday - 1,
         ),
@@ -245,13 +241,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       FocusCard(
         score: focusScore,
         label: '이번 주 집중도',
-        description: _useMock
+        description: kUseMock
             ? '훌륭해요! 지난주보다 집중력이 높아졌어요.'
             : _focusDesc(focusScore),
         stat1Label: '최장 연속',
-        stat1Value: _fmtDur(maxSessMin * 60),
+        stat1Value: time_fmt.formatDurationSeconds(maxSessMin * 60),
         stat2Label: '평균 세션',
-        stat2Value: _fmtDur(avgSessMin * 60),
+        stat2Value: time_fmt.formatDurationSeconds(avgSessMin * 60),
         stat3Label: '평균 속도',
         stat3Value: '분당 14p',
       ),
@@ -283,7 +279,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (_useMock) ...[
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '내 문장에 온 반응'),
         const SizedBox(height: AppTheme.spaceMD),
         const SentenceReactionsCard(sentences: [
@@ -331,8 +327,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final focusScore   = a?.monthFocusScore        ?? 79;
     final maxSessMin   = a?.monthMaxSessionMinutes ?? 222;
     final avgSessMin   = a?.monthAvgSessionMinutes ?? 44;
-    final monthSubtitle = _useMock ? '2026년 3월' : '${now.year}년 ${now.month}월';
-    final heatmapYear   = _useMock ? 2026 : now.year;
+    final monthSubtitle = kUseMock ? '2026년 3월' : '${now.year}년 ${now.month}월';
+    final heatmapYear   = kUseMock ? 2026 : now.year;
 
     final monthBooks = a != null
         ? a.completedBooks
@@ -386,13 +382,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       FocusCard(
         score: focusScore,
         label: '이번 달 집중도',
-        description: _useMock
+        description: kUseMock
             ? '꾸준히 읽고 있어요. 조금만 더 집중해 볼까요?'
             : _focusDesc(focusScore),
         stat1Label: '최장 연속',
-        stat1Value: _fmtDur(maxSessMin * 60),
+        stat1Value: time_fmt.formatDurationSeconds(maxSessMin * 60),
         stat2Label: '평균 세션',
-        stat2Value: _fmtDur(avgSessMin * 60),
+        stat2Value: time_fmt.formatDurationSeconds(avgSessMin * 60),
         stat3Label: '평균 속도',
         stat3Value: '분당 15p',
       ),
@@ -405,7 +401,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (_useMock) ...[
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '이번 달 베스트 문장'),
         const SizedBox(height: AppTheme.spaceMD),
         const SentenceReactionsCard(sentences: [
@@ -442,7 +438,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final completedCount = a?.completedBooks.length ?? 9;
     final monthlyMin     = a?.yearMonthlyMinutes    ?? const [620, 480, 560, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     final focusScore     = a?.yearFocusScore        ?? 81;
-    final yearSubtitle   = _useMock ? '2026년' : '${now.year}년';
+    final yearSubtitle   = kUseMock ? '2026년' : '${now.year}년';
 
     final allBooks = a != null
         ? a.completedBooks.map((b) => (
@@ -503,7 +499,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       FocusCard(
         score: focusScore,
         label: '올해 평균 집중도',
-        description: _useMock
+        description: kUseMock
             ? '올해도 좋은 독서 습관을 유지하고 있어요.'
             : _focusDesc(focusScore),
         stat1Label: '최장 연속일',
@@ -522,7 +518,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (_useMock) ...[
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '장르 분포'),
         const SizedBox(height: AppTheme.spaceMD),
         GenreChart(
@@ -591,16 +587,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         builder: (_, scrollCtrl) => Column(
           children: [
             const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.appBorder,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            const ChorokSheetHandle(),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(

@@ -34,7 +34,6 @@ class ReadingBooksSection extends ConsumerWidget {
               Text(
                 '지금 읽는 책',
                 style: AppTheme.headingSmall.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -121,7 +120,6 @@ class EmptyBooksState extends StatelessWidget {
             Text(
               '아직 등록된 책이 없어요',
               style: AppTheme.headingSmall.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
                 fontWeight: FontWeight.w700,
               ),
@@ -130,7 +128,6 @@ class EmptyBooksState extends StatelessWidget {
             Text(
               '첫 번째 책을 추가하고 독서를 시작해보세요',
               style: AppTheme.captionLarge.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextTertiary,
               ),
               textAlign: TextAlign.center,
@@ -170,7 +167,6 @@ class EmptyBooksState extends StatelessWidget {
                       Text(
                         '책 검색해서 추가하기',
                         style: AppTheme.bodySmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: isDark
                               ? context.appPrimaryAccent
                               : Colors.white,
@@ -244,16 +240,12 @@ class ReadingBookCard extends StatefulWidget {
 class ReadingBookCardState extends State<ReadingBookCard> {
   bool _isPressed = false;
 
-  int get _gradientIndex =>
-      widget.book.title.hashCode.abs() % AppTheme.coverGradients.length;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final progress = b.totalPages > 0 ? b.currentPage / b.totalPages : 0.0;
-    final gradIdx = _gradientIndex;
-    final gradColors = AppTheme.coverGradients[gradIdx];
+    final gradColors = AppTheme.coverGradientFor(b.title);
 
     return GestureDetector(
       onTap: () {
@@ -266,7 +258,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
             currentPage: b.currentPage,
             totalPages: b.totalPages,
             lastRead: '최근 읽음',
-            gradientIndex: gradIdx,
+            gradientIndex: b.title.hashCode.abs() % AppTheme.coverGradients.length,
             savedSentences: b.savedSentences,
           ),
         );
@@ -334,7 +326,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                         child: Text(
                           '${(progress * 100).round()}%',
                           style: AppTheme.captionSmall.copyWith(
-                            fontFamily: 'Pretendard',
                             color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w700,
                           ),
@@ -353,7 +344,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                     Text(
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -364,7 +354,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                     Text(
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextSecondary,
                       ),
                     ),
@@ -374,7 +363,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                     Text(
                       '${b.currentPage} / ${b.totalPages}쪽',
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextTertiary,
                       ),
                     ),
@@ -418,7 +406,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       child: Text(
                         '이어 읽기',
                         style: AppTheme.captionLarge.copyWith(
-                          fontFamily: 'Pretendard',
                           color: isDark
                               ? context.appPrimaryAccent
                               : Colors.white,

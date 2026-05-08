@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +11,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/screen/auth_screen.dart';
 import '../../../shared/providers/theme_provider.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
 class _ReadingGoal {
@@ -97,7 +97,6 @@ class SettingsScreen extends ConsumerWidget {
         title: Text(
           '설정',
           style: AppTheme.headingSmall.copyWith(
-            fontFamily: 'Pretendard',
             color: context.appTextPrimary,
           ),
         ),
@@ -148,7 +147,6 @@ class SettingsScreen extends ConsumerWidget {
                 trailing: Text(
                   '1.0.0',
                   style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextTertiary,
                   ),
                 ),
@@ -177,7 +175,7 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           // ─── 계정 (실사용 빌드 전용) ──────────────────────────────
-          if (!_useMock) ...[
+          if (!kUseMock) ...[
             _SectionLabel('계정'),
             _SettingsCard(
               children: [
@@ -243,7 +241,6 @@ class _ThemeTile extends StatelessWidget {
               Text(
                 '테마',
                 style: AppTheme.bodyMedium.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextPrimary,
                   fontWeight: FontWeight.w500,
                 ),
@@ -335,7 +332,6 @@ class _ThemeChip extends StatelessWidget {
               Text(
                 label,
                 style: AppTheme.captionLarge.copyWith(
-                  fontFamily: 'Pretendard',
                   color: selected ? Colors.white : context.appTextSecondary,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -428,7 +424,6 @@ class _SliderTile extends StatelessWidget {
                 child: Text(
                   label,
                   style: AppTheme.bodyMedium.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextPrimary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -437,7 +432,6 @@ class _SliderTile extends StatelessWidget {
               Text(
                 value,
                 style: AppTheme.bodyMedium.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w700,
                 ),
@@ -559,7 +553,6 @@ class _ToggleTile extends StatelessWidget {
                   Text(
                     label,
                     style: AppTheme.bodyMedium.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w500,
                     ),
@@ -567,7 +560,6 @@ class _ToggleTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: AppTheme.captionLarge.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextTertiary,
                     ),
                   ),
@@ -599,7 +591,6 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: AppTheme.captionLarge.copyWith(
-          fontFamily: 'Pretendard',
           color: context.appTextTertiary,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -733,7 +724,6 @@ class _InfoTile extends StatelessWidget {
               child: Text(
                 label,
                 style: AppTheme.bodyMedium.copyWith(
-                  fontFamily: 'Pretendard',
                   color: labelColor ?? context.appTextPrimary,
                   fontWeight: FontWeight.w500,
                 ),
@@ -742,7 +732,6 @@ class _InfoTile extends StatelessWidget {
             if (trailing != null)
               DefaultTextStyle(
                 style: AppTheme.captionLarge.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextTertiary,
                 ),
                 child: IconTheme(

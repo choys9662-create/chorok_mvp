@@ -1,5 +1,6 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +10,10 @@ import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 트렌딩 책 ───────────────────────────────────────────────────────────────
 typedef _TrendingBook = ({
@@ -147,7 +148,19 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   _FeedFilter _filter = _FeedFilter.latest;
   bool _isRefreshing = false;
 
-  List<OverlapGroup> _overlapGroups(List<FeedSentence> sentences) {
+  // sentences 참조가 동일하면 overlap/trending 재계산 생략
+  List<FeedSentence>? _derivedFromSentences;
+  List<OverlapGroup> _cachedGroups = const [];
+  Set<String> _cachedOverlapIds = const {};
+  List<_TrendingBook> _cachedTrending = const [];
+
+  void _ensureDerived(
+    List<FeedSentence> sentences, {
+    required List<_TrendingBook>? mockTrending,
+  }) {
+    if (identical(_derivedFromSentences, sentences)) return;
+    _derivedFromSentences = sentences;
+
     final entries = sentences
         .map((s) => SentenceEntry(
               id: s.id,
@@ -156,17 +169,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               bookTitle: s.bookTitle,
             ))
         .toList();
-    return OverlapDetector.findGroups(entries);
-  }
+    _cachedGroups = OverlapDetector.findGroups(entries);
 
-  Set<String> _overlapSentenceIds(List<OverlapGroup> groups) {
     final ids = <String>{};
-    for (final group in groups) {
+    for (final group in _cachedGroups) {
       for (final m in group.members) {
         ids.add(m.sentenceId);
       }
     }
-    return ids;
+    _cachedOverlapIds = ids;
+
+    _cachedTrending = mockTrending ?? _trendingFromSentences(sentences);
   }
 
   List<FeedSentence> _filtered(List<FeedSentence> all) {
@@ -183,7 +196,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
     setState(() => _isRefreshing = true);
-    if (!_useMock) {
+    if (!kUseMock) {
       await ref.read(feedProvider.notifier).refresh();
     } else {
       await Future.delayed(const Duration(milliseconds: 800));
@@ -193,16 +206,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sentences = _useMock
+    final sentences = kUseMock
         ? _kMockSentences()
         : (ref.watch(feedProvider).valueOrNull ?? const <FeedSentence>[]);
-    final trendingBooks = _useMock
-        ? _kMockTrendingBooks
-        : _trendingFromSentences(sentences);
-
+    _ensureDerived(
+      sentences,
+      mockTrending: kUseMock ? _kMockTrendingBooks : null,
+    );
+    final trendingBooks = _cachedTrending;
+    final groups = _cachedGroups;
+    final overlapIds = _cachedOverlapIds;
     final filtered = _filtered(sentences);
-    final groups = _overlapGroups(sentences);
-    final overlapIds = _overlapSentenceIds(groups);
     final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
     final topPad = MediaQuery.of(context).padding.top;
 
@@ -476,7 +490,6 @@ class _TrendingBooksSection extends StatelessWidget {
           child: Text(
             '이번 주 화제의 책',
             style: AppTheme.captionLarge.copyWith(
-              fontFamily: 'Pretendard',
               color: context.appTextTertiary,
               fontWeight: FontWeight.w600,
             ),
@@ -519,8 +532,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
   @override
   Widget build(BuildContext context) {
     final b = widget.book;
-    final gradColors =
-        AppTheme.coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final gradColors = AppTheme.coverGradientByIndex(b.gradientIndex);
 
     return GestureDetector(
       onTapDown: (_) {
@@ -562,7 +574,6 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                     Text(
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -573,7 +584,6 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                     Text(
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextSecondary,
                       ),
                     ),
@@ -596,7 +606,6 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                   child: Text(
                     '${b.sentenceCount}개',
                     style: AppTheme.captionSmall.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w600,
                     ),
@@ -683,12 +692,6 @@ class _SentenceCardState extends State<_SentenceCard> {
         _empathyCount += _isLiked ? 1 : -1;
       });
 
-  String _formatTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
-    if (diff.inHours < 24) return '${diff.inHours}시간 전';
-    return '${diff.inDays}일 전';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -791,7 +794,7 @@ class _SentenceCardState extends State<_SentenceCard> {
                       ),
                     ),
                     Text(
-                      _formatTime(s.savedAt),
+                      time_fmt.formatRelative(s.savedAt),
                       style: AppTheme.captionSmall
                           .copyWith(color: context.appTextTertiary),
                     ),
@@ -950,7 +953,6 @@ class _SentenceCardState extends State<_SentenceCard> {
                             content: const Text(
                               '공유 기능은 곧 지원돼요',
                               style: TextStyle(
-                                fontFamily: 'Pretendard',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.white,

@@ -83,6 +83,51 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     );
   }
 
+  Future<void> _editTotalPages(BuildContext context, int currentTotal) async {
+    HapticFeedback.selectionClick();
+    final controller = TextEditingController(
+      text: currentTotal > 0 ? '$currentTotal' : '',
+    );
+    final newTotal = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('총 페이지 수'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: '예: 320',
+            suffixText: '쪽',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              Navigator.pop(ctx, parsed != null && parsed > 0 ? parsed : null);
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+    if (newTotal == null || !mounted) return;
+    ref.read(libraryProvider.notifier).updateTotalPages(widget.book.id, newTotal);
+    if (_currentPage > newTotal) {
+      setState(() {
+        _currentPage = newTotal;
+        _pageController
+          ..text = '$newTotal'
+          ..selection = TextSelection.collapsed(offset: '$newTotal'.length);
+      });
+    }
+  }
+
   Future<void> _deleteBook(BuildContext context) async {
     HapticFeedback.selectionClick();
     final confirmed = await showDialog<bool>(
@@ -124,7 +169,11 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final book = widget.book;
+    // 라이브러리 상태와 동기화 — 페이지 수 수정 시 즉시 반영되도록
+    final book = ref.watch(libraryProvider).firstWhere(
+          (b) => b.id == widget.book.id,
+          orElse: () => widget.book,
+        );
     final isReading = book.status == ReadingStatus.reading;
     final isCompleted = book.status == ReadingStatus.completed;
     final progress = _currentPage / (book.totalPages > 0 ? book.totalPages : 1);
@@ -218,8 +267,11 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                   value: '${(progress * 100).toInt()}%',
                 ),
                 _DetailStat(
-                  label: '페이지',
-                  value: '$_currentPage/${book.totalPages}',
+                  label: book.totalPages == 0 ? '페이지 (입력)' : '페이지',
+                  value: book.totalPages == 0
+                      ? '─'
+                      : '$_currentPage/${book.totalPages}',
+                  onTap: () => _editTotalPages(context, book.totalPages),
                 ),
                 if (book.totalReadingHours > 0)
                   _DetailStat(
@@ -385,7 +437,6 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                       child: const Text(
                         '저장',
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -486,7 +537,6 @@ class _PageAdjustButton extends StatelessWidget {
           child: Text(
             label,
             style: AppTheme.captionLarge.copyWith(
-              fontFamily: 'Pretendard',
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppTheme.primaryLight
                   : Colors.white,
@@ -501,29 +551,50 @@ class _PageAdjustButton extends StatelessWidget {
 
 class _DetailStat extends StatelessWidget {
   final String label, value;
-  const _DetailStat({required this.label, required this.value});
+  final VoidCallback? onTap;
+  const _DetailStat({required this.label, required this.value, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              value,
+              style: AppTheme.bodyLarge.copyWith(
+                color: context.appPrimaryAccent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.edit_rounded,
+                size: 12,
+                color: context.appTextTertiary,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: AppTheme.captionSmall.copyWith(
+            color: context.appTextTertiary,
+          ),
+        ),
+      ],
+    );
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: AppTheme.bodyLarge.copyWith(
-              color: context.appPrimaryAccent,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTheme.captionSmall.copyWith(
-              color: context.appTextTertiary,
-            ),
-          ),
-        ],
-      ),
+      child: onTap != null
+          ? GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: content,
+            )
+          : content,
     );
   }
 }

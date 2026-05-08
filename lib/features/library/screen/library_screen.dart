@@ -1,6 +1,7 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,10 +24,9 @@ import '../widget/library_stats_view.dart';
 import '../widget/book_detail_sheet.dart';
 import '../widget/today_goal_banner.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
-  if (_useMock) return const [];
+  if (kUseMock) return const [];
   if (kIsWeb) {
     final client = Supabase.instance.client;
     final userId = client.auth.currentUser?.id;
@@ -176,7 +176,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 child: Text(
                                   label,
                                   style: TextStyle(
-                                    fontFamily: 'Pretendard',
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: context.appTextPrimary,
@@ -211,7 +210,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               Consumer(
                 builder: (ctx, r, _) {
                   final books = r.watch(libraryProvider);
-                  final logs = _useMock
+                  final logs = kUseMock
                       ? mockReadingLogs
                       : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
                   return _LibraryTab(
@@ -226,7 +225,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             else
               Consumer(
                 builder: (ctx2, r, child) {
-                  final logs = _useMock
+                  final logs = kUseMock
                       ? mockReadingLogs
                       : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
                   return LibraryCalendarView(
@@ -299,6 +298,16 @@ class _LibraryTabState extends State<_LibraryTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
     final logs = widget.logs;
+
+    // books 1회 순회: 카운트, reading 목록, 오늘 분 합산
+    final statusCounts = <ReadingStatus, int>{
+      for (final s in ReadingStatus.values) s: 0,
+    };
+    final readingBooks = <Book>[];
+    for (final b in widget.books) {
+      statusCounts[b.status] = (statusCounts[b.status] ?? 0) + 1;
+      if (b.status == ReadingStatus.reading) readingBooks.add(b);
+    }
     final todayMinutes = logs
         .where(
           (l) =>
@@ -307,16 +316,13 @@ class _LibraryTabState extends State<_LibraryTab> {
               l.date.day == now.day,
         )
         .fold<int>(0, (a, l) => a + l.minutes);
-    final readingBooks = widget.books
-        .where((b) => b.status == ReadingStatus.reading)
-        .toList();
 
     return CustomScrollView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         // ── 이번 달 성과 뱃지 ──────────────────────────────────────
-        if (_useMock)
+        if (kUseMock)
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -438,9 +444,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             child: Row(
               children: [
                 ...ReadingStatus.values.map((status) {
-                  final count = widget.books
-                      .where((b) => b.status == status)
-                      .length;
+                  final count = statusCounts[status] ?? 0;
                   final isSelected = status == _selectedStatus;
                   return Padding(
                     padding: EdgeInsets.only(
@@ -480,7 +484,6 @@ class _LibraryTabState extends State<_LibraryTab> {
                             Text(
                               '${status.label} $count',
                               style: AppTheme.captionLarge.copyWith(
-                                fontFamily: 'Pretendard',
                                 color: isSelected
                                     ? Colors.white
                                     : context.appTextTertiary,
@@ -652,7 +655,6 @@ class _MonthlyAchievementCard extends StatelessWidget {
                       Text(
                         item.label,
                         style: AppTheme.captionSmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appTextTertiary,
                         ),
                         textAlign: TextAlign.center,
@@ -738,8 +740,7 @@ class _WishlistListCardState extends State<_WishlistListCard> {
   @override
   Widget build(BuildContext context) {
     final b = widget.book;
-    final gradColors = AppTheme.coverGradients[
-        b.id.hashCode.abs() % AppTheme.coverGradients.length];
+    final gradColors = AppTheme.coverGradientFor(b.id);
 
     return GestureDetector(
       onTapDown: (_) {
@@ -821,7 +822,6 @@ class _WishlistListCardState extends State<_WishlistListCard> {
                       child: Text(
                         '읽기 시작',
                         style: AppTheme.captionLarge.copyWith(
-                          fontFamily: 'Pretendard',
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -845,8 +845,7 @@ class _CoverPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors = AppTheme
-        .coverGradients[bookId.hashCode.abs() % AppTheme.coverGradients.length];
+    final gradColors = AppTheme.coverGradientFor(bookId);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -963,7 +962,6 @@ class _BookCard extends StatelessWidget {
                               Text(
                                 '${book.savedSentences.length}',
                                 style: const TextStyle(
-                                  fontFamily: 'Pretendard',
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -1078,7 +1076,6 @@ class _BookCard extends StatelessWidget {
                           child: Text(
                             '이어 읽기',
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: isDark ? AppTheme.primaryLight : Colors.white,
@@ -1238,7 +1235,6 @@ class _BookListTile extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.bodySmall.copyWith(
-                              fontFamily: 'Pretendard',
                               color: context.appTextPrimary,
                               fontWeight: FontWeight.w600,
                             ),

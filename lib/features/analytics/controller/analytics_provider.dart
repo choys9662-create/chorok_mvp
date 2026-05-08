@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/isar/isar_reading_session.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 typedef TodSlot = ({String label, String range, int minutes});
 typedef SessionEntry = ({
@@ -205,7 +205,7 @@ List<SessionEntry> _sessToEntries(List<_Sess> sessions) {
 class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   @override
   Future<AnalyticsState> build() async {
-    if (_useMock) return const AnalyticsState();
+    if (kUseMock) return const AnalyticsState();
     return _load();
   }
 
@@ -428,29 +428,32 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final yearStart = DateTime(now.year, 1, 1);
     final yearEnd = DateTime(now.year + 1, 1, 1);
 
-    // 연 단위로 한 번에 로드 후 메모리에서 필터링
-    final sessionsRes = await client
-        .from('reading_sessions')
-        .select('started_at, ended_at, duration_seconds, sentence_count, books(title, author)')
-        .eq('user_id', userId)
-        .gte('ended_at', yearStart.toIso8601String())
-        .lt('ended_at', yearEnd.toIso8601String())
-        .order('ended_at', ascending: false);
-
-    final sentencesRes = await client
-        .from('sentences')
-        .select('created_at, content, books(title, author)')
-        .eq('user_id', userId)
-        .gte('created_at', yearStart.toIso8601String())
-        .lt('created_at', yearEnd.toIso8601String())
-        .order('created_at', ascending: false);
-
-    final completedBooksRes = await client
-        .from('books')
-        .select('id, title, author, total_pages, updated_at')
-        .eq('user_id', userId)
-        .eq('status', 'completed')
-        .order('updated_at', ascending: false);
+    // 연 단위로 한 번에 로드 후 메모리에서 필터링 (3개 쿼리 병렬)
+    final results = await Future.wait([
+      client
+          .from('reading_sessions')
+          .select('started_at, ended_at, duration_seconds, sentence_count, books(title, author)')
+          .eq('user_id', userId)
+          .gte('ended_at', yearStart.toIso8601String())
+          .lt('ended_at', yearEnd.toIso8601String())
+          .order('ended_at', ascending: false),
+      client
+          .from('sentences')
+          .select('created_at, content, books(title, author)')
+          .eq('user_id', userId)
+          .gte('created_at', yearStart.toIso8601String())
+          .lt('created_at', yearEnd.toIso8601String())
+          .order('created_at', ascending: false),
+      client
+          .from('books')
+          .select('id, title, author, total_pages, updated_at')
+          .eq('user_id', userId)
+          .eq('status', 'completed')
+          .order('updated_at', ascending: false),
+    ]);
+    final sessionsRes = results[0];
+    final sentencesRes = results[1];
+    final completedBooksRes = results[2];
 
     // Supabase rows → 공통 _Sess 타입으로 변환
     List<_Sess> rowsToSess(List rows) {

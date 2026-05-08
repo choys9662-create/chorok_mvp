@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 목업 데이터 (USE_MOCK=true 전용) ──────────────────────────────────────────
 final _kMockChoseo = [
@@ -120,7 +120,7 @@ class ChoseoListNotifier extends Notifier<ChoseoListState> {
   Future<void> load() async {
     final repo = ref.read(bookRepositoryProvider);
     final rows = await repo?.getAllChoseo() ?? [];
-    final items = (_useMock && rows.isEmpty) ? _kMockChoseo : rows;
+    final items = (kUseMock && rows.isEmpty) ? _kMockChoseo : rows;
     state = state.copyWith(items: items, isLoading: false);
   }
 
@@ -139,5 +139,5 @@ final choseoListProvider =
 final choseoCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.read(bookRepositoryProvider);
   final count = await repo?.getChoseoCount() ?? 0;
-  return (_useMock && count == 0) ? _kMockChoseo.length : count;
+  return (kUseMock && count == 0) ? _kMockChoseo.length : count;
 });

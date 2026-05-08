@@ -201,7 +201,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           child: Text(
                             '일단 시작해보기',
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: AppTheme.textSecondary,
@@ -223,7 +222,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           child: Text(
                             '건너뛰기',
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 13,
                               color: AppTheme.textTertiary,
                               height: 1.4,
@@ -300,7 +298,6 @@ class _SlidePage extends StatelessWidget {
             data.title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: AppTheme.textPrimary,
@@ -325,7 +322,6 @@ class _SlidePage extends StatelessWidget {
             child: Text(
               data.subtitle,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: context.appPrimaryAccent,
@@ -341,7 +337,6 @@ class _SlidePage extends StatelessWidget {
             data.body,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 15,
               fontWeight: FontWeight.w400,
               color: AppTheme.textSecondary,
@@ -498,7 +493,6 @@ class _PrimaryButtonState extends State<_PrimaryButton>
             child: Text(
               widget.label,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: Colors.black,

@@ -182,7 +182,6 @@ class _NavItem extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 11,
                     color: color,
                     fontWeight:

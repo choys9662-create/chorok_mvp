@@ -74,7 +74,6 @@ class WeeklyStatusCard extends ConsumerWidget {
                 child: Text(
                   '$daysAchieved일 달성',
                   style: AppTheme.captionSmall.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appPrimaryAccent,
                     fontWeight: FontWeight.w600,
                   ),
@@ -152,9 +151,8 @@ class WeeklyStatusCard extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            kWeekLabels[i],
+                            AppConstants.weekdaysMonFirst[i],
                             style: AppTheme.captionSmall.copyWith(
-                              fontFamily: 'Pretendard',
                               color: isToday
                                   ? context.appPrimaryAccent
                                   : context.appTextTertiary,

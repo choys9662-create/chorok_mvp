@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -84,10 +85,9 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  final _notifications = _useMock ? List<NotiItem>.from(_kNotifications) : <NotiItem>[];
+  final _notifications = kUseMock ? List<NotiItem>.from(_kNotifications) : <NotiItem>[];
 
   IconData _iconFor(NotiType type) => switch (type) {
         NotiType.follow   => Icons.person_add_rounded,
@@ -204,7 +204,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   Text(
                     '알림',
                     style: AppTheme.headingLarge.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
@@ -221,7 +220,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       child: Text(
                         '$unread 새로운',
                         style: AppTheme.captionSmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
@@ -236,7 +234,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       child: Text(
                         '모두 읽음',
                         style: AppTheme.captionLarge.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appTextTertiary,
                         ),
                       ),
@@ -408,7 +405,6 @@ class _NotiTile extends StatelessWidget {
                   Text(
                     item.title,
                     style: AppTheme.bodySmall.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextPrimary,
                       fontWeight:
                           item.isRead ? FontWeight.w400 : FontWeight.w600,
@@ -421,7 +417,6 @@ class _NotiTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.captionLarge.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextTertiary,
                       height: 1.5,
                     ),
@@ -430,7 +425,6 @@ class _NotiTile extends StatelessWidget {
                   Text(
                     item.time,
                     style: AppTheme.captionSmall.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextTertiary.withValues(alpha: 0.6),
                     ),
                   ),

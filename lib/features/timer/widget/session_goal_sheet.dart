@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/sheet_handle.dart';
 
 /// 독서 세션 목표 설정 바텀 시트
@@ -308,14 +309,6 @@ class _TimeGoalSection extends StatelessWidget {
     required this.onCustomTap,
   });
 
-  String _formatPreset(int minutes) {
-    if (minutes >= 60) {
-      final h = minutes ~/ 60;
-      final m = minutes % 60;
-      return m > 0 ? '$h시간 $m분' : '$h시간';
-    }
-    return '$minutes분';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +320,7 @@ class _TimeGoalSection extends StatelessWidget {
           runSpacing: 8,
           children: [
             ...presets.map((min) => _PresetChip(
-                  label: _formatPreset(min),
+                  label: time_fmt.formatMinutes(min),
                   isSelected: selectedMinutes == min && !customMode,
                   onTap: () => onPresetTap(min),
                 )),

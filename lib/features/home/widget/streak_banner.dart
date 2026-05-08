@@ -54,7 +54,6 @@ class StreakBanner extends ConsumerWidget {
                         ? '$days일 연속 독서 중'
                         : '오늘 아직 안 읽었어요. 스트릭이 끊길 수도 있어요.',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: hasReadToday
