@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
 import 'package:go_router/go_router.dart';
@@ -76,7 +77,6 @@ class FeedHighlightSection extends StatelessWidget {
                     Text(
                       '지금 많이 기록된 문장',
                       style: AppTheme.headingSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w700,
                       ),
@@ -85,7 +85,6 @@ class FeedHighlightSection extends StatelessWidget {
                     Text(
                       '독자들이 가장 많이 수집한 문장이에요',
                       style: AppTheme.captionLarge.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextTertiary,
                       ),
                     ),
@@ -93,11 +92,10 @@ class FeedHighlightSection extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: () => context.push('/feed'),
+                onTap: () => context.push(AppConstants.routeFeed),
                 child: Text(
                   '피드 보기 ›',
                   style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextTertiary,
                   ),
                 ),
@@ -142,7 +140,7 @@ class HighlightCard extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
-          context.push('/feed');
+          context.push(AppConstants.routeFeed);
         },
         child: Container(
           clipBehavior: Clip.antiAlias,
@@ -199,7 +197,6 @@ class HighlightCard extends StatelessWidget {
                                   Text(
                                     '겹문장 · ${sentence.recordCount}명 수집',
                                     style: AppTheme.captionSmall.copyWith(
-                                      fontFamily: 'Pretendard',
                                       color: context.appPrimaryAccent,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -212,7 +209,6 @@ class HighlightCard extends StatelessWidget {
                         Text(
                           '"${sentence.content}"',
                           style: AppTheme.bodySmall.copyWith(
-                            fontFamily: 'Pretendard',
                             color: context.appTextPrimary,
                             fontStyle: FontStyle.italic,
                             height: 1.6,
@@ -228,7 +224,6 @@ class HighlightCard extends StatelessWidget {
                               child: Text(
                                 '${sentence.bookTitle} · ${sentence.author}',
                                 style: AppTheme.captionSmall.copyWith(
-                                  fontFamily: 'Pretendard',
                                   color: context.appTextTertiary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -246,7 +241,6 @@ class HighlightCard extends StatelessWidget {
                             Text(
                               '${sentence.empathyCount}',
                               style: AppTheme.captionSmall.copyWith(
-                                fontFamily: 'Pretendard',
                                 color: context.appTextTertiary,
                               ),
                             ),

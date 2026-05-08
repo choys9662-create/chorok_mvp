@@ -63,7 +63,6 @@ class RecommendedBooksSection extends StatelessWidget {
                     Text(
                       '내 문장이 이끄는 책',
                       style: AppTheme.headingSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w700,
                       ),
@@ -72,7 +71,6 @@ class RecommendedBooksSection extends StatelessWidget {
                     Text(
                       '기록한 문장을 분석해 취향에 맞는 책을 추천해요',
                       style: AppTheme.captionLarge.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextTertiary,
                       ),
                     ),
@@ -106,7 +104,6 @@ class RecommendedBooksSection extends StatelessWidget {
                     Text(
                       'AI',
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w700,
                       ),
@@ -159,8 +156,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final gradColors = AppTheme
-        .coverGradients[b.gradientIndex % AppTheme.coverGradients.length];
+    final gradColors = AppTheme.coverGradientByIndex(b.gradientIndex);
 
     return GestureDetector(
       onTapDown: (_) {
@@ -242,7 +238,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                         child: Text(
                           '${(b.matchScore * 100).round()}%',
                           style: AppTheme.captionSmall.copyWith(
-                            fontFamily: 'Pretendard',
                             color: context.appPrimaryAccent,
                             fontWeight: FontWeight.w700,
                           ),
@@ -262,7 +257,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                       Text(
                         b.title,
                         style: AppTheme.bodySmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appTextPrimary,
                           fontWeight: FontWeight.w700,
                         ),
@@ -273,7 +267,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                       Text(
                         b.author,
                         style: AppTheme.captionSmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appTextSecondary,
                         ),
                       ),
@@ -309,7 +302,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                               child: Text(
                                 b.reason,
                                 style: AppTheme.captionSmall.copyWith(
-                                  fontFamily: 'Pretendard',
                                   color: context.appTextSecondary,
                                   height: 1.4,
                                 ),
@@ -389,7 +381,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                 Text(
                                   _isAdded ? '추가됨' : '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
-                                    fontFamily: 'Pretendard',
                                     color: _isAdded
                                         ? context.appPrimaryAccent
                                         : isDark

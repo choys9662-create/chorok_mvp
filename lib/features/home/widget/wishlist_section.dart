@@ -34,7 +34,6 @@ class WishlistSection extends ConsumerWidget {
               Text(
                 '다음에 읽을 책',
                 style: AppTheme.headingSmall.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -86,14 +85,11 @@ class WishlistBookCard extends StatefulWidget {
 class WishlistBookCardState extends State<WishlistBookCard> {
   bool _isPressed = false;
 
-  int get _gradientIndex =>
-      widget.book.title.hashCode.abs() % AppTheme.coverGradients.length;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final gradColors = AppTheme.coverGradients[_gradientIndex];
+    final gradColors = AppTheme.coverGradientFor(b.title);
     const daysText = '위시리스트';
 
     return GestureDetector(
@@ -158,7 +154,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                         child: Text(
                           daysText,
                           style: AppTheme.captionSmall.copyWith(
-                            fontFamily: 'Pretendard',
                             color: context.appTextSecondary,
                           ),
                         ),
@@ -175,7 +170,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                     Text(
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -186,7 +180,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                     Text(
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextSecondary,
                       ),
                     ),
@@ -240,7 +233,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                           Text(
                             '읽기 시작',
                             style: AppTheme.captionLarge.copyWith(
-                              fontFamily: 'Pretendard',
                               color: isDark
                                   ? context.appPrimaryAccent
                                   : Colors.white,

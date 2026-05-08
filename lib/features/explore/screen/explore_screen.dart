@@ -1,16 +1,17 @@
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../search/model/aladin_book.dart';
+import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 
@@ -51,8 +52,8 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchFocused = false;
-  List<_BookData> _allBooks = _useMock ? _kMockBooks : const [];
-  List<_BookData> _filteredBooks = _useMock ? _kMockBooks : const [];
+  List<_BookData> _allBooks = kUseMock ? _kMockBooks : const [];
+  List<_BookData> _filteredBooks = kUseMock ? _kMockBooks : const [];
   late final FocusNode _searchFocusNode;
 
   @override
@@ -63,7 +64,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchFocusNode.addListener(() {
       setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
     });
-    if (!_useMock && kIsWeb) _loadGlobalBooks();
+    if (!kUseMock && kIsWeb) _loadGlobalBooks();
   }
 
   Future<void> _loadGlobalBooks() async {
@@ -192,7 +193,6 @@ class _AppBarArea extends StatelessWidget {
               Text(
                 '탐색',
                 style: AppTheme.headingLarge.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -267,13 +267,11 @@ class _SearchBar extends StatelessWidget {
               focusNode: focusNode,
               onTap: () => HapticFeedback.selectionClick(),
               style: AppTheme.bodyMedium.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
               ),
               decoration: InputDecoration(
                 hintText: '책, 작가, 유저 검색',
                 hintStyle: AppTheme.bodyMedium.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextTertiary,
                 ),
                 border: InputBorder.none,
@@ -305,7 +303,6 @@ class _IdleSearchView extends StatelessWidget {
           Text(
             '책, 작가, 유저를 검색해보세요',
             style: AppTheme.headingSmall.copyWith(
-              fontFamily: 'Pretendard',
               color: context.appTextSecondary,
             ),
           ),
@@ -334,7 +331,6 @@ class _SearchResultsView extends StatelessWidget {
             Text(
               '검색 결과가 없어요',
               style: AppTheme.headingSmall.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextSecondary,
               ),
             ),
@@ -342,7 +338,6 @@ class _SearchResultsView extends StatelessWidget {
             Text(
               '다른 제목이나 저자 이름으로 검색해보세요',
               style: AppTheme.bodySmall.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextTertiary,
               ),
             ),
@@ -390,9 +385,10 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     final alreadyIn = lib.any((b) => b.title == aladinBook.title && b.author == aladinBook.author);
     if (alreadyIn) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(_buildSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
         context,
         '"${aladinBook.title}"은(는) 이미 서재에 있어요',
+        success: false,
       ));
       return;
     }
@@ -400,44 +396,18 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     final status = await showAddToLibrarySheet(context, aladinBook);
     if (status == null || !context.mounted) return;
 
-    ref.read(libraryProvider.notifier).addBook(aladinBook.toBook(status));
+    addBookAndFetchPages(ref, aladinBook, status);
 
     if (!context.mounted) return;
-    final label = status == ReadingStatus.reading ? '읽는 중' : '읽고 싶어요';
-    ScaffoldMessenger.of(context).showSnackBar(_buildSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
       context,
-      '"${aladinBook.title}"을(를) $label에 추가했어요',
+      '"${aladinBook.title}"을(를) ${readingStatusLabel(status)}에 추가했어요',
     ));
-  }
-
-  SnackBar _buildSnackBar(BuildContext context, String message) {
-    return SnackBar(
-      content: Text(
-        message,
-        style: AppTheme.bodySmall.copyWith(
-          fontFamily: 'Pretendard',
-          color: context.appTextPrimary,
-        ),
-      ),
-      backgroundColor: context.appCardElevated,
-      behavior: SnackBarBehavior.floating,
-      shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-        side: BorderSide(color: context.appBorder, width: 1),
-      ),
-      margin: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        0,
-        AppTheme.screenPadding,
-        16,
-      ),
-      duration: const Duration(seconds: 2),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors = AppTheme.coverGradients[(widget.rank - 1) % AppTheme.coverGradients.length];
+    final gradientColors = AppTheme.coverGradientByIndex(widget.rank - 1);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -496,7 +466,6 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                     Text(
                       widget.book.title,
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -507,7 +476,6 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                     Text(
                       '${widget.book.author} · ${widget.book.publisher}',
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextSecondary,
                       ),
                       maxLines: 1,
@@ -537,7 +505,6 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                     child: Text(
                       '서재에 추가',
                       style: AppTheme.captionSmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: AppTheme.accent,
                         fontWeight: FontWeight.w600,
                       ),

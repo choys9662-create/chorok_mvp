@@ -18,6 +18,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
@@ -240,18 +241,18 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         exitDurationSeconds: widget.data.exitDurationSeconds,
       );
 
-      // 초서 문장 개별 저장
-      for (final entry in widget.data.sentences) {
-        if (entry.content.isNotEmpty) {
-          await repo.saveChoseo(
-            bookId: bookId,
-            bookTitle: widget.data.bookTitle,
-            bookAuthor: widget.data.bookAuthor,
-            content: entry.content,
-            myThought: entry.thought.isEmpty ? null : entry.thought,
-          );
-        }
-      }
+      // 초서 문장 병렬 저장
+      await Future.wait(
+        widget.data.sentences
+            .where((entry) => entry.content.isNotEmpty)
+            .map((entry) => repo.saveChoseo(
+                  bookId: bookId,
+                  bookTitle: widget.data.bookTitle,
+                  bookAuthor: widget.data.bookAuthor,
+                  content: entry.content,
+                  myThought: entry.thought.isEmpty ? null : entry.thought,
+                )),
+      );
 
       if (!mounted) return;
 
@@ -296,7 +297,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         },
         onLater: () {
           Navigator.of(context).pop();
-          context.go('/home');
+          context.go(AppConstants.routeHome);
         },
       ),
     );
@@ -352,7 +353,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         child: GestureDetector(
                           onTap: () {
                             HapticFeedback.selectionClick();
-                            context.go('/home');
+                            context.go(AppConstants.routeHome);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -363,7 +364,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                               '건너뛰기',
                               style: AppTheme.captionLarge.copyWith(
                                 color: context.appTextTertiary,
-                                fontFamily: 'Pretendard',
                               ),
                             ),
                           ),
@@ -374,7 +374,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                       GestureDetector(
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          context.go('/home');
+                          context.go(AppConstants.routeHome);
                         },
                         child: Container(
                           width: 36,
@@ -477,7 +477,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                     color: Colors.black87,
                                     fontSize: 22,
                                     fontWeight: FontWeight.w800,
-                                    fontFamily: 'Pretendard',
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -487,7 +486,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                   style: const TextStyle(
                                     color: Colors.black54,
                                     fontSize: 15,
-                                    fontFamily: 'Pretendard',
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -496,7 +494,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
                                 _ReceiptRow(
                                   'DATE',
-                                  '${DateTime.now().year}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().day.toString().padLeft(2, '0')}',
+                                  time_fmt.formatDate(DateTime.now()),
                                 ),
                                 const SizedBox(height: 8),
                                 _ReceiptRow('TIME', _timeText),
@@ -520,7 +518,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                       fontSize: 15,
                                       fontStyle: FontStyle.italic,
                                       height: 1.5,
-                                      fontFamily: 'Pretendard',
                                     ),
                                   ),
                                   const SizedBox(height: 24),
@@ -1149,7 +1146,7 @@ class _RecapActions extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () {
                 HapticFeedback.mediumImpact();
-                context.go('/home');
+                context.go(AppConstants.routeHome);
               },
               icon: const Icon(Icons.home_rounded, size: 18),
               label: const Text('홈으로'),
@@ -1206,7 +1203,6 @@ class _PageRecordCard extends StatelessWidget {
             Text(
               '페이지 기록이 저장됐어요',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: context.appPrimaryAccent,
@@ -1239,7 +1235,6 @@ class _PageRecordCard extends StatelessWidget {
               Text(
                 '오늘 몇 쪽까지 읽었나요?',
                 style: TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: context.appTextPrimary,
@@ -1251,7 +1246,6 @@ class _PageRecordCard extends StatelessWidget {
                 Text(
                   '/ $totalPages쪽',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: context.appTextTertiary,
@@ -1277,7 +1271,6 @@ class _PageRecordCard extends StatelessWidget {
                     controller: controller,
                     keyboardType: TextInputType.number,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: context.appTextPrimary,
@@ -1286,7 +1279,6 @@ class _PageRecordCard extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: '현재 페이지',
                       hintStyle: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                         color: context.appTextTertiary,
@@ -1297,7 +1289,6 @@ class _PageRecordCard extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       suffixText: '쪽',
                       suffixStyle: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 14,
                         color: context.appTextSecondary,
                       ),
@@ -1332,7 +1323,6 @@ class _PageRecordCard extends StatelessWidget {
                         : const Text(
                             '기록',
                             style: TextStyle(
-                              fontFamily: 'Pretendard',
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: AppTheme.darkBg,
@@ -1404,7 +1394,6 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '완독을 축하해요! 🎉',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: context.appTextPrimary,
@@ -1417,7 +1406,6 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
@@ -1444,7 +1432,6 @@ class _CompletionDialog extends StatelessWidget {
                   child: const Text(
                     '감상 남기기',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.darkBg,
@@ -1469,7 +1456,6 @@ class _CompletionDialog extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: context.appTextTertiary,
@@ -1526,7 +1512,6 @@ class _OverlapHintCard extends StatelessWidget {
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 13,
                       color: context.appTextPrimary,
                       height: 1.5,
@@ -1547,7 +1532,6 @@ class _OverlapHintCard extends StatelessWidget {
                 Text(
                   '피드에서 같은 문장을 찾아보세요',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 11,
                     color: context.appTextTertiary,
                     height: 1.4,
@@ -1638,7 +1622,6 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
                   child: Text(
                     '${(_anim.value * 100).round()}%',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: _gaugeColor,
@@ -1806,7 +1789,6 @@ class _ReceiptRow extends StatelessWidget {
             color: Colors.black87,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Pretendard',
           ),
         ),
       ],

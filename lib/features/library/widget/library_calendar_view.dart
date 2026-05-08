@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
 // ─── 독서 기록 타입 ───────────────────────────────────────────────────────
 typedef ReadingLog = ({
@@ -12,11 +15,10 @@ typedef ReadingLog = ({
   int pages,
 });
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 독서 기록 목업 (USE_MOCK=true 전용) ────────────────────────────────────
 List<ReadingLog> get mockReadingLogs {
-  if (!_useMock) return const [];
+  if (!kUseMock) return const [];
   final now = DateTime.now();
   return [
     (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18),
@@ -79,7 +81,6 @@ class SegmentToggle extends StatelessWidget {
                 child: Text(
                   labels[i],
                   style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
                     color: isSelected ? Colors.white : context.appTextTertiary,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   ),
@@ -188,7 +189,6 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                 Text(
                   '${_focusedMonth.year}년 ${_focusedMonth.month}월',
                   style: AppTheme.headingSmall.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextPrimary,
                     fontWeight: FontWeight.w700,
                   ),
@@ -214,14 +214,13 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
             child: Row(
-              children: ['일', '월', '화', '수', '목', '금', '토']
+              children: AppConstants.weekdaysSunFirst
                   .map(
                     (d) => Expanded(
                       child: Center(
                         child: Text(
                           d,
                           style: AppTheme.captionSmall.copyWith(
-                            fontFamily: 'Pretendard',
                             color: context.appTextTertiary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -260,7 +259,6 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                   Text(
                     '${_selectedDate!.month}월 ${_selectedDate!.day}일',
                     style: AppTheme.headingSmall.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
@@ -274,11 +272,8 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        totalMin >= 60
-                            ? '${totalMin ~/ 60}시간 ${totalMin % 60}분'
-                            : '$totalMin분',
+                        time_fmt.formatMinutes(totalMin),
                         style: AppTheme.captionSmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
@@ -301,7 +296,6 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                   child: Text(
                     '이 날은 독서 기록이 없어요',
                     style: AppTheme.captionLarge.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appTextTertiary,
                     ),
                   ),
@@ -387,7 +381,6 @@ class _CalendarGrid extends StatelessWidget {
                 Text(
                   '$d',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 13,
                     fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                     color: isFuture
@@ -461,7 +454,6 @@ class _ReadingLogCard extends StatelessWidget {
                 Text(
                   log.bookTitle,
                   style: AppTheme.bodySmall.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -470,7 +462,6 @@ class _ReadingLogCard extends StatelessWidget {
                 Text(
                   log.bookAuthor,
                   style: AppTheme.captionSmall.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextSecondary,
                   ),
                 ),
@@ -490,7 +481,6 @@ class _ReadingLogCard extends StatelessWidget {
                         ? '${log.minutes ~/ 60}h ${log.minutes % 60}m'
                         : '${log.minutes}분',
                     style: AppTheme.captionLarge.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w600,
                     ),
@@ -501,7 +491,6 @@ class _ReadingLogCard extends StatelessWidget {
               Text(
                 '${log.pages}쪽 읽음',
                 style: AppTheme.captionSmall.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextTertiary,
                 ),
               ),

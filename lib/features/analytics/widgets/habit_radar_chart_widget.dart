@@ -112,7 +112,6 @@ class _LegendDot extends StatelessWidget {
           label,
           style: AppTheme.captionSmall.copyWith(
             color: _kLabel,
-            fontFamily: 'Pretendard',
           ),
         ),
       ],

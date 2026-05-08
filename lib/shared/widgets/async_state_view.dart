@@ -184,7 +184,6 @@ class _EmptyState extends StatelessWidget {
               message ?? '아직 데이터가 없어요',
               textAlign: TextAlign.center,
               style: AppTheme.bodyMedium.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextSecondary,
                 height: 1.5,
               ),
@@ -228,7 +227,6 @@ class _ErrorState extends StatelessWidget {
               message ?? '불러오는 중 오류가 발생했어요',
               textAlign: TextAlign.center,
               style: AppTheme.bodyMedium.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextSecondary,
                 height: 1.5,
               ),
@@ -255,7 +253,6 @@ class _ErrorState extends StatelessWidget {
                     child: Text(
                       '다시 시도',
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w600,
                       ),

@@ -36,4 +36,14 @@ class AppConstants {
   static const int mockActiveReaders = 15;
   static const int mockTodayReaders = 48;
   static const int mockWeekReaders = 134;
+
+  // ─── 요일 라벨 ────────────────────────────────────────────────
+  /// 월 시작 (분석/홈 위클리)
+  static const List<String> weekdaysMonFirst = [
+    '월', '화', '수', '목', '금', '토', '일',
+  ];
+  /// 일 시작 (캘린더)
+  static const List<String> weekdaysSunFirst = [
+    '일', '월', '화', '수', '목', '금', '토',
+  ];
 }

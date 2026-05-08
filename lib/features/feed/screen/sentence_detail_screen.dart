@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
@@ -42,7 +44,6 @@ class _ReaderThought {
   });
 }
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _thoughts = _useMock ? _buildMockThoughts() : [];
+    _thoughts = kUseMock ? _buildMockThoughts() : [];
   }
 
   @override
@@ -142,12 +143,6 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
     });
   }
 
-  String _formatRelative(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
-    if (diff.inHours < 24) return '${diff.inHours}시간 전';
-    return '${diff.inDays}일 전';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -406,7 +401,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                           const SizedBox(height: AppTheme.spaceMD),
                       itemBuilder: (context, index) => _ThoughtCard(
                         thought: _thoughts[index],
-                        formatTime: _formatRelative,
+                        formatTime: time_fmt.formatRelative,
                         onToggleLike: () {
                           HapticFeedback.selectionClick();
                           setState(() {

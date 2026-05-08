@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +9,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
@@ -286,11 +287,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _sentences = _useMock
+    _sentences = kUseMock
         ? _buildMockSentences()
         : _savedToCollected(widget.book.savedSentences);
-    _memos = _useMock ? _buildMockMemos() : [];
-    _otherReaders = _useMock ? _buildMockOtherReaders() : [];
+    _memos = kUseMock ? _buildMockMemos() : [];
+    _otherReaders = kUseMock ? _buildMockOtherReaders() : [];
   }
 
   List<_CollectedSentence> _savedToCollected(List<String> saved) {
@@ -581,8 +582,7 @@ class _HeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors = AppTheme
-        .coverGradients[book.gradientIndex % AppTheme.coverGradients.length];
+    final gradColors = AppTheme.coverGradientByIndex(book.gradientIndex);
 
     return Container(
       decoration: BoxDecoration(
@@ -1057,13 +1057,6 @@ class _SentenceCard extends StatelessWidget {
     required this.onToggleExpand,
   });
 
-  String _formatRelative(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}분 전';
-    if (diff.inHours < 24) return '${diff.inHours}시간 전';
-    return '${diff.inDays}일 전';
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = sentence;
@@ -1106,7 +1099,7 @@ class _SentenceCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _formatRelative(s.collectedAt),
+                      time_fmt.formatRelative(s.collectedAt),
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appTextTertiary,
                       ),
@@ -1255,7 +1248,7 @@ class _SentenceCard extends StatelessWidget {
                                 bottom: AppTheme.spaceSM),
                             child: _SocialThoughtTile(
                               thought: t,
-                              timeLabel: _formatRelative(t.createdAt),
+                              timeLabel: time_fmt.formatRelative(t.createdAt),
                             ),
                           ),
                         ),
@@ -1343,10 +1336,6 @@ class _MemoCard extends StatelessWidget {
 
   const _MemoCard({required this.memo});
 
-  String _formatDate(DateTime dt) {
-    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1360,7 +1349,7 @@ class _MemoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _formatDate(memo.createdAt),
+            time_fmt.formatDate(memo.createdAt),
             style: AppTheme.captionSmall.copyWith(
               color: context.appTextTertiary,
             ),
@@ -1411,7 +1400,7 @@ class _MenuSheet extends ConsumerWidget {
     ref.read(libraryProvider.notifier).deleteBook(bookId);
     Navigator.pop(context); // 시트 닫기
     if (!context.mounted) return;
-    context.go('/home');
+    context.go(AppConstants.routeHome);
   }
 
   @override
@@ -1472,7 +1461,6 @@ class _MenuSheet extends ConsumerWidget {
                   content: const Text(
                     '공유 기능은 곧 지원돼요',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
@@ -1732,7 +1720,6 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '완독을 축하해요! 🎉',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: context.appTextPrimary,
@@ -1745,7 +1732,6 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
@@ -1772,7 +1758,6 @@ class _CompletionDialog extends StatelessWidget {
                   child: const Text(
                     '감상 남기기',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.darkBg,
@@ -1797,7 +1782,6 @@ class _CompletionDialog extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: context.appTextTertiary,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/repositories/book_repository.dart';
@@ -117,7 +118,7 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
 
   void _onSkip() {
     HapticFeedback.selectionClick();
-    context.go('/home');
+    context.go(AppConstants.routeHome);
   }
 
   Future<void> _onComplete() async {
@@ -140,7 +141,7 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
 
     if (!mounted) return;
     HapticFeedback.mediumImpact();
-    context.go('/home');
+    context.go(AppConstants.routeHome);
   }
 
   // ── 빌드 ────────────────────────────────────────────────────────────────────
@@ -265,7 +266,6 @@ class _TopBar extends StatelessWidget {
           Text(
             '${currentStep + 1} / $_kStepCount',
             style: const TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: _kTextSecondary,
@@ -288,7 +288,6 @@ class _TopBar extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _kTextSecondary,
@@ -353,7 +352,6 @@ class _StepWrapper extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: _kTextPrimary,
@@ -364,7 +362,6 @@ class _StepWrapper extends StatelessWidget {
           Text(
             subtitle,
             style: const TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 14,
               fontWeight: FontWeight.w400,
               color: _kTextSecondary,
@@ -455,7 +452,6 @@ class _StarStep extends StatelessWidget {
                   child: Text(
                     _labels[rating],
                     style: const TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: _kGreen,
@@ -486,7 +482,6 @@ class _StarStep extends StatelessWidget {
                 child: Text(
                   '별점은 나만 볼 수 있어요. 솔직하게 남겨보세요.',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                     color: _kTextSecondary,
@@ -542,7 +537,6 @@ class _TextStep extends StatelessWidget {
                 controller: controller,
                 maxLines: maxLines,
                 style: const TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                   color: _kTextPrimary,
@@ -551,7 +545,6 @@ class _TextStep extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: const TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                     color: _kTextTertiary,
@@ -578,7 +571,6 @@ class _TextStep extends StatelessWidget {
             Text(
               '선택 입력이에요 — 비워도 괜찮아요',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: _kTextTertiary,
@@ -704,7 +696,6 @@ class _BottomCtaState extends State<_BottomCta> {
                             Text(
                               _label,
                               style: TextStyle(
-                                fontFamily: 'Pretendard',
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: active ? _kBg : _kTextTertiary,
@@ -732,7 +723,6 @@ class _BottomCtaState extends State<_BottomCta> {
             const Text(
               '별점을 선택해야 다음으로 넘어갈 수 있어요',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: _kTextSecondary,

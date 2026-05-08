@@ -9,12 +9,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/book_search_controller.dart';
 import '../controller/user_search_controller.dart';
+import '../util/add_book_flow.dart';
 import '../model/aladin_book.dart';
 import '../widget/add_to_library_sheet.dart';
 
@@ -131,7 +132,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar('"${book.title}"을(를) 서재에서 삭제했어요', true),
+        chorokSnackBar(context, '"${book.title}"을(를) 서재에서 삭제했어요'),
       );
       return;
     }
@@ -139,53 +140,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final status = await showAddToLibrarySheet(context, book);
     if (status == null || !mounted) return;
 
-    final added = ref.read(libraryProvider.notifier).addBook(book.toBook(status));
+    final added = addBookAndFetchPages(ref, book, status);
 
     if (!mounted) return;
-    final label = status == ReadingStatus.reading ? '읽는 중' : '읽고 싶어요';
 
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
-      _buildSnackBar(
+      chorokSnackBar(
+        context,
         added
-            ? '"${book.title}"을(를) $label에 추가했어요'
+            ? '"${book.title}"을(를) ${readingStatusLabel(status)}에 추가했어요'
             : '"${book.title}"은(는) 이미 서재에 있어요',
-        added,
+        success: added,
       ),
-    );
-  }
-
-  SnackBar _buildSnackBar(String message, bool success) {
-    return SnackBar(
-      content: Row(
-        children: [
-          Icon(
-            success ? Icons.check_circle_rounded : Icons.info_rounded,
-            color: success ? context.appPrimaryAccent : context.appTextSecondary,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: context.appTextPrimary,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: context.appCardElevated,
-      behavior: SnackBarBehavior.floating,
-      shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
-      ),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      duration: const Duration(seconds: 3),
     );
   }
 
@@ -278,7 +245,6 @@ class _TabBar extends StatelessWidget {
                 child: Text(
                   e.$2,
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
@@ -336,7 +302,6 @@ class _UserScopeChips extends StatelessWidget {
                 child: Text(
                   e.$2,
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
@@ -510,7 +475,6 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 Text(
                   p.displayName,
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: context.appTextPrimary,
@@ -522,7 +486,6 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 Text(
                   '@${p.username}',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 12,
                     color: context.appTextTertiary,
                   ),
@@ -534,7 +497,6 @@ class _UserCardState extends ConsumerState<_UserCard> {
                   Text(
                     p.bio!,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 12,
                       color: context.appTextSecondary,
                     ),
@@ -599,7 +561,6 @@ class _FollowButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: isFollowing ? context.appTextSecondary : Colors.white,
@@ -628,7 +589,6 @@ class _UserIdlePrompt extends StatelessWidget {
           Text(
             '유저를 검색해보세요',
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: context.appTextSecondary,
@@ -638,7 +598,6 @@ class _UserIdlePrompt extends StatelessWidget {
           Text(
             '닉네임 · 사용자 이름으로 찾을 수 있어요',
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 13,
               color: context.appTextTertiary,
             ),
@@ -687,7 +646,6 @@ class _UserEmptyResult extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: context.appTextPrimary,
@@ -698,7 +656,6 @@ class _UserEmptyResult extends StatelessWidget {
             Text(
               sub,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 13,
                 color: context.appTextSecondary,
               ),
@@ -781,7 +738,6 @@ class _SearchBar extends StatelessWidget {
                       focusNode: focusNode,
                       onChanged: onChanged,
                       style: TextStyle(
-                        fontFamily: 'Pretendard',
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
@@ -790,7 +746,6 @@ class _SearchBar extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: '제목, 저자, 키워드 검색',
                         hintStyle: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                           color: context.appTextTertiary,
@@ -927,7 +882,6 @@ class _BookCard extends ConsumerWidget {
                   Text(
                     book.title,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: context.appTextPrimary,
@@ -940,7 +894,6 @@ class _BookCard extends ConsumerWidget {
                   Text(
                     book.author,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: context.appTextSecondary,
@@ -953,7 +906,6 @@ class _BookCard extends ConsumerWidget {
                   Text(
                     book.publisher,
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
@@ -992,8 +944,7 @@ class _CoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradientIndex = title.codeUnitAt(0) % AppTheme.coverGradients.length;
-    final colors = AppTheme.coverGradients[gradientIndex];
+    final colors = AppTheme.coverGradientByIndex(title.codeUnitAt(0));
 
     return Container(
       width: 72,
@@ -1030,7 +981,6 @@ class _PlaceholderCover extends StatelessWidget {
       child: Text(
         title.length > 6 ? '${title.substring(0, 6)}...' : title,
         style: TextStyle(
-          fontFamily: 'Pretendard',
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: context.appTextPrimary,
@@ -1087,7 +1037,6 @@ class _AddButtonState extends State<_AddButton> {
                 Text(
                   '서재에 있어요',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: context.appPrimaryAccent,
@@ -1131,7 +1080,6 @@ class _AddButtonState extends State<_AddButton> {
                 Text(
                   '서재에 추가',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.darkBg,
@@ -1279,7 +1227,6 @@ class _IdlePrompt extends StatelessWidget {
           Text(
             '읽고 싶은 책을 검색해보세요',
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: context.appTextSecondary,
@@ -1290,7 +1237,6 @@ class _IdlePrompt extends StatelessWidget {
           Text(
             '제목, 저자, 키워드로 찾을 수 있어요',
             style: TextStyle(
-              fontFamily: 'Pretendard',
               fontSize: 13,
               fontWeight: FontWeight.w400,
               color: context.appTextTertiary,
@@ -1327,7 +1273,6 @@ class _EmptyResult extends StatelessWidget {
             Text(
               '"$query"',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: context.appTextPrimary,
@@ -1339,7 +1284,6 @@ class _EmptyResult extends StatelessWidget {
             Text(
               '검색 결과가 없어요\n다른 키워드로 찾아보세요',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
@@ -1379,7 +1323,6 @@ class _ErrorView extends StatelessWidget {
             Text(
               '검색에 실패했어요',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: context.appTextPrimary,
@@ -1390,7 +1333,6 @@ class _ErrorView extends StatelessWidget {
             Text(
               message,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
@@ -1420,7 +1362,6 @@ class _ErrorView extends StatelessWidget {
                   child: const Text(
                     '다시 시도',
                     style: TextStyle(
-                      fontFamily: 'Pretendard',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.darkBg,

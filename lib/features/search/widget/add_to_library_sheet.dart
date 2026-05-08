@@ -57,7 +57,6 @@ class _AddToLibrarySheet extends StatelessWidget {
             Text(
               '서재에 추가',
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: context.appTextPrimary,
@@ -68,7 +67,6 @@ class _AddToLibrarySheet extends StatelessWidget {
             Text(
               book.title,
               style: TextStyle(
-                fontFamily: 'Pretendard',
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
@@ -116,7 +114,6 @@ class _AddToLibrarySheet extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: context.appTextTertiary,
                   textStyle: const TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -204,7 +201,6 @@ class _StatusTileState extends State<_StatusTile> {
                       Text(
                         widget.label,
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: context.appTextPrimary,
@@ -214,7 +210,6 @@ class _StatusTileState extends State<_StatusTile> {
                       Text(
                         widget.sublabel,
                         style: TextStyle(
-                          fontFamily: 'Pretendard',
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: context.appTextSecondary,

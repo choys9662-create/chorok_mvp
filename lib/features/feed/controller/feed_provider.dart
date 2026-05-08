@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-const bool _useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 FeedSentence _toFeedSentence(IsarChoseo c) => FeedSentence(
       id: c.choseoId,
@@ -21,7 +21,7 @@ FeedSentence _toFeedSentence(IsarChoseo c) => FeedSentence(
 class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
   @override
   Future<List<FeedSentence>> build() async {
-    if (_useMock) return const [];
+    if (kUseMock) return const [];
     return _load();
   }
 

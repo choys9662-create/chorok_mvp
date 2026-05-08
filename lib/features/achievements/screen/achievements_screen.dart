@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 
 // ─── 뱃지 데이터 ───────────────────────────────────────────────────────────
 enum _BadgeCategory { reading, collection, social, special }
@@ -157,7 +158,6 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         title: Text(
           '성취 & 뱃지',
           style: AppTheme.headingSmall.copyWith(
-            fontFamily: 'Pretendard',
             color: context.appTextPrimary,
           ),
         ),
@@ -170,11 +170,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             labelColor: context.appPrimaryAccent,
             unselectedLabelColor: context.appTextTertiary,
             labelStyle: AppTheme.bodyMedium.copyWith(
-              fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
             ),
             unselectedLabelStyle: AppTheme.bodyMedium.copyWith(
-              fontFamily: 'Pretendard',
             ),
             tabs: const [Tab(text: '뱃지'), Tab(text: '챌린지')],
           ),
@@ -262,7 +260,6 @@ class _BadgesTab extends StatelessWidget {
                     child: Text(
                       cat.label,
                       style: AppTheme.captionLarge.copyWith(
-                        fontFamily: 'Pretendard',
                         color: selected ? Colors.white : context.appTextSecondary,
                         fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                       ),
@@ -328,7 +325,6 @@ class _LevelHeader extends StatelessWidget {
               child: Text(
                 'Lv.$_level',
                 style: const TextStyle(
-                  fontFamily: 'Pretendard',
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -344,7 +340,6 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '독서 레벨 $_level',
                   style: const TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -354,7 +349,6 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '$unlockedCount / $totalCount 뱃지 획득',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 13,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
@@ -373,7 +367,6 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '다음 레벨까지 ${3 - (unlockedCount % 3)}개',
                   style: TextStyle(
-                    fontFamily: 'Pretendard',
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -441,7 +434,6 @@ class _BadgeTile extends StatelessWidget {
             Text(
               badge.title,
               style: AppTheme.captionLarge.copyWith(
-                fontFamily: 'Pretendard',
                 color: badge.unlocked
                     ? context.appTextPrimary
                     : context.appTextTertiary,
@@ -510,21 +502,13 @@ class _BadgeDetailSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBorder,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const ChorokSheetHandle(),
             const SizedBox(height: 24),
             Text(badge.emoji, style: const TextStyle(fontSize: 56)),
             const SizedBox(height: 12),
             Text(
               badge.title,
               style: AppTheme.headingMedium.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
               ),
             ),
@@ -532,7 +516,6 @@ class _BadgeDetailSheet extends StatelessWidget {
             Text(
               badge.description,
               style: AppTheme.bodyMedium.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextSecondary,
               ),
               textAlign: TextAlign.center,
@@ -556,7 +539,6 @@ class _BadgeDetailSheet extends StatelessWidget {
                   Text(
                     '${(badge.progress * 100).round()}%',
                     style: AppTheme.bodyMedium.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w700,
                     ),
@@ -579,7 +561,6 @@ class _BadgeDetailSheet extends StatelessWidget {
                     Text(
                       '획득 완료',
                       style: AppTheme.captionLarge.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w600,
                       ),
@@ -660,7 +641,6 @@ class _ChallengeSection extends StatelessWidget {
             Text(
               title,
               style: AppTheme.headingSmall.copyWith(
-                fontFamily: 'Pretendard',
                 color: context.appTextPrimary,
               ),
             ),
@@ -669,7 +649,6 @@ class _ChallengeSection extends StatelessWidget {
               Text(
                 subtitle!,
                 style: AppTheme.captionLarge.copyWith(
-                  fontFamily: 'Pretendard',
                   color: context.appTextTertiary,
                 ),
               ),
@@ -707,7 +686,6 @@ class _ChallengeTile extends StatelessWidget {
                 child: Text(
                   challenge.title,
                   style: AppTheme.bodyMedium.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -721,7 +699,6 @@ class _ChallengeTile extends StatelessWidget {
                 child: Text(
                   challenge.deadline,
                   style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
                     color: challenge.color,
                     fontWeight: FontWeight.w600,
                   ),
@@ -733,7 +710,6 @@ class _ChallengeTile extends StatelessWidget {
           Text(
             challenge.description,
             style: AppTheme.captionLarge.copyWith(
-              fontFamily: 'Pretendard',
               color: context.appTextSecondary,
             ),
           ),
@@ -755,7 +731,6 @@ class _ChallengeTile extends StatelessWidget {
               Text(
                 challenge.progressLabel,
                 style: AppTheme.captionLarge.copyWith(
-                  fontFamily: 'Pretendard',
                   color: challenge.color,
                   fontWeight: FontWeight.w700,
                 ),
@@ -801,7 +776,6 @@ class _UpcomingChallengeTile extends StatelessWidget {
                 Text(
                   title,
                   style: AppTheme.bodyMedium.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -809,7 +783,6 @@ class _UpcomingChallengeTile extends StatelessWidget {
                 Text(
                   description,
                   style: AppTheme.captionLarge.copyWith(
-                    fontFamily: 'Pretendard',
                     color: context.appTextSecondary,
                   ),
                 ),
@@ -819,7 +792,6 @@ class _UpcomingChallengeTile extends StatelessWidget {
           Text(
             startDate,
             style: AppTheme.captionLarge.copyWith(
-              fontFamily: 'Pretendard',
               color: context.appTextTertiary,
             ),
           ),

@@ -73,3 +73,19 @@ final bookSearchProvider =
     AsyncNotifierProvider<BookSearchNotifier, List<AladinBook>>(
       BookSearchNotifier.new,
     );
+
+/// 알라딘 ItemLookUp으로 페이지 수만 조회.
+///
+/// `ItemSearch` 응답의 `subInfo.itemPage`는 누락되는 경우가 많아
+/// 책 추가 후 백그라운드로 보강할 때 사용한다.
+/// 페이지 수가 0 이거나 조회 실패 시 null 반환.
+Future<int?> fetchTotalPagesByIsbn(String isbn13) async {
+  try {
+    final results = await BookSearchNotifier.searchByIsbn(isbn13);
+    if (results.isEmpty) return null;
+    final pages = results.first.totalPages;
+    return pages > 0 ? pages : null;
+  } catch (_) {
+    return null;
+  }
+}

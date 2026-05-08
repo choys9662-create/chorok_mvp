@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
 class TodayGoalBanner extends StatelessWidget {
   final int todayMinutes;
@@ -57,14 +58,13 @@ class TodayGoalBanner extends StatelessWidget {
                   Text(
                     '오늘 목표 달성!',
                     style: AppTheme.bodySmall.copyWith(
-                      fontFamily: 'Pretendard',
                       color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_formatMinutes(todayMinutes)} 독서했어요 · 목표 $goalMinutes분',
+                    '${time_fmt.formatMinutes(todayMinutes)} 독서했어요 · 목표 $goalMinutes분',
                     style: AppTheme.captionSmall.copyWith(
                       color: context.appPrimaryAccent.withValues(alpha: 0.75),
                     ),
@@ -143,7 +143,6 @@ class TodayGoalBanner extends StatelessWidget {
                     Text(
                       '오늘 독서를 시작해보세요',
                       style: AppTheme.bodySmall.copyWith(
-                        fontFamily: 'Pretendard',
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w600,
                       ),
@@ -218,16 +217,15 @@ class TodayGoalBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '오늘 ${_formatMinutes(todayMinutes)} 독서했어요',
+                        '오늘 ${time_fmt.formatMinutes(todayMinutes)} 독서했어요',
                         style: AppTheme.bodySmall.copyWith(
-                          fontFamily: 'Pretendard',
                           color: context.appTextPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '목표까지 ${_formatMinutes(goalMinutes - todayMinutes)} 남았어요',
+                        '목표까지 ${time_fmt.formatMinutes(goalMinutes - todayMinutes)} 남았어요',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appTextTertiary,
                         ),
@@ -260,12 +258,4 @@ class TodayGoalBanner extends StatelessWidget {
     );
   }
 
-  String _formatMinutes(int minutes) {
-    if (minutes >= 60) {
-      final h = minutes ~/ 60;
-      final m = minutes % 60;
-      return m > 0 ? '$h시간 $m분' : '$h시간';
-    }
-    return '$minutes분';
-  }
 }
