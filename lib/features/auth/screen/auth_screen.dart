@@ -337,7 +337,9 @@ class _SocialButton extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: dark ? Colors.white : AppTheme.darkSurface,
             radius: 12,
-            side: dark ? BorderSide.none : BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
+            side: dark
+                ? BorderSide.none
+                : BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -451,10 +453,7 @@ class _Field extends StatelessWidget {
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-          fontSize: 15,
-          color: AppTheme.textTertiary,
-        ),
+        hintStyle: TextStyle(fontSize: 15, color: AppTheme.textTertiary),
         suffixIcon: suffix,
         filled: true,
         fillColor: AppTheme.darkSurface,
@@ -464,15 +463,21 @@ class _Field extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppTheme.darkBorder.withValues(alpha: 0.5),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppTheme.darkBorder.withValues(alpha: 0.5),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppTheme.primaryLight.withValues(alpha: 0.5),
+          ),
         ),
       ),
     );
@@ -489,7 +494,6 @@ class _SubmitButton extends StatelessWidget {
     required this.label,
     required this.loading,
     required this.onTap,
-    this.enabled = true,
   });
 
   @override

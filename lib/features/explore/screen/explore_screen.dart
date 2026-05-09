@@ -1,60 +1,32 @@
+import 'dart:async';
+
 import 'package:figma_squircle/figma_squircle.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../search/controller/book_search_controller.dart';
 import '../../search/model/aladin_book.dart';
 import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
 
 
-// ─── Data Model ──────────────────────────────────────────────────────────────
-
-class _BookData {
-  final String title;
-  final String author;
-  final String publisher;
-
-  const _BookData({
-    required this.title,
-    required this.author,
-    required this.publisher,
-  });
-}
-
-// ─── Mock Data ──────────────────────────────────────────────────────────────
-
-const List<_BookData> _kMockBooks = [
-  _BookData(title: '채식주의자', author: '한강', publisher: '창비'),
-  _BookData(title: '아몬드', author: '손원평', publisher: '창비'),
-  _BookData(title: '82년생 김지영', author: '조남주', publisher: '민음사'),
-  _BookData(title: '달러구트 꿈 백화점', author: '이미예', publisher: '팩토리나인'),
-  _BookData(title: '파친코', author: '이민진', publisher: '인플루엔셜'),
-  _BookData(title: '흰', author: '한강', publisher: '문학동네'),
-  _BookData(title: '지구 끝의 온실', author: '김초엽', publisher: '자이언트북스'),
-  _BookData(title: '소년이 온다', author: '한강', publisher: '창비'),
-];
-
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
-class ExploreScreen extends StatefulWidget {
+class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchFocused = false;
-  List<_BookData> _allBooks = kUseMock ? _kMockBooks : const [];
-  List<_BookData> _filteredBooks = kUseMock ? _kMockBooks : const [];
   late final FocusNode _searchFocusNode;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -64,46 +36,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchFocusNode.addListener(() {
       setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
     });
-    if (!kUseMock && kIsWeb) _loadGlobalBooks();
-  }
-
-  Future<void> _loadGlobalBooks() async {
-    try {
-      final rows = await Supabase.instance.client
-          .from('global_books')
-          .select('title, author, publisher')
-          .limit(50);
-      if (!mounted) return;
-      final books = (rows as List).map<_BookData>((r) => _BookData(
-        title: r['title'] as String? ?? '',
-        author: r['author'] as String? ?? '',
-        publisher: r['publisher'] as String? ?? '',
-      )).where((b) => b.title.isNotEmpty).toList();
-      setState(() {
-        _allBooks = books;
-        _filteredBooks = books;
-      });
-    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.trim().toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredBooks = _allBooks;
-      } else {
-        _filteredBooks = _allBooks.where((b) {
-          return b.title.toLowerCase().contains(query) ||
-              b.author.toLowerCase().contains(query);
-        }).toList();
-      }
+    _debounce?.cancel();
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      ref.read(bookSearchProvider.notifier).clear();
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      ref.read(bookSearchProvider.notifier).search(query);
     });
   }
 
@@ -111,13 +62,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
     HapticFeedback.selectionClick();
     _searchFocusNode.unfocus();
     _searchController.clear();
-    setState(() => _filteredBooks = _allBooks);
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isSearchActive = _searchController.text.isNotEmpty;
     final topPad = MediaQuery.of(context).padding.top;
+    final searchState = ref.watch(bookSearchProvider);
 
     return Scaffold(
       backgroundColor: context.appSurface,
@@ -132,7 +83,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
           Expanded(
             child: isSearchActive
-                ? _SearchResultsView(books: _filteredBooks)
+                ? _SearchResultsView(state: searchState, query: _searchController.text)
                 : const _IdleSearchView(),
           ),
         ],
@@ -315,43 +266,52 @@ class _IdleSearchView extends StatelessWidget {
 // ─── Search Results View ──────────────────────────────────────────────────────
 
 class _SearchResultsView extends StatelessWidget {
-  final List<_BookData> books;
+  final AsyncValue<List<AladinBook>> state;
+  final String query;
 
-  const _SearchResultsView({required this.books});
+  const _SearchResultsView({required this.state, required this.query});
 
   @override
   Widget build(BuildContext context) {
-    if (books.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off_rounded, size: 52, color: context.appTextTertiary),
-            const SizedBox(height: 16),
-            Text(
-              '검색 결과가 없어요',
-              style: AppTheme.headingSmall.copyWith(
-                color: context.appTextSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '다른 제목이나 저자 이름으로 검색해보세요',
-              style: AppTheme.bodySmall.copyWith(
-                color: context.appTextTertiary,
-              ),
-            ),
-          ],
+    return state.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+            style: AppTheme.bodySmall.copyWith(color: context.appTextSecondary),
+            textAlign: TextAlign.center,
+          ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(top: 8, bottom: 48),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        return _BookResultTile(book: books[index], rank: index + 1);
+      ),
+      data: (books) {
+        if (books.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.search_off_rounded, size: 52, color: context.appTextTertiary),
+                const SizedBox(height: 16),
+                Text(
+                  '검색 결과가 없어요',
+                  style: AppTheme.headingSmall.copyWith(color: context.appTextSecondary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '다른 제목이나 저자 이름으로 검색해보세요',
+                  style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 8, bottom: 48),
+          itemCount: books.length,
+          itemBuilder: (context, index) => _BookResultTile(book: books[index], rank: index + 1),
+        );
       },
     );
   }
@@ -360,7 +320,7 @@ class _SearchResultsView extends StatelessWidget {
 // ─── Book Result Tile ─────────────────────────────────────────────────────────
 
 class _BookResultTile extends ConsumerStatefulWidget {
-  final _BookData book;
+  final AladinBook book;
   final int rank;
 
   const _BookResultTile({required this.book, required this.rank});
@@ -375,33 +335,30 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
   Future<void> _onAddToLibrary(BuildContext context) async {
     HapticFeedback.mediumImpact();
 
-    final aladinBook = AladinBook(
-      title: widget.book.title,
-      author: widget.book.author,
-      publisher: widget.book.publisher,
-    );
-
     final lib = ref.read(libraryProvider);
-    final alreadyIn = lib.any((b) => b.title == aladinBook.title && b.author == aladinBook.author);
+    final alreadyIn = widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
+        ? lib.any((b) => b.isbn == widget.book.isbn13)
+        : lib.any((b) => b.title == widget.book.title && b.author == widget.book.author);
+
     if (alreadyIn) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
         context,
-        '"${aladinBook.title}"은(는) 이미 서재에 있어요',
+        '"${widget.book.title}"은(는) 이미 서재에 있어요',
         success: false,
       ));
       return;
     }
 
-    final status = await showAddToLibrarySheet(context, aladinBook);
+    final status = await showAddToLibrarySheet(context, widget.book);
     if (status == null || !context.mounted) return;
 
-    addBookAndFetchPages(ref, aladinBook, status);
+    addBookAndFetchPages(ref, widget.book, status);
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
       context,
-      '"${aladinBook.title}"을(를) ${readingStatusLabel(status)}에 추가했어요',
+      '"${widget.book.title}"을(를) ${readingStatusLabel(status)}에 추가했어요',
     ));
   }
 
@@ -452,11 +409,24 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                     side: BorderSide(color: context.appBorder, width: 1),
                   ),
                 ),
-                child: Icon(
-                  Icons.menu_book_rounded,
-                  size: 20,
-                  color: context.appPrimaryAccent.withValues(alpha: 0.6),
-                ),
+                child: widget.book.coverUrl != null && widget.book.coverUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          widget.book.coverUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Icon(
+                            Icons.menu_book_rounded,
+                            size: 20,
+                            color: context.appPrimaryAccent.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.menu_book_rounded,
+                        size: 20,
+                        color: context.appPrimaryAccent.withValues(alpha: 0.6),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -519,4 +489,3 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     );
   }
 }
-
