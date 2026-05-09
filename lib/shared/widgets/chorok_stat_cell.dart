@@ -30,10 +30,14 @@ class ChorokStatCell extends StatelessWidget {
               const SizedBox(width: 4),
             ],
             Flexible(
-              child: Text(
-                value,
-                style: AppTheme.displaySmall.copyWith(color: color),
-                overflow: TextOverflow.ellipsis,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: AppTheme.headingMedium.copyWith(color: color),
+                  maxLines: 1,
+                ),
               ),
             ),
           ],
