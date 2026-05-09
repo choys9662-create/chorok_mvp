@@ -46,7 +46,7 @@ class HabitRadarChartWidget extends StatelessWidget {
                 getTitle: (index, angle) {
                   return RadarChartTitle(
                     text: _axes[index % _axes.length],
-                    angle: angle,
+                    angle: 0,
                   );
                 },
                 dataSets: [

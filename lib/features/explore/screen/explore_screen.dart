@@ -331,6 +331,7 @@ class _BookResultTile extends ConsumerStatefulWidget {
 
 class _BookResultTileState extends ConsumerState<_BookResultTile> {
   bool _isPressed = false;
+  bool _btnPressed = false;
 
   Future<void> _onAddToLibrary(BuildContext context) async {
     HapticFeedback.mediumImpact();
@@ -365,6 +366,10 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
   @override
   Widget build(BuildContext context) {
     final gradientColors = AppTheme.coverGradientByIndex(widget.rank - 1);
+    final lib = ref.watch(libraryProvider);
+    final isAdded = widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
+        ? lib.any((b) => b.isbn == widget.book.isbn13)
+        : lib.any((b) => b.title == widget.book.title && b.author == widget.book.author);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -456,29 +461,76 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
               ),
               const SizedBox(width: 8),
               Semantics(
-                label: '${widget.book.title} 서재에 추가',
+                label: isAdded ? '${widget.book.title} 서재에 추가됨' : '${widget.book.title} 서재에 추가',
                 button: true,
                 child: GestureDetector(
-                  onTap: () => _onAddToLibrary(context),
-                  child: Container(
+                  onTapDown: isAdded ? null : (_) => setState(() => _btnPressed = true),
+                  onTapUp: isAdded ? null : (_) {
+                    setState(() => _btnPressed = false);
+                    _onAddToLibrary(context);
+                  },
+                  onTapCancel: isAdded ? null : () => setState(() => _btnPressed = false),
+                  child: AnimatedScale(
+                    scale: _btnPressed ? 0.92 : 1.0,
+                    duration: const Duration(milliseconds: 120),
+                    curve: Curves.easeOutCubic,
+                    child: Container(
                     height: 32,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     alignment: Alignment.center,
                     decoration: ShapeDecoration(
-                      color: context.appCardElevated,
+                      color: isAdded
+                          ? AppTheme.accent.withValues(alpha: 0.1)
+                          : _btnPressed
+                              ? AppTheme.accent.withValues(alpha: 0.15)
+                              : context.appCardElevated,
                       shape: SmoothRectangleBorder(
                         borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-                        side: BorderSide(color: context.appBorder, width: 1),
+                        side: BorderSide(
+                          color: isAdded || _btnPressed
+                              ? AppTheme.accent.withValues(alpha: 0.3)
+                              : context.appBorder,
+                          width: 1,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      '서재에 추가',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: AppTheme.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Opacity(
+                          opacity: 0,
+                          child: Text(
+                            '서재에 추가',
+                            style: AppTheme.captionSmall.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        if (isAdded)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_rounded, size: 13, color: AppTheme.accent),
+                              const SizedBox(width: 4),
+                              Text(
+                                '추가됨',
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: AppTheme.accent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Text(
+                            '서재에 추가',
+                            style: AppTheme.captionSmall.copyWith(
+                              color: AppTheme.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
                   ),
                 ),
               ),
