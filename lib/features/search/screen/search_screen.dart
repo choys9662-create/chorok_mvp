@@ -1072,19 +1072,38 @@ class _AddButtonState extends State<_AddButton> {
               radius: AppTheme.radiusSM,
             ),
             alignment: Alignment.center,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                Icon(Icons.add_rounded, color: AppTheme.darkBg, size: 14),
-                SizedBox(width: 4),
-                Text(
-                  '서재에 추가',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.darkBg,
-                    height: 1.4,
+                Opacity(
+                  opacity: 0,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.check_rounded, size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        '서재에 있어요',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, height: 1.4),
+                      ),
+                    ],
                   ),
+                ),
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, color: AppTheme.darkBg, size: 14),
+                    SizedBox(width: 4),
+                    Text(
+                      '서재에 추가',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.darkBg,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
