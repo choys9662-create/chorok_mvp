@@ -488,7 +488,6 @@ class _SubmitButton extends StatelessWidget {
   final String label;
   final bool loading;
   final VoidCallback onTap;
-  final bool enabled;
 
   const _SubmitButton({
     required this.label,
@@ -498,7 +497,7 @@ class _SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDisabled = !enabled || loading;
+    final isDisabled = loading;
 
     return Semantics(
       button: true,
