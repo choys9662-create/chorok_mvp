@@ -25,6 +25,7 @@ Book _fromIsarBook(IsarBook b) => Book(
         IsarReadingStatus.completed => ReadingStatus.completed,
         IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
       },
+      completedAt: b.completedAt,
     );
 
 class LibraryNotifier extends Notifier<List<Book>> {
@@ -88,6 +89,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
           : old.status,
       totalReadingHours: old.totalReadingHours,
       savedSentences: old.savedSentences,
+      completedAt: (clamped >= old.totalPages && old.totalPages > 0 && old.status != ReadingStatus.completed) 
+          ? DateTime.now() 
+          : old.completedAt,
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
@@ -120,6 +124,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       status: old.status,
       totalReadingHours: old.totalReadingHours,
       savedSentences: old.savedSentences,
+      completedAt: old.completedAt,
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
@@ -155,7 +160,7 @@ final libraryProvider = NotifierProvider<LibraryNotifier, List<Book>>(
 );
 
 // ─── 초기 목업 데이터 ────────────────────────────────────────────────────────
-const _kMockBooks = [
+final _kMockBooks = [
   // reading
   Book(
     id: '1',
@@ -194,6 +199,7 @@ const _kMockBooks = [
     totalPages: 190,
     currentPage: 190,
     totalReadingHours: 4.1,
+    completedAt: DateTime(2026, 5, 2),
   ),
   Book(
     id: '5',
@@ -203,6 +209,7 @@ const _kMockBooks = [
     totalPages: 264,
     currentPage: 264,
     totalReadingHours: 6.3,
+    completedAt: DateTime(2026, 5, 5),
   ),
   // wantToRead
   Book(

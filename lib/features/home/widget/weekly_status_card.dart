@@ -41,7 +41,7 @@ class WeeklyStatusCard extends ConsumerWidget {
         : '$weekTotal분';
 
     // 오늘 인사이트 (목업 mockup exitCount=0 기준)
-    final insight = todayInsightText(todayMin, 0);
+    final insight = todayInsightText(todayMin, 0, goalMin);
 
     return ChorokCard(
       borderColor: context.appBorder,
@@ -169,29 +169,66 @@ class WeeklyStatusCard extends ConsumerWidget {
               ),
             ),
           ),
-          // ── 오늘의 인사이트 ───────────────────────────────────
-          if (insight.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: ShapeDecoration(
-                color: context.primaryBg(0.06),
-                shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: AppTheme.radiusMD,
-                    cornerSmoothing: 0.6,
-                  ),
-                ),
-              ),
-              child: Text(
-                insight,
-                style: AppTheme.captionLarge.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w500,
+          // ── 오늘의 목표 현황 (인사이트 & 그래프) ──────────────────
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: ShapeDecoration(
+              color: context.primaryBg(0.06),
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: AppTheme.radiusMD,
+                  cornerSmoothing: 0.6,
                 ),
               ),
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (insight.isNotEmpty) ...[
+                  Text(
+                    insight,
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                // 프로그레스 바
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (todayMin / goalMin).clamp(0.0, 1.0),
+                    minHeight: 8,
+                    backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.15),
+                    valueColor: AlwaysStoppedAnimation<Color>(context.appPrimaryAccent),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // 상세 텍스트 (ex. 12분 / 30분)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$todayMin분 읽음',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '목표 $goalMin분',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

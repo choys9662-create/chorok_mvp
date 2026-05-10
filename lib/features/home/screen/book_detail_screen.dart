@@ -11,7 +11,6 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 
-
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
 class BookDetailExtra {
@@ -76,10 +75,7 @@ class _ReadingMemo {
   final String content;
   final DateTime createdAt;
 
-  const _ReadingMemo({
-    required this.content,
-    required this.createdAt,
-  });
+  const _ReadingMemo({required this.content, required this.createdAt});
 }
 
 /// 다른 독자가 같은 책에서 수집한 문장 + 생각
@@ -106,165 +102,163 @@ class _OtherReaderSentence {
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
 List<_CollectedSentence> _buildMockSentences() => [
-      _CollectedSentence(
-        id: '1',
-        content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
-        page: 23,
-        collectedAt: DateTime.now().subtract(const Duration(days: 3)),
-        myNote: '주인공의 결심이 단순한 선택이 아닌, 내면의 깊은 변화에서 비롯된 것임을 보여주는 첫 문장',
-        socialCount: 3,
-        socialThoughts: [
-          _SocialThought(
-            username: 'reader_jin',
-            thought: '이 문장에서 시작되는 전환점이 소름 돋았어요',
-            createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-          ),
-          _SocialThought(
-            username: 'bookworm_su',
-            thought: '꿈이 현실을 바꾸는 순간, 그 무게감이 느껴집니다',
-            createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          ),
-          _SocialThought(
-            username: 'midnight_books',
-            thought: '"꿈 때문에"라는 짧은 이유가 오히려 강렬해요',
-            createdAt: DateTime.now().subtract(const Duration(days: 2)),
-          ),
-        ],
+  _CollectedSentence(
+    id: '1',
+    content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
+    page: 23,
+    collectedAt: DateTime.now().subtract(const Duration(days: 3)),
+    myNote: '주인공의 결심이 단순한 선택이 아닌, 내면의 깊은 변화에서 비롯된 것임을 보여주는 첫 문장',
+    socialCount: 3,
+    socialThoughts: [
+      _SocialThought(
+        username: 'reader_jin',
+        thought: '이 문장에서 시작되는 전환점이 소름 돋았어요',
+        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
       ),
-      _CollectedSentence(
-        id: '2',
-        content: '그녀의 눈에는 아무런 감정도 없었다. 그게 가장 무서웠다.',
-        page: 45,
-        collectedAt: DateTime.now().subtract(const Duration(days: 2)),
-        socialCount: 1,
-        socialThoughts: [
-          _SocialThought(
-            username: 'seoulreader',
-            thought: '감정의 부재가 가장 큰 공포라는 걸 이 문장이 보여줘요',
-            createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-          ),
-        ],
+      _SocialThought(
+        username: 'bookworm_su',
+        thought: '꿈이 현실을 바꾸는 순간, 그 무게감이 느껴집니다',
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
-      _CollectedSentence(
-        id: '3',
-        content: '식물이 되고 싶었다. 뿌리를 내리고 햇빛을 먹고 살고 싶었다.',
-        page: 78,
-        collectedAt: DateTime.now().subtract(const Duration(days: 1)),
-        myNote: '인간으로서의 존재를 거부하는 영혜의 욕망이 가장 직접적으로 드러나는 장면',
-        socialCount: 5,
-        socialThoughts: [
-          _SocialThought(
-            username: 'hesse_lover',
-            thought: '자연으로 회귀하려는 본능적 욕구가 느껴져요',
-            createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-          ),
-          _SocialThought(
-            username: 'reader_jin',
-            thought: '이 문장을 읽고 한참을 멈췄습니다',
-            createdAt: DateTime.now().subtract(const Duration(hours: 8)),
-          ),
-        ],
-      ),
-      _CollectedSentence(
-        id: '4',
-        content: '아무도 나를 이해하지 못한다는 사실이, 오히려 자유였다.',
-        page: 112,
-        collectedAt: DateTime.now().subtract(const Duration(hours: 18)),
-        myNote: '고독이 자유가 되는 역설. 사회적 단절이 주는 해방감',
-        socialCount: 2,
-        socialThoughts: [
-          _SocialThought(
-            username: 'midnight_books',
-            thought: '이해받지 못하는 것이 해방이 될 수 있다니',
-            createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-          ),
-        ],
-      ),
-      _CollectedSentence(
-        id: '5',
-        content: '나무가 되는 것은 죽는 것이 아니라, 다른 방식으로 사는 것이다.',
-        page: 178,
-        collectedAt: DateTime.now().subtract(const Duration(hours: 2)),
-        myNote: '이 소설의 핵심 메시지. 변화는 소멸이 아니라 변환이다.',
-        socialCount: 4,
-        socialThoughts: [
-          _SocialThought(
-            username: 'seoulreader',
-            thought: '끝이 아닌 시작으로 읽히는 문장이에요',
-            createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-          ),
-          _SocialThought(
-            username: 'hesse_lover',
-            thought: '헤세의 "나무들"이 떠오르는 구절',
-            createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-          ),
-        ],
-      ),
-    ];
-
-List<_ReadingMemo> _buildMockMemos() => [
-      _ReadingMemo(
-        content:
-            '1부를 다 읽었다. 영혜의 거부가 단순한 식습관 변화가 아닌 존재론적 저항이라는 걸 느꼈다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      _ReadingMemo(
-        content:
-            '2부 "몽고반점"에서 시선이 남편에서 형부로 바뀌면서 영혜를 바라보는 시선의 문제가 더 선명해진다.',
+      _SocialThought(
+        username: 'midnight_books',
+        thought: '"꿈 때문에"라는 짧은 이유가 오히려 강렬해요',
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
       ),
-      _ReadingMemo(
-        content: '3부 시작. 언니의 시선에서 바라보는 영혜가 가장 아프다.',
+    ],
+  ),
+  _CollectedSentence(
+    id: '2',
+    content: '그녀의 눈에는 아무런 감정도 없었다. 그게 가장 무서웠다.',
+    page: 45,
+    collectedAt: DateTime.now().subtract(const Duration(days: 2)),
+    socialCount: 1,
+    socialThoughts: [
+      _SocialThought(
+        username: 'seoulreader',
+        thought: '감정의 부재가 가장 큰 공포라는 걸 이 문장이 보여줘요',
         createdAt: DateTime.now().subtract(const Duration(hours: 12)),
       ),
-    ];
+    ],
+  ),
+  _CollectedSentence(
+    id: '3',
+    content: '식물이 되고 싶었다. 뿌리를 내리고 햇빛을 먹고 살고 싶었다.',
+    page: 78,
+    collectedAt: DateTime.now().subtract(const Duration(days: 1)),
+    myNote: '인간으로서의 존재를 거부하는 영혜의 욕망이 가장 직접적으로 드러나는 장면',
+    socialCount: 5,
+    socialThoughts: [
+      _SocialThought(
+        username: 'hesse_lover',
+        thought: '자연으로 회귀하려는 본능적 욕구가 느껴져요',
+        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      ),
+      _SocialThought(
+        username: 'reader_jin',
+        thought: '이 문장을 읽고 한참을 멈췄습니다',
+        createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+      ),
+    ],
+  ),
+  _CollectedSentence(
+    id: '4',
+    content: '아무도 나를 이해하지 못한다는 사실이, 오히려 자유였다.',
+    page: 112,
+    collectedAt: DateTime.now().subtract(const Duration(hours: 18)),
+    myNote: '고독이 자유가 되는 역설. 사회적 단절이 주는 해방감',
+    socialCount: 2,
+    socialThoughts: [
+      _SocialThought(
+        username: 'midnight_books',
+        thought: '이해받지 못하는 것이 해방이 될 수 있다니',
+        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+      ),
+    ],
+  ),
+  _CollectedSentence(
+    id: '5',
+    content: '나무가 되는 것은 죽는 것이 아니라, 다른 방식으로 사는 것이다.',
+    page: 178,
+    collectedAt: DateTime.now().subtract(const Duration(hours: 2)),
+    myNote: '이 소설의 핵심 메시지. 변화는 소멸이 아니라 변환이다.',
+    socialCount: 4,
+    socialThoughts: [
+      _SocialThought(
+        username: 'seoulreader',
+        thought: '끝이 아닌 시작으로 읽히는 문장이에요',
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      ),
+      _SocialThought(
+        username: 'hesse_lover',
+        thought: '헤세의 "나무들"이 떠오르는 구절',
+        createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+      ),
+    ],
+  ),
+];
+
+List<_ReadingMemo> _buildMockMemos() => [
+  _ReadingMemo(
+    content: '1부를 다 읽었다. 영혜의 거부가 단순한 식습관 변화가 아닌 존재론적 저항이라는 걸 느꼈다.',
+    createdAt: DateTime.now().subtract(const Duration(days: 5)),
+  ),
+  _ReadingMemo(
+    content: '2부 "몽고반점"에서 시선이 남편에서 형부로 바뀌면서 영혜를 바라보는 시선의 문제가 더 선명해진다.',
+    createdAt: DateTime.now().subtract(const Duration(days: 2)),
+  ),
+  _ReadingMemo(
+    content: '3부 시작. 언니의 시선에서 바라보는 영혜가 가장 아프다.',
+    createdAt: DateTime.now().subtract(const Duration(hours: 12)),
+  ),
+];
 
 List<_OtherReaderSentence> _buildMockOtherReaders() => [
-      _OtherReaderSentence(
-        id: 'or1',
-        content: '그녀는 아무것도 원하지 않았다. 그것이 그녀의 유일한 소원이었다.',
-        page: 67,
-        username: 'seoulreader',
-        thought: '원하지 않는 것을 원한다는 역설. 이 한 문장에 영혜의 본질이 담겨 있다.',
-        empathyCount: 89,
-        savedAt: DateTime.now().subtract(const Duration(hours: 6)),
-      ),
-      _OtherReaderSentence(
-        id: 'or2',
-        content: '남편은 그녀의 변화를 이해하지 못했다. 이해하려고 하지도 않았다.',
-        page: 34,
-        username: 'bookworm_su',
-        thought: '"이해하지 못했다"와 "하지도 않았다"의 차이가 이 소설의 핵심. 무관심이 폭력이다.',
-        empathyCount: 124,
-        savedAt: DateTime.now().subtract(const Duration(hours: 12)),
-      ),
-      _OtherReaderSentence(
-        id: 'or3',
-        content: '꿈에서 본 얼굴은 자신의 것이었다.',
-        page: 12,
-        username: 'midnight_books',
-        thought: '자기 자신을 마주하는 꿈. 영혜의 변화는 외부가 아닌 내부에서 시작되었다.',
-        empathyCount: 56,
-        savedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      _OtherReaderSentence(
-        id: 'or4',
-        content: '피가 보이지 않는 음식만 먹겠다고 했다.',
-        page: 28,
-        username: 'hesse_lover',
-        empathyCount: 43,
-        savedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      _OtherReaderSentence(
-        id: 'or5',
-        content: '그녀는 점점 사라져 갔다. 아니, 변해 갔다.',
-        page: 156,
-        username: 'leafy_reader',
-        thought: '"사라진다"와 "변한다"— 이 두 단어의 차이가 소설 전체의 시각을 결정한다.',
-        empathyCount: 71,
-        savedAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-    ];
+  _OtherReaderSentence(
+    id: 'or1',
+    content: '그녀는 아무것도 원하지 않았다. 그것이 그녀의 유일한 소원이었다.',
+    page: 67,
+    username: 'seoulreader',
+    thought: '원하지 않는 것을 원한다는 역설. 이 한 문장에 영혜의 본질이 담겨 있다.',
+    empathyCount: 89,
+    savedAt: DateTime.now().subtract(const Duration(hours: 6)),
+  ),
+  _OtherReaderSentence(
+    id: 'or2',
+    content: '남편은 그녀의 변화를 이해하지 못했다. 이해하려고 하지도 않았다.',
+    page: 34,
+    username: 'bookworm_su',
+    thought: '"이해하지 못했다"와 "하지도 않았다"의 차이가 이 소설의 핵심. 무관심이 폭력이다.',
+    empathyCount: 124,
+    savedAt: DateTime.now().subtract(const Duration(hours: 12)),
+  ),
+  _OtherReaderSentence(
+    id: 'or3',
+    content: '꿈에서 본 얼굴은 자신의 것이었다.',
+    page: 12,
+    username: 'midnight_books',
+    thought: '자기 자신을 마주하는 꿈. 영혜의 변화는 외부가 아닌 내부에서 시작되었다.',
+    empathyCount: 56,
+    savedAt: DateTime.now().subtract(const Duration(days: 1)),
+  ),
+  _OtherReaderSentence(
+    id: 'or4',
+    content: '피가 보이지 않는 음식만 먹겠다고 했다.',
+    page: 28,
+    username: 'hesse_lover',
+    empathyCount: 43,
+    savedAt: DateTime.now().subtract(const Duration(days: 2)),
+  ),
+  _OtherReaderSentence(
+    id: 'or5',
+    content: '그녀는 점점 사라져 갔다. 아니, 변해 갔다.',
+    page: 156,
+    username: 'leafy_reader',
+    thought: '"사라진다"와 "변한다"— 이 두 단어의 차이가 소설 전체의 시각을 결정한다.',
+    empathyCount: 71,
+    savedAt: DateTime.now().subtract(const Duration(hours: 3)),
+  ),
+];
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 
@@ -295,12 +289,18 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   List<_CollectedSentence> _savedToCollected(List<String> saved) {
-    return saved.asMap().entries.map((e) => _CollectedSentence(
-      id: 'saved_${e.key}',
-      content: e.value,
-      page: 0,
-      collectedAt: DateTime.now(),
-    )).toList();
+    return saved
+        .asMap()
+        .entries
+        .map(
+          (e) => _CollectedSentence(
+            id: 'saved_${e.key}',
+            content: e.value,
+            page: 0,
+            collectedAt: DateTime.now(),
+          ),
+        )
+        .toList();
   }
 
   void _toggleExpansion(String id) {
@@ -362,10 +362,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => _MenuSheet(
-        bookId: widget.book.bookId,
-        bookTitle: widget.book.title,
-      ),
+      builder: (_) =>
+          _MenuSheet(bookId: widget.book.bookId, bookTitle: widget.book.title),
     );
   }
 
@@ -416,10 +414,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
           // ── 수집 문장 헤더 ────────────────────────────────────
           SliverToBoxAdapter(
-            child: _SectionHeader(
-              title: '수집한 문장',
-              count: _sentences.length,
-            ),
+            child: _SectionHeader(title: '수집한 문장', count: _sentences.length),
           ),
 
           // ── 수집 문장 목록 ────────────────────────────────────
@@ -435,8 +430,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 child: _SentenceCard(
                   sentence: _sentences[index],
                   isExpanded: _expandedIds.contains(_sentences[index].id),
-                  onToggleExpand: () =>
-                      _toggleExpansion(_sentences[index].id),
+                  onToggleExpand: () => _toggleExpansion(_sentences[index].id),
                 ),
               ),
               childCount: _sentences.length,
@@ -469,7 +463,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: AppTheme.smoothPill(
                         color: context.appPrimaryAccent.withValues(alpha: 0.12),
                       ),
@@ -490,7 +487,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 height: 200,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.screenPadding,
+                  ),
                   itemCount: _otherReaders.length,
                   itemBuilder: (context, index) => Padding(
                     padding: EdgeInsets.only(
@@ -554,7 +553,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ),
-
     );
   }
 }
@@ -584,188 +582,204 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradColors = AppTheme.coverGradientByIndex(book.gradientIndex);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            gradColors[0],
-            gradColors[1].withValues(alpha: 0.3),
-            context.appBg,
-          ],
-          stops: const [0.0, 0.6, 1.0],
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          topPadding + 8,
-          AppTheme.screenPadding,
-          AppTheme.space2XL,
-        ),
-        child: Column(
-          children: [
-            // ── 네비게이션 ────────────────────────────────────────
-            Row(
-              children: [
-                _NavButton(
-                  icon: Icons.arrow_back_ios_rounded,
-                  onTap: onBack,
-                  semanticsLabel: '뒤로 가기',
-                ),
-                const Spacer(),
-                _NavButton(
-                  icon: Icons.more_horiz_rounded,
-                  onTap: onMenu,
-                  semanticsLabel: '메뉴',
-                ),
-              ],
+    return Stack(
+      children: [
+        // ── 배경 글로우 ──────────────────────────────────────
+        Positioned(
+          top: -100,
+          left: -100,
+          right: -100,
+          child: Container(
+            height: 500,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  gradColors[0].withValues(alpha: 0.25),
+                  context.appBg.withValues(alpha: 0.0),
+                ],
+                radius: 0.7,
+              ),
             ),
-            const SizedBox(height: 24),
+          ),
+        ),
+        // ── 컨텐츠 ──────────────────────────────────────────
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            topPadding + 8,
+            AppTheme.screenPadding,
+            AppTheme.space2XL,
+          ),
+          child: Column(
+            children: [
+              // ── 네비게이션 ────────────────────────────────────────
+              Row(
+                children: [
+                  _NavButton(
+                    icon: Icons.arrow_back_ios_rounded,
+                    onTap: onBack,
+                    semanticsLabel: '뒤로 가기',
+                  ),
+                  const Spacer(),
+                  _NavButton(
+                    icon: Icons.more_horiz_rounded,
+                    onTap: onMenu,
+                    semanticsLabel: '메뉴',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
-            // ── 책 표지 ───────────────────────────────────────────
-            Container(
-              width: 120,
-              height: 168,
-              decoration: AppTheme.smoothBox(
-                radius: AppTheme.radiusLG,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: gradColors,
+              // ── 책 표지 ───────────────────────────────────────────
+              Container(
+                width: 120,
+                height: 168,
+                decoration: AppTheme.smoothBox(
+                  radius: AppTheme.radiusLG,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradColors,
+                  ),
+                  shadows: [
+                    BoxShadow(
+                      color: gradColors[0].withValues(alpha: 0.3),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -8,
+                      bottom: -8,
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: 80,
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    Center(
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: 40,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Stack(
+              const SizedBox(height: 20),
+
+              // ── 제목 · 저자 ───────────────────────────────────────
+              Text(
+                book.title,
+                style: AppTheme.headingLarge.copyWith(
+                  color: context.appTextPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                book.author,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: context.appTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── 진행률 ────────────────────────────────────────────
+              _ProgressSection(
+                progress: book.progress,
+                currentPage: book.currentPage,
+                totalPages: book.totalPages,
+              ),
+              const SizedBox(height: 20),
+
+              // ── 액션 버튼 ─────────────────────────────────────────
+              Row(
                 children: [
-                  Positioned(
-                    right: -8,
-                    bottom: -8,
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 80,
-                      color: Colors.white.withValues(alpha: 0.08),
+                  Expanded(
+                    child: Semantics(
+                      label: '${book.title} 이어 읽기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: onStartSession,
+                        child: Container(
+                          height: 48,
+                          alignment: Alignment.center,
+                          decoration: AppTheme.smoothBox(
+                            gradient: AppTheme.greenGradient,
+                            radius: AppTheme.radiusMD,
+                          ),
+                          child: Text(
+                            '이어 읽기',
+                            style: AppTheme.bodyMedium.copyWith(
+                              color: context.appBg,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  Center(
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 40,
-                      color: Colors.white.withValues(alpha: 0.6),
+                  const SizedBox(width: 12),
+                  Semantics(
+                    label: isCompleted ? '완독 취소' : '완독 체크',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: onToggleCompletion,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        alignment: Alignment.center,
+                        decoration: AppTheme.smoothBox(
+                          color: isCompleted
+                              ? AppTheme.accent.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.06),
+                          radius: AppTheme.radiusMD,
+                          side: BorderSide(
+                            color: isCompleted
+                                ? AppTheme.accent
+                                : Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isCompleted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              size: 20,
+                              color: isCompleted
+                                  ? AppTheme.accent
+                                  : context.appTextTertiary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '완독',
+                              style: AppTheme.bodySmall.copyWith(
+                                color: isCompleted
+                                    ? AppTheme.accent
+                                    : context.appTextSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── 제목 · 저자 ───────────────────────────────────────
-            Text(
-              book.title,
-              style: AppTheme.headingLarge.copyWith(
-                color: context.appTextPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              book.author,
-              style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextSecondary,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── 진행률 ────────────────────────────────────────────
-            _ProgressSection(
-              progress: book.progress,
-              currentPage: book.currentPage,
-              totalPages: book.totalPages,
-            ),
-            const SizedBox(height: 20),
-
-            // ── 액션 버튼 ─────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    label: '${book.title} 이어 읽기',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: onStartSession,
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: AppTheme.smoothBox(
-                          gradient: AppTheme.greenGradient,
-                          radius: AppTheme.radiusMD,
-                        ),
-                        child: Text(
-                          '이어 읽기',
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: context.appBg,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Semantics(
-                  label: isCompleted ? '완독 취소' : '완독 체크',
-                  button: true,
-                  child: GestureDetector(
-                    onTap: onToggleCompletion,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      alignment: Alignment.center,
-                      decoration: AppTheme.smoothBox(
-                        color: isCompleted
-                            ? context.appAccentColor.withValues(alpha: 0.15)
-                            : context.appCard,
-                        radius: AppTheme.radiusMD,
-                        side: BorderSide(
-                          color: isCompleted
-                              ? AppTheme.accent
-                              : context.appBorder,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isCompleted
-                                ? Icons.check_circle_rounded
-                                : Icons.check_circle_outline_rounded,
-                            size: 20,
-                            color: isCompleted
-                                ? AppTheme.accent
-                                : context.appTextTertiary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '완독',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: isCompleted
-                                  ? AppTheme.accent
-                                  : context.appTextSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -799,8 +813,9 @@ class _NavButton extends StatelessWidget {
               height: 40,
               alignment: Alignment.center,
               decoration: AppTheme.smoothBox(
-                color: context.appSurface.withValues(alpha: 0.5),
+                color: Colors.white.withValues(alpha: 0.06),
                 radius: AppTheme.radiusSM,
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: Icon(icon, size: 20, color: context.appTextPrimary),
             ),
@@ -834,7 +849,7 @@ class _ProgressSection extends StatelessWidget {
             Text(
               '$currentPage / $totalPages쪽',
               style: AppTheme.captionLarge.copyWith(
-                color: context.appTextSecondary,
+                color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
             Text(
@@ -851,7 +866,7 @@ class _ProgressSection extends StatelessWidget {
           builder: (_, c) => Container(
             height: 8,
             decoration: BoxDecoration(
-              color: context.appBorder,
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Align(
@@ -902,8 +917,7 @@ class _StatsRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child:
-                _StatCard(value: '${totalHours}h', label: '누적 시간'),
+            child: _StatCard(value: '${totalHours}h', label: '누적 시간'),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -930,9 +944,11 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: AppTheme.smoothBox(
-        color: context.appCard,
+        color: context.primaryBg(0.04),
         radius: AppTheme.radiusMD,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide(
+          color: context.appPrimaryAccent.withValues(alpha: 0.05),
+        ),
       ),
       child: Column(
         children: [
@@ -1085,12 +1101,14 @@ class _SentenceCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: AppTheme.smoothPill(
                         color: AppTheme.primary.withValues(alpha: 0.25),
                       ),
                       child: Text(
-                        'p.${ s.page}',
+                        'p.${s.page}',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
@@ -1161,8 +1179,9 @@ class _SentenceCard extends StatelessWidget {
                         child: Icon(
                           Icons.lightbulb_outline_rounded,
                           size: 16,
-                          color:
-                              context.appPrimaryAccent.withValues(alpha: 0.6),
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1239,13 +1258,13 @@ class _SentenceCard extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Divider(
-                            height: 1, color: context.appBorder),
+                        Divider(height: 1, color: context.appBorder),
                         const SizedBox(height: 12),
                         ...s.socialThoughts.map(
                           (t) => Padding(
                             padding: const EdgeInsets.only(
-                                bottom: AppTheme.spaceSM),
+                              bottom: AppTheme.spaceSM,
+                            ),
                             child: _SocialThoughtTile(
                               thought: t,
                               timeLabel: time_fmt.formatRelative(t.createdAt),
@@ -1269,10 +1288,7 @@ class _SocialThoughtTile extends StatelessWidget {
   final _SocialThought thought;
   final String timeLabel;
 
-  const _SocialThoughtTile({
-    required this.thought,
-    required this.timeLabel,
-  });
+  const _SocialThoughtTile({required this.thought, required this.timeLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -1519,16 +1535,14 @@ class _MenuTile extends StatelessWidget {
         child: SizedBox(
           height: 52,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
             child: Row(
               children: [
                 Icon(icon, size: 20, color: c),
                 const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: AppTheme.bodyMedium.copyWith(color: c),
-                ),
+                Text(label, style: AppTheme.bodyMedium.copyWith(color: c)),
               ],
             ),
           ),
@@ -1641,8 +1655,9 @@ class _OtherReaderCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 10,
-                backgroundColor:
-                    context.appPrimaryAccent.withValues(alpha: 0.12),
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.12,
+                ),
                 child: Text(
                   s.username[0].toUpperCase(),
                   style: AppTheme.captionSmall.copyWith(

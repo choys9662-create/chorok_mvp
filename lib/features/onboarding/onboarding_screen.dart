@@ -46,7 +46,7 @@ const List<_SlideData> _kSlides = [
   ),
   _SlideData(
     emoji: '🔥',
-    title: 'CHO_LOCK으로\n읽는 시간을 지켜요',
+    title: '초록으로\n읽는 시간을 지켜요',
     subtitle: '독서 중 이탈하면 기록에 남아요',
     body: '타이머와 반딧불이가 함께해요.\n집중의 흔적이 쌓일수록 숲이 자라요.',
   ),
@@ -257,8 +257,9 @@ class _SlidePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 80, 32, 24),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // 이모지 일러스트
           AnimatedBuilder(

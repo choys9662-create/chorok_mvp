@@ -17,9 +17,9 @@ const kTreemapItems = <({String title, double hours})>[
 
 List<({String name, Color color, int cells})> buildWaffleItems(BuildContext context) => [
   (name: '소설', color: context.appPrimaryAccent, cells: 60),
-  (name: '문학', color: const Color(0xFF1D9E75), cells: 22),
-  (name: '인문', color: const Color(0xFF0F6E56), cells: 11),
-  (name: '자기계발', color: const Color(0xFF3BC49A), cells: 7),
+  (name: '문학', color: const Color(0xFF81C784), cells: 22), // Light pastel green
+  (name: '인문', color: const Color(0xFF2E7D32), cells: 11), // Deep forest green
+  (name: '자기계발', color: const Color(0xFFCCFF90), cells: 7), // Neon yellowish-green
 ];
 
 // ─── 통계 탭 — 책별 비중 · 장르 비율 ──────────────────────────────────────

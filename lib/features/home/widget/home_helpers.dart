@@ -38,10 +38,13 @@ int daysSinceLastRead(int todayIndex) {
 
 const List<int> kWeeklyMinutes = [42, 28, 55, 0, 35, 18, 0];
 
-String todayInsightText(int todayMinutes, int exitCount) {
+String todayInsightText(int todayMinutes, int exitCount, int goalMinutes) {
   if (todayMinutes <= 0) return '';
-  if (exitCount == 0 && todayMinutes >= 30) return '한 번도 안 나가셨어요. 완전한 몰입이었어요';
-  if (exitCount == 0) return '중간에 한 번도 안 나가셨네요. 훌륭해요';
-  if (todayMinutes > 45) return '평소보다 오래 읽으셨어요. 재밌는 장면이었나요?';
-  return '오늘도 읽으셨어요. 이게 전부예요';
+  if (todayMinutes >= goalMinutes) {
+    if (exitCount == 0) return '한 번도 안 나가셨어요. 완전한 몰입이었어요';
+    return '오늘 목표를 달성했어요! 내일도 이 기세로요';
+  }
+  
+  final remaining = goalMinutes - todayMinutes;
+  return '오늘 $remaining분만 더 읽어볼까요?';
 }
