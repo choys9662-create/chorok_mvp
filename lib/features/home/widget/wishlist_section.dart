@@ -190,7 +190,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 child: Semantics(
-                  label: '${b.title} 읽기 시작',
+                  label: '${b.title} 읽기',
                   button: true,
                   child: GestureDetector(
                     onTap: () async {
@@ -231,7 +231,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '읽기 시작',
+                            '읽기',
                             style: AppTheme.captionLarge.copyWith(
                               color: isDark
                                   ? context.appPrimaryAccent

@@ -915,8 +915,8 @@ class _FireflyPainter extends CustomPainter {
       if (op < 0.01) continue; // 너무 흐린 반딧불이 스킵
       final sz = f.baseSize * (0.7 + 0.3 * pulseFactor);
 
-      // 앞쪽 nearbyCount개 = 마젠타(주변), 나머지 = 초록(맞팔)
-      final c = i < nearbyCount ? const Color(0xFFFF00FF) : _kGreen;
+      // 앞쪽 100개 = 마젠타, 나머지 400개 = 초록
+      final c = i < 100 ? const Color(0xFFFF00FF) : _kGreen;
       if (f.type == 0) {
         // 내부 — 3단 글로우 (블러 반지름도 마릿수에 맞게 축소)
         canvas.drawCircle(

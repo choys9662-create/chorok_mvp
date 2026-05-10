@@ -61,6 +61,7 @@ class Book {
   final int currentPage;
   final double totalReadingHours;
   final List<String> savedSentences;
+  final DateTime? completedAt;
 
   const Book({
     required this.id,
@@ -73,6 +74,7 @@ class Book {
     this.currentPage = 0,
     this.totalReadingHours = 0,
     this.savedSentences = const [],
+    this.completedAt,
   });
 
   double get readingProgress =>

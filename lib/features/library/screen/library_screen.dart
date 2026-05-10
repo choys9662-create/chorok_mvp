@@ -137,59 +137,131 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               },
             ),
 
-            // ── 수집한 문장 전체 보기 버튼 ──────────────────────
+            // ── 내 문장장 (Quotes Archive) ──────────────────────
             Consumer(
               builder: (context, ref, _) {
-                final choseoCount = ref.watch(choseoCountProvider);
-                final label = choseoCount.when(
-                  data: (n) => '수집한 문장 전체 보기 ($n개)',
-                  loading: () => '수집한 문장 전체 보기',
-                  error: (_, _) => '수집한 문장 전체 보기',
-                );
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(AppTheme.screenPadding, 8, AppTheme.screenPadding, 0),
-                  child: Semantics(
-                    label: label,
-                    button: true,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push(AppConstants.routeChoseoList);
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: ShapeDecoration(
-                            color: context.appCard,
-                            shape: SmoothRectangleBorder(
-                              borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-                              side: BorderSide(color: context.appAccentColor.withValues(alpha: 0.3)),
+                final state = ref.watch(choseoListProvider);
+                final items = state.items;
+                if (items.isEmpty) return const SizedBox.shrink();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(AppTheme.screenPadding, 8, AppTheme.screenPadding, 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '내 문장장',
+                            style: AppTheme.headingSmall.copyWith(
+                              color: context.appTextPrimary,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.format_quote_rounded, color: context.appAccentColor, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: context.appTextPrimary,
-                                    height: 1.4,
-                                  ),
+                          Semantics(
+                            label: '수집한 문장 전체 보기',
+                            button: true,
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                context.push(AppConstants.routeChoseoList);
+                              },
+                              child: Text(
+                                '전체보기',
+                                style: AppTheme.captionLarge.copyWith(
+                                  color: context.appTextTertiary,
                                 ),
                               ),
-                              Icon(Icons.chevron_right_rounded, color: context.appTextTertiary, size: 20),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
+                    SizedBox(
+                      height: 140,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+                        itemCount: items.length > 5 ? 5 : items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          
+                          // 배지/특성 부여 로직
+                          String badge = '수집한 문장';
+                          if (index == 0 || item.content.length > 60) {
+                            badge = '이 책의 핵심!';
+                          } else if (index == 1) {
+                            badge = '나만의 발견';
+                          } else if (item.content.length < 20) {
+                            badge = '짧고 강렬한';
+                          } else if (index == 2) {
+                            badge = '최근 수집';
+                          } else {
+                            badge = '긴 여운';
+                          }
+
+                          return Container(
+                            width: 240,
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: AppTheme.smoothBox(
+                              color: context.appCardElevated,
+                              radius: AppTheme.radiusLG,
+                              side: BorderSide(color: context.appBorder),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        badge,
+                                        style: AppTheme.captionSmall.copyWith(
+                                          color: context.appPrimaryAccent,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Icon(Icons.format_quote_rounded, size: 14, color: context.appTextTertiary.withValues(alpha: 0.5)),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: Text(
+                                    item.content,
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      color: context.appTextPrimary,
+                                      height: 1.5,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${item.bookTitle} · ${item.bookAuthor}',
+                                  style: AppTheme.captionSmall.copyWith(
+                                    color: context.appTextTertiary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -228,8 +300,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   final logs = kUseMock
                       ? mockReadingLogs
                       : r.watch(_readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
+                  final books = r.watch(libraryProvider);
                   return LibraryCalendarView(
                     logs: logs,
+                    books: books,
                     scrollController: null,
                   );
                 },
@@ -590,12 +664,6 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
           ),
 
-        // ── 읽고 싶은 책 (wantToRead 탭 선택 시 중복 방지로 숨김) ──
-        if (_selectedStatus != ReadingStatus.wantToRead) ...[
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceXL)),
-          const SliverToBoxAdapter(child: _LibraryWishlistSection()),
-          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceXL)),
-        ],
       ],
     );
   }
@@ -675,168 +743,7 @@ class _MonthlyAchievementCard extends StatelessWidget {
   }
 }
 
-// ─── 읽고 싶은 책 섹션 ────────────────────────────────────────────────────────
 
-class _LibraryWishlistSection extends ConsumerWidget {
-  const _LibraryWishlistSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final books = ref
-        .watch(libraryProvider)
-        .where((b) => b.status == ReadingStatus.wantToRead)
-        .toList();
-
-    if (books.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ChorokSectionHeader(
-            title: '읽고 싶은 책',
-            trailing: Text(
-              '${books.length}권',
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
-          ChorokCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: books.asMap().entries.map((e) {
-                final isLast = e.key == books.length - 1;
-                return Column(
-                  children: [
-                    _WishlistListCard(book: e.value),
-                    if (!isLast)
-                      Divider(height: 1, color: context.appBorder, indent: 64),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WishlistListCard extends StatefulWidget {
-  final Book book;
-  const _WishlistListCard({required this.book});
-
-  @override
-  State<_WishlistListCard> createState() => _WishlistListCardState();
-}
-
-class _WishlistListCardState extends State<_WishlistListCard> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final b = widget.book;
-    final gradColors = AppTheme.coverGradientFor(b.id);
-
-    return GestureDetector(
-      onTapDown: (_) {
-        HapticFeedback.selectionClick();
-        setState(() => _isPressed = true);
-      },
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedOpacity(
-        opacity: _isPressed ? 0.7 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.cardPaddingMD,
-            vertical: AppTheme.spaceMD,
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: gradColors,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: AppTheme.spaceMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        b.title,
-                        style: AppTheme.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.appTextPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        b.author,
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Semantics(
-                  label: '${b.title} 읽기 시작',
-                  button: true,
-                  child: GestureDetector(
-                    onTap: () async {
-                      HapticFeedback.mediumImpact();
-                      context.push(
-                          AppConstants.routeSession,
-                          extra: SessionExtra(
-                            bookId: b.id,
-                            bookTitle: b.title,
-                            bookAuthor: b.author,
-                            startPage: 0,
-                            totalPages: b.totalPages,
-                          ),
-                        );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: AppTheme.smoothBox(
-                        color: context.appPrimaryAccent,
-                        radius: AppTheme.radiusSM,
-                      ),
-                      child: Text(
-                        '읽기 시작',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 커버 플레이스홀더 ────────────────────────────────────────────────────
 class _CoverPlaceholder extends StatelessWidget {

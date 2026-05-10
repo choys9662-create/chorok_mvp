@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 
@@ -97,9 +99,10 @@ class SegmentToggle extends StatelessWidget {
 // ─── 캘린더 뷰 ────────────────────────────────────────────────────────────
 class LibraryCalendarView extends StatefulWidget {
   final List<ReadingLog> logs;
+  final List<Book> books;
   final ScrollController? scrollController;
 
-  const LibraryCalendarView({super.key, required this.logs, this.scrollController});
+  const LibraryCalendarView({super.key, required this.logs, required this.books, this.scrollController});
 
   @override
   State<LibraryCalendarView> createState() => _LibraryCalendarViewState();
@@ -136,6 +139,19 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
               l.date.month == _focusedMonth.month,
         )
         .map((l) => l.date.day)
+        .toSet();
+  }
+
+  Set<int> get _completedDays {
+    return widget.books
+        .where(
+          (b) =>
+              b.status == ReadingStatus.completed &&
+              b.completedAt != null &&
+              b.completedAt!.year == _focusedMonth.year &&
+              b.completedAt!.month == _focusedMonth.month,
+        )
+        .map((b) => b.completedAt!.day)
         .toSet();
   }
 
@@ -240,6 +256,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
             child: _CalendarGrid(
               month: _focusedMonth,
               activeDays: _activeDays,
+              completedDays: _completedDays,
               selectedDate: _selectedDate,
               onDayTap: (date) {
                 HapticFeedback.selectionClick();
@@ -327,12 +344,14 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
 class _CalendarGrid extends StatelessWidget {
   final DateTime month;
   final Set<int> activeDays;
+  final Set<int> completedDays;
   final DateTime? selectedDate;
   final ValueChanged<DateTime> onDayTap;
 
   const _CalendarGrid({
     required this.month,
     required this.activeDays,
+    required this.completedDays,
     required this.selectedDate,
     required this.onDayTap,
   });
@@ -358,6 +377,7 @@ class _CalendarGrid extends StatelessWidget {
           date.month == selectedDate!.month &&
           date.day == selectedDate!.day;
       final hasLog = activeDays.contains(d);
+      final isCompleted = completedDays.contains(d);
       final isFuture = date.isAfter(today);
 
       cells.add(
@@ -393,17 +413,36 @@ class _CalendarGrid extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: hasLog
-                        ? context.appPrimaryAccent.withValues(alpha: isSelected ? 1.0 : 0.7)
-                        : Colors.transparent,
-                  ),
-                ),
+                if (isCompleted || hasLog) ...[
+                  const SizedBox(height: 2),
+                  if (isCompleted)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white.withValues(alpha: 0.2) : context.appPrimaryAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '완독',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : context.appPrimaryAccent,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: context.appPrimaryAccent.withValues(alpha: isSelected ? 1.0 : 0.7),
+                      ),
+                    ),
+                ] else ...[
+                  const SizedBox(height: 7),
+                ],
               ],
             ),
           ),

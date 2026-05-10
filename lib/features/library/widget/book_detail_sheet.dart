@@ -481,7 +481,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                         ? '이어 읽기'
                         : isCompleted
                         ? '다시 읽기'
-                        : '읽기 시작',
+                        : '읽기',
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
