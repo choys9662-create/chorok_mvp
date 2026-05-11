@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -130,24 +131,53 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // 독서 세션 — 쉘 밖에서 전체 화면으로 표시
       GoRoute(
         path: AppConstants.routeSession,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra;
-          // SessionExtra (신규) 또는 SessionGoal? (레거시 호환)
-          if (extra is SessionExtra) {
-            return ReadingSessionScreen(
-              goal: extra.goal,
-              bookId: extra.bookId,
-              bookTitle: extra.bookTitle,
-              bookAuthor: extra.bookAuthor,
-              coverUrl: extra.coverUrl,
-              startPage: extra.startPage,
-              totalPages: extra.totalPages,
-            );
-          }
-          return ReadingSessionScreen(goal: extra as SessionGoal?);
+          final screen = () {
+            if (extra is SessionExtra) {
+              return ReadingSessionScreen(
+                goal: extra.goal,
+                bookId: extra.bookId,
+                bookTitle: extra.bookTitle,
+                bookAuthor: extra.bookAuthor,
+                coverUrl: extra.coverUrl,
+                startPage: extra.startPage,
+                totalPages: extra.totalPages,
+              );
+            }
+            return ReadingSessionScreen(goal: extra as SessionGoal?);
+          }();
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: screen,
+            transitionDuration: const Duration(milliseconds: 700),
+            reverseTransitionDuration: const Duration(milliseconds: 400),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              // 진입: fade + scale 0.94 → 1.0  (집중 모드로 몰입하는 느낌)
+              final fade = CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              );
+              final scale = Tween<double>(begin: 0.94, end: 1.0).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              );
+              // 퇴장(pop): 빠르게 fade만
+              final exitFade = CurvedAnimation(
+                parent: secondaryAnimation,
+                curve: Curves.easeIn,
+              );
+              return FadeTransition(
+                opacity: Tween<double>(begin: 1.0, end: 0.0).animate(exitFade),
+                child: FadeTransition(
+                  opacity: fade,
+                  child: ScaleTransition(scale: scale, child: child),
+                ),
+              );
+            },
+          );
         },
       ),
 

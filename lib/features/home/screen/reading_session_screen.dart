@@ -52,6 +52,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
   late final AnimationController _moveCtrl;
+  late final AnimationController _entryCtrl;
+  late final Animation<double> _entryTopBar;
+  late final Animation<double> _entryTimer;
+  late final Animation<double> _entryBottom;
   bool _isUiVisible = true;
   Timer? _uiHideTimer;
 
@@ -156,6 +160,24 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       duration: const Duration(seconds: 60),
     )..repeat();
 
+    // ── 진입 staggered 애니메이션 ──────────────────────────────────
+    _entryCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _entryTopBar = CurvedAnimation(
+      parent: _entryCtrl,
+      curve: const Interval(0.0, 0.55, curve: Curves.easeOut),
+    );
+    _entryTimer = CurvedAnimation(
+      parent: _entryCtrl,
+      curve: const Interval(0.2, 0.72, curve: Curves.easeOut),
+    );
+    _entryBottom = CurvedAnimation(
+      parent: _entryCtrl,
+      curve: const Interval(0.42, 1.0, curve: Curves.easeOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final timer = ref.read(timerProvider);
       if (timer.isIdle) {
@@ -163,6 +185,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       WakelockPlus.enable();
+      _entryCtrl.forward();
     });
   }
 
@@ -188,6 +211,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     WakelockPlus.disable();
     _pulseCtrl.dispose();
     _moveCtrl.dispose();
+    _entryCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     super.dispose();
@@ -291,53 +315,78 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ─ 상단 컨트롤 바 ──────────────────────────────
-                      IgnorePointer(
-                        ignoring: !_isUiVisible,
-                        child: _TopBar(
-                          timer: timer,
-                          readersCount: readersCount,
-                          onTogglePause: () {
-                            HapticFeedback.mediumImpact();
-                            final ctrl = ref.read(timerProvider.notifier);
-                            timer.isPaused ? ctrl.resume() : ctrl.pause();
-                            _resetUiTimer();
-                          },
-                          onStopPress: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('꾹 눌러서 세션을 종료하세요', style: TextStyle(fontFamily: 'Pretendard')),
-                                duration: Duration(milliseconds: 1500),
-                                backgroundColor: Color(0xFF1A3D2B),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          onStopLongPress: _onStop,
-                          onReadersTap: _openReadersSheet,
+                      FadeTransition(
+                        opacity: _entryTopBar,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, -0.3),
+                            end: Offset.zero,
+                          ).animate(_entryTopBar),
+                          child: IgnorePointer(
+                            ignoring: !_isUiVisible,
+                            child: _TopBar(
+                              timer: timer,
+                              readersCount: readersCount,
+                              onTogglePause: () {
+                                HapticFeedback.mediumImpact();
+                                final ctrl = ref.read(timerProvider.notifier);
+                                timer.isPaused ? ctrl.resume() : ctrl.pause();
+                                _resetUiTimer();
+                              },
+                              onStopPress: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('꾹 눌러서 세션을 종료하세요', style: TextStyle(fontFamily: 'Pretendard')),
+                                    duration: Duration(milliseconds: 1500),
+                                    backgroundColor: Color(0xFF1A3D2B),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              onStopLongPress: _onStop,
+                              onReadersTap: _openReadersSheet,
+                            ),
+                          ),
                         ),
                       ),
 
                       // ─ 타이머 숫자 ──────────────────────────────────
-                      IgnorePointer(
-                        ignoring: !_isUiVisible,
-                        child: Center(child: _TimerDisplay(timer: timer)),
+                      FadeTransition(
+                        opacity: _entryTimer,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.85, end: 1.0)
+                              .animate(_entryTimer),
+                          child: IgnorePointer(
+                            ignoring: !_isUiVisible,
+                            child: Center(child: _TimerDisplay(timer: timer)),
+                          ),
+                        ),
                       ),
 
                       const Spacer(),
 
                       // ─ 하단 책 정보 + 초서 액션 바 ───────────────
-                      IgnorePointer(
-                        ignoring: !_isUiVisible,
-                        child: _BottomArea(
-                          chosuCount: _collectedSentences.length,
-                          bookTitle: widget.bookTitle,
-                          bookAuthor: widget.bookAuthor,
-                          onOcrTap: _openOcr,
-                          onRecordTap: _toggleRecording,
-                          isRecording: _isRecording,
-                          isOcrLoading: _isOcrLoading,
-                          onTypeSentence: (text) =>
-                              _openChosuSheet(initialText: text),
+                      FadeTransition(
+                        opacity: _entryBottom,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.3),
+                            end: Offset.zero,
+                          ).animate(_entryBottom),
+                          child: IgnorePointer(
+                            ignoring: !_isUiVisible,
+                            child: _BottomArea(
+                              chosuCount: _collectedSentences.length,
+                              bookTitle: widget.bookTitle,
+                              bookAuthor: widget.bookAuthor,
+                              onOcrTap: _openOcr,
+                              onRecordTap: _toggleRecording,
+                              isRecording: _isRecording,
+                              isOcrLoading: _isOcrLoading,
+                              onTypeSentence: (text) =>
+                                  _openChosuSheet(initialText: text),
+                            ),
+                          ),
                         ),
                       ),
                     ],
