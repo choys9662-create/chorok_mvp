@@ -26,11 +26,11 @@ typedef _TrendingBook = ({
 });
 
 const List<_TrendingBook> _kMockTrendingBooks = [
-  (title: '채식주의자', author: '한강', coverUrl: 'https://picsum.photos/seed/chorok1/300/400', sentenceCount: 142, gradientIndex: 0),
-  (title: '파친코', author: '이민진', coverUrl: 'https://picsum.photos/seed/chorok2/300/400', sentenceCount: 98, gradientIndex: 2),
-  (title: '아몬드', author: '손원평', coverUrl: 'https://picsum.photos/seed/chorok3/300/400', sentenceCount: 87, gradientIndex: 4),
-  (title: '소년이 온다', author: '한강', coverUrl: 'https://picsum.photos/seed/chorok1/300/400', sentenceCount: 76, gradientIndex: 3),
-  (title: '82년생 김지영', author: '조남주', coverUrl: 'https://picsum.photos/seed/chorok5/300/400', sentenceCount: 61, gradientIndex: 1),
+  (title: '채식주의자', author: '한강', coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg', sentenceCount: 142, gradientIndex: 0),
+  (title: '파친코', author: '이민진', coverUrl: 'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg', sentenceCount: 98, gradientIndex: 2),
+  (title: '아몬드', author: '손원평', coverUrl: 'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg', sentenceCount: 87, gradientIndex: 4),
+  (title: '소년이 온다', author: '한강', coverUrl: 'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg', sentenceCount: 76, gradientIndex: 3),
+  (title: '82년생 김지영', author: '조남주', coverUrl: 'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg', sentenceCount: 61, gradientIndex: 1),
 ];
 
 List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
@@ -73,7 +73,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'reader_jin',
       savedAt: now.subtract(const Duration(minutes: 23)),
       empathyCount: 42,
@@ -85,7 +85,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'leafy_reader',
       savedAt: now.subtract(const Duration(minutes: 45)),
       empathyCount: 28,
@@ -97,7 +97,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '채식이 곧 저항이고, 꿈이 곧 각성이다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'green_pages',
       savedAt: now.subtract(const Duration(hours: 2)),
       empathyCount: 15,
@@ -108,7 +108,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '사랑의 정의가 이렇게 아플 수 있다니. 지영이의 상처를 "보듬는" 사람은 결국 아무도 없었다는 게 더 아프다.',
       bookTitle: '82년생 김지영',
       bookAuthor: '조남주',
-      coverUrl: 'https://picsum.photos/seed/chorok5/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
       username: 'bookworm_su',
       savedAt: now.subtract(const Duration(hours: 1)),
       empathyCount: 87,
@@ -121,7 +121,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '"다름"과 "틀림"의 경계에서 선재가 내뱉은 이 한마디가 소설 전체를 관통한다.',
       bookTitle: '아몬드',
       bookAuthor: '손원평',
-      coverUrl: 'https://picsum.photos/seed/chorok3/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
       username: 'seoulreader',
       savedAt: now.subtract(const Duration(hours: 3)),
       empathyCount: 156,
@@ -133,7 +133,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '외로움의 반대가 사랑이 아니라 "연결"이라는 걸 이 문장이 증명한다.',
       bookTitle: '밤을 걷는 선비',
       bookAuthor: '이지운',
-      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
       username: 'midnight_books',
       savedAt: now.subtract(const Duration(hours: 5)),
       empathyCount: 23,
@@ -144,7 +144,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '헤세가 이 말을 했을 때, 그는 분명 데미안을 쓰면서 자기 자신을 느끼고 있었을 것이다.',
       bookTitle: '독서의 기쁨',
       bookAuthor: '헤르만 헤세',
-      coverUrl: 'https://picsum.photos/seed/chorok2/300/400',
+      coverUrl: 'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
       username: 'hesse_lover',
       savedAt: now.subtract(const Duration(hours: 8)),
       empathyCount: 64,
@@ -810,15 +810,15 @@ class _SentenceCardState extends State<_SentenceCard> {
                 Container(
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
-                    color: context.appCardElevated,
+                    color: overlap
+                        ? context.appPrimaryAccent.withValues(alpha: 0.07)
+                        : context.appCardElevated,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border(
-                      left: BorderSide(
-                        color: overlap
-                            ? context.appPrimaryAccent
-                            : context.appBorder,
-                        width: 3,
-                      ),
+                    border: Border.all(
+                      color: overlap
+                          ? context.appPrimaryAccent.withValues(alpha: 0.35)
+                          : context.appBorder,
+                      width: 1,
                     ),
                   ),
                   child: Text(
@@ -1088,13 +1088,11 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
-                    color: context.appCardElevated,
+                    color: context.appPrimaryAccent.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border(
-                      left: BorderSide(
-                        color: context.appPrimaryAccent,
-                        width: 3,
-                      ),
+                    border: Border.all(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.35),
+                      width: 1,
                     ),
                   ),
                   child: Column(
