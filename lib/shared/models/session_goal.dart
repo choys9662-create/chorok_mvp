@@ -1,16 +1,16 @@
 /// 세션 목표 유형
 enum SessionGoalType {
-  time,  // 시간 목표 (예: 30분)
+  time, // 시간 목표 (예: 30분)
   pages, // 페이지 목표 (예: 250쪽까지)
-  free,  // 자유 독서 (목표 없음)
+  free, // 자유 독서 (목표 없음)
 }
 
 /// 독서 세션 목표 — 타이머 진입 전 설정
 class SessionGoal {
   final SessionGoalType type;
   final int? targetMinutes; // time 유형일 때 사용
-  final int? targetPage;    // pages 유형일 때 사용 (절대 페이지)
-  final int startPage;      // 세션 시작 시점의 현재 페이지
+  final int? targetPage; // pages 유형일 때 사용 (절대 페이지)
+  final int startPage; // 세션 시작 시점의 현재 페이지
 
   const SessionGoal({
     required this.type,
@@ -20,21 +20,21 @@ class SessionGoal {
   });
 
   const SessionGoal.free()
-      : type = SessionGoalType.free,
-        targetMinutes = null,
-        targetPage = null,
-        startPage = 0;
+    : type = SessionGoalType.free,
+      targetMinutes = null,
+      targetPage = null,
+      startPage = 0;
 
   const SessionGoal.time(int minutes)
-      : type = SessionGoalType.time,
-        targetMinutes = minutes,
-        targetPage = null,
-        startPage = 0;
+    : type = SessionGoalType.time,
+      targetMinutes = minutes,
+      targetPage = null,
+      startPage = 0;
 
   SessionGoal.pages({required int target, required this.startPage})
-      : type = SessionGoalType.pages,
-        targetMinutes = null,
-        targetPage = target;
+    : type = SessionGoalType.pages,
+      targetMinutes = null,
+      targetPage = target;
 
   /// 시간 목표를 초 단위로 환산
   int get targetSeconds => (targetMinutes ?? 0) * 60;
@@ -65,7 +65,6 @@ class SessionGoal {
     }
   }
 }
-
 
 /// 세션 중 수집한 문장 — 원문과 내 생각을 함께 보관
 class CollectedSentence {

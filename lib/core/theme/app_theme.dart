@@ -30,7 +30,9 @@ extension AppThemeExt on BuildContext {
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: (alpha * 1.5).clamp(0, 1));
+      : AppTheme.lightPrimaryAccent.withValues(
+          alpha: (alpha * 1.5).clamp(0, 1),
+        );
 
   // 읽기 관련 진행 그라디언트 — DESIGN.md Primary Green 기반
   Gradient get appReadingGradient => _isDark
@@ -97,7 +99,7 @@ class AppTheme {
   static const Color darkSurface = Color(0xFF1A1A1A);
   static const Color darkCard = Color(0xFF1A1A1A);
   static const Color darkCardElevated = Color(0xFF222222);
-  static const Color darkBorder = Color(0xFF2C2C2C);
+  static const Color darkBorder = Colors.transparent;
   static const Color darkPrimaryContainer = Color(0xFF1E3A2F);
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
@@ -115,8 +117,8 @@ class AppTheme {
   static const Color lightTextPrimary = Color(0xFF191F28);
   static const Color lightTextSecondary = Color(0xFF8B95A1);
   static const Color lightTextTertiary = Color(0xFFB0B8C1);
-  static const Color lightBorderColor = Color(0xFFE5E8EB);
-  static const Color lightDivider = Color(0xFFE5E8EB);
+  static const Color lightBorderColor = Colors.transparent;
+  static const Color lightDivider = Colors.transparent;
 
   // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
   static const Color lightPrimaryAccent = Color(0xFF009B58);
@@ -292,7 +294,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: darkCard,
       elevation: 0,
-      shape: smoothShape(radius: 16, side: const BorderSide(color: darkBorder)),
+      shape: smoothShape(radius: 16),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurface,
@@ -323,7 +325,7 @@ class AppTheme {
         color: textPrimary,
       ),
     ),
-    dividerColor: darkBorder,
+    dividerColor: Colors.transparent,
     chipTheme: ChipThemeData(
       backgroundColor: darkCard,
       labelStyle: captionLarge.copyWith(color: textSecondary),
@@ -354,10 +356,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: lightSurface,
       elevation: 0,
-      shape: smoothShape(
-        radius: radiusLG,
-        side: const BorderSide(color: lightBorderColor),
-      ),
+      shape: smoothShape(radius: radiusLG),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: lightSurface,
@@ -388,7 +387,7 @@ class AppTheme {
         color: lightTextPrimary,
       ),
     ),
-    dividerColor: lightDivider,
+    dividerColor: Colors.transparent,
     chipTheme: ChipThemeData(
       backgroundColor: lightCard,
       labelStyle: captionLarge.copyWith(color: lightTextSecondary),

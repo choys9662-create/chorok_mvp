@@ -52,37 +52,20 @@ class TimeCapsuleSection extends ConsumerWidget {
                       cornerRadius: AppTheme.radiusLG * 1.8,
                       cornerSmoothing: 0.6,
                     ),
-                    side: BorderSide(color: context.appBorder),
+                    side: BorderSide.none,
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            width: 3,
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.greenGradientVertical,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '"${choseo.content}"',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: context.appTextPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      '"${choseo.content}"',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -107,7 +90,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                             alpha: 0.08,
                           ),
                           shape: StadiumBorder(
-                            side: BorderSide(color: context.appBorder),
+                            side: BorderSide.none,
                           ),
                         ),
                         child: Text(

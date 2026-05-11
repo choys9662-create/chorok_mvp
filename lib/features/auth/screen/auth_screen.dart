@@ -366,9 +366,7 @@ class _SocialButton extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: dark ? Colors.white : AppTheme.darkSurface,
             radius: 12,
-            side: dark
-                ? BorderSide.none
-                : BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
+            side: BorderSide.none,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -492,21 +490,15 @@ class _Field extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppTheme.darkBorder.withValues(alpha: 0.5),
-          ),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppTheme.darkBorder.withValues(alpha: 0.5),
-          ),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: AppTheme.primaryLight.withValues(alpha: 0.5),
-          ),
+          borderSide: BorderSide.none,
         ),
       ),
     );

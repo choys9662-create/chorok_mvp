@@ -126,14 +126,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final lib = ref.read(libraryProvider);
     final existing = book.isbn13 != null && book.isbn13!.isNotEmpty
         ? lib.where((b) => b.isbn == book.isbn13).firstOrNull
-        : lib.where((b) => b.title == book.title && b.author == book.author).firstOrNull;
+        : lib
+              .where((b) => b.title == book.title && b.author == book.author)
+              .firstOrNull;
     if (existing != null) {
       ref.read(libraryProvider.notifier).deleteBook(existing.id);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        chorokSnackBar(context, '"${book.title}"을(를) 서재에서 삭제했어요'),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '"${book.title}"을(를) 서재에서 삭제했어요'));
       return;
     }
 
@@ -187,14 +189,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ],
           Expanded(
             child: _tab == _SearchTab.user
-                ? _UserResultArea(
-                    query: _controller.text,
-                    scope: _userScope,
-                  )
-                : _BookResultArea(
-                    query: _controller.text,
-                    onTap: _onBookTap,
-                  ),
+                ? _UserResultArea(query: _controller.text, scope: _userScope)
+                : _BookResultArea(query: _controller.text, onTap: _onBookTap),
           ),
         ],
       ),
@@ -236,20 +232,13 @@ class _TabBar extends StatelessWidget {
                   color: isSelected
                       ? context.appPrimaryAccent
                       : context.appCard,
-                  side: BorderSide(
-                    color: isSelected
-                        ? context.appPrimaryAccent
-                        : context.appBorder,
-                  ),
                 ),
                 child: Text(
                   e.$2,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected
-                        ? Colors.white
-                        : context.appTextSecondary,
+                    color: isSelected ? Colors.white : context.appTextSecondary,
                   ),
                 ),
               ),
@@ -293,11 +282,6 @@ class _UserScopeChips extends StatelessWidget {
                   color: isSelected
                       ? context.appPrimaryAccent.withValues(alpha: 0.12)
                       : Colors.transparent,
-                  side: BorderSide(
-                    color: isSelected
-                        ? context.appPrimaryAccent
-                        : context.appBorder,
-                  ),
                 ),
                 child: Text(
                   e.$2,
@@ -333,8 +317,7 @@ class _BookResultArea extends ConsumerWidget {
       loading: () => const _ShimmerList(),
       error: (error, _) => _ErrorView(
         message: error.toString().replaceFirst('Exception: ', ''),
-        onRetry: () =>
-            ref.read(bookSearchProvider.notifier).search(query),
+        onRetry: () => ref.read(bookSearchProvider.notifier).search(query),
       ),
       data: (books) {
         if (query.trim().isEmpty) return const _IdlePrompt();
@@ -360,9 +343,8 @@ class _UserResultArea extends ConsumerWidget {
       loading: () => const _ShimmerList(),
       error: (error, _) => _ErrorView(
         message: error.toString().replaceFirst('Exception: ', ''),
-        onRetry: () => ref
-            .read(userSearchProvider.notifier)
-            .search(query, scope: scope),
+        onRetry: () =>
+            ref.read(userSearchProvider.notifier).search(query, scope: scope),
       ),
       data: (users) {
         if (users.isEmpty) {
@@ -415,8 +397,9 @@ class _UserCardState extends ConsumerState<_UserCard> {
   Future<void> _loadFollowState() async {
     final me = Supabase.instance.client.auth.currentUser?.id;
     if (me == null || me == widget.profile.id) return;
-    final following =
-        await ref.read(followRepositoryProvider).isFollowing(widget.profile.id);
+    final following = await ref
+        .read(followRepositoryProvider)
+        .isFollowing(widget.profile.id);
     if (!mounted) return;
     setState(() => _isFollowing = following);
   }
@@ -451,8 +434,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
       padding: const EdgeInsets.all(12),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [
@@ -463,8 +445,11 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 ? NetworkImage(p.avatarUrl!)
                 : null,
             child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
-                ? Icon(Icons.person_rounded,
-                    color: context.appTextTertiary, size: 22)
+                ? Icon(
+                    Icons.person_rounded,
+                    color: context.appTextTertiary,
+                    size: 22,
+                  )
                 : null,
           ),
           const SizedBox(width: 12),
@@ -552,11 +537,11 @@ class _FollowButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           decoration: AppTheme.smoothBox(
-            color: isFollowing ? context.appCardElevated : context.appPrimaryAccent,
+            color: isFollowing
+                ? context.appCardElevated
+                : context.appPrimaryAccent,
             radius: AppTheme.radiusSM,
-            side: BorderSide(
-              color: isFollowing ? context.appBorder : context.appPrimaryAccent,
-            ),
+            side: BorderSide.none,
           ),
           child: Text(
             label,
@@ -583,8 +568,11 @@ class _UserIdlePrompt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline_rounded,
-              color: context.appTextTertiary, size: 48),
+          Icon(
+            Icons.people_outline_rounded,
+            color: context.appTextTertiary,
+            size: 48,
+          ),
           const SizedBox(height: 16),
           Text(
             '유저를 검색해보세요',
@@ -597,10 +585,7 @@ class _UserIdlePrompt extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '닉네임 · 사용자 이름으로 찾을 수 있어요',
-            style: TextStyle(
-              fontSize: 13,
-              color: context.appTextTertiary,
-            ),
+            style: TextStyle(fontSize: 13, color: context.appTextTertiary),
           ),
         ],
       ),
@@ -618,21 +603,17 @@ class _UserEmptyResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final (title, sub) = switch (scope) {
       UserSearchScope.all => (
-          query.isEmpty ? '유저를 검색해보세요' : '"$query"',
-          '검색 결과가 없어요',
-        ),
+        query.isEmpty ? '유저를 검색해보세요' : '"$query"',
+        '검색 결과가 없어요',
+      ),
       UserSearchScope.following => (
-          query.isEmpty ? '아직 팔로우하는 유저가 없어요' : '"$query"',
-          query.isEmpty
-              ? '관심 있는 사용자를 팔로우해보세요'
-              : '팔로잉 중에서 결과가 없어요',
-        ),
+        query.isEmpty ? '아직 팔로우하는 유저가 없어요' : '"$query"',
+        query.isEmpty ? '관심 있는 사용자를 팔로우해보세요' : '팔로잉 중에서 결과가 없어요',
+      ),
       UserSearchScope.followers => (
-          query.isEmpty ? '아직 팔로워가 없어요' : '"$query"',
-          query.isEmpty
-              ? '활동을 통해 팔로워를 모아보세요'
-              : '팔로워 중에서 결과가 없어요',
-        ),
+        query.isEmpty ? '아직 팔로워가 없어요' : '"$query"',
+        query.isEmpty ? '활동을 통해 팔로워를 모아보세요' : '팔로워 중에서 결과가 없어요',
+      ),
     };
     return Center(
       child: Padding(
@@ -640,8 +621,11 @@ class _UserEmptyResult extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded,
-                color: context.appTextTertiary, size: 48),
+            Icon(
+              Icons.search_off_rounded,
+              color: context.appTextTertiary,
+              size: 48,
+            ),
             const SizedBox(height: 16),
             Text(
               title,
@@ -655,10 +639,7 @@ class _UserEmptyResult extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               sub,
-              style: TextStyle(
-                fontSize: 13,
-                color: context.appTextSecondary,
-              ),
+              style: TextStyle(fontSize: 13, color: context.appTextSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -721,7 +702,7 @@ class _SearchBar extends StatelessWidget {
               decoration: AppTheme.smoothBox(
                 color: context.appCard,
                 radius: AppTheme.radiusMD,
-                side: BorderSide(color: context.appBorder, width: 1),
+                side: BorderSide.none,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -795,8 +776,11 @@ class _SearchBar extends StatelessWidget {
                   decoration: ShapeDecoration(
                     color: context.appCard,
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
-                      side: BorderSide(color: context.appBorder),
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: AppTheme.radiusMD,
+                        cornerSmoothing: 0.6,
+                      ),
+                      side: BorderSide.none,
                     ),
                   ),
                   child: Icon(
@@ -828,10 +812,7 @@ class _ResultList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       itemCount: books.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, index) => _BookCard(
-        book: books[index],
-        onTap: onTap,
-      ),
+      itemBuilder: (_, index) => _BookCard(book: books[index], onTap: onTap),
     );
   }
 }
@@ -851,7 +832,9 @@ class _BookCard extends ConsumerWidget {
         if (book.isbn13 != null && book.isbn13!.isNotEmpty) {
           return books.any((b) => b.isbn == book.isbn13);
         }
-        return books.any((b) => b.title == book.title && b.author == book.author);
+        return books.any(
+          (b) => b.title == book.title && b.author == book.author,
+        );
       }),
     );
 
@@ -860,18 +843,14 @@ class _BookCard extends ConsumerWidget {
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: AppTheme.radiusLG,
-          side: BorderSide(color: context.appBorder, width: 1),
+          side: BorderSide.none,
         ),
         padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 표지 이미지
-            _CoverImage(
-              coverUrl: book.coverUrl,
-              title: book.title,
-            ),
+            _CoverImage(coverUrl: book.coverUrl, title: book.title),
             const SizedBox(width: 16),
 
             // 책 정보
@@ -1021,8 +1000,7 @@ class _AddButtonState extends State<_AddButton> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: AppTheme.smoothBox(
               color: context.appCardElevated,
-              radius: AppTheme.radiusSM,
-              side: BorderSide(color: context.appBorder, width: 1),
+              side: BorderSide.none,
             ),
             alignment: Alignment.center,
             child: Row(
@@ -1084,7 +1062,11 @@ class _AddButtonState extends State<_AddButton> {
                       SizedBox(width: 4),
                       Text(
                         '서재에 있어요',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, height: 1.4),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -1179,21 +1161,41 @@ class _ShimmerCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 표지 플레이스홀더
-          _ShimmerBox(width: 72, height: 104, opacity: opacity, radius: AppTheme.radiusSM),
+          _ShimmerBox(
+            width: 72,
+            height: 104,
+            opacity: opacity,
+            radius: AppTheme.radiusSM,
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ShimmerBox(width: double.infinity, height: 16, opacity: opacity, radius: 4),
+                _ShimmerBox(
+                  width: double.infinity,
+                  height: 16,
+                  opacity: opacity,
+                  radius: 4,
+                ),
                 const SizedBox(height: 8),
-                _ShimmerBox(width: 120, height: 13, opacity: opacity, radius: 4),
+                _ShimmerBox(
+                  width: 120,
+                  height: 13,
+                  opacity: opacity,
+                  radius: 4,
+                ),
                 const SizedBox(height: 6),
                 _ShimmerBox(width: 80, height: 12, opacity: opacity, radius: 4),
                 const Spacer(),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: _ShimmerBox(width: 88, height: 32, opacity: opacity, radius: AppTheme.radiusSM),
+                  child: _ShimmerBox(
+                    width: 88,
+                    height: 32,
+                    opacity: opacity,
+                    radius: AppTheme.radiusSM,
+                  ),
                 ),
               ],
             ),

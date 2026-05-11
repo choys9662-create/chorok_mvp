@@ -17,19 +17,25 @@ const _kMockMutuals = [
   (username: '페이지터너', displayName: '페이지터너'),
 ];
 
-final sessionFireflyProvider = FutureProvider<
-    ({int mutualCount, int nearbyCount, List<UserProfile> mutuals})>((ref) async {
-  if (_kUseMock) {
-    final mutuals = _kMockMutuals
-        .map((m) => UserProfile(
-              id: m.username,
-              username: m.username,
-              displayName: m.displayName,
-            ))
-        .toList();
-    return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
-  }
+final sessionFireflyProvider =
+    FutureProvider<
+      ({int mutualCount, int nearbyCount, List<UserProfile> mutuals})
+    >((ref) async {
+      if (_kUseMock) {
+        final mutuals = _kMockMutuals
+            .map(
+              (m) => UserProfile(
+                id: m.username,
+                username: m.username,
+                displayName: m.displayName,
+              ),
+            )
+            .toList();
+        return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
+      }
 
-  final mutuals = await ref.read(followRepositoryProvider).getMutualFollows();
-  return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
-});
+      final mutuals = await ref
+          .read(followRepositoryProvider)
+          .getMutualFollows();
+      return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
+    });

@@ -17,9 +17,8 @@ class UserProfile {
     return UserProfile(
       id: r['id'] as String,
       username: r['username'] as String? ?? '',
-      displayName: (r['display_name'] as String?) ??
-          (r['username'] as String?) ??
-          '사용자',
+      displayName:
+          (r['display_name'] as String?) ?? (r['username'] as String?) ?? '사용자',
       avatarUrl: r['avatar_url'] as String?,
       bio: r['bio'] as String?,
     );

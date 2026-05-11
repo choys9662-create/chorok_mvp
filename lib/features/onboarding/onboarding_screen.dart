@@ -87,9 +87,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _pulseAnim = Tween<double>(
+      begin: 0.92,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -115,8 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (!mounted) return;
     // Android에서 StatefulShellRoute redirect가 누락되는 케이스 방어:
     // 세션 없으면 /auth로 직접 이동, 있으면 목적지로 이동
-    final isLoggedIn =
-        Supabase.instance.client.auth.currentSession != null;
+    final isLoggedIn = Supabase.instance.client.auth.currentSession != null;
     context.go(isLoggedIn ? destination : AppConstants.routeAuth);
   }
 
@@ -210,10 +210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         ),
                       ),
                     ] else ...[
-                      _PrimaryButton(
-                        label: '다음',
-                        onTap: _next,
-                      ),
+                      _PrimaryButton(label: '다음', onTap: _next),
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: () => _finish(AppConstants.routeHome),
@@ -277,16 +274,9 @@ class _SlidePage extends StatelessWidget {
                       context.appPrimaryAccent.withValues(alpha: 0.0),
                     ],
                   ),
-                  border: Border.all(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
                 ),
                 child: Center(
-                  child: Text(
-                    data.emoji,
-                    style: TextStyle(fontSize: 52),
-                  ),
+                  child: Text(data.emoji, style: TextStyle(fontSize: 52)),
                 ),
               ),
             ),
@@ -314,10 +304,7 @@ class _SlidePage extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),
               shape: StadiumBorder(
-                side: BorderSide(
-                  color: context.appPrimaryAccent,
-                  width: 0.5,
-                ),
+                side: BorderSide.none,
               ),
             ),
             child: Text(
@@ -392,7 +379,10 @@ class _MiniFirefliesState extends State<_MiniFireflies>
       child: AnimatedBuilder(
         animation: _ctrl,
         builder: (ctx, _) => CustomPaint(
-          painter: _MiniFireflyPainter(t: _ctrl.value, color: ctx.appPrimaryAccent),
+          painter: _MiniFireflyPainter(
+            t: _ctrl.value,
+            color: ctx.appPrimaryAccent,
+          ),
         ),
       ),
     );
@@ -407,13 +397,13 @@ class _MiniFireflyPainter extends CustomPainter {
   static final _rng = math.Random(42);
   static final List<({double x, double y, double phase, double speed})> _flies =
       List.generate(8, (i) {
-    return (
-      x: _rng.nextDouble(),
-      y: _rng.nextDouble(),
-      phase: _rng.nextDouble() * math.pi * 2,
-      speed: 0.3 + _rng.nextDouble() * 0.7,
-    );
-  });
+        return (
+          x: _rng.nextDouble(),
+          y: _rng.nextDouble(),
+          phase: _rng.nextDouble() * math.pi * 2,
+          speed: 0.3 + _rng.nextDouble() * 0.7,
+        );
+      });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -421,8 +411,10 @@ class _MiniFireflyPainter extends CustomPainter {
       final angle = (t * f.speed * math.pi * 2) + f.phase;
       final dx = f.x * size.width + math.sin(angle) * 12;
       final dy = f.y * size.height + math.cos(angle * 1.3) * 8;
-      final alpha = ((math.sin(angle + math.pi / 2) + 1) / 2 * 0.8 + 0.2)
-          .clamp(0.0, 1.0);
+      final alpha = ((math.sin(angle + math.pi / 2) + 1) / 2 * 0.8 + 0.2).clamp(
+        0.0,
+        1.0,
+      );
       final paint = Paint()
         ..color = color.withValues(alpha: alpha)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
@@ -460,9 +452,10 @@ class _PrimaryButtonState extends State<_PrimaryButton>
       lowerBound: 0.0,
       upperBound: 1.0,
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -483,7 +476,8 @@ class _PrimaryButtonState extends State<_PrimaryButton>
       behavior: HitTestBehavior.opaque,
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+        builder: (_, child) =>
+            Transform.scale(scale: _scale.value, child: child),
         child: Container(
           width: double.infinity,
           height: 56,

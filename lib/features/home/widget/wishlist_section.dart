@@ -9,15 +9,15 @@ import '../../../shared/models/reading_session.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import '../../../shared/models/session_goal.dart';
 
-
 class WishlistSection extends ConsumerWidget {
   const WishlistSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allBooks = ref.watch(libraryProvider);
-    final wishlistBooks =
-        allBooks.where((b) => b.status == ReadingStatus.wantToRead).toList();
+    final wishlistBooks = allBooks
+        .where((b) => b.status == ReadingStatus.wantToRead)
+        .toList();
 
     // 위시리스트가 비어있으면 섹션 자체를 숨김 (신규 사용자 화면 정리)
     if (wishlistBooks.isEmpty) return const SizedBox.shrink();
@@ -112,7 +112,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: 20,
-            side: BorderSide(color: context.appBorder),
+            side: BorderSide.none,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,16 +199,16 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                     onTap: () async {
                       HapticFeedback.mediumImpact();
                       context.push(
-                          AppConstants.routeSession,
-                          extra: SessionExtra(
-                            bookId: b.id,
-                            bookTitle: b.title,
-                            bookAuthor: b.author,
-                            coverUrl: b.coverUrl,
-                            startPage: 0,
-                            totalPages: b.totalPages,
-                          ),
-                        );
+                        AppConstants.routeSession,
+                        extra: SessionExtra(
+                          bookId: b.id,
+                          bookTitle: b.title,
+                          bookAuthor: b.author,
+                          coverUrl: b.coverUrl,
+                          startPage: 0,
+                          totalPages: b.totalPages,
+                        ),
+                      );
                     },
                     child: Container(
                       height: 34,
@@ -217,11 +217,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                         color: isDark
                             ? AppTheme.primary.withValues(alpha: 0.5)
                             : AppTheme.lightPrimaryAccent,
-                        side: BorderSide(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
+                        side: BorderSide.none,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

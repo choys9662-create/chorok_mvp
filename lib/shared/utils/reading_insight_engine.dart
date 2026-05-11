@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 enum InsightType {
   completionEstimate, // 완독 예상
   streakEncouragement, // 연속 독서 격려
-  sentenceMilestone,   // 초서 문장 마일스톤
-  paceAnalysis,        // 독서 속도 분석
-  sessionSuggestion,   // 다음 세션 제안
+  sentenceMilestone, // 초서 문장 마일스톤
+  paceAnalysis, // 독서 속도 분석
+  sessionSuggestion, // 다음 세션 제안
 }
 
 /// 단일 인사이트 메시지
@@ -30,8 +30,8 @@ class BookReadingStats {
   final int currentPage;
   final int totalPages;
   final double avgPagesPerHour; // 시간당 평균 페이지 수
-  final int savedSentences;     // 초서한 문장 수
-  final int streakDays;         // 연속 독서 일수
+  final int savedSentences; // 초서한 문장 수
+  final int streakDays; // 연속 독서 일수
   final double totalReadingHours;
 
   const BookReadingStats({
@@ -89,10 +89,14 @@ class ReadingInsightEngine {
   static String streakMessage(int consecutiveDays) {
     if (consecutiveDays <= 0) return '오늘 독서를 시작해볼까요?';
     if (consecutiveDays == 1) return '첫걸음을 뗐어요! 내일도 이어가볼까요?';
-    if (consecutiveDays <= 3) return '$consecutiveDays일 연속 독서 중! 좋은 습관이 만들어지고 있어요';
+    if (consecutiveDays <= 3) {
+      return '$consecutiveDays일 연속 독서 중! 좋은 습관이 만들어지고 있어요';
+    }
     if (consecutiveDays <= 7) return '$consecutiveDays일째 꾸준히! 이미 습관이 되어가고 있어요';
     if (consecutiveDays <= 14) return '$consecutiveDays일 연속! 대단한 독서 습관이에요';
-    if (consecutiveDays <= 30) return '$consecutiveDays일째 멈추지 않는 독서! 당신은 진짜 독서가예요';
+    if (consecutiveDays <= 30) {
+      return '$consecutiveDays일째 멈추지 않는 독서! 당신은 진짜 독서가예요';
+    }
     return '$consecutiveDays일 연속 독서, 놀라운 기록이에요!';
   }
 

@@ -33,10 +33,7 @@ class _AddToLibrarySheet extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusXL,
-          side: BorderSide(
-            color: context.appBorder,
-            width: 1,
-          ),
+          side: BorderSide.none,
         ),
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
         child: Column(
@@ -173,10 +170,7 @@ class _StatusTileState extends State<_StatusTile> {
             decoration: AppTheme.smoothBox(
               color: context.appCardElevated,
               radius: AppTheme.radiusMD,
-              side: BorderSide(
-                color: context.appBorder,
-                width: 1,
-              ),
+              side: BorderSide.none,
             ),
             child: Row(
               children: [

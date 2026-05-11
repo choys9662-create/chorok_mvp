@@ -11,16 +11,16 @@ class TimerData {
   final TimerState timerState;
   final SessionGoal? goal;
 
-  const TimerData({
-    required this.seconds,
-    required this.timerState,
-    this.goal,
-  });
+  const TimerData({required this.seconds, required this.timerState, this.goal});
 
   factory TimerData.initial() =>
       const TimerData(seconds: 0, timerState: TimerState.idle);
 
-  TimerData copyWith({int? seconds, TimerState? timerState, SessionGoal? goal}) {
+  TimerData copyWith({
+    int? seconds,
+    TimerState? timerState,
+    SessionGoal? goal,
+  }) {
     return TimerData(
       seconds: seconds ?? this.seconds,
       timerState: timerState ?? this.timerState,
@@ -44,7 +44,9 @@ class TimerData {
   /// 목표 달성 여부
   bool get goalReached {
     if (goal == null || goal!.type == SessionGoalType.free) return false;
-    if (goal!.type == SessionGoalType.time) return seconds >= goal!.targetSeconds;
+    if (goal!.type == SessionGoalType.time) {
+      return seconds >= goal!.targetSeconds;
+    }
     return false; // 페이지 목표는 외부에서 판단
   }
 
@@ -83,10 +85,7 @@ class TimerNotifier extends Notifier<TimerData> {
 
   void start({SessionGoal? goal}) {
     if (state.isRunning) return;
-    state = state.copyWith(
-      timerState: TimerState.running,
-      goal: goal,
-    );
+    state = state.copyWith(timerState: TimerState.running, goal: goal);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       state = state.copyWith(seconds: state.seconds + 1);
     });
@@ -111,7 +110,6 @@ class TimerNotifier extends Notifier<TimerData> {
     _timer?.cancel();
     state = TimerData.initial();
   }
-
 }
 
 final timerProvider = NotifierProvider<TimerNotifier, TimerData>(

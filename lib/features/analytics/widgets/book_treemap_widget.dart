@@ -11,11 +11,7 @@ class BookTreemapWidget extends StatelessWidget {
   final List<({String title, double hours})> items;
   final double height;
 
-  const BookTreemapWidget({
-    super.key,
-    required this.items,
-    this.height = 260,
-  });
+  const BookTreemapWidget({super.key, required this.items, this.height = 260});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +23,9 @@ class BookTreemapWidget extends StatelessWidget {
           child: Center(
             child: Text(
               '아직 독서 기록이 없어요',
-              style: AppTheme.bodyMedium.copyWith(color: context.appTextTertiary),
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextTertiary,
+              ),
             ),
           ),
         ),
@@ -45,64 +43,71 @@ class BookTreemapWidget extends StatelessWidget {
             final maxH = sorted.first.hours;
             final values = sorted.map((e) => e.hours).toList();
             final bounds = Rect.fromLTWH(
-              0, 0, constraints.maxWidth, constraints.maxHeight,
+              0,
+              0,
+              constraints.maxWidth,
+              constraints.maxHeight,
             );
             final rects = _Squarify.compute(values, bounds);
 
             return Stack(
-              children: List.generate(
-                math.min(rects.length, sorted.length),
-                (i) {
-                  final rect = rects[i];
-                  final item = sorted[i];
-                  final t = maxH > 0 ? item.hours / maxH : 0.0;
-                  final color = Color.lerp(
-                    const Color(0xFF0F6E56),
-                    context.appPrimaryAccent,
-                    t,
-                  )!;
-                  final showLabel = rect.width > 80 && rect.height > 50;
+              children: List.generate(math.min(rects.length, sorted.length), (
+                i,
+              ) {
+                final rect = rects[i];
+                final item = sorted[i];
+                final t = maxH > 0 ? item.hours / maxH : 0.0;
+                final color = Color.lerp(
+                  const Color(0xFF0F6E56),
+                  context.appPrimaryAccent,
+                  t,
+                )!;
+                final showLabel = rect.width > 80 && rect.height > 50;
 
-                  return Positioned(
-                    left:   rect.left + 1,
-                    top:    rect.top + 1,
-                    width:  rect.width - 2,
-                    height: rect.height - 2,
-                    child: ClipSmoothRect(
-                      radius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        color: color.withValues(alpha: 0.85),
-                        child: showLabel
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      item.title,
-                                      style: AppTheme.captionSmall.copyWith(
-                                        color: Colors.black.withValues(alpha: 0.8),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${item.hours.toStringAsFixed(1)}h',
-                                    style: AppTheme.captionSmall.copyWith(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : null,
-                      ),
+                return Positioned(
+                  left: rect.left + 1,
+                  top: rect.top + 1,
+                  width: rect.width - 2,
+                  height: rect.height - 2,
+                  child: ClipSmoothRect(
+                    radius: SmoothBorderRadius(
+                      cornerRadius: 12,
+                      cornerSmoothing: 0.6,
                     ),
-                  );
-                },
-              ),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      color: color.withValues(alpha: 0.85),
+                      child: showLabel
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    item.title,
+                                    style: AppTheme.captionSmall.copyWith(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${item.hours.toStringAsFixed(1)}h',
+                                  style: AppTheme.captionSmall.copyWith(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : null,
+                    ),
+                  ),
+                );
+              }),
             );
           },
         ),
@@ -166,17 +171,22 @@ class _Squarify {
     if (remaining.isNotEmpty) {
       final newRect = horizontal
           ? Rect.fromLTWH(
-              rect.left + rowDim, rect.top,
-              rect.width - rowDim, rect.height)
+              rect.left + rowDim,
+              rect.top,
+              rect.width - rowDim,
+              rect.height,
+            )
           : Rect.fromLTWH(
-              rect.left, rect.top + rowDim,
-              rect.width, rect.height - rowDim);
+              rect.left,
+              rect.top + rowDim,
+              rect.width,
+              rect.height - rowDim,
+            );
       _recurse(remaining, newRect, result);
     }
   }
 
-  static double _worstAspect(
-      List<double> row, double side, double rowArea) {
+  static double _worstAspect(List<double> row, double side, double rowArea) {
     if (row.isEmpty || rowArea == 0 || side == 0) return double.infinity;
     final w = rowArea / side;
     double worst = 0.0;

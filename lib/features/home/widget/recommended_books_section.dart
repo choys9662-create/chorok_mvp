@@ -20,7 +20,8 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '"채식주의자"에서 수집한 문장과 비슷한 감성',
     gradientIndex: 3,
     matchScore: 0.94,
-    coverUrl: 'https://picsum.photos/seed/chorok6/300/400',
+    coverUrl:
+        'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
   ),
   (
     title: '아몬드',
@@ -28,7 +29,8 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '감정과 공감에 대한 문장을 자주 기록하셨어요',
     gradientIndex: 4,
     matchScore: 0.89,
-    coverUrl: 'https://picsum.photos/seed/chorok5/300/400',
+    coverUrl:
+        'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
   ),
   (
     title: '작별하지 않는다',
@@ -36,7 +38,8 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '"파친코"에서 저장한 가족 서사와 닮은 이야기',
     gradientIndex: 5,
     matchScore: 0.86,
-    coverUrl: 'https://picsum.photos/seed/chorok9/300/400',
+    coverUrl:
+        'https://image.aladin.co.kr/product/27043/33/cover500/8936434454_1.jpg',
   ),
   (
     title: '불편한 편의점',
@@ -44,7 +47,8 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '따뜻한 일상 문장을 좋아하시는 취향에 맞춰',
     gradientIndex: 6,
     matchScore: 0.82,
-    coverUrl: 'https://picsum.photos/seed/chorok7/300/400',
+    coverUrl:
+        'https://image.aladin.co.kr/product/26942/84/cover500/k582730818_1.jpg',
   ),
 ];
 
@@ -93,9 +97,6 @@ class RecommendedBooksSection extends StatelessWidget {
                     borderRadius: SmoothBorderRadius(
                       cornerRadius: 8,
                       cornerSmoothing: 0.6,
-                    ),
-                    side: BorderSide(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.2),
                     ),
                   ),
                 ),
@@ -179,10 +180,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
             ),
             backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(
-              radius: AppTheme.radiusMD,
-              side: BorderSide(color: context.appBorder),
-            ),
+            shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           ),
         );
@@ -195,11 +193,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
         child: Container(
           width: 240,
           clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: 16,
-            side: BorderSide(color: context.appBorder),
-          ),
+          decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
           child: Row(
             children: [
               // 표지 썸네일
@@ -272,14 +266,13 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: ShapeDecoration(
-                          color: context.appPrimaryAccent.withValues(alpha: 0.06),
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.06,
+                          ),
                           shape: SmoothRectangleBorder(
                             borderRadius: SmoothBorderRadius(
                               cornerRadius: 8,
                               cornerSmoothing: 0.6,
-                            ),
-                            side: BorderSide(
-                              color: context.appPrimaryAccent.withValues(alpha: 0.15),
                             ),
                           ),
                         ),
@@ -330,8 +323,15 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                 ),
                                 backgroundColor: AppTheme.primary,
                                 behavior: SnackBarBehavior.floating,
-                                shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                shape: AppTheme.smoothShape(
+                                  radius: AppTheme.radiusMD,
+                                ),
+                                margin: const EdgeInsets.fromLTRB(
+                                  20,
+                                  0,
+                                  20,
+                                  16,
+                                ),
                               ),
                             );
                           },
@@ -342,21 +342,16 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
                               color: _isAdded
-                                  ? context.appPrimaryAccent.withValues(alpha: 0.15)
+                                  ? context.appPrimaryAccent.withValues(
+                                      alpha: 0.15,
+                                    )
                                   : isDark
-                                      ? AppTheme.primary.withValues(alpha: 0.4)
-                                      : AppTheme.lightPrimaryAccent,
+                                  ? AppTheme.primary.withValues(alpha: 0.4)
+                                  : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
                                 borderRadius: SmoothBorderRadius(
                                   cornerRadius: 8,
                                   cornerSmoothing: 0.6,
-                                ),
-                                side: BorderSide(
-                                  color: _isAdded
-                                      ? context.appPrimaryAccent
-                                      : context.appPrimaryAccent.withValues(
-                                          alpha: 0.2,
-                                        ),
                                 ),
                               ),
                             ),
@@ -371,8 +366,8 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                   color: _isAdded
                                       ? context.appPrimaryAccent
                                       : isDark
-                                          ? context.appPrimaryAccent
-                                          : Colors.white,
+                                      ? context.appPrimaryAccent
+                                      : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -381,8 +376,8 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                     color: _isAdded
                                         ? context.appPrimaryAccent
                                         : isDark
-                                            ? context.appPrimaryAccent
-                                            : Colors.white,
+                                        ? context.appPrimaryAccent
+                                        : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

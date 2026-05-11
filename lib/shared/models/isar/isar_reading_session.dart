@@ -5,10 +5,10 @@ class IsarReadingSession {
   final String? bookId;
   final DateTime startedAt;
   final DateTime endedAt;
-  final int durationSeconds;    // 실제 독서 시간 (이탈 시간 제외)
+  final int durationSeconds; // 실제 독서 시간 (이탈 시간 제외)
   final int pagesRead;
   final int choseoCount;
-  final int exitCount;           // 앱 이탈 횟수
+  final int exitCount; // 앱 이탈 횟수
   final int exitDurationSeconds; // 총 이탈 시간 (초)
 
   const IsarReadingSession({
@@ -32,16 +32,16 @@ class IsarReadingSession {
   }
 
   Map<String, dynamic> toMap() => {
-        'session_id': sessionId,
-        'book_id': bookId,
-        'started_at': startedAt.toIso8601String(),
-        'ended_at': endedAt.toIso8601String(),
-        'duration_seconds': durationSeconds,
-        'pages_read': pagesRead,
-        'choseo_count': choseoCount,
-        'exit_count': exitCount,
-        'exit_duration_seconds': exitDurationSeconds,
-      };
+    'session_id': sessionId,
+    'book_id': bookId,
+    'started_at': startedAt.toIso8601String(),
+    'ended_at': endedAt.toIso8601String(),
+    'duration_seconds': durationSeconds,
+    'pages_read': pagesRead,
+    'choseo_count': choseoCount,
+    'exit_count': exitCount,
+    'exit_duration_seconds': exitDurationSeconds,
+  };
 
   factory IsarReadingSession.fromMap(Map<String, dynamic> m) =>
       IsarReadingSession(

@@ -13,20 +13,20 @@ import '../repositories/supabase_book_repository.dart';
 ///   - 웹 → Supabase (SupabaseBookRepository)
 
 Book _fromIsarBook(IsarBook b) => Book(
-      id: b.bookId,
-      title: b.title,
-      author: b.author,
-      isbn: b.isbn,
-      coverUrl: b.coverUrl,
-      currentPage: b.currentPage,
-      totalPages: b.totalPages,
-      status: switch (b.status) {
-        IsarReadingStatus.reading => ReadingStatus.reading,
-        IsarReadingStatus.completed => ReadingStatus.completed,
-        IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
-      },
-      completedAt: b.completedAt,
-    );
+  id: b.bookId,
+  title: b.title,
+  author: b.author,
+  isbn: b.isbn,
+  coverUrl: b.coverUrl,
+  currentPage: b.currentPage,
+  totalPages: b.totalPages,
+  status: switch (b.status) {
+    IsarReadingStatus.reading => ReadingStatus.reading,
+    IsarReadingStatus.completed => ReadingStatus.completed,
+    IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
+  },
+  completedAt: b.completedAt,
+);
 
 class LibraryNotifier extends Notifier<List<Book>> {
   @override
@@ -59,9 +59,11 @@ class LibraryNotifier extends Notifier<List<Book>> {
         final rows = await repo.getAllBooks();
         loaded = rows.map(_fromIsarBook).toList();
       }
-      
+
       // _loadFromDb 대기 중 addBook으로 추가된 책 보존
-      final extra = state.where((b) => !loaded.any((lb) => lb.id == b.id)).toList();
+      final extra = state
+          .where((b) => !loaded.any((lb) => lb.id == b.id))
+          .toList();
       state = [...loaded, ...extra];
       debugPrint('LibraryProvider: Loaded ${loaded.length} books');
     } catch (e) {
@@ -72,7 +74,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   bool addBook(Book book) {
-    final isDuplicate = book.isbn != null &&
+    final isDuplicate =
+        book.isbn != null &&
         book.isbn!.isNotEmpty &&
         state.any((b) => b.isbn == book.isbn);
     if (isDuplicate) return false;
@@ -95,9 +98,11 @@ class LibraryNotifier extends Notifier<List<Book>> {
       return;
     }
     final old = state[idx];
-    final clamped = old.totalPages > 0 ? newPage.clamp(0, old.totalPages) : newPage;
-    
-    // 상태 결정 로직: 
+    final clamped = old.totalPages > 0
+        ? newPage.clamp(0, old.totalPages)
+        : newPage;
+
+    // 상태 결정 로직:
     // 1. 페이지가 끝까지 도달하면 completed
     // 2. 페이지가 0보다 크고 끝보다 작으면 reading
     // 3. 페이지가 0이면 기존 상태 유지 (혹은 독서 시작 전으로 간주할지 고민 필요)
@@ -113,7 +118,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final updated = old.copyWith(
       currentPage: clamped,
       status: newStatus,
-      completedAt: (newStatus == ReadingStatus.completed && old.status != ReadingStatus.completed)
+      completedAt:
+          (newStatus == ReadingStatus.completed &&
+              old.status != ReadingStatus.completed)
           ? DateTime.now()
           : (newStatus != ReadingStatus.completed ? null : old.completedAt),
     );
@@ -134,7 +141,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     debugPrint('LibraryProvider: markAsCompleted($bookId)');
     final idx = state.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
-    
+
     final old = state[idx];
     if (old.totalPages <= 0) {
       debugPrint('LibraryProvider: Cannot complete book with 0 total pages');
@@ -146,7 +153,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       status: ReadingStatus.completed,
       completedAt: DateTime.now(),
     );
-    
+
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
@@ -167,7 +174,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
     if (idx < 0) return;
     final old = state[idx];
     if (old.totalPages == totalPages) return;
-    final clampedCurrent = old.currentPage > totalPages ? totalPages : old.currentPage;
+    final clampedCurrent = old.currentPage > totalPages
+        ? totalPages
+        : old.currentPage;
     final updated = Book(
       id: old.id,
       title: old.title,
@@ -256,7 +265,8 @@ final _kMockBooks = [
     id: '1',
     title: '채식주의자',
     author: '한강',
-    coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
     status: ReadingStatus.reading,
     totalPages: 300,
     currentPage: 186,
@@ -267,7 +277,8 @@ final _kMockBooks = [
     id: '2',
     title: '파친코',
     author: '이민진',
-    coverUrl: 'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
     status: ReadingStatus.reading,
     totalPages: 688,
     currentPage: 234,
@@ -277,7 +288,8 @@ final _kMockBooks = [
     id: '3',
     title: '지구 끝의 온실',
     author: '김초엽',
-    coverUrl: 'https://image.aladin.co.kr/product/27692/63/cover500/s222930473_1.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/27692/63/cover500/s222930473_1.jpg',
     status: ReadingStatus.reading,
     totalPages: 304,
     currentPage: 88,
@@ -288,7 +300,8 @@ final _kMockBooks = [
     id: '4',
     title: '82년생 김지영',
     author: '조남주',
-    coverUrl: 'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
     status: ReadingStatus.completed,
     totalPages: 190,
     currentPage: 190,
@@ -299,7 +312,8 @@ final _kMockBooks = [
     id: '5',
     title: '아몬드',
     author: '손원평',
-    coverUrl: 'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
     status: ReadingStatus.completed,
     totalPages: 264,
     currentPage: 264,
@@ -311,7 +325,8 @@ final _kMockBooks = [
     id: '6',
     title: '소년이 온다',
     author: '한강',
-    coverUrl: 'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
     status: ReadingStatus.wantToRead,
     totalPages: 216,
     currentPage: 0,
@@ -320,7 +335,8 @@ final _kMockBooks = [
     id: '7',
     title: '불편한 편의점',
     author: '김호연',
-    coverUrl: 'https://image.aladin.co.kr/product/29045/74/cover500/k192836746_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/29045/74/cover500/k192836746_2.jpg',
     status: ReadingStatus.wantToRead,
     totalPages: 312,
     currentPage: 0,
@@ -329,7 +345,8 @@ final _kMockBooks = [
     id: '8',
     title: '달러구트 꿈 백화점',
     author: '이미예',
-    coverUrl: 'https://image.aladin.co.kr/product/24512/70/cover500/k392630952_2.jpg',
+    coverUrl:
+        'https://image.aladin.co.kr/product/24512/70/cover500/k392630952_2.jpg',
     status: ReadingStatus.wantToRead,
     totalPages: 304,
     currentPage: 0,

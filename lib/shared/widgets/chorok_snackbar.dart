@@ -37,7 +37,7 @@ SnackBar chorokSnackBar(
         cornerRadius: AppTheme.radiusMD,
         cornerSmoothing: 0.6,
       ),
-      side: BorderSide(color: context.appBorder, width: 1),
+      side: BorderSide.none,
     ),
     margin: const EdgeInsets.fromLTRB(
       AppTheme.screenPadding,

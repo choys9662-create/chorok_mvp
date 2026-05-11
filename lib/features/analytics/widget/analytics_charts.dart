@@ -10,7 +10,8 @@ class BarChart extends StatelessWidget {
   final int highlightIndex;
   final String labelSuffix;
 
-  const BarChart({super.key, 
+  const BarChart({
+    super.key,
     required this.labels,
     required this.values,
     required this.highlightIndex,
@@ -41,7 +42,9 @@ class BarChart extends StatelessWidget {
                 if (isHighlight && mins > 0)
                   Text(
                     mins >= 60 ? '${mins ~/ 60}h ${mins % 60}m' : '${mins}m',
-                    style: AppTheme.captionSmall.copyWith(color: AppTheme.accent),
+                    style: AppTheme.captionSmall.copyWith(
+                      color: AppTheme.accent,
+                    ),
                   ),
                 const SizedBox(height: 4),
                 Container(
@@ -51,7 +54,9 @@ class BarChart extends StatelessWidget {
                     color: isHighlight
                         ? context.appPrimaryAccent
                         : AppTheme.primary.withValues(alpha: 0.35),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(5),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -59,8 +64,12 @@ class BarChart extends StatelessWidget {
                   '${labels[i]}$labelSuffix',
                   style: AppTheme.captionSmall.copyWith(
                     fontSize: labels.length > 8 ? 10 : null,
-                    color: isHighlight ? context.appPrimaryAccent : context.appTextTertiary,
-                    fontWeight: isHighlight ? FontWeight.w700 : FontWeight.normal,
+                    color: isHighlight
+                        ? context.appPrimaryAccent
+                        : context.appTextTertiary,
+                    fontWeight: isHighlight
+                        ? FontWeight.w700
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -77,7 +86,8 @@ class LineRhythmChart extends StatelessWidget {
   final List<int> values;
   final int highlightIndex;
 
-  const LineRhythmChart({super.key, 
+  const LineRhythmChart({
+    super.key,
     required this.labels,
     required this.values,
     required this.highlightIndex,
@@ -116,7 +126,9 @@ class LineRhythmChart extends StatelessWidget {
                       highlightMins >= 60
                           ? '${highlightMins ~/ 60}h ${highlightMins % 60}m'
                           : '${highlightMins}m',
-                      style: AppTheme.captionSmall.copyWith(color: AppTheme.accent),
+                      style: AppTheme.captionSmall.copyWith(
+                        color: AppTheme.accent,
+                      ),
                     )
                   else
                     const SizedBox(height: 14),
@@ -124,8 +136,12 @@ class LineRhythmChart extends StatelessWidget {
                     labels[i],
                     textAlign: TextAlign.center,
                     style: AppTheme.captionSmall.copyWith(
-                      color: isHighlight ? context.appPrimaryAccent : context.appTextTertiary,
-                      fontWeight: isHighlight ? FontWeight.w700 : FontWeight.normal,
+                      color: isHighlight
+                          ? context.appPrimaryAccent
+                          : context.appTextTertiary,
+                      fontWeight: isHighlight
+                          ? FontWeight.w700
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -145,7 +161,7 @@ class LineRhythmPainter extends CustomPainter {
   final Color lineColor;
   final Color accentColor;
 
-  const LineRhythmPainter({ 
+  const LineRhythmPainter({
     required this.values,
     required this.highlightIndex,
     required this.maxVal,
@@ -179,7 +195,10 @@ class LineRhythmPainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [lineColor.withValues(alpha: 0.25), lineColor.withValues(alpha: 0.0)],
+          colors: [
+            lineColor.withValues(alpha: 0.25),
+            lineColor.withValues(alpha: 0.0),
+          ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
     );
 
@@ -248,13 +267,19 @@ class TimeOfDayChart extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(s.label,
-                          style: AppTheme.captionLarge.copyWith(color: context.appTextSecondary)),
-                      Text(s.range,
-                          style: AppTheme.captionSmall.copyWith(
-                            fontSize: 10,
-                            color: context.appTextTertiary,
-                          )),
+                      Text(
+                        s.label,
+                        style: AppTheme.captionLarge.copyWith(
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                      Text(
+                        s.range,
+                        style: AppTheme.captionSmall.copyWith(
+                          fontSize: 10,
+                          color: context.appTextTertiary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -270,8 +295,8 @@ class TimeOfDayChart extends StatelessWidget {
                         ratio >= 0.8
                             ? context.appPrimaryAccent
                             : ratio >= 0.4
-                                ? AppTheme.accent
-                                : AppTheme.primary.withValues(alpha: 0.5),
+                            ? AppTheme.accent
+                            : AppTheme.primary.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -283,8 +308,12 @@ class TimeOfDayChart extends StatelessWidget {
                     '$pct%',
                     textAlign: TextAlign.right,
                     style: AppTheme.captionSmall.copyWith(
-                      color: ratio >= 0.8 ? context.appPrimaryAccent : context.appTextTertiary,
-                      fontWeight: ratio >= 0.8 ? FontWeight.w600 : FontWeight.normal,
+                      color: ratio >= 0.8
+                          ? context.appPrimaryAccent
+                          : context.appTextTertiary,
+                      fontWeight: ratio >= 0.8
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -318,14 +347,22 @@ class GenreChart extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 8, height: 8,
-                  decoration: BoxDecoration(color: g.color, shape: BoxShape.circle),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: g.color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 56,
-                  child: Text(g.name,
-                      style: AppTheme.captionLarge.copyWith(color: context.appTextSecondary)),
+                  child: Text(
+                    g.name,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextSecondary,
+                    ),
+                  ),
                 ),
                 Expanded(
                   child: ClipRRect(
@@ -341,9 +378,13 @@ class GenreChart extends StatelessWidget {
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 28,
-                  child: Text('${g.count}권',
-                      textAlign: TextAlign.right,
-                      style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
+                  child: Text(
+                    '${g.count}권',
+                    textAlign: TextAlign.right,
+                    style: AppTheme.captionSmall.copyWith(
+                      color: context.appTextTertiary,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -358,15 +399,25 @@ class YearMonthDials extends StatelessWidget {
   final List<int> values; // 12 months, reading minutes each
   final int highlightIndex; // current month index (0–11)
 
-  const YearMonthDials({super.key, 
+  const YearMonthDials({
+    super.key,
     required this.values,
     required this.highlightIndex,
   });
 
   static const _monthLabels = [
-    '1월', '2월', '3월', '4월',
-    '5월', '6월', '7월', '8월',
-    '9월', '10월', '11월', '12월',
+    '1월',
+    '2월',
+    '3월',
+    '4월',
+    '5월',
+    '6월',
+    '7월',
+    '8월',
+    '9월',
+    '10월',
+    '11월',
+    '12월',
   ];
 
   @override
@@ -396,8 +447,8 @@ class YearMonthDials extends StatelessWidget {
           final dialColor = isCurrent
               ? context.appPrimaryAccent
               : mins > 0
-                  ? context.appAccentColor.withValues(alpha: 0.4 + 0.6 * ratio)
-                  : context.appBorder.withValues(alpha: 0.4);
+              ? context.appAccentColor.withValues(alpha: 0.4 + 0.6 * ratio)
+              : context.appBorder.withValues(alpha: 0.4);
 
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -412,7 +463,9 @@ class YearMonthDials extends StatelessWidget {
                     CircularProgressIndicator(
                       value: ratio,
                       strokeWidth: isCurrent ? 5.0 : 3.5,
-                      backgroundColor: context.appBorder.withValues(alpha: 0.35),
+                      backgroundColor: context.appBorder.withValues(
+                        alpha: 0.35,
+                      ),
                       valueColor: AlwaysStoppedAnimation(dialColor),
                       strokeCap: StrokeCap.round,
                     ),
@@ -420,13 +473,14 @@ class YearMonthDials extends StatelessWidget {
                       _monthLabels[i],
                       style: AppTheme.captionSmall.copyWith(
                         fontSize: 10,
-                        fontWeight:
-                            isCurrent ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isCurrent
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         color: isCurrent
                             ? context.appPrimaryAccent
                             : isFuture
-                                ? context.appTextTertiary.withValues(alpha: 0.5)
-                                : context.appTextSecondary,
+                            ? context.appTextTertiary.withValues(alpha: 0.5)
+                            : context.appTextSecondary,
                       ),
                     ),
                   ],
@@ -437,8 +491,8 @@ class YearMonthDials extends StatelessWidget {
                 isFuture || mins == 0
                     ? '—'
                     : mins >= 60
-                        ? '${mins ~/ 60}h'
-                        : '${mins}m',
+                    ? '${mins ~/ 60}h'
+                    : '${mins}m',
                 style: AppTheme.captionSmall.copyWith(
                   fontSize: 10,
                   color: isCurrent ? AppTheme.accent : context.appTextTertiary,
@@ -459,7 +513,8 @@ class ReadingDensityCard extends StatelessWidget {
   final int maxStreak;
   final String streakDescription;
 
-  const ReadingDensityCard({super.key, 
+  const ReadingDensityCard({
+    super.key,
     required this.readDays,
     required this.totalDays,
     required this.maxStreak,
@@ -485,7 +540,9 @@ class ReadingDensityCard extends StatelessWidget {
                   children: [
                     Text(
                       '독서한 날',
-                      style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary),
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -500,7 +557,9 @@ class ReadingDensityCard extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 4, left: 4),
                           child: Text(
                             '/ $totalDays일',
-                            style: AppTheme.headingSmall.copyWith(color: context.appTextTertiary),
+                            style: AppTheme.headingSmall.copyWith(
+                              color: context.appTextTertiary,
+                            ),
                           ),
                         ),
                       ],
@@ -511,9 +570,19 @@ class ReadingDensityCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('최장 연속', style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
+                  Text(
+                    '최장 연속',
+                    style: AppTheme.captionSmall.copyWith(
+                      color: context.appTextTertiary,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('$maxStreak일', style: AppTheme.headingSmall.copyWith(color: AppTheme.accent)),
+                  Text(
+                    '$maxStreak일',
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.accent,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -531,14 +600,16 @@ class ReadingDensityCard extends StatelessWidget {
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             '$pct%의 날을 책과 함께했어요',
-            style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+            ),
           ),
           const SizedBox(height: AppTheme.spaceMD),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: AppTheme.smoothBox(
               color: AppTheme.primary.withValues(alpha: 0.2),
-              side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.4)),
+            side: BorderSide.none,
               radius: AppTheme.radiusMD,
             ),
             child: Text(
@@ -559,7 +630,11 @@ class GoalProgressCard extends StatelessWidget {
   final int current;
   final int goal;
 
-  const GoalProgressCard({super.key, required this.current, required this.goal});
+  const GoalProgressCard({
+    super.key,
+    required this.current,
+    required this.goal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -569,7 +644,6 @@ class GoalProgressCard extends StatelessWidget {
 
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
-      borderColor: AppTheme.primary.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -579,8 +653,12 @@ class GoalProgressCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('연간 독서 목표',
-                        style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary)),
+                    Text(
+                      '연간 독서 목표',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -594,7 +672,9 @@ class GoalProgressCard extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 4, left: 4),
                           child: Text(
                             '/ $goal권',
-                            style: AppTheme.headingSmall.copyWith(color: context.appTextTertiary),
+                            style: AppTheme.headingSmall.copyWith(
+                              color: context.appTextTertiary,
+                            ),
                           ),
                         ),
                       ],
@@ -603,14 +683,19 @@ class GoalProgressCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: AppTheme.smoothPill(
                   color: AppTheme.primary.withValues(alpha: 0.4),
-                  side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.3)),
+                  side: BorderSide.none,
                 ),
                 child: Text(
                   '$pct%',
-                  style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent),
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
               ),
             ],
@@ -630,7 +715,9 @@ class GoalProgressCard extends StatelessWidget {
             remaining > 0
                 ? '목표까지 $remaining권 남았어요. 이 속도라면 충분히 달성할 수 있어요!'
                 : '올해 목표를 달성했어요! 정말 대단해요!',
-            style: AppTheme.captionLarge.copyWith(color: context.appTextSecondary),
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appTextSecondary,
+            ),
           ),
         ],
       ),

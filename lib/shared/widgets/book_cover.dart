@@ -52,7 +52,7 @@ class BookCover extends StatelessWidget {
               child: Icon(
                 Icons.menu_book,
                 color: Colors.white.withValues(alpha: 0.5),
-                size: (width != null ? width! / 2.5 : 24),
+                size: (width != null && width!.isFinite ? width! / 2.5 : 24),
               ),
             ),
 
@@ -67,7 +67,7 @@ class BookCover extends StatelessWidget {
             ),
 
           // 추가 자식 위젯 (이미지 위에 렌더링)
-          ?child,
+          if (child != null) child,
         ],
       ),
     );

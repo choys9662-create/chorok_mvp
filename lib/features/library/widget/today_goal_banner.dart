@@ -33,7 +33,7 @@ class TodayGoalBanner extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appPrimaryAccent.withValues(alpha: 0.08),
           radius: AppTheme.radiusLG,
-          side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.15)),
+          side: BorderSide.none,
         ),
         child: Row(
           children: [
@@ -78,9 +78,7 @@ class TodayGoalBanner extends StatelessWidget {
                 color: isDark
                     ? AppTheme.primary.withValues(alpha: 0.5)
                     : AppTheme.lightPrimaryAccent,
-                side: BorderSide(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.3),
-                ),
+                side: BorderSide.none,
               ),
               child: Text(
                 '완료',
@@ -119,7 +117,7 @@ class TodayGoalBanner extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: 14,
-            side: BorderSide(color: context.appBorder),
+          side: BorderSide.none,
           ),
           child: Row(
             children: [
@@ -193,7 +191,7 @@ class TodayGoalBanner extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: 14,
-          side: BorderSide(color: context.appBorder),
+          side: BorderSide.none,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +247,7 @@ class TodayGoalBanner extends StatelessWidget {
               borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: context.appBorder,
+                backgroundColor: context.appCardElevated,
                 valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
                 minHeight: 4,
               ),
@@ -259,5 +257,4 @@ class TodayGoalBanner extends StatelessWidget {
       ),
     );
   }
-
 }

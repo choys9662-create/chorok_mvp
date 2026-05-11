@@ -23,12 +23,12 @@ class NotiItem {
   });
 
   NotiItem copyWith({bool? isRead}) => NotiItem(
-        type: type,
-        title: title,
-        body: body,
-        time: time,
-        isRead: isRead ?? this.isRead,
-      );
+    type: type,
+    title: title,
+    body: body,
+    time: time,
+    isRead: isRead ?? this.isRead,
+  );
 }
 
 const _kNotifications = [
@@ -85,23 +85,24 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-
 class _NotificationScreenState extends State<NotificationScreen> {
-  final _notifications = kUseMock ? List<NotiItem>.from(_kNotifications) : <NotiItem>[];
+  final _notifications = kUseMock
+      ? List<NotiItem>.from(_kNotifications)
+      : <NotiItem>[];
 
   IconData _iconFor(NotiType type) => switch (type) {
-        NotiType.follow   => Icons.person_add_rounded,
-        NotiType.like     => Icons.favorite_rounded,
-        NotiType.overlap  => Icons.format_quote_rounded,
-        NotiType.system   => Icons.notifications_rounded,
-      };
+    NotiType.follow => Icons.person_add_rounded,
+    NotiType.like => Icons.favorite_rounded,
+    NotiType.overlap => Icons.format_quote_rounded,
+    NotiType.system => Icons.notifications_rounded,
+  };
 
   Color _colorFor(NotiType type) => switch (type) {
-        NotiType.follow  => AppTheme.accent,
-        NotiType.like    => const Color(0xFFFF6B6B),
-        NotiType.overlap => context.appPrimaryAccent,
-        NotiType.system  => context.appTextSecondary,
-      };
+    NotiType.follow => AppTheme.accent,
+    NotiType.like => const Color(0xFFFF6B6B),
+    NotiType.overlap => context.appPrimaryAccent,
+    NotiType.system => context.appTextSecondary,
+  };
 
   void _markAllRead() {
     HapticFeedback.selectionClick();
@@ -135,7 +136,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
               radius: 12,
-              side: BorderSide(color: context.appBorder),
+              side: BorderSide.none,
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             duration: const Duration(seconds: 2),
@@ -153,7 +154,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
               radius: 12,
-              side: BorderSide(color: context.appBorder),
+              side: BorderSide.none,
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             duration: const Duration(seconds: 2),
@@ -178,75 +179,77 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // ─── 앱바 ───────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
-              child: Row(
-                children: [
-                  // 뒤로가기
-                  Semantics(
-                    label: '뒤로가기',
-                    button: true,
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.of(context).pop();
-                        },
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: context.appTextPrimary,
-                          size: 20,
-                        ),
+            child: Row(
+              children: [
+                // 뒤로가기
+                Semantics(
+                  label: '뒤로가기',
+                  button: true,
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.of(context).pop();
+                      },
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: context.appTextPrimary,
+                        size: 20,
                       ),
                     ),
                   ),
-                  // 타이틀
-                  Text(
-                    '알림',
-                    style: AppTheme.headingLarge.copyWith(
-                      color: context.appTextPrimary,
-                      fontWeight: FontWeight.w700,
+                ),
+                // 타이틀
+                Text(
+                  '알림',
+                  style: AppTheme.headingLarge.copyWith(
+                    color: context.appTextPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (unread > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: AppTheme.smoothBox(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.15),
+                      radius: 10,
+                    ),
+                    child: Text(
+                      '$unread 새로운',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  if (unread > 0) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: AppTheme.smoothBox(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.15),
-                        radius: 10,
-                      ),
-                      child: Text(
-                        '$unread 새로운',
-                        style: AppTheme.captionSmall.copyWith(
-                          color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  // 모두 읽음
-                  if (unread > 0)
-                    TextButton(
-                      onPressed: _markAllRead,
-                      child: Text(
-                        '모두 읽음',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appTextTertiary,
-                        ),
-                      ),
-                    ),
                 ],
-              ),
+                const Spacer(),
+                // 모두 읽음
+                if (unread > 0)
+                  TextButton(
+                    onPressed: _markAllRead,
+                    child: Text(
+                      '모두 읽음',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Divider(height: 1, color: context.appBorder),
+          ),
+          const SizedBox(height: 8),
 
-            // ─── 알림 목록 (새로운 / 이전 그룹) ────────────────
-            Expanded(
-              child: Builder(builder: (context) {
+          // ─── 알림 목록 (새로운 / 이전 그룹) ────────────────
+          Expanded(
+            child: Builder(
+              builder: (context) {
                 final newItems = _notifications
                     .asMap()
                     .entries
@@ -275,28 +278,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) {
-                            final entry = newItems[i];
-                            final n = entry.value;
-                            return Column(
-                              children: [
-                                _NotiTile(
-                                  item: n,
-                                  icon: _iconFor(n.type),
-                                  color: _colorFor(n.type),
-                                  onTap: () =>
-                                      _onNotiTap(context, entry.key),
-                                ),
-                                if (i < newItems.length - 1)
-                                  Divider(
-                                      height: 1,
-                                      color: context.appBorder),
-                              ],
-                            );
-                          },
-                          childCount: newItems.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((_, i) {
+                          final entry = newItems[i];
+                          final n = entry.value;
+                          return _NotiTile(
+                            item: n,
+                            icon: _iconFor(n.type),
+                            color: _colorFor(n.type),
+                            onTap: () => _onNotiTap(context, entry.key),
+                          );
+                        }, childCount: newItems.length),
                       ),
                     ],
 
@@ -315,28 +306,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                       ),
                       SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) {
-                            final entry = oldItems[i];
-                            final n = entry.value;
-                            return Column(
-                              children: [
-                                _NotiTile(
-                                  item: n,
-                                  icon: _iconFor(n.type),
-                                  color: _colorFor(n.type),
-                                  onTap: () =>
-                                      _onNotiTap(context, entry.key),
-                                ),
-                                if (i < oldItems.length - 1)
-                                  Divider(
-                                      height: 1,
-                                      color: context.appBorder),
-                              ],
-                            );
-                          },
-                          childCount: oldItems.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((_, i) {
+                          final entry = oldItems[i];
+                          final n = entry.value;
+                          return _NotiTile(
+                            item: n,
+                            icon: _iconFor(n.type),
+                            color: _colorFor(n.type),
+                            onTap: () => _onNotiTap(context, entry.key),
+                          );
+                        }, childCount: oldItems.length),
                       ),
                     ],
 
@@ -344,15 +323,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     if (newItems.isEmpty && oldItems.isEmpty)
                       SliverFillRemaining(
                         child: Center(
-                          child: Text('알림이 없어요',
-                              style: TextStyle(color: context.appTextTertiary)),
+                          child: Text(
+                            '알림이 없어요',
+                            style: TextStyle(color: context.appTextTertiary),
+                          ),
                         ),
                       ),
                   ],
                 );
-              }),
+              },
             ),
-          ],
+          ),
+        ],
       ),
     );
   }
@@ -406,8 +388,9 @@ class _NotiTile extends StatelessWidget {
                     item.title,
                     style: AppTheme.bodySmall.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight:
-                          item.isRead ? FontWeight.w400 : FontWeight.w600,
+                      fontWeight: item.isRead
+                          ? FontWeight.w400
+                          : FontWeight.w600,
                       height: 1.4,
                     ),
                   ),

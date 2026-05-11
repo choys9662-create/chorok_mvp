@@ -4,7 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
 class SessionList extends StatelessWidget {
-  final List<({String title, String author, String duration, String date})> sessions;
+  final List<({String title, String author, String duration, String date})>
+  sessions;
   const SessionList({super.key, required this.sessions});
 
   @override
@@ -17,10 +18,12 @@ class SessionList extends StatelessWidget {
           return Column(
             children: [
               SessionTile(
-                  title: s.title, author: s.author,
-                  duration: s.duration, date: s.date),
-              if (i < sessions.length - 1)
-                Divider(height: 1, color: context.appBorder, indent: 64),
+                title: s.title,
+                author: s.author,
+                duration: s.duration,
+                date: s.date,
+              ),
+
             ],
           );
         }),
@@ -31,47 +34,80 @@ class SessionList extends StatelessWidget {
 
 class SessionTile extends StatelessWidget {
   final String title, author, duration, date;
-  const SessionTile({super.key, 
-    required this.title, required this.author,
-    required this.duration, required this.date,
+  const SessionTile({
+    super.key,
+    required this.title,
+    required this.author,
+    required this.duration,
+    required this.date,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.cardPaddingMD, vertical: AppTheme.spaceMD),
+        horizontal: AppTheme.cardPaddingMD,
+        vertical: AppTheme.spaceMD,
+      ),
       child: Row(
         children: [
           Container(
-            width: 36, height: 48,
+            width: 36,
+            height: 48,
             decoration: ShapeDecoration(
               color: AppTheme.primary.withValues(alpha: 0.2),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 6,
+                  cornerSmoothing: 0.6,
+                ),
               ),
             ),
-            child: const Icon(Icons.menu_book_rounded, color: AppTheme.accent, size: 18),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: AppTheme.accent,
+              size: 18,
+            ),
           ),
           const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600, color: context.appTextPrimary)),
+                Text(
+                  title,
+                  style: AppTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: context.appTextPrimary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(author, style: AppTheme.captionLarge.copyWith(color: context.appTextSecondary)),
+                Text(
+                  author,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(duration, style: AppTheme.bodySmall.copyWith(
-                  color: context.appPrimaryAccent, fontWeight: FontWeight.w600)),
+              Text(
+                duration,
+                style: AppTheme.bodySmall.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(date, style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
+              Text(
+                date,
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
             ],
           ),
         ],
@@ -95,48 +131,75 @@ class FinishedBookList extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.cardPaddingMD, vertical: AppTheme.spaceMD),
+                  horizontal: AppTheme.cardPaddingMD,
+                  vertical: AppTheme.spaceMD,
+                ),
                 child: Row(
                   children: [
                     Container(
-                      width: 36, height: 48,
+                      width: 36,
+                      height: 48,
                       decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
-                          side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.3)),
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 6,
+                            cornerSmoothing: 0.6,
+                          ),
+                          side: BorderSide.none,
                         ),
                       ),
-                      child: Icon(Icons.check_rounded, color: context.appPrimaryAccent, size: 18),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: context.appPrimaryAccent,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: AppTheme.spaceMD),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(b.title, style: AppTheme.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600, color: context.appTextPrimary)),
+                          Text(
+                            b.title,
+                            style: AppTheme.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: context.appTextPrimary,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(b.author,
-                              style: AppTheme.captionLarge.copyWith(color: context.appTextSecondary)),
+                          Text(
+                            b.author,
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextSecondary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(b.date, style: AppTheme.captionLarge.copyWith(
-                            color: context.appPrimaryAccent, fontWeight: FontWeight.w500)),
+                        Text(
+                          b.date,
+                          style: AppTheme.captionLarge.copyWith(
+                            color: context.appPrimaryAccent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        Text('${b.pages}p',
-                            style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
+                        Text(
+                          '${b.pages}p',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              if (i < books.length - 1)
-                Divider(height: 1, color: context.appBorder, indent: 64),
+
             ],
           );
         }),

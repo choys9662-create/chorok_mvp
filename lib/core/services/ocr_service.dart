@@ -35,20 +35,21 @@ class CloudVisionOcrService implements OcrService {
             {
               'image': {'content': base64Image},
               'features': [
-                {'type': 'TEXT_DETECTION', 'maxResults': 1}
+                {'type': 'TEXT_DETECTION', 'maxResults': 1},
               ],
               'imageContext': {
-                'languageHints': ['ko']
+                'languageHints': ['ko'],
               },
-            }
-          ]
+            },
+          ],
         }),
       );
 
       if (response.statusCode != 200) return null;
 
       final data = jsonDecode(response.body);
-      final text = data['responses']?[0]?['fullTextAnnotation']?['text'] as String?;
+      final text =
+          data['responses']?[0]?['fullTextAnnotation']?['text'] as String?;
       return text?.trim();
     } catch (_) {
       return null;
@@ -56,4 +57,6 @@ class CloudVisionOcrService implements OcrService {
   }
 }
 
-final ocrServiceProvider = Provider<OcrService>((ref) => CloudVisionOcrService());
+final ocrServiceProvider = Provider<OcrService>(
+  (ref) => CloudVisionOcrService(),
+);

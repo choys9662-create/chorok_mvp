@@ -127,7 +127,9 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
     HapticFeedback.mediumImpact();
 
     try {
-      await ref.read(bookRepositoryProvider)?.saveReflection(
+      await ref
+          .read(bookRepositoryProvider)
+          ?.saveReflection(
             bookId: widget.book.id,
             bookTitle: widget.book.title,
             bookAuthor: widget.book.author,
@@ -411,7 +413,9 @@ class _StarStep extends StatelessWidget {
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 150),
                         child: Icon(
-                          filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                          filled
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
                           key: ValueKey('$i-$filled'),
                           size: 44,
                           color: filled ? _kGreen : _kTextTertiary,
@@ -442,11 +446,14 @@ class _StarStep extends StatelessWidget {
           child: rating > 0
               ? Container(
                   key: ValueKey(rating),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   decoration: ShapeDecoration(
                     color: _kGreen.withValues(alpha: 0.08),
                     shape: const StadiumBorder(
-                      side: BorderSide(color: _kGreen, width: 0.5),
+                      side: BorderSide.none,
                     ),
                   ),
                   child: Text(
@@ -470,13 +477,20 @@ class _StarStep extends StatelessWidget {
           decoration: ShapeDecoration(
             color: _kSurface,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
-              side: const BorderSide(color: _kBorder),
+              borderRadius: SmoothBorderRadius(
+                cornerRadius: AppTheme.radiusLG,
+                cornerSmoothing: 0.6,
+              ),
+              side: BorderSide.none,
             ),
           ),
           child: const Row(
             children: [
-              Icon(Icons.info_outline_rounded, size: 16, color: _kTextSecondary),
+              Icon(
+                Icons.info_outline_rounded,
+                size: 16,
+                color: _kTextSecondary,
+              ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -523,8 +537,11 @@ class _TextStep extends StatelessWidget {
           decoration: ShapeDecoration(
             color: _kSurface,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
-              side: const BorderSide(color: _kBorder),
+              borderRadius: SmoothBorderRadius(
+                cornerRadius: AppTheme.radiusLG,
+                cornerSmoothing: 0.6,
+              ),
+              side: BorderSide.none,
             ),
           ),
           padding: const EdgeInsets.all(20),
@@ -565,8 +582,11 @@ class _TextStep extends StatelessWidget {
         // 선택 입력 안내
         const Row(
           children: [
-            Icon(Icons.check_circle_outline_rounded,
-                size: 14, color: _kTextTertiary),
+            Icon(
+              Icons.check_circle_outline_rounded,
+              size: 14,
+              color: _kTextTertiary,
+            ),
             SizedBox(width: 6),
             Text(
               '선택 입력이에요 — 비워도 괜찮아요',
@@ -674,10 +694,13 @@ class _BottomCtaState extends State<_BottomCta> {
                         : null,
                     color: active ? null : _kSurface,
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: AppTheme.radiusMD,
+                        cornerSmoothing: 0.6,
+                      ),
                       side: active
                           ? BorderSide.none
-                          : const BorderSide(color: _kBorder),
+                          : BorderSide.none,
                     ),
                   ),
                   alignment: Alignment.center,

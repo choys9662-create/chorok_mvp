@@ -48,8 +48,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
   Future<void> _savePage() async {
     HapticFeedback.mediumImpact();
-    ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, _currentPage);
-    
+    ref
+        .read(libraryProvider.notifier)
+        .updateCurrentPage(widget.bookId, _currentPage);
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -88,7 +90,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('나중에', style: TextStyle(color: context.appTextTertiary)),
+            child: Text(
+              '나중에',
+              style: TextStyle(color: context.appTextTertiary),
+            ),
           ),
           FilledButton(
             onPressed: () {
@@ -110,7 +115,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   Widget build(BuildContext context) {
     final bookList = ref.watch(libraryProvider);
     final bookIndex = bookList.indexWhere((b) => b.id == widget.bookId);
-    
+
     if (bookIndex < 0) {
       return const Scaffold(body: Center(child: Text('책을 찾을 수 없습니다.')));
     }
@@ -152,7 +157,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           if (!isCompleted)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: _PageUpdateCard(
                   currentPage: _currentPage,
                   totalPages: book.totalPages,
@@ -174,11 +182,15 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           // ── 수집한 문장 리스트 ──────────────────────────────────────
           if (book.savedSentences.isNotEmpty) ...[
             SliverToBoxAdapter(
-              child: _SectionHeader(title: '수집한 문장', count: book.savedSentences.length),
+              child: _SectionHeader(
+                title: '수집한 문장',
+                count: book.savedSentences.length,
+              ),
             ),
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _SentenceItem(content: book.savedSentences[index]),
+                (context, index) =>
+                    _SentenceItem(content: book.savedSentences[index]),
                 childCount: book.savedSentences.length,
               ),
             ),
@@ -208,10 +220,15 @@ class _BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        16,
+        24,
+        MediaQuery.of(context).padding.bottom + 16,
+      ),
       decoration: BoxDecoration(
         color: context.appBg.withValues(alpha: 0.8),
-        border: Border(top: BorderSide(color: context.appBorder, width: 0.5)),
+        // border: Border(top: BorderSide(color: context.appBorder, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -219,7 +236,10 @@ class _BottomActionBar extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onStartSession,
               icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('이어 읽기', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                '이어 읽기',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -274,12 +294,19 @@ class _PageUpdateCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('현재 페이지 업데이트', style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                '현재 페이지 업데이트',
+                style: AppTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               TextButton.icon(
                 onPressed: onManualLog,
                 icon: const Icon(Icons.history_edu_rounded, size: 16),
                 label: const Text('수동 기록', style: TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(foregroundColor: context.appPrimaryAccent),
+                style: TextButton.styleFrom(
+                  foregroundColor: context.appPrimaryAccent,
+                ),
               ),
             ],
           ),
@@ -299,7 +326,10 @@ class _PageUpdateCard extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.w700),
-                  decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.all(8)),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.all(8),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -312,11 +342,16 @@ class _PageUpdateCard extends StatelessWidget {
             child: FilledButton(
               onPressed: onSave,
               style: FilledButton.styleFrom(
-                backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.1),
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.1,
+                ),
                 foregroundColor: context.appPrimaryAccent,
                 shape: AppTheme.smoothShape(radius: 8),
               ),
-              child: const Text('페이지 저장', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                '페이지 저장',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -340,7 +375,14 @@ class _QuickAdjust extends StatelessWidget {
           color: context.appPrimaryAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(label, style: TextStyle(color: context.appPrimaryAccent, fontWeight: FontWeight.w700, fontSize: 12)),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: context.appPrimaryAccent,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
@@ -353,40 +395,72 @@ class _HeroSection extends StatelessWidget {
   final bool isCompleted;
   final VoidCallback onToggleCompletion;
 
-  const _HeroSection({required this.book, required this.isCompleted, required this.onToggleCompletion});
+  const _HeroSection({
+    required this.book,
+    required this.isCompleted,
+    required this.onToggleCompletion,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 12, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        MediaQuery.of(context).padding.top + 12,
+        24,
+        24,
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20)),
+              IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+              ),
               const Spacer(),
             ],
           ),
           const SizedBox(height: 20),
           BookCover(
             coverUrl: book.coverUrl,
-            gradientIndex: book.title.hashCode.abs() % AppTheme.coverGradients.length,
+            gradientIndex:
+                book.title.hashCode.abs() % AppTheme.coverGradients.length,
             width: 140,
             height: 200,
             radius: 16,
           ),
           const SizedBox(height: 24),
-          Text(book.title, style: AppTheme.headingLarge, textAlign: TextAlign.center),
+          Text(
+            book.title,
+            style: AppTheme.headingLarge,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 8),
-          Text(book.author, style: AppTheme.bodyMedium.copyWith(color: context.appTextSecondary)),
+          Text(
+            book.author,
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextSecondary,
+            ),
+          ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('${(book.readingProgress * 100).toInt()}%', style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent)),
+              Text(
+                '${(book.readingProgress * 100).toInt()}%',
+                style: AppTheme.headingSmall.copyWith(
+                  color: context.appPrimaryAccent,
+                ),
+              ),
               const SizedBox(width: 12),
-              Text('${book.currentPage} / ${book.totalPages}쪽', style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary)),
+              Text(
+                '${book.currentPage} / ${book.totalPages}쪽',
+                style: AppTheme.bodySmall.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -395,7 +469,7 @@ class _HeroSection extends StatelessWidget {
             child: LinearProgressIndicator(
               value: book.readingProgress,
               minHeight: 6,
-              backgroundColor: context.appBorder,
+              backgroundColor: Colors.transparent,
               valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
             ),
           ),
@@ -405,33 +479,47 @@ class _HeroSection extends StatelessWidget {
               onToggleCompletion();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(isCompleted ? '다시 읽는 중으로 변경되었습니다.' : '완독 처리가 완료되었습니다! 🎉'),
+                  content: Text(
+                    isCompleted ? '다시 읽는 중으로 변경되었습니다.' : '완독 처리가 완료되었습니다! 🎉',
+                  ),
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 ),
               );
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), // 터치 영역 확장
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ), // 터치 영역 확장
               decoration: AppTheme.smoothBox(
-                color: isCompleted ? context.appPrimaryAccent.withValues(alpha: 0.1) : context.appCardElevated,
+                color: isCompleted
+                    ? context.appPrimaryAccent.withValues(alpha: 0.1)
+                    : context.appCardElevated,
                 radius: 12,
-                side: BorderSide(color: isCompleted ? context.appPrimaryAccent : context.appBorder),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isCompleted ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
-                    color: isCompleted ? context.appPrimaryAccent : context.appTextTertiary,
+                    isCompleted
+                        ? Icons.check_circle_rounded
+                        : Icons.check_circle_outline_rounded,
+                    color: isCompleted
+                        ? context.appPrimaryAccent
+                        : context.appTextTertiary,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '완독하기',
                     style: TextStyle(
-                      color: isCompleted ? context.appPrimaryAccent : context.appTextSecondary,
+                      color: isCompleted
+                          ? context.appPrimaryAccent
+                          : context.appTextSecondary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -450,7 +538,12 @@ class _StatsRow extends StatelessWidget {
   final double totalHours;
   final int avgMinutes;
 
-  const _StatsRow({required this.sessions, required this.totalHours, required this.avgMinutes, required this.sentenceCount});
+  const _StatsRow({
+    required this.sessions,
+    required this.totalHours,
+    required this.avgMinutes,
+    required this.sentenceCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -476,9 +569,17 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent)),
+        Text(
+          value,
+          style: AppTheme.headingSmall.copyWith(
+            color: context.appPrimaryAccent,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary)),
+        Text(
+          label,
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+        ),
       ],
     );
   }
@@ -496,7 +597,13 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(title, style: AppTheme.headingSmall),
           const SizedBox(width: 8),
-          Text('$count', style: TextStyle(color: context.appPrimaryAccent, fontWeight: FontWeight.w700)),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: context.appPrimaryAccent,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -512,8 +619,14 @@ class _SentenceItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: AppTheme.smoothBox(color: context.appCardElevated, radius: 12),
-        child: Text(content, style: AppTheme.bodySmall.copyWith(fontStyle: FontStyle.italic)),
+        decoration: AppTheme.smoothBox(
+          color: context.appCardElevated,
+          radius: 12,
+        ),
+        child: Text(
+          content,
+          style: AppTheme.bodySmall.copyWith(fontStyle: FontStyle.italic),
+        ),
       ),
     );
   }

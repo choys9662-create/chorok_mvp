@@ -10,8 +10,10 @@ final tabScrollControllersProvider = Provider<TabScrollControllers>((ref) {
 });
 
 class TabScrollControllers {
-  final List<ScrollController> _ctrls =
-      List.generate(6, (_) => ScrollController());
+  final List<ScrollController> _ctrls = List.generate(
+    6,
+    (_) => ScrollController(),
+  );
 
   ScrollController operator [](int index) => _ctrls[index];
 

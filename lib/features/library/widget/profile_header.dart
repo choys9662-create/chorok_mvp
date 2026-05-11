@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
-
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
 class ProfileHeader extends StatefulWidget {
   final VoidCallback? onSettingsTap;
@@ -26,8 +25,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       topRight: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
     ),
   );
-  static final _buttonBorderRadius =
-      SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6);
+  static final _buttonBorderRadius = SmoothBorderRadius(
+    cornerRadius: AppTheme.radiusMD,
+    cornerSmoothing: 0.6,
+  );
 
   String _name = '';
   String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
@@ -66,7 +67,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 24,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         children: [
@@ -222,9 +223,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   ),
                   decoration: AppTheme.smoothPill(
                     color: AppTheme.primary.withValues(alpha: 0.3),
-                    side: BorderSide(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.4),
-                    ),
+                    side: BorderSide.none,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -322,10 +321,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   ),
                   child: const Text(
                     '저장',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -428,16 +424,10 @@ class _SheetField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(
-        fontSize: 14,
-        color: context.appTextPrimary,
-      ),
+      style: TextStyle(fontSize: 14, color: context.appTextPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          color: context.appTextTertiary,
-          fontSize: 13,
-        ),
+        labelStyle: TextStyle(color: context.appTextTertiary, fontSize: 13),
         filled: true,
         fillColor: context.appCardElevated,
         border: OutlineInputBorder(
@@ -446,7 +436,7 @@ class _SheetField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: _inputRadius,
-          borderSide: BorderSide(color: context.appPrimaryAccent),
+          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -471,8 +461,10 @@ class _FollowListSheet extends StatefulWidget {
 
 class _FollowListSheetState extends State<_FollowListSheet> {
   // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
-  static final _followButtonRadius =
-      SmoothBorderRadius(cornerRadius: 20, cornerSmoothing: 0.6);
+  static final _followButtonRadius = SmoothBorderRadius(
+    cornerRadius: 20,
+    cornerSmoothing: 0.6,
+  );
 
   late List<bool> _followStates;
 
@@ -544,11 +536,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                               : AppTheme.primary,
                           shape: SmoothRectangleBorder(
                             borderRadius: _followButtonRadius,
-                            side: BorderSide(
-                              color: _followStates[i]
-                                  ? context.appBorder
-                                  : context.appPrimaryAccent.withValues(alpha: 0.4),
-                            ),
+                            side: BorderSide.none,
                           ),
                         ),
                         child: Text(

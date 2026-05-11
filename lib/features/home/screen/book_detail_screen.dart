@@ -526,7 +526,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                       behavior: SnackBarBehavior.floating,
                       shape: AppTheme.smoothShape(
                         radius: AppTheme.radiusMD,
-                        side: BorderSide(color: context.appBorder),
+                        side: BorderSide.none,
                       ),
                       margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                       duration: const Duration(seconds: 2),
@@ -731,11 +731,9 @@ class _HeroSection extends StatelessWidget {
                               ? AppTheme.accent.withValues(alpha: 0.15)
                               : Colors.white.withValues(alpha: 0.06),
                           radius: AppTheme.radiusMD,
-                          side: BorderSide(
-                            color: isCompleted
-                                ? AppTheme.accent
-                                : Colors.white.withValues(alpha: 0.1),
-                          ),
+                          radius: AppTheme.radiusMD,
+                          side: BorderSide.none,
+                        ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -805,7 +803,7 @@ class _NavButton extends StatelessWidget {
               decoration: AppTheme.smoothBox(
                 color: Colors.white.withValues(alpha: 0.06),
                 radius: AppTheme.radiusSM,
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+                side: BorderSide.none,
               ),
               child: Icon(icon, size: 20, color: context.appTextPrimary),
             ),
@@ -936,9 +934,7 @@ class _StatCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.primaryBg(0.04),
         radius: AppTheme.radiusMD,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.05),
-        ),
+        side: BorderSide.none,
       ),
       child: Column(
         children: [
@@ -1033,9 +1029,7 @@ class _AddMemoButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
             color: AppTheme.primary.withValues(alpha: 0.3),
-            side: BorderSide(
-              color: context.appPrimaryAccent.withValues(alpha: 0.2),
-            ),
+            side: BorderSide.none,
           ),
           child: Text(
             '+ 메모 추가',
@@ -1072,11 +1066,7 @@ class _SentenceCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(
-          color: hasSocial
-              ? context.appPrimaryAccent.withValues(alpha: 0.2)
-              : context.appBorder,
-        ),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1139,14 +1129,6 @@ class _SentenceCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.appCardElevated,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border(
-                      left: BorderSide(
-                        color: hasSocial
-                            ? context.appPrimaryAccent
-                            : context.appBorder,
-                        width: 3,
-                      ),
-                    ),
                   ),
                   child: Text(
                     '"${s.content}"',
@@ -1248,7 +1230,7 @@ class _SentenceCard extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Divider(height: 1, color: context.appBorder),
+                        // Divider(height: 1, color: context.appBorder),
                         const SizedBox(height: 12),
                         ...s.socialThoughts.map(
                           (t) => Padding(
@@ -1349,7 +1331,7 @@ class _MemoCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1448,7 +1430,7 @@ class _MenuSheet extends ConsumerWidget {
                   behavior: SnackBarBehavior.floating,
                   shape: AppTheme.smoothShape(
                     radius: AppTheme.radiusMD,
-                    side: BorderSide(color: context.appBorder),
+                    side: BorderSide.none,
                   ),
                   margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   duration: const Duration(seconds: 2),
@@ -1476,9 +1458,7 @@ class _MenuSheet extends ConsumerWidget {
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(100),
-                    side: BorderSide(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.4),
-                    ),
+                      side: BorderSide.none,
                   ),
                   margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                   duration: const Duration(seconds: 2),
@@ -1558,7 +1538,7 @@ class _OtherReaderCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1603,12 +1583,6 @@ class _OtherReaderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.appCardElevated,
               borderRadius: BorderRadius.circular(8),
-              border: Border(
-                left: BorderSide(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.5),
-                  width: 3,
-                ),
-              ),
             ),
             child: Text(
               '"${s.content}"',
@@ -1692,9 +1666,7 @@ class _CompletionDialog extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusXL,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.25),
-          ),
+          side: BorderSide.none,
           shadows: [
             BoxShadow(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),

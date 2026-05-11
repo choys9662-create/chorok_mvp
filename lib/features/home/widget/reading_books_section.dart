@@ -19,8 +19,9 @@ class ReadingBooksSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allBooks = ref.watch(libraryProvider);
-    final readingBooks =
-        allBooks.where((b) => b.status == ReadingStatus.reading).toList();
+    final readingBooks = allBooks
+        .where((b) => b.status == ReadingStatus.reading)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,12 +91,9 @@ class EmptyBooksState extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.screenPadding,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: ChorokCard(
-        borderColor: context.appBorder,
-        padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -150,9 +148,7 @@ class EmptyBooksState extends StatelessWidget {
                     color: isDark
                         ? AppTheme.primary.withValues(alpha: 0.5)
                         : AppTheme.lightPrimaryAccent,
-                    side: BorderSide(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.3),
-                    ),
+                    side: BorderSide.none,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -160,9 +156,7 @@ class EmptyBooksState extends StatelessWidget {
                       Icon(
                         Icons.search_rounded,
                         size: 18,
-                        color: isDark
-                            ? context.appPrimaryAccent
-                            : Colors.white,
+                        color: isDark ? context.appPrimaryAccent : Colors.white,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -198,7 +192,7 @@ class InsightChip extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appPrimaryAccent.withValues(alpha: 0.08),
         radius: AppTheme.radiusMD,
-        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.15)),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [
@@ -267,7 +261,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: BorderSide(color: context.appBorder),
+            side: BorderSide.none,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +269,8 @@ class ReadingBookCardState extends State<ReadingBookCard> {
               // 표지
               BookCover(
                 coverUrl: b.coverUrl,
-                gradientIndex: b.title.hashCode.abs() % AppTheme.coverGradients.length,
+                gradientIndex:
+                    b.title.hashCode.abs() % AppTheme.coverGradients.length,
                 height: 110,
                 width: double.infinity,
                 radius: 0, // 컨테이너 클리핑에 의존
@@ -360,16 +355,16 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                     onTap: () async {
                       HapticFeedback.mediumImpact();
                       context.push(
-                          AppConstants.routeSession,
-                          extra: SessionExtra(
-                            bookId: b.id,
-                            bookTitle: b.title,
-                            bookAuthor: b.author,
-                            coverUrl: b.coverUrl,
-                            startPage: b.currentPage,
-                            totalPages: b.totalPages,
-                          ),
-                        );
+                        AppConstants.routeSession,
+                        extra: SessionExtra(
+                          bookId: b.id,
+                          bookTitle: b.title,
+                          bookAuthor: b.author,
+                          coverUrl: b.coverUrl,
+                          startPage: b.currentPage,
+                          totalPages: b.totalPages,
+                        ),
+                      );
                     },
                     child: Container(
                       height: 36,
@@ -378,11 +373,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                         color: isDark
                             ? AppTheme.primary.withValues(alpha: 0.5)
                             : AppTheme.lightPrimaryAccent,
-                        side: BorderSide(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
+                        side: BorderSide.none,
                       ),
                       child: Text(
                         '이어 읽기',

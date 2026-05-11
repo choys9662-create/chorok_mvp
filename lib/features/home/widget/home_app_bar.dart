@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../timer/controller/timer_controller.dart';
 import 'home_helpers.dart';
+
 class HomeAppBar extends ConsumerWidget {
   const HomeAppBar({super.key});
 

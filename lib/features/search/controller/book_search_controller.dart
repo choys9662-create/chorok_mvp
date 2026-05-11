@@ -23,10 +23,9 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
       return;
     }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _invoke({
-          'query': q,
-          'queryType': _typeParam(_type),
-        }));
+    state = await AsyncValue.guard(
+      () => _invoke({'query': q, 'queryType': _typeParam(_type)}),
+    );
   }
 
   void setType(BookSearchType type) {
@@ -46,10 +45,10 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
       _invoke({'isbn': isbn13});
 
   static String _typeParam(BookSearchType t) => switch (t) {
-        BookSearchType.keyword => 'Keyword',
-        BookSearchType.title => 'Title',
-        BookSearchType.author => 'Author',
-      };
+    BookSearchType.keyword => 'Keyword',
+    BookSearchType.title => 'Title',
+    BookSearchType.author => 'Author',
+  };
 
   static Future<List<AladinBook>> _invoke(Map<String, dynamic> body) async {
     try {
@@ -59,7 +58,10 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
       );
       final data = res.data as Map<String, dynamic>;
       final items = data['item'] as List<dynamic>? ?? [];
-      return items.cast<Map<String, dynamic>>().map(AladinBook.fromJson).toList();
+      return items
+          .cast<Map<String, dynamic>>()
+          .map(AladinBook.fromJson)
+          .toList();
     } catch (e) {
       if (e is FunctionException) {
         throw Exception('검색 서버 에러 (${e.status}): ${e.details ?? e.toString()}');

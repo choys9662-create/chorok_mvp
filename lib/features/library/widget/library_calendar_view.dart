@@ -20,31 +20,208 @@ typedef ReadingLog = ({
   int gradientIndex,
 });
 
-
 // ─── 독서 기록 목업 (USE_MOCK=true 전용) ────────────────────────────────────
 List<ReadingLog> get mockReadingLogs {
   if (!kUseMock) return const [];
   final now = DateTime.now();
-  const c1 = 'https://picsum.photos/seed/chorok1/300/400';
-  const c2 = 'https://picsum.photos/seed/chorok2/300/400';
+  const c1 =
+      'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg'; // 채식주의자
+  const c2 =
+      'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg'; // 파친코
+  const c3 =
+      'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg'; // 소년이 온다
+  const c4 =
+      'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg'; // 아몬드
   return [
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18, coverUrl: c1, gradientIndex: 0),
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '파친코', bookAuthor: '이민진', minutes: 25, pages: 12, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 1)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 55, pages: 24, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 2)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 38, pages: 16, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 3)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 20, pages: 8, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 5)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 65, pages: 30, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 6)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 30, pages: 14, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 8)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 48, pages: 22, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 10)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 35, pages: 15, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 52, pages: 25, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 18, pages: 7, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 14)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 40, pages: 19, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 15)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 28, pages: 13, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 18)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 60, pages: 28, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 20)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 33, pages: 16, coverUrl: c2, gradientIndex: 1),
-    (date: now.subtract(const Duration(days: 22)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 45, pages: 20, coverUrl: c1, gradientIndex: 0),
-    (date: now.subtract(const Duration(days: 25)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 50, pages: 24, coverUrl: c2, gradientIndex: 1),
+    (
+      date: DateTime(now.year, now.month, now.day),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 42,
+      pages: 18,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: DateTime(now.year, now.month, now.day),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 25,
+      pages: 12,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: DateTime(now.year, now.month, now.day - 1),
+      bookTitle: '소년이 온다',
+      bookAuthor: '한강',
+      minutes: 55,
+      pages: 31,
+      coverUrl: c3,
+      gradientIndex: 3,
+    ),
+    (
+      date: DateTime(now.year, now.month, now.day - 2),
+      bookTitle: '아몬드',
+      bookAuthor: '손원평',
+      minutes: 30,
+      pages: 20,
+      coverUrl: c4,
+      gradientIndex: 4,
+    ),
+    (
+      date: now.subtract(const Duration(days: 1)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 55,
+      pages: 24,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 2)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 38,
+      pages: 16,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 3)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 20,
+      pages: 8,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 4)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 45,
+      pages: 20,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 5)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 35,
+      pages: 15,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 5)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 65,
+      pages: 30,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 6)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 30,
+      pages: 14,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 8)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 48,
+      pages: 22,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 10)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 35,
+      pages: 15,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 12)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 52,
+      pages: 25,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 12)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 18,
+      pages: 7,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 14)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 40,
+      pages: 19,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 15)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 28,
+      pages: 13,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 18)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 60,
+      pages: 28,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 20)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 33,
+      pages: 16,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
+    (
+      date: now.subtract(const Duration(days: 22)),
+      bookTitle: '채식주의자',
+      bookAuthor: '한강',
+      minutes: 45,
+      pages: 20,
+      coverUrl: c1,
+      gradientIndex: 0,
+    ),
+    (
+      date: now.subtract(const Duration(days: 25)),
+      bookTitle: '파친코',
+      bookAuthor: '이민진',
+      minutes: 50,
+      pages: 24,
+      coverUrl: c2,
+      gradientIndex: 1,
+    ),
   ];
 }
 
@@ -69,7 +246,7 @@ class SegmentToggle extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 12,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Row(
         children: List.generate(labels.length, (i) {
@@ -82,7 +259,9 @@ class SegmentToggle extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isSelected ? context.appPrimaryAccent : Colors.transparent,
+                  color: isSelected
+                      ? context.appPrimaryAccent
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Text(
@@ -107,7 +286,12 @@ class LibraryCalendarView extends StatefulWidget {
   final List<Book> books;
   final ScrollController? scrollController;
 
-  const LibraryCalendarView({super.key, required this.logs, required this.books, this.scrollController});
+  const LibraryCalendarView({
+    super.key,
+    required this.logs,
+    required this.books,
+    this.scrollController,
+  });
 
   @override
   State<LibraryCalendarView> createState() => _LibraryCalendarViewState();
@@ -181,7 +365,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedLogs = _selectedDate != null ? _logsFor(_selectedDate!) : <ReadingLog>[];
+    final selectedLogs = _selectedDate != null
+        ? _logsFor(_selectedDate!)
+        : <ReadingLog>[];
     final totalMin = selectedLogs.fold<int>(0, (a, l) => a + l.minutes);
 
     return CustomScrollView(
@@ -191,7 +377,12 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppTheme.screenPadding, 16, AppTheme.screenPadding, 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              16,
+              AppTheme.screenPadding,
+              12,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -203,7 +394,11 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                     child: SizedBox(
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.chevron_left_rounded, color: context.appTextSecondary, size: 24),
+                      child: Icon(
+                        Icons.chevron_left_rounded,
+                        color: context.appTextSecondary,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -222,7 +417,11 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                     child: SizedBox(
                       width: 40,
                       height: 40,
-                      child: Icon(Icons.chevron_right_rounded, color: context.appTextSecondary, size: 24),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        color: context.appTextSecondary,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -233,7 +432,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
 
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
             child: Row(
               children: AppConstants.weekdaysSunFirst
                   .map(
@@ -257,7 +458,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
 
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
             child: _CalendarGrid(
               month: _focusedMonth,
               activeDays: _activeDays,
@@ -275,7 +478,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
         if (_selectedDate != null) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
               child: Row(
                 children: [
                   Text(
@@ -288,7 +493,10 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                   if (totalMin > 0) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: context.appPrimaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -396,9 +604,7 @@ class _CalendarGrid extends StatelessWidget {
                   ? AppTheme.primary.withValues(alpha: 0.15)
                   : null,
               radius: 10,
-              side: isToday && !isSelected
-                  ? BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.4))
-                  : BorderSide.none,
+              side: BorderSide.none,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -422,9 +628,14 @@ class _CalendarGrid extends StatelessWidget {
                   const SizedBox(height: 2),
                   if (isCompleted)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white.withValues(alpha: 0.2) : context.appPrimaryAccent.withValues(alpha: 0.2),
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : context.appPrimaryAccent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -432,7 +643,9 @@ class _CalendarGrid extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 8,
                           fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : context.appPrimaryAccent,
+                          color: isSelected
+                              ? Colors.white
+                              : context.appPrimaryAccent,
                         ),
                       ),
                     )
@@ -442,7 +655,9 @@ class _CalendarGrid extends StatelessWidget {
                       height: 5,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: context.appPrimaryAccent.withValues(alpha: isSelected ? 1.0 : 0.7),
+                        color: context.appPrimaryAccent.withValues(
+                          alpha: isSelected ? 1.0 : 0.7,
+                        ),
                       ),
                     ),
                 ] else ...[
@@ -477,7 +692,7 @@ class _ReadingLogCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 14,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [
@@ -516,7 +731,11 @@ class _ReadingLogCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.schedule_rounded, size: 12, color: context.appPrimaryAccent),
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 12,
+                    color: context.appPrimaryAccent,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     log.minutes >= 60

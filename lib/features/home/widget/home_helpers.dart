@@ -44,7 +44,7 @@ String todayInsightText(int todayMinutes, int exitCount, int goalMinutes) {
     if (exitCount == 0) return '한 번도 안 나가셨어요. 완전한 몰입이었어요';
     return '오늘 목표를 달성했어요! 내일도 이 기세로요';
   }
-  
+
   final remaining = goalMinutes - todayMinutes;
   return '오늘 $remaining분만 더 읽어볼까요?';
 }

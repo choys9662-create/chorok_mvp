@@ -28,32 +28,152 @@ class _Badge {
 
 const _kBadges = <_Badge>[
   // 독서 습관
-  _Badge(emoji: '🌱', title: '첫 발걸음', description: '첫 독서 세션 완료', unlocked: true, category: _BadgeCategory.reading),
-  _Badge(emoji: '🔥', title: '3일 연속', description: '3일 연속 독서', unlocked: true, category: _BadgeCategory.reading),
-  _Badge(emoji: '⚡', title: '일주일 독서가', description: '7일 연속 독서', unlocked: true, category: _BadgeCategory.reading),
-  _Badge(emoji: '🌙', title: '저녁형 독서가', description: '저녁 시간대 독서 20회', unlocked: true, category: _BadgeCategory.reading),
-  _Badge(emoji: '🏅', title: '한 달 독서왕', description: '30일 연속 독서', progress: 0.7, category: _BadgeCategory.reading),
-  _Badge(emoji: '🕐', title: '집중력 마스터', description: '90분 연속 독서', progress: 0.4, category: _BadgeCategory.reading),
-  _Badge(emoji: '🌅', title: '새벽 독서가', description: '오전 6시 이전 독서 10회', progress: 0.2, category: _BadgeCategory.reading),
-  _Badge(emoji: '💯', title: '퍼펙트 위크', description: '7일 모두 목표 달성', progress: 0, category: _BadgeCategory.reading),
+  _Badge(
+    emoji: '🌱',
+    title: '첫 발걸음',
+    description: '첫 독서 세션 완료',
+    unlocked: true,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '🔥',
+    title: '3일 연속',
+    description: '3일 연속 독서',
+    unlocked: true,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '⚡',
+    title: '일주일 독서가',
+    description: '7일 연속 독서',
+    unlocked: true,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '🌙',
+    title: '저녁형 독서가',
+    description: '저녁 시간대 독서 20회',
+    unlocked: true,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '🏅',
+    title: '한 달 독서왕',
+    description: '30일 연속 독서',
+    progress: 0.7,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '🕐',
+    title: '집중력 마스터',
+    description: '90분 연속 독서',
+    progress: 0.4,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '🌅',
+    title: '새벽 독서가',
+    description: '오전 6시 이전 독서 10회',
+    progress: 0.2,
+    category: _BadgeCategory.reading,
+  ),
+  _Badge(
+    emoji: '💯',
+    title: '퍼펙트 위크',
+    description: '7일 모두 목표 달성',
+    progress: 0,
+    category: _BadgeCategory.reading,
+  ),
 
   // 문장 수집
-  _Badge(emoji: '✏️', title: '첫 문장', description: '첫 초서 완료', unlocked: true, category: _BadgeCategory.collection),
-  _Badge(emoji: '📚', title: '문장 수집가', description: '초서 50개 달성', unlocked: true, category: _BadgeCategory.collection),
-  _Badge(emoji: '💬', title: '겹문장 발견', description: '겹문장 첫 발견', unlocked: true, category: _BadgeCategory.collection),
-  _Badge(emoji: '🎯', title: '초서 100', description: '초서 100개 달성', progress: 0.62, category: _BadgeCategory.collection),
-  _Badge(emoji: '📖', title: '완독 달성', description: '첫 책 완독', progress: 0, category: _BadgeCategory.collection),
-  _Badge(emoji: '🌟', title: '명문장 큐레이터', description: '좋아요 10개 이상 초서', progress: 0, category: _BadgeCategory.collection),
+  _Badge(
+    emoji: '✏️',
+    title: '첫 문장',
+    description: '첫 초서 완료',
+    unlocked: true,
+    category: _BadgeCategory.collection,
+  ),
+  _Badge(
+    emoji: '📚',
+    title: '문장 수집가',
+    description: '초서 50개 달성',
+    unlocked: true,
+    category: _BadgeCategory.collection,
+  ),
+  _Badge(
+    emoji: '💬',
+    title: '겹문장 발견',
+    description: '겹문장 첫 발견',
+    unlocked: true,
+    category: _BadgeCategory.collection,
+  ),
+  _Badge(
+    emoji: '🎯',
+    title: '초서 100',
+    description: '초서 100개 달성',
+    progress: 0.62,
+    category: _BadgeCategory.collection,
+  ),
+  _Badge(
+    emoji: '📖',
+    title: '완독 달성',
+    description: '첫 책 완독',
+    progress: 0,
+    category: _BadgeCategory.collection,
+  ),
+  _Badge(
+    emoji: '🌟',
+    title: '명문장 큐레이터',
+    description: '좋아요 10개 이상 초서',
+    progress: 0,
+    category: _BadgeCategory.collection,
+  ),
 
   // 소셜
-  _Badge(emoji: '👥', title: '첫 팔로워', description: '첫 팔로워 생김', unlocked: true, category: _BadgeCategory.social),
-  _Badge(emoji: '❤️', title: '공감왕', description: '좋아요 100개 받기', progress: 0.3, category: _BadgeCategory.social),
-  _Badge(emoji: '🤝', title: '독서 친구', description: '팔로잉 10명 달성', progress: 0.6, category: _BadgeCategory.social),
+  _Badge(
+    emoji: '👥',
+    title: '첫 팔로워',
+    description: '첫 팔로워 생김',
+    unlocked: true,
+    category: _BadgeCategory.social,
+  ),
+  _Badge(
+    emoji: '❤️',
+    title: '공감왕',
+    description: '좋아요 100개 받기',
+    progress: 0.3,
+    category: _BadgeCategory.social,
+  ),
+  _Badge(
+    emoji: '🤝',
+    title: '독서 친구',
+    description: '팔로잉 10명 달성',
+    progress: 0.6,
+    category: _BadgeCategory.social,
+  ),
 
   // 특별
-  _Badge(emoji: '🎄', title: '크리스마스 독서', description: '12월 25일 독서', progress: 0, category: _BadgeCategory.special),
-  _Badge(emoji: '🎆', title: '새해 첫 독서', description: '1월 1일 독서', progress: 0, category: _BadgeCategory.special),
-  _Badge(emoji: '🌸', title: '봄날의 독서', description: '벚꽃 시즌 독서 (3~4월)', unlocked: true, category: _BadgeCategory.special),
+  _Badge(
+    emoji: '🎄',
+    title: '크리스마스 독서',
+    description: '12월 25일 독서',
+    progress: 0,
+    category: _BadgeCategory.special,
+  ),
+  _Badge(
+    emoji: '🎆',
+    title: '새해 첫 독서',
+    description: '1월 1일 독서',
+    progress: 0,
+    category: _BadgeCategory.special,
+  ),
+  _Badge(
+    emoji: '🌸',
+    title: '봄날의 독서',
+    description: '벚꽃 시즌 독서 (3~4월)',
+    unlocked: true,
+    category: _BadgeCategory.special,
+  ),
 ];
 
 // ─── 챌린지 데이터 ─────────────────────────────────────────────────────────
@@ -149,7 +269,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         backgroundColor: context.appBg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: context.appTextPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: context.appTextPrimary,
+          ),
           onPressed: () {
             HapticFeedback.selectionClick();
             context.pop();
@@ -157,9 +281,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         ),
         title: Text(
           '성취 & 뱃지',
-          style: AppTheme.headingSmall.copyWith(
-            color: context.appTextPrimary,
-          ),
+          style: AppTheme.headingSmall.copyWith(color: context.appTextPrimary),
         ),
         centerTitle: true,
         bottom: PreferredSize(
@@ -172,9 +294,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             labelStyle: AppTheme.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
             ),
-            unselectedLabelStyle: AppTheme.bodyMedium.copyWith(
-            ),
-            tabs: const [Tab(text: '뱃지'), Tab(text: '챌린지')],
+            unselectedLabelStyle: AppTheme.bodyMedium.copyWith(),
+            tabs: const [
+              Tab(text: '뱃지'),
+              Tab(text: '챌린지'),
+            ],
           ),
         ),
       ),
@@ -235,7 +359,9 @@ class _BadgesTab extends StatelessWidget {
             height: 40,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
               itemCount: categories.length,
               separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
@@ -246,7 +372,10 @@ class _BadgesTab extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: selected
                         ? AppTheme.smoothBox(
                             gradient: context.appReadingGradient,
@@ -255,13 +384,17 @@ class _BadgesTab extends StatelessWidget {
                         : AppTheme.smoothBox(
                             color: context.appCard,
                             radius: AppTheme.radiusMD,
-                            side: BorderSide(color: context.appBorder),
+                            side: BorderSide.none,
                           ),
                     child: Text(
                       cat.label,
                       style: AppTheme.captionLarge.copyWith(
-                        color: selected ? Colors.white : context.appTextSecondary,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                        color: selected
+                            ? Colors.white
+                            : context.appTextSecondary,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                   ),
@@ -274,7 +407,9 @@ class _BadgesTab extends StatelessWidget {
 
         // ─── 뱃지 그리드 ──────────────────────────────────────────
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
           sliver: SliverGrid.builder(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
@@ -399,15 +534,9 @@ class _BadgeTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: AppTheme.smoothBox(
-          color: badge.unlocked
-              ? context.primaryBg(0.12)
-              : context.appCard,
+          color: badge.unlocked ? context.primaryBg(0.12) : context.appCard,
           radius: AppTheme.radiusLG,
-          side: BorderSide(
-            color: badge.unlocked
-                ? context.appPrimaryAccent.withValues(alpha: 0.3)
-                : context.appBorder,
-          ),
+          side: BorderSide.none,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -416,18 +545,31 @@ class _BadgeTile extends StatelessWidget {
             ColorFiltered(
               colorFilter: locked
                   ? const ColorFilter.matrix([
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0,      0,      0,      1, 0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0.2126,
+                      0.7152,
+                      0.0722,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      1,
+                      0,
                     ])
                   : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
               child: Text(
                 badge.emoji,
-                style: TextStyle(
-                  fontSize: 32,
-                  color: locked ? null : null,
-                ),
+                style: TextStyle(fontSize: 32, color: locked ? null : null),
               ),
             ),
             const SizedBox(height: 6),
@@ -452,7 +594,9 @@ class _BadgeTile extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: badge.progress,
                     backgroundColor: context.appBorder,
-                    valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+                    valueColor: AlwaysStoppedAnimation(
+                      context.appPrimaryAccent,
+                    ),
                     minHeight: 3,
                   ),
                 ),
@@ -460,7 +604,11 @@ class _BadgeTile extends StatelessWidget {
             ],
             if (badge.unlocked) ...[
               const SizedBox(height: 4),
-              Icon(Icons.check_circle_rounded, size: 14, color: context.appPrimaryAccent),
+              Icon(
+                Icons.check_circle_rounded,
+                size: 14,
+                color: context.appPrimaryAccent,
+              ),
             ],
           ],
         ),
@@ -529,8 +677,10 @@ class _BadgeDetailSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
                         value: badge.progress,
-                        backgroundColor: context.appBorder,
-                        valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+                        backgroundColor: context.appCardElevated,
+                        valueColor: AlwaysStoppedAnimation(
+                          context.appPrimaryAccent,
+                        ),
                         minHeight: 8,
                       ),
                     ),
@@ -549,14 +699,21 @@ class _BadgeDetailSheet extends StatelessWidget {
             if (badge.unlocked) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: AppTheme.smoothPill(
                   color: context.appPrimaryAccent.withValues(alpha: 0.12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle_rounded, size: 16, color: context.appPrimaryAccent),
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 16,
+                      color: context.appPrimaryAccent,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '획득 완료',
@@ -590,7 +747,9 @@ class _ChallengesTab extends StatelessWidget {
         _ChallengeSection(
           title: '진행 중',
           subtitle: '${_kChallenges.length}개',
-          children: _kChallenges.map((c) => _ChallengeTile(challenge: c)).toList(),
+          children: _kChallenges
+              .map((c) => _ChallengeTile(challenge: c))
+              .toList(),
         ),
         const SizedBox(height: AppTheme.space2XL),
 
@@ -675,7 +834,7 @@ class _ChallengeTile extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +922,7 @@ class _UpcomingChallengeTile extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [

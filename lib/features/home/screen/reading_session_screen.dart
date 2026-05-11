@@ -79,6 +79,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       builder: (_) => const _ReadersSheet(),
     ).then((_) => _resetUiTimer());
   }
+
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
   int? _exitSeconds;
@@ -113,7 +114,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       final initialized = await stt.initialize();
       if (!initialized && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('마이크를 사용할 수 없습니다.', style: TextStyle(fontFamily: 'Pretendard'))),
+          const SnackBar(
+            content: Text(
+              '마이크를 사용할 수 없습니다.',
+              style: TextStyle(fontFamily: 'Pretendard'),
+            ),
+          ),
         );
         return;
       }
@@ -142,8 +148,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarBrightness: Brightness.dark,        // iOS: light icons
-        statusBarIconBrightness: Brightness.light,   // Android: light icons
+        statusBarBrightness: Brightness.dark, // iOS: light icons
+        statusBarIconBrightness: Brightness.light, // Android: light icons
       ),
     );
 
@@ -272,139 +278,146 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         canPop: false,
         child: Scaffold(
           backgroundColor: context.appBg,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ① 배경
-            const _SessionBackground(),
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ① 배경
+              const _SessionBackground(),
 
-            // ② 반딧불이 + 중심 오브 — 화면 전체
-            AnimatedBuilder(
-              animation: Listenable.merge([_pulseAnim, _moveCtrl]),
-              builder: (_, _) => Stack(
-                fit: StackFit.expand,
-                children: [
-                  CustomPaint(
-                    painter: _FireflyPainter(
-                      pulse: _pulseAnim.value,
-                      time: _moveCtrl.value,
-                      mutualCount: mutualCount,
-                      nearbyCount: nearbyCount,
+              // ② 반딧불이 + 중심 오브 — 화면 전체
+              AnimatedBuilder(
+                animation: Listenable.merge([_pulseAnim, _moveCtrl]),
+                builder: (_, _) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CustomPaint(
+                      painter: _FireflyPainter(
+                        pulse: _pulseAnim.value,
+                        time: _moveCtrl.value,
+                        mutualCount: mutualCount,
+                        nearbyCount: nearbyCount,
+                      ),
                     ),
-                  ),
-                  Center(
-                    child: _GlowOrb(
-                      scale: _pulseAnim.value,
-                      isPaused: timer.isPaused,
+                    Center(
+                      child: _GlowOrb(
+                        scale: _pulseAnim.value,
+                        isPaused: timer.isPaused,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // ③ UI 레이어
-            GestureDetector(
-              onTap: _resetUiTimer,
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedOpacity(
-                opacity: _isUiVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 600),
-                child: SafeArea(
-                  minimum: const EdgeInsets.only(top: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ─ 상단 컨트롤 바 ──────────────────────────────
-                      FadeTransition(
-                        opacity: _entryTopBar,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, -0.3),
-                            end: Offset.zero,
-                          ).animate(_entryTopBar),
-                          child: IgnorePointer(
-                            ignoring: !_isUiVisible,
-                            child: _TopBar(
-                              timer: timer,
-                              readersCount: readersCount,
-                              onTogglePause: () {
-                                HapticFeedback.mediumImpact();
-                                final ctrl = ref.read(timerProvider.notifier);
-                                timer.isPaused ? ctrl.resume() : ctrl.pause();
-                                _resetUiTimer();
-                              },
-                              onStopPress: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('꾹 눌러서 세션을 종료하세요', style: TextStyle(fontFamily: 'Pretendard')),
-                                    duration: Duration(milliseconds: 1500),
-                                    backgroundColor: Color(0xFF1A3D2B),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                              onStopLongPress: _onStop,
-                              onReadersTap: _openReadersSheet,
+              // ③ UI 레이어
+              GestureDetector(
+                onTap: _resetUiTimer,
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedOpacity(
+                  opacity: _isUiVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 600),
+                  child: SafeArea(
+                    minimum: const EdgeInsets.only(top: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ─ 상단 컨트롤 바 ──────────────────────────────
+                        FadeTransition(
+                          opacity: _entryTopBar,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, -0.3),
+                              end: Offset.zero,
+                            ).animate(_entryTopBar),
+                            child: IgnorePointer(
+                              ignoring: !_isUiVisible,
+                              child: _TopBar(
+                                timer: timer,
+                                readersCount: readersCount,
+                                onTogglePause: () {
+                                  HapticFeedback.mediumImpact();
+                                  final ctrl = ref.read(timerProvider.notifier);
+                                  timer.isPaused ? ctrl.resume() : ctrl.pause();
+                                  _resetUiTimer();
+                                },
+                                onStopPress: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        '꾹 눌러서 세션을 종료하세요',
+                                        style: TextStyle(
+                                          fontFamily: 'Pretendard',
+                                        ),
+                                      ),
+                                      duration: Duration(milliseconds: 1500),
+                                      backgroundColor: Color(0xFF1A3D2B),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                onStopLongPress: _onStop,
+                                onReadersTap: _openReadersSheet,
+                              ),
                             ),
                           ),
                         ),
-                      ),
 
-                      // ─ 타이머 숫자 ──────────────────────────────────
-                      FadeTransition(
-                        opacity: _entryTimer,
-                        child: ScaleTransition(
-                          scale: Tween<double>(begin: 0.85, end: 1.0)
-                              .animate(_entryTimer),
-                          child: IgnorePointer(
-                            ignoring: !_isUiVisible,
-                            child: Center(child: _TimerDisplay(timer: timer)),
-                          ),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // ─ 하단 책 정보 + 초서 액션 바 ───────────────
-                      FadeTransition(
-                        opacity: _entryBottom,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.3),
-                            end: Offset.zero,
-                          ).animate(_entryBottom),
-                          child: IgnorePointer(
-                            ignoring: !_isUiVisible,
-                            child: _BottomArea(
-                              chosuCount: _collectedSentences.length,
-                              bookTitle: widget.bookTitle,
-                              bookAuthor: widget.bookAuthor,
-                              onOcrTap: _openOcr,
-                              onRecordTap: _toggleRecording,
-                              isRecording: _isRecording,
-                              isOcrLoading: _isOcrLoading,
-                              onTypeSentence: (text) =>
-                                  _openChosuSheet(initialText: text),
+                        // ─ 타이머 숫자 ──────────────────────────────────
+                        FadeTransition(
+                          opacity: _entryTimer,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.85,
+                              end: 1.0,
+                            ).animate(_entryTimer),
+                            child: IgnorePointer(
+                              ignoring: !_isUiVisible,
+                              child: Center(child: _TimerDisplay(timer: timer)),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        const Spacer(),
+
+                        // ─ 하단 책 정보 + 초서 액션 바 ───────────────
+                        FadeTransition(
+                          opacity: _entryBottom,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.3),
+                              end: Offset.zero,
+                            ).animate(_entryBottom),
+                            child: IgnorePointer(
+                              ignoring: !_isUiVisible,
+                              child: _BottomArea(
+                                chosuCount: _collectedSentences.length,
+                                bookTitle: widget.bookTitle,
+                                bookAuthor: widget.bookAuthor,
+                                onOcrTap: _openOcr,
+                                onRecordTap: _toggleRecording,
+                                isRecording: _isRecording,
+                                isOcrLoading: _isOcrLoading,
+                                onTypeSentence: (text) =>
+                                    _openChosuSheet(initialText: text),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // ④ 녹음 오버레이 (STT 중일 때)
-            if (_isRecording)
-              _RecordingOverlay(
-                recognizedText: _recognizedText,
-                onStop: _toggleRecording,
-              ),
-          ],
+              // ④ 녹음 오버레이 (STT 중일 때)
+              if (_isRecording)
+                _RecordingOverlay(
+                  recognizedText: _recognizedText,
+                  onStop: _toggleRecording,
+                ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -458,7 +471,9 @@ class _TopBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: _kGreen,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: _kGreen.withValues(alpha: 0.8), blurRadius: 4)],
+              boxShadow: [
+                BoxShadow(color: _kGreen.withValues(alpha: 0.8), blurRadius: 4),
+              ],
             ),
           ),
           const SizedBox(width: 6),
@@ -470,10 +485,17 @@ class _TopBar extends StatelessWidget {
                 children: [
                   Text(
                     '$readersCount명 함께 읽는 중',
-                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 14,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                 ],
               ),
             ),
@@ -485,15 +507,17 @@ class _TopBar extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: AppTheme.smoothBox(
-                color: timer.isPaused ? _kGreen.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.09),
+                color: timer.isPaused
+                    ? _kGreen.withValues(alpha: 0.15)
+                    : Colors.white.withValues(alpha: 0.09),
                 radius: 9,
-                side: BorderSide(
-                  color: timer.isPaused ? _kGreen.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.12),
-                ),
+                side: BorderSide.none,
               ),
               child: Icon(
                 timer.isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                color: timer.isPaused ? _kGreen : Colors.white.withValues(alpha: 0.65),
+                color: timer.isPaused
+                    ? _kGreen
+                    : Colors.white.withValues(alpha: 0.65),
                 size: 16,
               ),
             ),
@@ -508,12 +532,16 @@ class _TopBar extends StatelessWidget {
               decoration: AppTheme.smoothBox(
                 color: Colors.red.withValues(alpha: 0.15),
                 radius: 10,
-                side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+                side: BorderSide.none,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.stop_rounded, color: Colors.red.withValues(alpha: 0.8), size: 16),
+                  Icon(
+                    Icons.stop_rounded,
+                    color: Colors.red.withValues(alpha: 0.8),
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '종료',
@@ -612,18 +640,6 @@ class _BottomArea extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 그린 강조 바
-              Container(
-                width: 3,
-                height: 46,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF00FF00), Color(0xFF00CC6A)],
-                  ),
-                ),
-              ),
               const SizedBox(width: 14),
               // 제목 + 저자
               Expanded(
@@ -661,7 +677,7 @@ class _BottomArea extends StatelessWidget {
                   ),
                   decoration: AppTheme.smoothPill(
                     color: _kGreen.withValues(alpha: 0.08),
-                    side: BorderSide(color: _kGreen.withValues(alpha: 0.2)),
+                    side: BorderSide.none,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -748,7 +764,7 @@ class _ChosuActionBarState extends State<_ChosuActionBar> {
             height: 44,
             decoration: AppTheme.smoothPill(
               color: Colors.white.withValues(alpha: 0.07),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+              side: BorderSide.none,
             ),
             child: Row(
               children: [
@@ -756,10 +772,7 @@ class _ChosuActionBarState extends State<_ChosuActionBar> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                     decoration: InputDecoration(
                       hintText: '문장을 입력하세요...',
                       hintStyle: TextStyle(
@@ -855,11 +868,7 @@ class _QuickBtn extends StatelessWidget {
           color: isActive
               ? activeColor.withValues(alpha: 0.15)
               : Colors.white.withValues(alpha: 0.07),
-          side: BorderSide(
-            color: isActive
-                ? activeColor.withValues(alpha: 0.45)
-                : Colors.white.withValues(alpha: 0.10),
-          ),
+          side: BorderSide.none,
         ),
         child: Icon(
           icon,
@@ -889,10 +898,13 @@ class _FireflyPainter extends CustomPainter {
   static const int _count = 500;
   static const double _ref = 60.0;
 
-  static final double _sizeScale    = math.pow(_ref / _count, 0.35).toDouble();
+  static final double _sizeScale = math.pow(_ref / _count, 0.35).toDouble();
   static final double _opacityScale = math.pow(_ref / _count, 0.28).toDouble();
   // 많을수록 화면 가장자리까지 넓게 퍼짐 (1.5 상한)
-  static final double _spreadMult   = math.min(math.pow(_count / _ref, 0.22).toDouble(), 1.5);
+  static final double _spreadMult = math.min(
+    math.pow(_count / _ref, 0.22).toDouble(),
+    1.5,
+  );
 
   static final _flies = _buildFireflies();
 
@@ -919,10 +931,15 @@ class _FireflyPainter extends CustomPainter {
     return List.generate(_count, (i) {
       final u = rng.nextDouble();
       final r = math.sqrt(
-        globalMinR * globalMinR + u * (globalMaxR * globalMaxR - globalMinR * globalMinR),
+        globalMinR * globalMinR +
+            u * (globalMaxR * globalMaxR - globalMinR * globalMinR),
       );
 
-      final type = r < 0.42 ? 0 : r < 0.84 ? 1 : 2;
+      final type = r < 0.42
+          ? 0
+          : r < 0.84
+          ? 1
+          : 2;
 
       final driftFreq = (1 + rng.nextInt(3)).toDouble();
       final pulseFreq = (1 + rng.nextInt(5)).toDouble();
@@ -976,16 +993,26 @@ class _FireflyPainter extends CustomPainter {
           sz * 4.5,
           Paint()
             ..color = c.withValues(alpha: op * 0.10)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, math.max(3.0, 9.0 * _sizeScale)),
+            ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal,
+              math.max(3.0, 9.0 * _sizeScale),
+            ),
         );
         canvas.drawCircle(
           Offset(x, y),
           sz * 2.4,
           Paint()
             ..color = c.withValues(alpha: op * 0.28)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, math.max(2.0, 4.0 * _sizeScale)),
+            ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal,
+              math.max(2.0, 4.0 * _sizeScale),
+            ),
         );
-        canvas.drawCircle(Offset(x, y), sz, Paint()..color = c.withValues(alpha: op));
+        canvas.drawCircle(
+          Offset(x, y),
+          sz,
+          Paint()..color = c.withValues(alpha: op),
+        );
       } else if (f.type == 1) {
         // 중간 — 블러 글로우 + 코어
         canvas.drawCircle(
@@ -993,9 +1020,16 @@ class _FireflyPainter extends CustomPainter {
           sz * 2.8,
           Paint()
             ..color = c.withValues(alpha: op * 0.22)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, math.max(2.0, 6.0 * _sizeScale)),
+            ..maskFilter = MaskFilter.blur(
+              BlurStyle.normal,
+              math.max(2.0, 6.0 * _sizeScale),
+            ),
         );
-        canvas.drawCircle(Offset(x, y), sz, Paint()..color = c.withValues(alpha: op));
+        canvas.drawCircle(
+          Offset(x, y),
+          sz,
+          Paint()..color = c.withValues(alpha: op),
+        );
       } else {
         // 외부 — 블러 없음, 소프트 링 + 코어 (드로우콜 최소화)
         canvas.drawCircle(
@@ -1003,7 +1037,11 @@ class _FireflyPainter extends CustomPainter {
           sz * 1.8,
           Paint()..color = c.withValues(alpha: op * 0.28),
         );
-        canvas.drawCircle(Offset(x, y), sz, Paint()..color = c.withValues(alpha: op));
+        canvas.drawCircle(
+          Offset(x, y),
+          sz,
+          Paint()..color = c.withValues(alpha: op),
+        );
       }
     }
   }
@@ -1140,10 +1178,7 @@ class _RecordingOverlay extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 '탭하여 중지',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 14),
               ),
               if (recognizedText.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -1181,7 +1216,7 @@ class _ReadersSheet extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0A0F0C),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: null,
       ),
       child: SafeArea(
         child: Column(
@@ -1208,7 +1243,10 @@ class _ReadersSheet extends ConsumerWidget {
                       color: _kGreen,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: _kGreen.withValues(alpha: 0.5), blurRadius: 8),
+                        BoxShadow(
+                          color: _kGreen.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                        ),
                       ],
                     ),
                   ),
@@ -1237,11 +1275,17 @@ class _ReadersSheet extends ConsumerWidget {
             if (fireflyAsync.isLoading)
               const Padding(
                 padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: _kGreen,
+                  strokeWidth: 2,
+                ),
               )
             else if (mutuals.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 24,
+                ),
                 child: Text(
                   '아직 맞팔한 친구가 없어요\n친구와 함께 읽어보세요 🌿',
                   textAlign: TextAlign.center,
@@ -1257,7 +1301,10 @@ class _ReadersSheet extends ConsumerWidget {
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: mutuals.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemBuilder: (context, i) {
                     final u = mutuals[i];
                     return Padding(
@@ -1293,8 +1340,9 @@ class _MutualReaderTile extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: _kGreen.withValues(alpha: 0.12),
-            backgroundImage:
-                user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+            backgroundImage: user.avatarUrl != null
+                ? NetworkImage(user.avatarUrl!)
+                : null,
             child: user.avatarUrl == null
                 ? Text(
                     (user.displayName.isNotEmpty
@@ -1338,7 +1386,7 @@ class _MutualReaderTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: AppTheme.smoothPill(
               color: _kGreen.withValues(alpha: 0.1),
-              side: BorderSide(color: _kGreen.withValues(alpha: 0.3)),
+              side: BorderSide.none,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1350,7 +1398,10 @@ class _MutualReaderTile extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: _kGreen,
                     boxShadow: [
-                      BoxShadow(color: _kGreen.withValues(alpha: 0.6), blurRadius: 4),
+                      BoxShadow(
+                        color: _kGreen.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
                 ),

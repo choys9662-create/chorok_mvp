@@ -8,7 +8,6 @@ import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/isar/isar_reading_session.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-
 typedef TodSlot = ({String label, String range, int minutes});
 typedef SessionEntry = ({
   String title,
@@ -145,12 +144,16 @@ String _fmtRelativeDate(DateTime dt) {
 }
 
 List<SessionEntry> _sessToEntries(List<_Sess> sessions) {
-  return sessions.map((s) => (
-        title: s.bookTitle.isNotEmpty ? s.bookTitle : '알 수 없는 책',
-        author: s.bookAuthor,
-        duration: _fmtDuration(s.durationSeconds),
-        date: _fmtRelativeDate(s.date),
-      )).toList();
+  return sessions
+      .map(
+        (s) => (
+          title: s.bookTitle.isNotEmpty ? s.bookTitle : '알 수 없는 책',
+          author: s.bookAuthor,
+          duration: _fmtDuration(s.durationSeconds),
+          date: _fmtRelativeDate(s.date),
+        ),
+      )
+      .toList();
 }
 
 // ─── 세션 리스트에서 공통 통계 계산 ─────────────────────────────────────────
@@ -163,7 +166,8 @@ List<SessionEntry> _sessToEntries(List<_Sess> sessions) {
   int maxSessionMinutes,
   int avgSessionMinutes,
   int monthlyMinutes, // minute for single month/year bucket
-}) _computeSessStats(List<_Sess> sessions) {
+})
+_computeSessStats(List<_Sess> sessions) {
   final daySet = <String>{};
   final daily = List<int>.filled(7, 0);
   final tod = [0, 0, 0, 0];
@@ -273,7 +277,9 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final weekTotal = weekSess.fold(0, (s, r) => s + r.durationSeconds);
     final weekDaySet = <String>{};
     for (final s in weekSess) {
-      weekDaySet.add('${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}');
+      weekDaySet.add(
+        '${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}',
+      );
     }
     final weekDailyMin = List<int>.filled(7, 0);
     for (final s in weekSess) {
@@ -296,25 +302,36 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final wFocus = _focusScoreFromIsarSessions(weekSess);
     final wMaxSessMin = weekSess.isEmpty
         ? 0
-        : weekSess.map((s) => s.durationSeconds).reduce((a, b) => a > b ? a : b) ~/
-            60;
-    final wAvgSessMin =
-        weekSess.isEmpty ? 0 : weekTotal ~/ weekSess.length ~/ 60;
+        : weekSess
+                  .map((s) => s.durationSeconds)
+                  .reduce((a, b) => a > b ? a : b) ~/
+              60;
+    final wAvgSessMin = weekSess.isEmpty
+        ? 0
+        : weekTotal ~/ weekSess.length ~/ 60;
 
     // Month
     final monthTotal = monthSess.fold(0, (s, r) => s + r.durationSeconds);
     final monthDaySet = <String>{};
     for (final s in monthSess) {
-      monthDaySet.add('${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}');
+      monthDaySet.add(
+        '${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}',
+      );
     }
-    final prevMonthTotal = prevMonthSess.fold(0, (s, r) => s + r.durationSeconds);
+    final prevMonthTotal = prevMonthSess.fold(
+      0,
+      (s, r) => s + r.durationSeconds,
+    );
     final mFocus = _focusScoreFromIsarSessions(monthSess);
     final mMaxSessMin = monthSess.isEmpty
         ? 0
-        : monthSess.map((s) => s.durationSeconds).reduce((a, b) => a > b ? a : b) ~/
-            60;
-    final mAvgSessMin =
-        monthSess.isEmpty ? 0 : monthTotal ~/ monthSess.length ~/ 60;
+        : monthSess
+                  .map((s) => s.durationSeconds)
+                  .reduce((a, b) => a > b ? a : b) ~/
+              60;
+    final mAvgSessMin = monthSess.isEmpty
+        ? 0
+        : monthTotal ~/ monthSess.length ~/ 60;
 
     int maxStreak = 0, curStreak = 0;
     for (int d = 1; d <= monthTotalDays; d++) {
@@ -330,7 +347,9 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final yearTotal = yearSess.fold(0, (s, r) => s + r.durationSeconds);
     final yearDaySet = <String>{};
     for (final s in yearSess) {
-      yearDaySet.add('${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}');
+      yearDaySet.add(
+        '${s.startedAt.year}-${s.startedAt.month}-${s.startedAt.day}',
+      );
     }
     final yFocus = _focusScoreFromIsarSessions(yearSess);
 
@@ -432,7 +451,9 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     final results = await Future.wait([
       client
           .from('reading_sessions')
-          .select('started_at, ended_at, duration_seconds, sentence_count, books(title, author)')
+          .select(
+            'started_at, ended_at, duration_seconds, sentence_count, books(title, author)',
+          )
           .eq('user_id', userId)
           .gte('ended_at', yearStart.toIso8601String())
           .lt('ended_at', yearEnd.toIso8601String())
@@ -459,7 +480,8 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     List<_Sess> rowsToSess(List rows) {
       return rows.map((r) {
         final map = r as Map<String, dynamic>;
-        final dateStr = map['ended_at'] as String? ??
+        final dateStr =
+            map['ended_at'] as String? ??
             map['started_at'] as String? ??
             now.toIso8601String();
         final book = map['books'] as Map<String, dynamic>?;
@@ -478,14 +500,18 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     bool inRange(DateTime d, DateTime from, DateTime to) =>
         !d.isBefore(from) && d.isBefore(to);
 
-    final weekSess =
-        allSess.where((s) => inRange(s.date, weekStart, weekEnd)).toList();
-    final prevWeekSess =
-        allSess.where((s) => inRange(s.date, prevWeekStart, weekStart)).toList();
-    final monthSess =
-        allSess.where((s) => inRange(s.date, monthStart, nextMonthStart)).toList();
-    final prevMonthSess =
-        allSess.where((s) => inRange(s.date, prevMonthStart, monthStart)).toList();
+    final weekSess = allSess
+        .where((s) => inRange(s.date, weekStart, weekEnd))
+        .toList();
+    final prevWeekSess = allSess
+        .where((s) => inRange(s.date, prevWeekStart, weekStart))
+        .toList();
+    final monthSess = allSess
+        .where((s) => inRange(s.date, monthStart, nextMonthStart))
+        .toList();
+    final prevMonthSess = allSess
+        .where((s) => inRange(s.date, prevMonthStart, monthStart))
+        .toList();
 
     // Sentences (choseo equivalent)
     List<IsarChoseo> rowsToChoseo(List rows) {
@@ -498,9 +524,8 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
           bookTitle: book?['title'] as String? ?? '',
           bookAuthor: book?['author'] as String? ?? '',
           content: map['content'] as String? ?? '',
-          createdAt: DateTime.tryParse(
-                  map['created_at'] as String? ?? '') ??
-              now,
+          createdAt:
+              DateTime.tryParse(map['created_at'] as String? ?? '') ?? now,
         );
       }).toList();
     }
@@ -538,27 +563,29 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
         totalPages: (map['total_pages'] as num?)?.toInt() ?? 0,
         status: IsarReadingStatus.completed,
         createdAt: DateTime.now(),
-        updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+        updatedAt:
+            DateTime.tryParse(map['updated_at'] as String? ?? '') ??
             DateTime.now(),
       );
     }).toList();
 
     // Week 집계
     final wStats = _computeSessStats(weekSess);
-    final prevWeekTotal =
-        prevWeekSess.fold(0, (s, r) => s + r.durationSeconds);
+    final prevWeekTotal = prevWeekSess.fold(0, (s, r) => s + r.durationSeconds);
     final wFocus = weekSess.isEmpty
         ? 0
         : (weekSess.fold(0, (s, r) => s + r.sentenceCount) /
-                    weekSess.length *
-                    10)
-                .round()
-                .clamp(40, 100);
+                  weekSess.length *
+                  10)
+              .round()
+              .clamp(40, 100);
 
     // Month 집계
     final mStats = _computeSessStats(monthSess);
-    final prevMonthTotal =
-        prevMonthSess.fold(0, (s, r) => s + r.durationSeconds);
+    final prevMonthTotal = prevMonthSess.fold(
+      0,
+      (s, r) => s + r.durationSeconds,
+    );
 
     int maxStreak = 0, curStreak = 0;
     for (int d = 1; d <= monthTotalDays; d++) {
@@ -631,5 +658,5 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
 
 final analyticsProvider =
     AsyncNotifierProvider<AnalyticsNotifier, AnalyticsState>(
-  AnalyticsNotifier.new,
-);
+      AnalyticsNotifier.new,
+    );

@@ -8,7 +8,8 @@ class QualitativeInsightCard extends StatelessWidget {
   final String message;
   final String? subMessage;
 
-  const QualitativeInsightCard({super.key, 
+  const QualitativeInsightCard({
+    super.key,
     required this.icon,
     required this.message,
     this.subMessage,
@@ -25,7 +26,8 @@ class QualitativeInsightCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: AppTheme.smoothBox(
                   gradient: AppTheme.greenGradient,
                   radius: AppTheme.radiusMD,
@@ -53,7 +55,7 @@ class QualitativeInsightCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: AppTheme.smoothBox(
                 color: AppTheme.primary.withValues(alpha: 0.2),
-                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.4)),
+                side: BorderSide.none,
                 radius: AppTheme.radiusMD,
               ),
               child: Text(
@@ -76,7 +78,8 @@ class ReadingPersonaCard extends StatelessWidget {
   final IconData icon;
   final String description;
 
-  const ReadingPersonaCard({super.key, 
+  const ReadingPersonaCard({
+    super.key,
     required this.persona,
     required this.icon,
     required this.description,
@@ -86,12 +89,12 @@ class ReadingPersonaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
-      borderColor: AppTheme.primary.withValues(alpha: 0.3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 48, height: 48,
+            width: 48,
+            height: 48,
             decoration: AppTheme.smoothBox(
               gradient: AppTheme.greenGradient,
               radius: AppTheme.radiusMD,
@@ -105,7 +108,9 @@ class ReadingPersonaCard extends StatelessWidget {
               children: [
                 Text(
                   persona,
-                  style: AppTheme.headingMedium.copyWith(color: context.appPrimaryAccent),
+                  style: AppTheme.headingMedium.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -129,7 +134,8 @@ class ReaderIdentityCard extends StatelessWidget {
   final IconData icon;
   final String description;
 
-  const ReaderIdentityCard({super.key, 
+  const ReaderIdentityCard({
+    super.key,
     required this.identity,
     required this.icon,
     required this.description,
@@ -139,14 +145,14 @@ class ReaderIdentityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
-      borderColor: AppTheme.primary.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 40, height: 40,
+                width: 40,
+                height: 40,
                 decoration: AppTheme.smoothBox(
                   gradient: AppTheme.greenGradient,
                   radius: AppTheme.radiusMD,
@@ -156,7 +162,9 @@ class ReaderIdentityCard extends StatelessWidget {
               const SizedBox(width: AppTheme.spaceMD),
               Text(
                 '올해 나는',
-                style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary),
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextTertiary,
+                ),
               ),
             ],
           ),
@@ -167,7 +175,7 @@ class ReaderIdentityCard extends StatelessWidget {
             gradient: AppTheme.greenGradientVertical,
           ),
           const SizedBox(height: AppTheme.spaceMD),
-          Divider(color: context.appBorder, height: 1),
+          // Divider(color: context.appBorder, height: 1),
           const SizedBox(height: AppTheme.spaceMD),
           Text(
             description,

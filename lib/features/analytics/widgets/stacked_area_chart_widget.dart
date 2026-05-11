@@ -60,30 +60,34 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
       final sp = widget.series[s];
       final topVals = stacked[s];
 
-      lines.add(LineChartBarData(
-        spots: List.generate(
-          widget.labels.length,
-          (i) => FlSpot(i.toDouble(), topVals[i]),
+      lines.add(
+        LineChartBarData(
+          spots: List.generate(
+            widget.labels.length,
+            (i) => FlSpot(i.toDouble(), topVals[i]),
+          ),
+          isCurved: true,
+          curveSmoothness: 0.35,
+          color: sp.color,
+          barWidth: 1.5,
+          isStrokeCapRound: true,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: sp.color.withValues(alpha: 0.25),
+            applyCutOffY: false,
+            spotsLine: BarAreaSpotsLine(show: false),
+          ),
         ),
-        isCurved: true,
-        curveSmoothness: 0.35,
-        color: sp.color,
-        barWidth: 1.5,
-        isStrokeCapRound: true,
-        dotData: const FlDotData(show: false),
-        belowBarData: BarAreaData(
-          show: true,
-          color: sp.color.withValues(alpha: 0.25),
-          applyCutOffY: false,
-          spotsLine: BarAreaSpotsLine(show: false),
-        ),
-      ));
+      );
     }
 
     return ChorokCard(
       padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceMD, AppTheme.cardPaddingLG,
-        AppTheme.cardPaddingLG, AppTheme.cardPaddingLG,
+        AppTheme.spaceMD,
+        AppTheme.cardPaddingLG,
+        AppTheme.cardPaddingLG,
+        AppTheme.cardPaddingLG,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,10 +105,8 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: context.appBorder,
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (_) =>
+                      FlLine(color: context.appBorder, strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
@@ -141,7 +143,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                           widget.labels[idx],
                           style: AppTheme.captionSmall.copyWith(
                             color: _kLabel,
-                              fontSize: 10,
+                            fontSize: 10,
                           ),
                         );
                       },
@@ -157,9 +159,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                       final name = idx >= 0 ? widget.series[idx].name : '';
                       return LineTooltipItem(
                         '$name ${s.y.round()}h',
-                        AppTheme.captionSmall.copyWith(
-                          color: s.bar.color,
-                        ),
+                        AppTheme.captionSmall.copyWith(color: s.bar.color),
                       );
                     }).toList(),
                   ),
@@ -182,7 +182,10 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                 onTap: () => setState(() => _visible[i] = !active),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: ShapeDecoration(
                     color: active
                         ? sp.color.withValues(alpha: 0.15)

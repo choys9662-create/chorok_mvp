@@ -8,10 +8,7 @@ import '../../../shared/widgets/chorok_card.dart';
 class WaffleChartWidget extends StatelessWidget {
   final List<({String name, Color color, int cells})> genres;
 
-  const WaffleChartWidget({
-    super.key,
-    required this.genres,
-  });
+  const WaffleChartWidget({super.key, required this.genres});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +54,10 @@ class WaffleChartWidget extends StatelessWidget {
             runSpacing: 6,
             children: genres.map((g) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: ShapeDecoration(
                   color: g.color.withValues(alpha: 0.15),
                   shape: const StadiumBorder(),
@@ -76,9 +76,7 @@ class WaffleChartWidget extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       '${g.name} ${g.cells}%',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: g.color,
-                      ),
+                      style: AppTheme.captionSmall.copyWith(color: g.color),
                     ),
                   ],
                 ),

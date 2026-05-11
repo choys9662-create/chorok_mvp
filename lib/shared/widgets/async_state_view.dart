@@ -18,23 +18,23 @@ class AsyncStateView extends StatelessWidget {
   final VoidCallback? onRetry;
 
   const AsyncStateView.loading({super.key})
-      : _type = _AsyncStateType.loading,
-        message = null,
-        onRetry = null;
+    : _type = _AsyncStateType.loading,
+      message = null,
+      onRetry = null;
 
   const AsyncStateView.empty({super.key, this.message})
-      : _type = _AsyncStateType.empty,
-        onRetry = null;
+    : _type = _AsyncStateType.empty,
+      onRetry = null;
 
   const AsyncStateView.error({super.key, this.message, this.onRetry})
-      : _type = _AsyncStateType.error;
+    : _type = _AsyncStateType.error;
 
   @override
   Widget build(BuildContext context) {
     return switch (_type) {
       _AsyncStateType.loading => const _LoadingShimmer(),
-      _AsyncStateType.empty   => _EmptyState(message: message),
-      _AsyncStateType.error   => _ErrorState(message: message, onRetry: onRetry),
+      _AsyncStateType.empty => _EmptyState(message: message),
+      _AsyncStateType.error => _ErrorState(message: message, onRetry: onRetry),
     };
   }
 }
@@ -59,10 +59,7 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
   }
 
   @override
@@ -107,7 +104,7 @@ class _ShimmerCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: color,
         radius: 16,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +116,10 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 7, cornerSmoothing: 0.6),
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 7,
+                  cornerSmoothing: 0.6,
+                ),
               ),
             ),
           ),
@@ -131,7 +131,10 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 6,
+                  cornerSmoothing: 0.6,
+                ),
               ),
             ),
           ),
@@ -143,7 +146,10 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 6,
+                  cornerSmoothing: 0.6,
+                ),
               ),
             ),
           ),
@@ -242,12 +248,12 @@ class _ErrorState extends StatelessWidget {
                     onPressed: onRetry,
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.space2XL),
-                      backgroundColor:
-                          AppTheme.primary.withValues(alpha: 0.3),
+                        horizontal: AppTheme.space2XL,
+                      ),
+                      backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
                       shape: AppTheme.smoothShape(
                         radius: 12,
-                        side: BorderSide(color: context.appBorder),
+                        side: BorderSide.none,
                       ),
                     ),
                     child: Text(

@@ -106,9 +106,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             : '"${found.title}"은(는) 이미 서재에 있어요';
         HapticFeedback.mediumImpact();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            _buildSnackBar(msg, added),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(_buildSnackBar(msg, added));
           Navigator.of(context).pop();
         }
       } else {
@@ -160,7 +160,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       backgroundColor: _kSurface,
       behavior: SnackBarBehavior.floating,
       shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(cornerRadius: 32, cornerSmoothing: 0.6),
+        borderRadius: SmoothBorderRadius(
+          cornerRadius: 32,
+          cornerSmoothing: 0.6,
+        ),
       ),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       duration: const Duration(seconds: 3),
@@ -177,16 +180,11 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         children: [
           // ── 카메라 뷰 ────────────────────────────────────────────────
           Positioned.fill(
-            child: MobileScanner(
-              controller: _scannerCtrl,
-              onDetect: _onDetect,
-            ),
+            child: MobileScanner(controller: _scannerCtrl, onDetect: _onDetect),
           ),
 
           // ── 스캔 오버레이 ─────────────────────────────────────────────
-          Positioned.fill(
-            child: _ScanOverlay(pulseAnim: _pulseAnim),
-          ),
+          Positioned.fill(child: _ScanOverlay(pulseAnim: _pulseAnim)),
 
           // ── 상단 바 ───────────────────────────────────────────────────
           Positioned(
@@ -290,8 +288,7 @@ class _ScanOverlay extends StatelessWidget {
     );
   }
 
-  static List<Widget> _corners(
-      double l, double t, double w, double h) {
+  static List<Widget> _corners(double l, double t, double w, double h) {
     const cs = 24.0; // corner size
     const ct = 3.0; // corner thickness
 
@@ -320,11 +317,7 @@ class _ScanOverlay extends StatelessWidget {
     return Positioned(
       left: left,
       top: top,
-      child: Container(
-        width: width,
-        height: height,
-        color: _kGreen,
-      ),
+      child: Container(width: width, height: height, color: _kGreen),
     );
   }
 }
@@ -425,14 +418,9 @@ class _TopBar extends StatelessWidget {
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: torchOn
-                      ? _kGreen.withValues(alpha: 0.2)
-                      : _kOverlay,
+                  color: torchOn ? _kGreen.withValues(alpha: 0.2) : _kOverlay,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: torchOn ? _kGreen : Colors.transparent,
-                    width: 1,
-                  ),
+                  border: null,
                 ),
                 child: Icon(
                   torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
@@ -478,8 +466,11 @@ class _BottomStatus extends StatelessWidget {
               decoration: ShapeDecoration(
                 color: _kSurface,
                 shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(cornerRadius: 16, cornerSmoothing: 0.6),
-                  side: const BorderSide(color: _kBorder),
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: 16,
+                    cornerSmoothing: 0.6,
+                  ),
+                  side: BorderSide.none,
                 ),
               ),
               child: Row(

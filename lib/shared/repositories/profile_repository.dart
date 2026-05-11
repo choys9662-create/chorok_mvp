@@ -33,10 +33,7 @@ class ProfileRepository {
 
   Future<List<UserProfile>> getByIds(List<String> ids) async {
     if (ids.isEmpty) return const [];
-    final rows = await _client
-        .from('profiles')
-        .select()
-        .inFilter('id', ids);
+    final rows = await _client.from('profiles').select().inFilter('id', ids);
     return (rows as List)
         .map((r) => UserProfile.fromRow(r as Map<String, dynamic>))
         .toList();

@@ -13,7 +13,6 @@ import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
 import '../../../shared/widgets/book_cover.dart';
 
-
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -84,7 +83,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           ),
           Expanded(
             child: isSearchActive
-                ? _SearchResultsView(state: searchState, query: _searchController.text)
+                ? _SearchResultsView(
+                    state: searchState,
+                    query: _searchController.text,
+                  )
                 : const _IdleSearchView(),
           ),
         ],
@@ -189,10 +191,7 @@ class _SearchBar extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 12,
-        side: BorderSide(
-          color: isSearchFocused ? AppTheme.accent : context.appBorder,
-          width: isSearchFocused ? 1.5 : 1,
-        ),
+        side: BorderSide.none,
         shadows: isSearchFocused
             ? [
                 BoxShadow(
@@ -292,16 +291,24 @@ class _SearchResultsView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search_off_rounded, size: 52, color: context.appTextTertiary),
+                Icon(
+                  Icons.search_off_rounded,
+                  size: 52,
+                  color: context.appTextTertiary,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   '검색 결과가 없어요',
-                  style: AppTheme.headingSmall.copyWith(color: context.appTextSecondary),
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextSecondary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '다른 제목이나 저자 이름으로 검색해보세요',
-                  style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+                  style: AppTheme.bodySmall.copyWith(
+                    color: context.appTextTertiary,
+                  ),
                 ),
               ],
             ),
@@ -311,7 +318,8 @@ class _SearchResultsView extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(top: 8, bottom: 48),
           itemCount: books.length,
-          itemBuilder: (context, index) => _BookResultTile(book: books[index], rank: index + 1),
+          itemBuilder: (context, index) =>
+              _BookResultTile(book: books[index], rank: index + 1),
         );
       },
     );
@@ -338,17 +346,23 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     HapticFeedback.mediumImpact();
 
     final lib = ref.read(libraryProvider);
-    final alreadyIn = widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
+    final alreadyIn =
+        widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
         ? lib.any((b) => b.isbn == widget.book.isbn13)
-        : lib.any((b) => b.title == widget.book.title && b.author == widget.book.author);
+        : lib.any(
+            (b) =>
+                b.title == widget.book.title && b.author == widget.book.author,
+          );
 
     if (alreadyIn) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
-        context,
-        '"${widget.book.title}"은(는) 이미 서재에 있어요',
-        success: false,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(
+          context,
+          '"${widget.book.title}"은(는) 이미 서재에 있어요',
+          success: false,
+        ),
+      );
       return;
     }
 
@@ -358,10 +372,12 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     addBookAndFetchPages(ref, widget.book, status);
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(chorokSnackBar(
-      context,
-      '"${widget.book.title}"을(를) ${readingStatusLabel(status)}에 추가했어요',
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      chorokSnackBar(
+        context,
+        '"${widget.book.title}"을(를) ${readingStatusLabel(status)}에 추가했어요',
+      ),
+    );
   }
 
   @override
@@ -369,7 +385,10 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
     final lib = ref.watch(libraryProvider);
     final isAdded = widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
         ? lib.any((b) => b.isbn == widget.book.isbn13)
-        : lib.any((b) => b.title == widget.book.title && b.author == widget.book.author);
+        : lib.any(
+            (b) =>
+                b.title == widget.book.title && b.author == widget.book.author,
+          );
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -395,7 +414,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: 16,
-            side: BorderSide(color: context.appBorder),
+            side: BorderSide.none,
           ),
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -435,76 +454,91 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
               ),
               const SizedBox(width: 8),
               Semantics(
-                label: isAdded ? '${widget.book.title} 서재에 추가됨' : '${widget.book.title} 서재에 추가',
+                label: isAdded
+                    ? '${widget.book.title} 서재에 추가됨'
+                    : '${widget.book.title} 서재에 추가',
                 button: true,
                 child: GestureDetector(
-                  onTapDown: isAdded ? null : (_) => setState(() => _btnPressed = true),
-                  onTapUp: isAdded ? null : (_) {
-                    setState(() => _btnPressed = false);
-                    _onAddToLibrary(context);
-                  },
-                  onTapCancel: isAdded ? null : () => setState(() => _btnPressed = false),
+                  onTapDown: isAdded
+                      ? null
+                      : (_) => setState(() => _btnPressed = true),
+                  onTapUp: isAdded
+                      ? null
+                      : (_) {
+                          setState(() => _btnPressed = false);
+                          _onAddToLibrary(context);
+                        },
+                  onTapCancel: isAdded
+                      ? null
+                      : () => setState(() => _btnPressed = false),
                   child: AnimatedScale(
                     scale: _btnPressed ? 0.92 : 1.0,
                     duration: const Duration(milliseconds: 120),
                     curve: Curves.easeOutCubic,
                     child: Container(
-                    height: 32,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                    alignment: Alignment.center,
-                    decoration: ShapeDecoration(
-                      color: isAdded
-                          ? AppTheme.accent.withValues(alpha: 0.1)
-                          : _btnPressed
-                              ? AppTheme.accent.withValues(alpha: 0.15)
-                              : context.appCardElevated,
-                      shape: SmoothRectangleBorder(
-                        borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-                        side: BorderSide(
-                          color: isAdded || _btnPressed
-                              ? AppTheme.accent.withValues(alpha: 0.3)
-                              : context.appBorder,
-                          width: 1,
+                      height: 32,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        color: isAdded
+                            ? AppTheme.accent.withValues(alpha: 0.1)
+                            : _btnPressed
+                            ? AppTheme.accent.withValues(alpha: 0.15)
+                            : context.appCardElevated,
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 8,
+                            cornerSmoothing: 0.6,
+                          ),
+                          side: BorderSide.none,
                         ),
                       ),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Opacity(
-                          opacity: 0,
-                          child: Text(
-                            '서재에 추가',
-                            style: AppTheme.captionSmall.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        if (isAdded)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.check_rounded, size: 13, color: AppTheme.accent),
-                              const SizedBox(width: 4),
-                              Text(
-                                '추가됨',
-                                style: AppTheme.captionSmall.copyWith(
-                                  color: AppTheme.accent,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Opacity(
+                            opacity: 0,
+                            child: Text(
+                              '서재에 추가',
+                              style: AppTheme.captionSmall.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
-                          )
-                        else
-                          Text(
-                            '서재에 추가',
-                            style: AppTheme.captionSmall.copyWith(
-                              color: AppTheme.accent,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                      ],
+                          if (isAdded)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_rounded,
+                                  size: 13,
+                                  color: AppTheme.accent,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '추가됨',
+                                  style: AppTheme.captionSmall.copyWith(
+                                    color: AppTheme.accent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Text(
+                              '서재에 추가',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: AppTheme.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                 ),
               ),

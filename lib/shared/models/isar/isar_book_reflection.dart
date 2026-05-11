@@ -5,9 +5,9 @@ class IsarBookReflection {
   final String bookId;
   final String bookTitle;
   final String bookAuthor;
-  final int starRating;       // 1 ~ 5
+  final int starRating; // 1 ~ 5
   final String? memorableLine; // 기억에 남는 문장
-  final String? legacy;        // 이 책이 남긴 것
+  final String? legacy; // 이 책이 남긴 것
   final DateTime createdAt;
 
   const IsarBookReflection({
@@ -23,15 +23,15 @@ class IsarBookReflection {
   });
 
   Map<String, dynamic> toMap() => {
-        'reflection_id': reflectionId,
-        'book_id': bookId,
-        'book_title': bookTitle,
-        'book_author': bookAuthor,
-        'star_rating': starRating,
-        'memorable_line': memorableLine,
-        'legacy': legacy,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'reflection_id': reflectionId,
+    'book_id': bookId,
+    'book_title': bookTitle,
+    'book_author': bookAuthor,
+    'star_rating': starRating,
+    'memorable_line': memorableLine,
+    'legacy': legacy,
+    'created_at': createdAt.toIso8601String(),
+  };
 
   factory IsarBookReflection.fromMap(Map<String, dynamic> m) =>
       IsarBookReflection(

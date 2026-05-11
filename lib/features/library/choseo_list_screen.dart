@@ -47,7 +47,10 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
       ref.read(choseoListProvider.notifier).search('');
       _focusNode.unfocus();
     } else {
-      Future.delayed(const Duration(milliseconds: 100), _focusNode.requestFocus);
+      Future.delayed(
+        const Duration(milliseconds: 100),
+        _focusNode.requestFocus,
+      );
     }
   }
 
@@ -76,26 +79,26 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
             onSearchChanged: _onSearchChanged,
           ),
 
-            // ── 탭 바 ─────────────────────────────────────────────────
-            _ChoseoTabBar(controller: _tabCtrl),
-            const SizedBox(height: 4),
+          // ── 탭 바 ─────────────────────────────────────────────────
+          _ChoseoTabBar(controller: _tabCtrl),
+          const SizedBox(height: 4),
 
-            // ── 콘텐츠 ───────────────────────────────────────────────
-            Expanded(
-              child: state.isLoading
-                  ? const _LoadingShimmer()
-                  : TabBarView(
-                      controller: _tabCtrl,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        // 책별 탭
-                        _ByBookTab(state: state),
-                        // 날짜순 탭
-                        _ByDateTab(state: state),
-                      ],
-                    ),
-            ),
-          ],
+          // ── 콘텐츠 ───────────────────────────────────────────────
+          Expanded(
+            child: state.isLoading
+                ? const _LoadingShimmer()
+                : TabBarView(
+                    controller: _tabCtrl,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      // 책별 탭
+                      _ByBookTab(state: state),
+                      // 날짜순 탭
+                      _ByDateTab(state: state),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -202,7 +205,9 @@ class _TopBar extends StatelessWidget {
                   child: Icon(
                     searchActive ? Icons.close_rounded : Icons.search_rounded,
                     key: ValueKey(searchActive),
-                    color: searchActive ? context.appPrimaryAccent : context.appTextSecondary,
+                    color: searchActive
+                        ? context.appPrimaryAccent
+                        : context.appTextSecondary,
                     size: 22,
                   ),
                 ),
@@ -235,8 +240,11 @@ class _SearchField extends StatelessWidget {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusMD, cornerSmoothing: 0.6),
-          side: BorderSide(color: context.appBorder),
+          borderRadius: SmoothBorderRadius(
+            cornerRadius: AppTheme.radiusMD,
+            cornerSmoothing: 0.6,
+          ),
+          side: BorderSide.none,
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -281,7 +289,7 @@ class _ChoseoTabBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.appCard,
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: context.appBorder),
+        border: null,
       ),
       child: TabBar(
         controller: controller,
@@ -289,9 +297,7 @@ class _ChoseoTabBar extends StatelessWidget {
         indicator: BoxDecoration(
           color: AppTheme.primary,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-            color: context.appPrimaryAccent.withValues(alpha: 0.3),
-          ),
+          border: null,
         ),
         dividerColor: Colors.transparent,
         labelStyle: const TextStyle(
@@ -362,8 +368,10 @@ class _BookGroupState extends State<_BookGroup> {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusXL, cornerSmoothing: 0.6),
-          side: BorderSide(color: context.appBorder),
+          borderRadius: SmoothBorderRadius(
+            cornerRadius: AppTheme.radiusXL,
+            cornerSmoothing: 0.6,
+          ),
         ),
       ),
       child: Column(
@@ -392,14 +400,15 @@ class _BookGroupState extends State<_BookGroup> {
                           colors: colors,
                         ),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(cornerRadius: 6, cornerSmoothing: 0.6),
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 6,
+                            cornerSmoothing: 0.6,
+                          ),
                         ),
                       ),
                       child: Center(
                         child: Text(
-                          widget.title.isNotEmpty
-                              ? widget.title[0]
-                              : '?',
+                          widget.title.isNotEmpty ? widget.title[0] : '?',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
@@ -441,10 +450,12 @@ class _BookGroupState extends State<_BookGroup> {
                     // 개수 뱃지
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: ShapeDecoration(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.12),
-                        shape: const StadiumBorder(),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.appCardElevated,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '${widget.items.length}개',
@@ -484,8 +495,6 @@ class _BookGroupState extends State<_BookGroup> {
             secondCurve: Curves.easeOutCubic,
             firstChild: Column(
               children: [
-                Divider(
-                    color: context.appBorder, height: 1, indent: 16, endIndent: 16),
                 ...widget.items.map(
                   (c) => _ChoseoCard(item: c, showBookInfo: false),
                 ),
@@ -546,8 +555,10 @@ class _ChoseoCard extends StatelessWidget {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(cornerRadius: AppTheme.radiusLG, cornerSmoothing: 0.6),
-          side: BorderSide(color: context.appBorder),
+          borderRadius: SmoothBorderRadius(
+            cornerRadius: AppTheme.radiusLG,
+            cornerSmoothing: 0.6,
+          ),
         ),
       ),
       child: Column(
@@ -657,15 +668,6 @@ class _ChoseoCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 3,
-                  height: 16,
-                  margin: const EdgeInsets.only(top: 2, right: 10),
-                  decoration: BoxDecoration(
-                    color: context.appPrimaryAccent,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
                 Expanded(
                   child: Text(
                     item.content,
@@ -732,7 +734,11 @@ class _EmptyView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.format_quote_rounded, size: 48, color: context.appTextTertiary),
+          Icon(
+            Icons.format_quote_rounded,
+            size: 48,
+            color: context.appTextTertiary,
+          ),
           const SizedBox(height: 16),
           Text(
             '아직 기록한 문장이 없어요',
@@ -777,8 +783,9 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat(reverse: true);
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
     _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
   }
 
@@ -800,10 +807,13 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
           height: 110,
           decoration: ShapeDecoration(
             color: Color.lerp(
-                context.appCard, context.appCardElevated, _anim.value),
+              context.appCard,
+              context.appCardElevated,
+              _anim.value,
+            ),
             shape: ContinuousRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusLG * 1.35),
-              side: BorderSide(color: context.appBorder),
+              side: BorderSide.none,
             ),
           ),
         ),

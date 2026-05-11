@@ -21,20 +21,22 @@ class ChorokCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = elevated ? context.appCardElevated : context.appCard;
-    final border = borderColor ?? (elevated ? Colors.transparent : context.appBorder);
+    final border = borderColor ?? Colors.transparent;
 
     return Container(
       padding: padding ?? const EdgeInsets.all(AppTheme.cardPaddingMD),
       decoration: AppTheme.smoothBox(
         color: bg,
         radius: 16,
-        side: BorderSide(color: border),
+        side: BorderSide.none,
         shadows: hasShadow
-            ? [BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.15),
-                blurRadius: 20,
-                spreadRadius: 2,
-              )]
+            ? [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ]
             : null,
       ),
       child: child,

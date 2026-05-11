@@ -15,7 +15,6 @@ import '../../../shared/widgets/book_cover.dart';
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
-
 // ─── 트렌딩 책 ───────────────────────────────────────────────────────────────
 typedef _TrendingBook = ({
   String title,
@@ -26,11 +25,46 @@ typedef _TrendingBook = ({
 });
 
 const List<_TrendingBook> _kMockTrendingBooks = [
-  (title: '채식주의자', author: '한강', coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg', sentenceCount: 142, gradientIndex: 0),
-  (title: '파친코', author: '이민진', coverUrl: 'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg', sentenceCount: 98, gradientIndex: 2),
-  (title: '아몬드', author: '손원평', coverUrl: 'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg', sentenceCount: 87, gradientIndex: 4),
-  (title: '소년이 온다', author: '한강', coverUrl: 'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg', sentenceCount: 76, gradientIndex: 3),
-  (title: '82년생 김지영', author: '조남주', coverUrl: 'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg', sentenceCount: 61, gradientIndex: 1),
+  (
+    title: '채식주의자',
+    author: '한강',
+    coverUrl:
+        'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+    sentenceCount: 142,
+    gradientIndex: 0,
+  ),
+  (
+    title: '파친코',
+    author: '이민진',
+    coverUrl:
+        'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
+    sentenceCount: 98,
+    gradientIndex: 2,
+  ),
+  (
+    title: '아몬드',
+    author: '손원평',
+    coverUrl:
+        'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+    sentenceCount: 87,
+    gradientIndex: 4,
+  ),
+  (
+    title: '소년이 온다',
+    author: '한강',
+    coverUrl:
+        'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+    sentenceCount: 76,
+    gradientIndex: 3,
+  ),
+  (
+    title: '82년생 김지영',
+    author: '조남주',
+    coverUrl:
+        'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
+    sentenceCount: 61,
+    gradientIndex: 1,
+  ),
 ];
 
 List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
@@ -44,13 +78,21 @@ List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
   }
   final sorted = counts.entries.toList()
     ..sort((a, b) => b.value.count.compareTo(a.value.count));
-  return sorted.take(5).toList().asMap().entries.map((e) => (
-        title: e.value.key,
-        author: e.value.value.author,
-        coverUrl: null,
-        sentenceCount: e.value.value.count,
-        gradientIndex: e.key,
-      )).toList();
+  return sorted
+      .take(5)
+      .toList()
+      .asMap()
+      .entries
+      .map(
+        (e) => (
+          title: e.value.key,
+          author: e.value.value.author,
+          coverUrl: null,
+          sentenceCount: e.value.value.count,
+          gradientIndex: e.key,
+        ),
+      )
+      .toList();
 }
 
 /// 피드 스크린: 소식(소셜 활동) & 발견(문장 탐색)
@@ -73,7 +115,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'reader_jin',
       savedAt: now.subtract(const Duration(minutes: 23)),
       empathyCount: 42,
@@ -85,7 +128,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'leafy_reader',
       savedAt: now.subtract(const Duration(minutes: 45)),
       empathyCount: 28,
@@ -97,7 +141,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '채식이 곧 저항이고, 꿈이 곧 각성이다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
-      coverUrl: 'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
       username: 'green_pages',
       savedAt: now.subtract(const Duration(hours: 2)),
       empathyCount: 15,
@@ -108,7 +153,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '사랑의 정의가 이렇게 아플 수 있다니. 지영이의 상처를 "보듬는" 사람은 결국 아무도 없었다는 게 더 아프다.',
       bookTitle: '82년생 김지영',
       bookAuthor: '조남주',
-      coverUrl: 'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
       username: 'bookworm_su',
       savedAt: now.subtract(const Duration(hours: 1)),
       empathyCount: 87,
@@ -121,7 +167,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '"다름"과 "틀림"의 경계에서 선재가 내뱉은 이 한마디가 소설 전체를 관통한다.',
       bookTitle: '아몬드',
       bookAuthor: '손원평',
-      coverUrl: 'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
       username: 'seoulreader',
       savedAt: now.subtract(const Duration(hours: 3)),
       empathyCount: 156,
@@ -133,7 +180,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '외로움의 반대가 사랑이 아니라 "연결"이라는 걸 이 문장이 증명한다.',
       bookTitle: '밤을 걷는 선비',
       bookAuthor: '이지운',
-      coverUrl: 'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/1816/51/cover500/896053241x_1.jpg',
       username: 'midnight_books',
       savedAt: now.subtract(const Duration(hours: 5)),
       empathyCount: 23,
@@ -144,7 +192,8 @@ List<FeedSentence> _kMockSentences() {
       thought: '헤세가 이 말을 했을 때, 그는 분명 데미안을 쓰면서 자기 자신을 느끼고 있었을 것이다.',
       bookTitle: '독서의 기쁨',
       bookAuthor: '헤르만 헤세',
-      coverUrl: 'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
+      coverUrl:
+          'https://image.aladin.co.kr/product/206/48/cover500/893643361x_1.jpg',
       username: 'hesse_lover',
       savedAt: now.subtract(const Duration(hours: 8)),
       empathyCount: 64,
@@ -172,13 +221,15 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     _derivedFromSentences = sentences;
 
     final entries = sentences
-        .map((s) => SentenceEntry(
-              id: s.id,
-              content: s.content,
-              username: s.username,
-              bookTitle: s.bookTitle,
-              coverUrl: s.coverUrl,
-            ))
+        .map(
+          (s) => SentenceEntry(
+            id: s.id,
+            content: s.content,
+            username: s.username,
+            bookTitle: s.bookTitle,
+            coverUrl: s.coverUrl,
+          ),
+        )
         .toList();
     _cachedGroups = OverlapDetector.findGroups(entries);
 
@@ -198,7 +249,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       case _FeedFilter.latest:
         return all;
       case _FeedFilter.popular:
-        return [...all]..sort((a, b) => b.empathyCount.compareTo(a.empathyCount));
+        return [...all]
+          ..sort((a, b) => b.empathyCount.compareTo(a.empathyCount));
       case _FeedFilter.overlap:
         return [];
     }
@@ -238,156 +290,161 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           // ─── 헤더 (고정) ──────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppTheme.screenPadding, 20,
-              AppTheme.screenPadding, 12,
+              AppTheme.screenPadding,
+              20,
+              AppTheme.screenPadding,
+              12,
             ),
-              child: Row(
-                children: [
-                  if (context.canPop()) ...[
-                    Semantics(
-                      label: '뒤로 가기',
-                      button: true,
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.pop();
-                        },
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            color: context.appCard,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: context.appBorder),
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 16,
-                            color: context.appTextSecondary,
-                          ),
+            child: Row(
+              children: [
+                if (context.canPop()) ...[
+                  Semantics(
+                    label: '뒤로 가기',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.pop();
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: context.appCard,
+                          shape: BoxShape.circle,
+                          border: null,
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 16,
+                          color: context.appTextSecondary,
                         ),
                       ),
                     ),
-                  ],
-                  Text(
-                    '피드',
-                    style: AppTheme.headingLarge.copyWith(
-                      color: context.appTextPrimary,
+                  ),
+                ],
+                Text(
+                  '피드',
+                  style: AppTheme.headingLarge.copyWith(
+                    color: context.appTextPrimary,
+                  ),
+                ),
+                const Spacer(),
+                if (_isRefreshing)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.appPrimaryAccent,
                     ),
                   ),
-                  const Spacer(),
-                  if (_isRefreshing)
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: context.appPrimaryAccent,
+              ],
+            ),
+          ),
+          const _ActivityBanner(),
+          // const SizedBox(height: 10),
+          // Divider(height: 1, color: context.appBorder),
+
+          // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
+          Expanded(
+            child: RefreshIndicator(
+              color: context.appPrimaryAccent,
+              backgroundColor: context.appCard,
+              onRefresh: _onRefresh,
+              child: CustomScrollView(
+                controller: scrollCtrl,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 48,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.screenPadding,
+                          vertical: 8,
+                        ),
+                        children: [
+                          _FeedFilterChip(
+                            label: '최신순',
+                            isSelected: _filter == _FeedFilter.latest,
+                            onTap: () =>
+                                setState(() => _filter = _FeedFilter.latest),
+                          ),
+                          const SizedBox(width: 8),
+                          _FeedFilterChip(
+                            label: '인기순',
+                            isSelected: _filter == _FeedFilter.popular,
+                            onTap: () =>
+                                setState(() => _filter = _FeedFilter.popular),
+                          ),
+                          const SizedBox(width: 8),
+                          _FeedFilterChip(
+                            label:
+                                '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
+                            isSelected: _filter == _FeedFilter.overlap,
+                            onTap: () =>
+                                setState(() => _filter = _FeedFilter.overlap),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+                  if (_filter != _FeedFilter.overlap) ...[
+                    SliverToBoxAdapter(
+                      child: _TrendingBooksSection(books: trendingBooks),
+                    ),
+                    SliverToBoxAdapter(
+                      // child: Divider(height: 1, color: context.appBorder),
+                    ),
+                  ],
+                  if (_filter == _FeedFilter.overlap)
+                    groups.isEmpty
+                        ? SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _buildEmptyState(),
+                          )
+                        : SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.screenPadding,
+                              vertical: AppTheme.spaceMD,
+                            ),
+                            sliver: SliverList.separated(
+                              itemCount: groups.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: AppTheme.spaceMD),
+                              itemBuilder: (_, i) =>
+                                  _OverlapGroupCard(group: groups[i]),
+                            ),
+                          )
+                  else
+                    filtered.isEmpty
+                        ? SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: _buildEmptyState(),
+                          )
+                        : SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.screenPadding,
+                              vertical: AppTheme.spaceMD,
+                            ),
+                            sliver: SliverList.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: AppTheme.spaceMD),
+                              itemBuilder: (_, i) => _SentenceCard(
+                                sentence: filtered[i],
+                                isOverlap: overlapIds.contains(filtered[i].id),
+                              ),
+                            ),
+                          ),
                 ],
               ),
             ),
-            const _ActivityBanner(),
-            const SizedBox(height: 10),
-            Divider(height: 1, color: context.appBorder),
-
-            // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
-            Expanded(
-              child: RefreshIndicator(
-                color: context.appPrimaryAccent,
-                backgroundColor: context.appCard,
-                onRefresh: _onRefresh,
-                child: CustomScrollView(
-                  controller: scrollCtrl,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 48,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.screenPadding, vertical: 8),
-                          children: [
-                            _FeedFilterChip(
-                              label: '최신순',
-                              isSelected: _filter == _FeedFilter.latest,
-                              onTap: () =>
-                                  setState(() => _filter = _FeedFilter.latest),
-                            ),
-                            const SizedBox(width: 8),
-                            _FeedFilterChip(
-                              label: '인기순',
-                              isSelected: _filter == _FeedFilter.popular,
-                              onTap: () =>
-                                  setState(() => _filter = _FeedFilter.popular),
-                            ),
-                            const SizedBox(width: 8),
-                            _FeedFilterChip(
-                              label:
-                                  '겹문장 ${groups.isNotEmpty ? "(${groups.length})" : ""}',
-                              isSelected: _filter == _FeedFilter.overlap,
-                              onTap: () =>
-                                  setState(() => _filter = _FeedFilter.overlap),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (_filter != _FeedFilter.overlap) ...[
-                      SliverToBoxAdapter(child: _TrendingBooksSection(books: trendingBooks)),
-                      SliverToBoxAdapter(
-                        child: Divider(height: 1, color: context.appBorder),
-                      ),
-                    ],
-                    if (_filter == _FeedFilter.overlap)
-                      groups.isEmpty
-                          ? SliverFillRemaining(
-                              hasScrollBody: false,
-                              child: _buildEmptyState(),
-                            )
-                          : SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.screenPadding,
-                                vertical: AppTheme.spaceMD,
-                              ),
-                              sliver: SliverList.separated(
-                                itemCount: groups.length,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(height: AppTheme.spaceMD),
-                                itemBuilder: (_, i) =>
-                                    _OverlapGroupCard(group: groups[i]),
-                              ),
-                            )
-                    else
-                      filtered.isEmpty
-                          ? SliverFillRemaining(
-                              hasScrollBody: false,
-                              child: _buildEmptyState(),
-                            )
-                          : SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.screenPadding,
-                                vertical: AppTheme.spaceMD,
-                              ),
-                              sliver: SliverList.separated(
-                                itemCount: filtered.length,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(height: AppTheme.spaceMD),
-                                itemBuilder: (_, i) => _SentenceCard(
-                                  sentence: filtered[i],
-                                  isOverlap:
-                                      overlapIds.contains(filtered[i].id),
-                                ),
-                              ),
-                            ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
+        ],
       ),
     );
   }
@@ -397,13 +454,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.format_quote_rounded,
-              size: 48, color: context.appTextTertiary),
+          Icon(
+            Icons.format_quote_rounded,
+            size: 48,
+            color: context.appTextTertiary,
+          ),
           const SizedBox(height: 12),
           Text(
             '겹문장이 아직 없어요',
-            style: AppTheme.bodyMedium
-                .copyWith(color: context.appTextSecondary),
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextSecondary,
+            ),
           ),
         ],
       ),
@@ -423,15 +484,16 @@ class _ActivityBanner extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding, 10,
-        AppTheme.screenPadding, 0,
+        AppTheme.screenPadding,
+        10,
+        AppTheme.screenPadding,
+        0,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusMD,
-          side: BorderSide(color: context.appBorder),
         ),
         child: Row(
           children: [
@@ -496,7 +558,10 @@ class _TrendingBooksSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppTheme.screenPadding, 16, AppTheme.screenPadding, 8,
+            AppTheme.screenPadding,
+            16,
+            AppTheme.screenPadding,
+            8,
           ),
           child: Text(
             '이번 주 화제의 책',
@@ -511,7 +576,9 @@ class _TrendingBooksSection extends StatelessWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
             itemCount: books.length,
             itemBuilder: (context, index) {
               return Padding(
@@ -561,18 +628,19 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusMD,
-            side: BorderSide(color: context.appBorder),
           ),
           child: Row(
             children: [
-              BookCover(
-                coverUrl: b.coverUrl,
-                gradientIndex: b.gradientIndex,
-                width: 6,
-                height: double.infinity,
-                radius: 0,
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: BookCover(
+                  coverUrl: b.coverUrl,
+                  gradientIndex: b.gradientIndex,
+                  width: 44,
+                  height: 56,
+                  radius: 6,
+                ),
               ),
-              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,9 +666,12 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(right: 10),
+                padding: const EdgeInsets.only(right: 12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: ShapeDecoration(
                     color: context.appPrimaryAccent.withValues(alpha: 0.08),
                     shape: SmoothRectangleBorder(
@@ -653,15 +724,12 @@ class _FeedFilterChip extends StatelessWidget {
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
           color: isSelected ? AppTheme.accent : context.appCard,
-          side: BorderSide(
-            color: isSelected ? AppTheme.accent : context.appBorder,
-          ),
+          side: BorderSide.none,
         ),
         child: Text(
           label,
           style: AppTheme.captionLarge.copyWith(
-            color:
-                isSelected ? context.appSurface : context.appTextSecondary,
+            color: isSelected ? context.appSurface : context.appTextSecondary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -674,10 +742,7 @@ class _SentenceCard extends StatefulWidget {
   final FeedSentence sentence;
   final bool isOverlap;
 
-  const _SentenceCard({
-    required this.sentence,
-    required this.isOverlap,
-  });
+  const _SentenceCard({required this.sentence, required this.isOverlap});
 
   @override
   State<_SentenceCard> createState() => _SentenceCardState();
@@ -695,10 +760,9 @@ class _SentenceCardState extends State<_SentenceCard> {
   }
 
   void _toggleLike() => setState(() {
-        _isLiked = !_isLiked;
-        _empathyCount += _isLiked ? 1 : -1;
-      });
-
+    _isLiked = !_isLiked;
+    _empathyCount += _isLiked ? 1 : -1;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -720,276 +784,281 @@ class _SentenceCardState extends State<_SentenceCard> {
         );
       },
       child: Container(
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 16,
-        side: BorderSide(
-          color: overlap
-              ? context.appPrimaryAccent.withValues(alpha: 0.35)
-              : context.appBorder,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 겹문장 배너 (동적 감지)
-          if (overlap)
-            Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: ShapeDecoration(
-                color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius.only(
-                    topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                    topRight: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                  ),
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 겹문장 배너 (동적 감지)
+            if (overlap)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
                 ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.join_inner_rounded,
-                      size: 16, color: AppTheme.accent),
-                  const SizedBox(width: 6),
-                  Text(
-                    '겹문장 감지됨',
-                    style: AppTheme.captionLarge
-                        .copyWith(color: AppTheme.accent),
-                  ),
-                ],
-              ),
-            ),
-
-          Padding(
-            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 책 정보
-                Row(
-                  children: [
-                    BookCover(
-                      coverUrl: s.coverUrl,
-                      gradientIndex: s.bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
-                      width: 28,
-                      height: 36,
-                      radius: 4,
-                    ),
-                    const SizedBox(width: AppTheme.spaceSM),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            s.bookTitle,
-                            style: AppTheme.bodySmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: context.appPrimaryAccent,
-                            ),
-                          ),
-                          Text(
-                            s.bookAuthor,
-                            style: AppTheme.captionLarge.copyWith(
-                              color: context.appTextSecondary,
-                            ),
-                          ),
-                        ],
+                decoration: ShapeDecoration(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.1),
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius.only(
+                      topLeft: SmoothRadius(
+                        cornerRadius: 15,
+                        cornerSmoothing: 0.6,
+                      ),
+                      topRight: SmoothRadius(
+                        cornerRadius: 15,
+                        cornerSmoothing: 0.6,
                       ),
                     ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.join_inner_rounded,
+                      size: 16,
+                      color: AppTheme.accent,
+                    ),
+                    const SizedBox(width: 6),
                     Text(
-                      time_fmt.formatRelative(s.savedAt),
-                      style: AppTheme.captionSmall
-                          .copyWith(color: context.appTextTertiary),
+                      '겹문장 감지됨',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: AppTheme.accent,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppTheme.spaceMD),
+              ),
 
-                // 문장 내용
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.spaceMD),
-                  decoration: BoxDecoration(
-                    color: overlap
-                        ? context.appPrimaryAccent.withValues(alpha: 0.07)
-                        : context.appCardElevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: overlap
-                          ? context.appPrimaryAccent.withValues(alpha: 0.35)
-                          : context.appBorder,
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    '"${s.content}"',
-                    style: AppTheme.bodyMedium.copyWith(
-                      fontStyle: FontStyle.italic,
-                      color: context.appTextPrimary,
-                      height: 1.6,
-                    ),
-                  ),
-                ),
-                // ── 유저의 생각 ──────────────────────────────
-                if (s.thought != null && s.thought!.isNotEmpty) ...[
-                  const SizedBox(height: AppTheme.spaceMD),
+            Padding(
+              padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 책 정보
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor:
-                            context.appPrimaryAccent.withValues(alpha: 0.12),
-                        child: Text(
-                          s.username[0].toUpperCase(),
-                          style: AppTheme.captionSmall
-                              .copyWith(color: context.appPrimaryAccent),
-                        ),
+                      BookCover(
+                        coverUrl: s.coverUrl,
+                        gradientIndex:
+                            s.bookTitle.hashCode.abs() %
+                            AppTheme.coverGradients.length,
+                        width: 28,
+                        height: 36,
+                        radius: 4,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppTheme.spaceSM),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${s.username}의 생각',
-                              style: AppTheme.captionSmall.copyWith(
-                                color: context.appTextTertiary,
+                              s.bookTitle,
+                              style: AppTheme.bodySmall.copyWith(
                                 fontWeight: FontWeight.w600,
+                                color: context.appPrimaryAccent,
                               ),
                             ),
-                            const SizedBox(height: 4),
                             Text(
-                              s.thought!,
-                              style: AppTheme.bodySmall.copyWith(
-                                color: context.appTextPrimary,
-                                height: 1.5,
+                              s.bookAuthor,
+                              style: AppTheme.captionLarge.copyWith(
+                                color: context.appTextSecondary,
                               ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ] else ...[
-                  // 생각이 없으면 유저 이름만 표시
-                  const SizedBox(height: AppTheme.spaceSM),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 10,
-                        backgroundColor:
-                            context.appPrimaryAccent.withValues(alpha: 0.12),
-                        child: Text(
-                          s.username[0].toUpperCase(),
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appPrimaryAccent,
-                            fontSize: 9,
-                          ),
+                      Text(
+                        time_fmt.formatRelative(s.savedAt),
+                        style: AppTheme.captionSmall.copyWith(
+                          color: context.appTextTertiary,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        s.username,
-                        style: AppTheme.captionLarge
-                            .copyWith(color: context.appTextTertiary),
-                      ),
                     ],
                   ),
-                ],
-                const SizedBox(height: AppTheme.spaceMD),
+                  const SizedBox(height: AppTheme.spaceMD),
 
-                // ── 좋아요 · 댓글 · 공유 ────────────────────────
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _toggleLike,
-                      child: Row(
-                        children: [
-                          Icon(
-                            _isLiked
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 16,
-                            color: _isLiked
-                                ? const Color(0xFFFF6B6B)
-                                : context.appTextTertiary,
+                  // 문장 내용
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.spaceMD),
+                    decoration: BoxDecoration(
+                      color: overlap
+                          ? context.appPrimaryAccent.withValues(alpha: 0.07)
+                          : context.appCardElevated,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '"${s.content}"',
+                      style: AppTheme.bodyMedium.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: context.appTextPrimary,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                  // ── 유저의 생각 ──────────────────────────────
+                  if (s.thought != null && s.thought!.isNotEmpty) ...[
+                    const SizedBox(height: AppTheme.spaceMD),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: context.appPrimaryAccent.withValues(
+                            alpha: 0.12,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$_empathyCount',
-                            style: AppTheme.captionLarge.copyWith(
+                          child: Text(
+                            s.username[0].toUpperCase(),
+                            style: AppTheme.captionSmall.copyWith(
+                              color: context.appPrimaryAccent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${s.username}의 생각',
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: context.appTextTertiary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                s.thought!,
+                                style: AppTheme.bodySmall.copyWith(
+                                  color: context.appTextPrimary,
+                                  height: 1.5,
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    // 생각이 없으면 유저 이름만 표시
+                    const SizedBox(height: AppTheme.spaceSM),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10,
+                          backgroundColor: context.appPrimaryAccent.withValues(
+                            alpha: 0.12,
+                          ),
+                          child: Text(
+                            s.username[0].toUpperCase(),
+                            style: AppTheme.captionSmall.copyWith(
+                              color: context.appPrimaryAccent,
+                              fontSize: 9,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          s.username,
+                          style: AppTheme.captionLarge.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: AppTheme.spaceMD),
+
+                  // ── 좋아요 · 댓글 · 공유 ────────────────────────
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _toggleLike,
+                        child: Row(
+                          children: [
+                            Icon(
+                              _isLiked
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 16,
                               color: _isLiked
                                   ? const Color(0xFFFF6B6B)
                                   : context.appTextTertiary,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              '$_empathyCount',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: _isLiked
+                                    ? const Color(0xFFFF6B6B)
+                                    : context.appTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    if (s.commentCount > 0) ...[
-                      const SizedBox(width: AppTheme.spaceMD),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 14,
-                            color: context.appTextTertiary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '다른 생각 ${s.commentCount}',
-                            style: AppTheme.captionLarge.copyWith(
+                      if (s.commentCount > 0) ...[
+                        const SizedBox(width: AppTheme.spaceMD),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 14,
                               color: context.appTextTertiary,
                             ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '다른 생각 ${s.commentCount}',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                '공유 기능은 곧 지원돼요',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              backgroundColor: context.appCardElevated,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: Icon(
+                            Icons.share_outlined,
+                            size: 16,
+                            color: context.appTextTertiary,
                           ),
-                        ],
+                        ),
                       ),
                     ],
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                              '공유 기능은 곧 지원돼요',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                              ),
-                            ),
-                            backgroundColor: context.appCardElevated,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
-                              side: BorderSide(
-                                color: context.appPrimaryAccent.withValues(alpha: 0.4),
-                              ),
-                            ),
-                            margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      child: SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: Icon(Icons.share_outlined,
-                            size: 16, color: context.appTextTertiary),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-      ),  // GestureDetector child end
     );
   }
 }
@@ -1017,9 +1086,6 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.35),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1027,27 +1093,33 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
           // ── 겹문장 헤더 배너 ──────────────────────────────────
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: ShapeDecoration(
               color: context.appPrimaryAccent.withValues(alpha: 0.1),
               shape: SmoothRectangleBorder(
                 borderRadius: SmoothBorderRadius.only(
                   topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                  topRight: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
+                  topRight: SmoothRadius(
+                    cornerRadius: 15,
+                    cornerSmoothing: 0.6,
+                  ),
                 ),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.join_inner_rounded,
-                    size: 16, color: AppTheme.accent),
+                const Icon(
+                  Icons.join_inner_rounded,
+                  size: 16,
+                  color: AppTheme.accent,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '겹문장 · ${g.memberCount}명이 같은 문장을 수집했어요',
-                    style: AppTheme.captionLarge
-                        .copyWith(color: AppTheme.accent),
+                    style: AppTheme.captionLarge.copyWith(
+                      color: AppTheme.accent,
+                    ),
                   ),
                 ),
               ],
@@ -1064,7 +1136,9 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                   children: [
                     BookCover(
                       coverUrl: base.coverUrl,
-                      gradientIndex: base.bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
+                      gradientIndex:
+                          base.bookTitle.hashCode.abs() %
+                          AppTheme.coverGradients.length,
                       width: 28,
                       height: 36,
                       radius: 4,
@@ -1090,10 +1164,6 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                   decoration: BoxDecoration(
                     color: context.appPrimaryAccent.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.35),
-                      width: 1,
-                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1121,8 +1191,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
 
                 // ── 수집자 목록 토글 ─────────────────────────────
                 Semantics(
-                  label:
-                      '수집자 목록 ${_isExpanded ? "접기" : "펼치기"}',
+                  label: '수집자 목록 ${_isExpanded ? "접기" : "펼치기"}',
                   button: true,
                   child: GestureDetector(
                     onTap: () {
@@ -1139,9 +1208,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                             height: 24,
                             child: Stack(
                               children: [
-                                for (int i = 0;
-                                    i < g.memberCount && i < 4;
-                                    i++)
+                                for (int i = 0; i < g.memberCount && i < 4; i++)
                                   Positioned(
                                     left: i * 16.0,
                                     child: CircleAvatar(
@@ -1149,10 +1216,8 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                                       backgroundColor: context.appPrimaryAccent
                                           .withValues(alpha: 0.15),
                                       child: Text(
-                                        g.members[i].username[0]
-                                            .toUpperCase(),
-                                        style:
-                                            AppTheme.captionSmall.copyWith(
+                                        g.members[i].username[0].toUpperCase(),
+                                        style: AppTheme.captionSmall.copyWith(
                                           color: context.appPrimaryAccent,
                                         ),
                                       ),
@@ -1202,17 +1267,20 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                     ),
                     child: Column(
                       children: [
-                        Divider(
-                            height: 1, color: context.appBorder),
+                        // Divider(
+                        //     height: 1, color: context.appBorder),
                         const SizedBox(height: 12),
-                        ...g.members.map((m) => Padding(
-                              padding: const EdgeInsets.only(
-                                  bottom: AppTheme.spaceSM),
-                              child: _OverlapMemberTile(
-                                member: m,
-                                commonPhrase: g.commonPhrase,
-                              ),
-                            )),
+                        ...g.members.map(
+                          (m) => Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppTheme.spaceSM,
+                            ),
+                            child: _OverlapMemberTile(
+                              member: m,
+                              commonPhrase: g.commonPhrase,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -1230,10 +1298,7 @@ class _OverlapMemberTile extends StatelessWidget {
   final OverlapMember member;
   final String commonPhrase;
 
-  const _OverlapMemberTile({
-    required this.member,
-    required this.commonPhrase,
-  });
+  const _OverlapMemberTile({required this.member, required this.commonPhrase});
 
   @override
   Widget build(BuildContext context) {
@@ -1251,11 +1316,14 @@ class _OverlapMemberTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.12),
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.12,
+                ),
                 child: Text(
                   member.username[0].toUpperCase(),
-                  style: AppTheme.captionSmall
-                      .copyWith(color: context.appPrimaryAccent),
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1269,8 +1337,7 @@ class _OverlapMemberTile extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: AppTheme.smoothPill(
                   color: context.appPrimaryAccent.withValues(alpha: 0.12),
                 ),
@@ -1287,10 +1354,7 @@ class _OverlapMemberTile extends StatelessWidget {
           const SizedBox(height: 8),
 
           // 하이라이트된 문장
-          _HighlightedText(
-            text: member.content,
-            highlights: member.highlights,
-          ),
+          _HighlightedText(text: member.content, highlights: member.highlights),
         ],
       ),
     );
@@ -1303,10 +1367,7 @@ class _HighlightedText extends StatelessWidget {
   final String text;
   final List<HighlightRange> highlights;
 
-  const _HighlightedText({
-    required this.text,
-    required this.highlights,
-  });
+  const _HighlightedText({required this.text, required this.highlights});
 
   @override
   Widget build(BuildContext context) {
@@ -1322,14 +1383,17 @@ class _HighlightedText extends StatelessWidget {
     }
 
     // 하이라이트 구간을 정렬하고 텍스트 범위 내로 클램프
-    final sorted = highlights
-        .map((h) => HighlightRange(
-              h.start.clamp(0, text.length),
-              h.end.clamp(0, text.length),
-            ))
-        .where((h) => h.start < h.end)
-        .toList()
-      ..sort((a, b) => a.start.compareTo(b.start));
+    final sorted =
+        highlights
+            .map(
+              (h) => HighlightRange(
+                h.start.clamp(0, text.length),
+                h.end.clamp(0, text.length),
+              ),
+            )
+            .where((h) => h.start < h.end)
+            .toList()
+          ..sort((a, b) => a.start.compareTo(b.start));
 
     final spans = <InlineSpan>[];
     spans.add(const TextSpan(text: '"'));
@@ -1348,23 +1412,18 @@ class _HighlightedText extends StatelessWidget {
 
     for (final hl in sorted) {
       if (hl.start > lastEnd) {
-        spans.add(TextSpan(
-          text: text.substring(lastEnd, hl.start),
-          style: baseStyle,
-        ));
+        spans.add(
+          TextSpan(text: text.substring(lastEnd, hl.start), style: baseStyle),
+        );
       }
-      spans.add(TextSpan(
-        text: text.substring(hl.start, hl.end),
-        style: highlightStyle,
-      ));
+      spans.add(
+        TextSpan(text: text.substring(hl.start, hl.end), style: highlightStyle),
+      );
       lastEnd = hl.end;
     }
 
     if (lastEnd < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(lastEnd),
-        style: baseStyle,
-      ));
+      spans.add(TextSpan(text: text.substring(lastEnd), style: baseStyle));
     }
     spans.add(TextSpan(text: '"', style: baseStyle));
 

@@ -7,17 +7,16 @@ import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-
 FeedSentence _toFeedSentence(IsarChoseo c) => FeedSentence(
-      id: c.choseoId,
-      content: c.content,
-      thought: c.myThought,
-      bookTitle: c.bookTitle.isNotEmpty ? c.bookTitle : '알 수 없는 책',
-      bookAuthor: c.bookAuthor,
-      coverUrl: null, // To be implemented later if IsarChoseo stores it
-      username: '나',
-      savedAt: c.createdAt,
-    );
+  id: c.choseoId,
+  content: c.content,
+  thought: c.myThought,
+  bookTitle: c.bookTitle.isNotEmpty ? c.bookTitle : '알 수 없는 책',
+  bookAuthor: c.bookAuthor,
+  coverUrl: null, // To be implemented later if IsarChoseo stores it
+  username: '나',
+  savedAt: c.createdAt,
+);
 
 class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
   @override
@@ -54,7 +53,8 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
       final map = r as Map<String, dynamic>;
       final book = map['books'] as Map<String, dynamic>?;
       final createdAt =
-          DateTime.tryParse(map['created_at'] as String? ?? '') ?? DateTime.now();
+          DateTime.tryParse(map['created_at'] as String? ?? '') ??
+          DateTime.now();
       return FeedSentence(
         id: map['id'] as String? ?? '',
         content: map['content'] as String? ?? '',
@@ -73,5 +73,6 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
   }
 }
 
-final feedProvider =
-    AsyncNotifierProvider<FeedNotifier, List<FeedSentence>>(FeedNotifier.new);
+final feedProvider = AsyncNotifierProvider<FeedNotifier, List<FeedSentence>>(
+  FeedNotifier.new,
+);

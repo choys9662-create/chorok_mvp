@@ -4,7 +4,6 @@ import '../../../core/constants/app_flags.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/repositories/book_repository.dart';
 
-
 // ─── 목업 데이터 (USE_MOCK=true 전용) ──────────────────────────────────────────
 final _kMockChoseo = [
   IsarChoseo(
@@ -64,7 +63,7 @@ final _kMockChoseo = [
 // ─── 상태 ────────────────────────────────────────────────────────────────────
 
 class ChoseoListState {
-  final List<IsarChoseo> items;   // DB 전체 (검색 전)
+  final List<IsarChoseo> items; // DB 전체 (검색 전)
   final String query;
   final bool isLoading;
 
@@ -99,12 +98,11 @@ class ChoseoListState {
     List<IsarChoseo>? items,
     String? query,
     bool? isLoading,
-  }) =>
-      ChoseoListState(
-        items: items ?? this.items,
-        query: query ?? this.query,
-        isLoading: isLoading ?? this.isLoading,
-      );
+  }) => ChoseoListState(
+    items: items ?? this.items,
+    query: query ?? this.query,
+    isLoading: isLoading ?? this.isLoading,
+  );
 }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
@@ -131,8 +129,8 @@ class ChoseoListNotifier extends Notifier<ChoseoListState> {
 
 final choseoListProvider =
     NotifierProvider<ChoseoListNotifier, ChoseoListState>(
-  ChoseoListNotifier.new,
-);
+      ChoseoListNotifier.new,
+    );
 
 // ─── 초서 전체 개수 Provider ──────────────────────────────────────────────────
 

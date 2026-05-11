@@ -248,13 +248,15 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       await Future.wait(
         widget.data.sentences
             .where((entry) => entry.content.isNotEmpty)
-            .map((entry) => repo.saveChoseo(
-                  bookId: bookId,
-                  bookTitle: widget.data.bookTitle,
-                  bookAuthor: widget.data.bookAuthor,
-                  content: entry.content,
-                  myThought: entry.thought.isEmpty ? null : entry.thought,
-                )),
+            .map(
+              (entry) => repo.saveChoseo(
+                bookId: bookId,
+                bookTitle: widget.data.bookTitle,
+                bookAuthor: widget.data.bookAuthor,
+                content: entry.content,
+                myThought: entry.thought.isEmpty ? null : entry.thought,
+              ),
+            ),
       );
 
       if (!mounted) return;
@@ -348,6 +350,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           ),
                         ],
                       ),
+                      const SizedBox(height: AppTheme.spaceMD),
                       const Spacer(),
                       // 건너뛰기
                       Semantics(
@@ -385,7 +388,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           decoration: BoxDecoration(
                             color: context.appCard,
                             shape: BoxShape.circle,
-                            border: Border.all(color: context.appBorder),
                           ),
                           child: Icon(
                             Icons.close_rounded,
@@ -471,7 +473,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                const _DashedDivider(),
+                                const SizedBox(height: AppTheme.spaceMD),
                                 const SizedBox(height: 24),
 
                                 Text(
@@ -493,7 +495,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                const _DashedDivider(),
+                                const SizedBox(height: AppTheme.spaceMD),
                                 const SizedBox(height: 24),
 
                                 _ReceiptRow(
@@ -510,7 +512,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                 const SizedBox(height: 8),
                                 _ReceiptRow('SCORE', '$_score PTS'),
                                 const SizedBox(height: 24),
-                                const _DashedDivider(),
+                                const SizedBox(height: AppTheme.spaceMD),
                                 const SizedBox(height: 24),
 
                                 if (widget.data.sentences.isNotEmpty) ...[
@@ -525,8 +527,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  const _DashedDivider(),
-                                  const SizedBox(height: 24),
+                                   const SizedBox(height: 24),
                                 ],
 
                                 Row(
@@ -659,7 +660,7 @@ class _ScoreCardState extends State<_ScoreCard>
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 20,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -858,11 +859,6 @@ class _SentenceAnalysisCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
-        side: BorderSide(
-          color: isSpecial
-              ? tagColor.withValues(alpha: 0.35)
-              : context.appBorder,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -914,7 +910,6 @@ class _SentenceAnalysisCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.appCardElevated,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border(left: BorderSide(color: tagColor, width: 3)),
                   ),
                   child: Text(
                     '"${entry.content}"',
@@ -967,7 +962,6 @@ class _EmptySentenceCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
-        side: BorderSide(color: context.appBorder.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -1021,7 +1015,6 @@ class _StatsRow extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 16,
-        side: BorderSide(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -1030,14 +1023,12 @@ class _StatsRow extends StatelessWidget {
             value: _fmtSec(seconds),
             label: '독서 시간',
           ),
-          _Divider(),
           _StatItem(
             icon: Icons.format_quote_rounded,
             value: '$sentenceCount',
             label: '수집 문장',
             highlight: true,
           ),
-          _Divider(),
           _StatItem(
             icon: Icons.join_inner_rounded,
             value: '$overlapCount',
@@ -1106,12 +1097,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 1, height: 36, color: context.appBorder);
-  }
-}
 
 // ─── 하단 액션 버튼 ───────────────────────────────────────────────────
 class _RecapActions extends StatelessWidget {
@@ -1125,7 +1110,6 @@ class _RecapActions extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
       decoration: BoxDecoration(
         color: context.appBg,
-        border: Border(top: BorderSide(color: context.appBorder)),
       ),
       child: Row(
         children: [
@@ -1137,7 +1121,7 @@ class _RecapActions extends StatelessWidget {
               label: const Text('공유하기'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.appTextSecondary,
-                side: BorderSide(color: context.appBorder),
+                side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: AppTheme.smoothShape(radius: 14),
               ),
@@ -1192,9 +1176,6 @@ class _PageRecordCard extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusLG,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.3),
-          ),
         ),
         child: Row(
           children: [
@@ -1223,7 +1204,6 @@ class _PageRecordCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,7 +1247,6 @@ class _PageRecordCard extends StatelessWidget {
                   decoration: AppTheme.smoothBox(
                     color: context.appCardElevated,
                     radius: AppTheme.radiusSM,
-                    side: BorderSide(color: context.appBorder),
                   ),
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1365,9 +1344,6 @@ class _CompletionDialog extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusXL,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.25),
-          ),
           shadows: [
             BoxShadow(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),
@@ -1491,9 +1467,6 @@ class _OverlapHintCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appPrimaryAccent.withValues(alpha: 0.08),
         radius: 16,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.2),
-        ),
       ),
       child: Row(
         children: [
@@ -1606,7 +1579,7 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: 20,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [
@@ -1660,7 +1633,7 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
                         decoration: AppTheme.smoothBox(
                           color: context.appCardElevated,
                           radius: 8,
-                          side: BorderSide(color: context.appBorder),
+                          side: BorderSide.none,
                         ),
                         child: Text(
                           '이탈 ${widget.exitCount}회',
@@ -1741,33 +1714,6 @@ class _FocusArcPainter extends CustomPainter {
       old.progress != progress || old.color != color;
 }
 
-class _DashedDivider extends StatelessWidget {
-  const _DashedDivider();
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final boxWidth = constraints.constrainWidth();
-        const dashWidth = 5.0;
-        const dashHeight = 1.0;
-        final dashCount = (boxWidth / (2 * dashWidth)).floor();
-        return Flex(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          direction: Axis.horizontal,
-          children: List.generate(dashCount, (_) {
-            return const SizedBox(
-              width: dashWidth,
-              height: dashHeight,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.black26),
-              ),
-            );
-          }),
-        );
-      },
-    );
-  }
-}
 
 class _ReceiptRow extends StatelessWidget {
   final String label;
@@ -1823,15 +1769,14 @@ class _SessionHeroCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         gradient: AppTheme.greenCardGradient,
         radius: 20,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.2),
-        ),
+        side: BorderSide.none,
       ),
       child: Row(
         children: [
           BookCover(
             coverUrl: coverUrl,
-            gradientIndex: bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
+            gradientIndex:
+                bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
             width: 56,
             height: 72,
             radius: 8,
@@ -1885,7 +1830,7 @@ class _HeroPill extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: Colors.white.withValues(alpha: 0.15),
         radius: 12,
-        side: const BorderSide(color: Colors.white24),
+        side: BorderSide.none,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

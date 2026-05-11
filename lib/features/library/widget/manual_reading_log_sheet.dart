@@ -20,8 +20,7 @@ class ManualReadingLogSheet extends ConsumerStatefulWidget {
       _ManualReadingLogSheetState();
 }
 
-class _ManualReadingLogSheetState
-    extends ConsumerState<ManualReadingLogSheet> {
+class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
   late TextEditingController _startPageCtrl;
   late TextEditingController _endPageCtrl;
   late TextEditingController _minutesCtrl;
@@ -31,8 +30,7 @@ class _ManualReadingLogSheetState
   @override
   void initState() {
     super.initState();
-    _startPageCtrl =
-        TextEditingController(text: '${widget.book.currentPage}');
+    _startPageCtrl = TextEditingController(text: '${widget.book.currentPage}');
     _endPageCtrl = TextEditingController();
     _minutesCtrl = TextEditingController();
     _selectedDate = DateTime.now();
@@ -83,13 +81,15 @@ class _ManualReadingLogSheetState
     HapticFeedback.mediumImpact();
 
     try {
-      await ref.read(libraryProvider.notifier).addManualReadingLog(
-        bookId: widget.book.id,
-        startPage: int.parse(_startPageCtrl.text.trim()),
-        endPage: endPage,
-        durationSeconds: minutes * 60,
-        sessionDate: _selectedDate,
-      );
+      await ref
+          .read(libraryProvider.notifier)
+          .addManualReadingLog(
+            bookId: widget.book.id,
+            startPage: int.parse(_startPageCtrl.text.trim()),
+            endPage: endPage,
+            durationSeconds: minutes * 60,
+            sessionDate: _selectedDate,
+          );
 
       if (!context.mounted) return;
       Navigator.pop(context, true);
@@ -229,7 +229,7 @@ class _ManualReadingLogSheetState
                     decoration: AppTheme.smoothBox(
                       color: context.appCardElevated,
                       radius: AppTheme.radiusMD,
-                      side: BorderSide(color: context.appBorder),
+                      side: BorderSide.none,
                     ),
                     child: Row(
                       children: [
@@ -308,22 +308,24 @@ class _ManualReadingLogSheetState
               ),
 
               // 읽은 쪽수 미리보기
-              Builder(builder: (_) {
-                final start = int.tryParse(_startPageCtrl.text);
-                final end = int.tryParse(_endPageCtrl.text);
-                if (start != null && end != null && end > start) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '${end - start}쪽 읽었어요',
-                      style: AppTheme.captionLarge.copyWith(
-                        color: context.appPrimaryAccent,
+              Builder(
+                builder: (_) {
+                  final start = int.tryParse(_startPageCtrl.text);
+                  final end = int.tryParse(_endPageCtrl.text);
+                  if (start != null && end != null && end > start) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '${end - start}쪽 읽었어요',
+                        style: AppTheme.captionLarge.copyWith(
+                          color: context.appPrimaryAccent,
+                        ),
                       ),
-                    ),
-                  );
-                }
-                return const SizedBox(height: 6);
-              }),
+                    );
+                  }
+                  return const SizedBox(height: 6);
+                },
+              ),
               const SizedBox(height: 16),
 
               // ── 독서 시간 ──────────────────────────────────────────
@@ -344,7 +346,7 @@ class _ManualReadingLogSheetState
                       decoration: AppTheme.smoothBox(
                         color: context.appCardElevated,
                         radius: AppTheme.radiusMD,
-                        side: BorderSide(color: context.appBorder),
+                        side: BorderSide.none,
                       ),
                       child: TextField(
                         controller: _minutesCtrl,
@@ -379,9 +381,7 @@ class _ManualReadingLogSheetState
                 decoration: AppTheme.smoothBox(
                   color: context.appPrimaryAccent.withValues(alpha: 0.08),
                   radius: AppTheme.radiusMD,
-                  side: BorderSide(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.15),
-                  ),
+                  side: BorderSide.none,
                 ),
                 child: Row(
                   children: [
@@ -413,10 +413,12 @@ class _ManualReadingLogSheetState
                   onPressed: _isSaving ? null : () => _save(context),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
-                    foregroundColor:
-                        isDark ? AppTheme.primaryLight : Colors.white,
-                    disabledBackgroundColor:
-                        AppTheme.primary.withValues(alpha: 0.5),
+                    foregroundColor: isDark
+                        ? AppTheme.primaryLight
+                        : Colors.white,
+                    disabledBackgroundColor: AppTheme.primary.withValues(
+                      alpha: 0.5,
+                    ),
                     shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
                   ),
                   child: _isSaving
@@ -431,8 +433,9 @@ class _ManualReadingLogSheetState
                       : Text(
                           '기록 추가하기',
                           style: AppTheme.bodyLarge.copyWith(
-                            color:
-                                isDark ? AppTheme.primaryLight : Colors.white,
+                            color: isDark
+                                ? AppTheme.primaryLight
+                                : Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -466,9 +469,7 @@ class _PageField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTheme.captionSmall.copyWith(
-            color: context.appTextTertiary,
-          ),
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
         ),
         const SizedBox(height: 4),
         Container(
@@ -477,7 +478,7 @@ class _PageField extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCardElevated,
             radius: AppTheme.radiusMD,
-            side: BorderSide(color: context.appBorder),
+            side: BorderSide.none,
           ),
           child: TextField(
             controller: controller,

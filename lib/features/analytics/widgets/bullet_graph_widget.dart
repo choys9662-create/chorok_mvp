@@ -51,13 +51,13 @@ class BulletGraphWidget extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(9999),
                   child: Stack(
+                    clipBehavior: Clip.antiAlias,
                     fit: StackFit.expand,
                     children: [
-                      // 1. 배경 트랙
                       Container(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? const Color(0xFF1A1A1A)
-                            : AppTheme.lightDivider,
+                            : context.appBg,
                       ),
                       // 2. 현재 진행률
                       FractionallySizedBox(
@@ -71,11 +71,14 @@ class BulletGraphWidget extends StatelessWidget {
                       ),
                       // 3. 목표 마커 (흰색 세로선 2px)
                       Positioned(
-                        left: constraints.maxWidth * goalMarkerRatio - 1,
+                        left: (constraints.maxWidth * goalMarkerRatio - 2)
+                            .clamp(0.0, constraints.maxWidth - 2),
                         top: 2,
                         bottom: 2,
                         width: 2,
-                        child: Container(color: Colors.white.withValues(alpha: 0.7)),
+                        child: Container(
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
                       ),
                     ],
                   ),

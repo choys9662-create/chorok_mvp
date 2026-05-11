@@ -43,9 +43,8 @@ class UserSearchNotifier extends AsyncNotifier<List<UserProfile>> {
     final repo = ref.read(profileRepositoryProvider);
     final follows = ref.read(followRepositoryProvider);
     return switch (_scope) {
-      UserSearchScope.all => _lastQuery.isEmpty
-          ? const []
-          : repo.searchUsers(_lastQuery),
+      UserSearchScope.all =>
+        _lastQuery.isEmpty ? const [] : repo.searchUsers(_lastQuery),
       UserSearchScope.following => follows.searchFollowing(_lastQuery),
       UserSearchScope.followers => follows.searchFollowers(_lastQuery),
     };

@@ -68,7 +68,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
       if (useMock) {
         final loc = state.matchedLocation;
-        if (loc == AppConstants.routeAuth || loc == AppConstants.routeOnboarding) {
+        if (loc == AppConstants.routeAuth ||
+            loc == AppConstants.routeOnboarding) {
           return AppConstants.routeHome;
         }
         return null;
@@ -77,11 +78,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
       final loc = state.matchedLocation;
-      final isPublic = loc == AppConstants.routeAuth ||
+      final isPublic =
+          loc == AppConstants.routeAuth ||
           loc == AppConstants.routeSignUp ||
           loc == AppConstants.routeOnboarding;
       if (!isLoggedIn && !isPublic) return AppConstants.routeAuth;
-      if (isLoggedIn && loc == AppConstants.routeAuth) return AppConstants.routeHome;
+      if (isLoggedIn && loc == AppConstants.routeAuth) {
+        return AppConstants.routeHome;
+      }
       return null;
     },
 
@@ -155,28 +159,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             child: screen,
             transitionDuration: const Duration(milliseconds: 700),
             reverseTransitionDuration: const Duration(milliseconds: 400),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              // 진입: fade + scale 0.94 → 1.0  (집중 모드로 몰입하는 느낌)
-              final fade = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              );
-              final scale = Tween<double>(begin: 0.94, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              );
-              // 퇴장(pop): 빠르게 fade만
-              final exitFade = CurvedAnimation(
-                parent: secondaryAnimation,
-                curve: Curves.easeIn,
-              );
-              return FadeTransition(
-                opacity: Tween<double>(begin: 1.0, end: 0.0).animate(exitFade),
-                child: FadeTransition(
-                  opacity: fade,
-                  child: ScaleTransition(scale: scale, child: child),
-                ),
-              );
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  // 진입: fade + scale 0.94 → 1.0  (집중 모드로 몰입하는 느낌)
+                  final fade = CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOut,
+                  );
+                  final scale = Tween<double>(begin: 0.94, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
+                  );
+                  // 퇴장(pop): 빠르게 fade만
+                  final exitFade = CurvedAnimation(
+                    parent: secondaryAnimation,
+                    curve: Curves.easeIn,
+                  );
+                  return FadeTransition(
+                    opacity: Tween<double>(
+                      begin: 1.0,
+                      end: 0.0,
+                    ).animate(exitFade),
+                    child: FadeTransition(
+                      opacity: fade,
+                      child: ScaleTransition(scale: scale, child: child),
+                    ),
+                  );
+                },
           );
         },
       ),

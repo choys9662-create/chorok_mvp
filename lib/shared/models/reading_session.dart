@@ -77,8 +77,7 @@ class Book {
     this.completedAt,
   });
 
-  double get readingProgress =>
-      totalPages > 0 ? currentPage / totalPages : 0.0;
+  double get readingProgress => totalPages > 0 ? currentPage / totalPages : 0.0;
 
   Book copyWith({
     String? id,
@@ -110,20 +109,22 @@ class Book {
 }
 
 enum ReadingStatus {
-  reading,      // 읽는 중
-  completed,    // 읽음
-  wantToRead,   // 읽고 싶어요
+  reading, // 읽는 중
+  completed, // 읽음
+  wantToRead, // 읽고 싶어요
 }
 
 extension ReadingStatusLabel on ReadingStatus {
   String get label {
     switch (this) {
-      case ReadingStatus.reading: return '독서 중';
-      case ReadingStatus.completed: return '완독';
-      case ReadingStatus.wantToRead: return '위시';
+      case ReadingStatus.reading:
+        return '독서 중';
+      case ReadingStatus.completed:
+        return '완독';
+      case ReadingStatus.wantToRead:
+        return '위시';
     }
   }
-
 }
 
 /// 피드 문장 모델

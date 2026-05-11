@@ -21,36 +21,54 @@ import '../widget/analytics_lists.dart';
 import '../widget/analytics_community_cards.dart';
 import '../widget/analytics_ui_elements.dart';
 
-
 // ─── Mock 데이터 ─────────────────────────────────────────────────────────
 
 class AnalyticsMockData {
   static final Map<DateTime, int> heatmap2026 = {
-    DateTime(2026, 1,  3): 45,  DateTime(2026, 1,  5): 90,
-    DateTime(2026, 1,  8): 30,  DateTime(2026, 1, 12): 120,
-    DateTime(2026, 1, 15): 60,  DateTime(2026, 1, 19): 90,
-    DateTime(2026, 1, 22): 150, DateTime(2026, 1, 26): 45,
-    DateTime(2026, 2,  2): 60,  DateTime(2026, 2,  5): 90,
-    DateTime(2026, 2,  9): 120, DateTime(2026, 2, 13): 30,
-    DateTime(2026, 2, 17): 90,  DateTime(2026, 2, 21): 180,
-    DateTime(2026, 2, 25): 60,  DateTime(2026, 2, 28): 90,
-    DateTime(2026, 3,  1): 120, DateTime(2026, 3,  3): 45,
-    DateTime(2026, 3,  5): 90,  DateTime(2026, 3,  8): 60,
-    DateTime(2026, 3, 10): 180, DateTime(2026, 3, 12): 75,
-    DateTime(2026, 3, 14): 150, DateTime(2026, 3, 15): 90,
-    DateTime(2026, 3, 17): 200, DateTime(2026, 3, 19): 120,
-    DateTime(2026, 3, 20): 45,  DateTime(2026, 3, 21): 180,
-    DateTime(2026, 3, 22): 60,  DateTime(2026, 3, 24): 90,
-    DateTime(2026, 3, 26): 240, DateTime(2026, 3, 27): 150,
-    DateTime(2026, 3, 29): 75,  DateTime(2026, 3, 31): 120,
-    DateTime(2026, 4,  1): 60,  DateTime(2026, 4,  3): 90,
-    DateTime(2026, 4,  7): 120, DateTime(2026, 4, 10): 45,
+    DateTime(2026, 1, 3): 45,
+    DateTime(2026, 1, 5): 90,
+    DateTime(2026, 1, 8): 30,
+    DateTime(2026, 1, 12): 120,
+    DateTime(2026, 1, 15): 60,
+    DateTime(2026, 1, 19): 90,
+    DateTime(2026, 1, 22): 150,
+    DateTime(2026, 1, 26): 45,
+    DateTime(2026, 2, 2): 60,
+    DateTime(2026, 2, 5): 90,
+    DateTime(2026, 2, 9): 120,
+    DateTime(2026, 2, 13): 30,
+    DateTime(2026, 2, 17): 90,
+    DateTime(2026, 2, 21): 180,
+    DateTime(2026, 2, 25): 60,
+    DateTime(2026, 2, 28): 90,
+    DateTime(2026, 3, 1): 120,
+    DateTime(2026, 3, 3): 45,
+    DateTime(2026, 3, 5): 90,
+    DateTime(2026, 3, 8): 60,
+    DateTime(2026, 3, 10): 180,
+    DateTime(2026, 3, 12): 75,
+    DateTime(2026, 3, 14): 150,
+    DateTime(2026, 3, 15): 90,
+    DateTime(2026, 3, 17): 200,
+    DateTime(2026, 3, 19): 120,
+    DateTime(2026, 3, 20): 45,
+    DateTime(2026, 3, 21): 180,
+    DateTime(2026, 3, 22): 60,
+    DateTime(2026, 3, 24): 90,
+    DateTime(2026, 3, 26): 240,
+    DateTime(2026, 3, 27): 150,
+    DateTime(2026, 3, 29): 75,
+    DateTime(2026, 3, 31): 120,
+    DateTime(2026, 4, 1): 60,
+    DateTime(2026, 4, 3): 90,
+    DateTime(2026, 4, 7): 120,
+    DateTime(2026, 4, 10): 45,
     DateTime(2026, 4, 14): 90,
   };
 
-  static const List<double> currentMonthRadar  = [0.80, 0.65, 0.83, 0.70, 0.90];
+  static const List<double> currentMonthRadar = [0.80, 0.65, 0.83, 0.70, 0.90];
   static const List<double> previousMonthRadar = [0.55, 0.45, 0.60, 0.50, 0.70];
-  static const double weekBulletGoal  = 14.0;
+  static const double weekBulletGoal = 14.0;
   static const double monthBulletGoal = 50.0;
 }
 
@@ -65,7 +83,6 @@ String _mainUnit(int secs) {
   }
   return '분';
 }
-
 
 String _pct(int curr, int prev) {
   if (prev == 0) return curr > 0 ? '+100%' : '0%';
@@ -101,8 +118,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final AnalyticsState? a =
-        kUseMock ? null : ref.watch(analyticsProvider).valueOrNull;
+    final AnalyticsState? a = kUseMock
+        ? null
+        : ref.watch(analyticsProvider).valueOrNull;
 
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
@@ -116,70 +134,99 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
-          AppTheme.screenPadding, topPad + 20,
-          AppTheme.screenPadding, 40,
+          AppTheme.screenPadding,
+          topPad + 20,
+          AppTheme.screenPadding,
+          40,
         ),
         children: [
-          Text('분석', style: AppTheme.headingLarge.copyWith(color: context.appTextPrimary)),
+          Text(
+            '분석',
+            style: AppTheme.headingLarge.copyWith(
+              color: context.appTextPrimary,
+            ),
+          ),
           const SizedBox(height: 16),
-          TabSelector(selected: _tab, onChanged: (i) => setState(() => _tab = i)),
+          TabSelector(
+            selected: _tab,
+            onChanged: (i) => setState(() => _tab = i),
+          ),
           const SizedBox(height: 24),
           ...(_tab == 0
               ? _buildWeekContent(a, weekSubtitle, now)
               : _tab == 1
-                  ? _buildMonthContent(a, now)
-                  : _buildYearContent(a, now)),
+              ? _buildMonthContent(a, now)
+              : _buildYearContent(a, now)),
         ],
       ),
     );
   }
 
   // ─── 이번 주 콘텐츠 ─────────────────────────────────────────────────
-  List<Widget> _buildWeekContent(AnalyticsState? a, String subtitle, DateTime now) {
-    final totalSecs   = a?.weekTotalSeconds      ?? (9 * 3600 + 38 * 60);
-    final readDays    = a?.weekReadDays           ?? 5;
-    final choseoCount = a?.weekChoseoCount        ?? 47;
-    final prevSecs    = a?.prevWeekTotalSeconds   ?? (7 * 3600 + 50 * 60);
-    final dailyMin    = a?.weekDailyMinutes       ?? const [85, 42, 120, 65, 30, 153, 83];
-    final timeOfDay   = a?.weekTimeOfDay          ?? const [
-      (label: '새벽', range: '00–06', minutes: 12),
-      (label: '오전', range: '06–12', minutes: 65),
-      (label: '오후', range: '12–18', minutes: 148),
-      (label: '저녁', range: '18–24', minutes: 353),
-    ];
-    final focusScore  = a?.weekFocusScore         ?? 83;
-    final maxSessMin  = a?.weekMaxSessionMinutes  ?? 135;
-    final avgSessMin  = a?.weekAvgSessionMinutes  ?? 38;
-    final radar       = a?.weekRadar              ?? AnalyticsMockData.currentMonthRadar;
-    final prevRadar   = kUseMock
+  List<Widget> _buildWeekContent(
+    AnalyticsState? a,
+    String subtitle,
+    DateTime now,
+  ) {
+    final totalSecs = a?.weekTotalSeconds ?? (9 * 3600 + 38 * 60);
+    final readDays = a?.weekReadDays ?? 5;
+    final choseoCount = a?.weekChoseoCount ?? 47;
+    final prevSecs = a?.prevWeekTotalSeconds ?? (7 * 3600 + 50 * 60);
+    final dailyMin =
+        a?.weekDailyMinutes ?? const [85, 42, 120, 65, 30, 153, 83];
+    final timeOfDay =
+        a?.weekTimeOfDay ??
+        const [
+          (label: '새벽', range: '00–06', minutes: 12),
+          (label: '오전', range: '06–12', minutes: 65),
+          (label: '오후', range: '12–18', minutes: 148),
+          (label: '저녁', range: '18–24', minutes: 353),
+        ];
+    final focusScore = a?.weekFocusScore ?? 83;
+    final maxSessMin = a?.weekMaxSessionMinutes ?? 135;
+    final avgSessMin = a?.weekAvgSessionMinutes ?? 38;
+    final radar = a?.weekRadar ?? AnalyticsMockData.currentMonthRadar;
+    final prevRadar = kUseMock
         ? AnalyticsMockData.previousMonthRadar
         : const <double>[0.0, 0.0, 0.0, 0.0, 0.0];
-    final sessions    = a?.weekSessions           ?? const [
-      (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
-      (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
-      (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
-      (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
-    ];
-    final allSessions = a?.allRecentSessions      ?? const [
-      (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
-      (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
-      (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
-      (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
-      (title: '파친코', author: '이민진', duration: '2시간 15분', date: '4일 전'),
-      (title: '채식주의자', author: '한강', duration: '35분', date: '5일 전'),
-      (title: '아몬드', author: '손원평', duration: '48분', date: '6일 전'),
-      (title: '82년생 김지영', author: '조남주', duration: '1시간 2분', date: '1주 전'),
-    ];
+    final sessions =
+        a?.weekSessions ??
+        const [
+          (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
+          (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
+          (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
+          (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
+        ];
+    final allSessions =
+        a?.allRecentSessions ??
+        const [
+          (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
+          (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
+          (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
+          (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
+          (title: '파친코', author: '이민진', duration: '2시간 15분', date: '4일 전'),
+          (title: '채식주의자', author: '한강', duration: '35분', date: '5일 전'),
+          (title: '아몬드', author: '손원평', duration: '48분', date: '6일 전'),
+          (title: '82년생 김지영', author: '조남주', duration: '1시간 2분', date: '1주 전'),
+        ];
     final highlights = a != null
-        ? a.weekChoseo.take(2).map((c) => (
-              text: c.content,
-              book: c.bookTitle.isNotEmpty
-                  ? '${c.bookTitle}${c.bookAuthor.isNotEmpty ? ' — ${c.bookAuthor}' : ''}'
-                  : '알 수 없는 책',
-            )).toList()
+        ? a.weekChoseo
+              .take(2)
+              .map(
+                (c) => (
+                  text: c.content,
+                  book: c.bookTitle.isNotEmpty
+                      ? '${c.bookTitle}${c.bookAuthor.isNotEmpty ? ' — ${c.bookAuthor}' : ''}'
+                      : '알 수 없는 책',
+                ),
+              )
+              .toList()
         : const [
             (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강'),
-            (text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.', book: '아몬드 — 손원평'),
+            (
+              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+              book: '아몬드 — 손원평',
+            ),
           ];
 
     return [
@@ -189,9 +236,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         mainValue: _mainVal(totalSecs),
         mainUnit: _mainUnit(totalSecs),
         stats: [
-          (icon: Icons.calendar_today_rounded, label: '독서 일수', value: '$readDays일', color: null),
-          (icon: Icons.format_quote_rounded, label: '수집 문장', value: '$choseoCount개', color: context.appAccentColor),
-          (icon: Icons.trending_up_rounded, label: '전주 대비', value: _pct(totalSecs, prevSecs), color: context.appPrimaryAccent),
+          (
+            icon: Icons.calendar_today_rounded,
+            label: '독서 일수',
+            value: '$readDays일',
+            color: null,
+          ),
+          (
+            icon: Icons.format_quote_rounded,
+            label: '수집 문장',
+            value: '$choseoCount개',
+            color: context.appAccentColor,
+          ),
+          (
+            icon: Icons.trending_up_rounded,
+            label: '전주 대비',
+            value: _pct(totalSecs, prevSecs),
+            color: context.appPrimaryAccent,
+          ),
         ],
       ),
       const SizedBox(height: AppTheme.spaceXL),
@@ -234,8 +296,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
       ChorokSectionHeader(
         title: '집중도',
-        trailing: Text('이번 주 $focusScore점',
-            style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
+        trailing: Text(
+          '이번 주 $focusScore점',
+          style: AppTheme.captionLarge.copyWith(
+            color: context.appPrimaryAccent,
+          ),
+        ),
       ),
       const SizedBox(height: AppTheme.spaceMD),
       FocusCard(
@@ -265,7 +331,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             HapticFeedback.selectionClick();
             _showAllSessions(context, allSessions);
           },
-          child: Text('전체', style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
+          child: Text(
+            '전체',
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appPrimaryAccent,
+            ),
+          ),
         ),
       ),
       const SizedBox(height: AppTheme.spaceSM),
@@ -282,18 +353,40 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       if (kUseMock) ...[
         const ChorokSectionHeader(title: '내 문장에 온 반응'),
         const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(sentences: [
-          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 34, isTop: true),
-          (text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.', book: '아몬드 — 손원평', reactions: 21, isTop: false),
-        ]),
+        const SentenceReactionsCard(
+          sentences: [
+            (
+              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+              book: '채식주의자 — 한강',
+              reactions: 34,
+              isTop: true,
+            ),
+            (
+              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+              book: '아몬드 — 손원평',
+              reactions: 21,
+              isTop: false,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(highlights: [
-          (text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.', book: '파친코 — 이민진', reactions: 128),
-          (text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.', book: '소년이 온다 — 한강', reactions: 97),
-        ]),
+        const CommunityHighlightsCard(
+          highlights: [
+            (
+              text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
+              book: '파친코 — 이민진',
+              reactions: 128,
+            ),
+            (
+              text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
+              book: '소년이 온다 — 한강',
+              reactions: 97,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '이번 주 독서 성향'),
@@ -301,7 +394,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const ReadingPersonaCard(
           persona: '저녁형 독서가',
           icon: Icons.nights_stay_rounded,
-          description: '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
+          description:
+              '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
@@ -309,7 +403,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         const QualitativeInsightCard(
           icon: Icons.auto_awesome_rounded,
-          message: '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
+          message:
+              '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
         ),
       ],
     ];
@@ -317,28 +412,35 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   // ─── 이번 달 콘텐츠 ─────────────────────────────────────────────────
   List<Widget> _buildMonthContent(AnalyticsState? a, DateTime now) {
-    final totalSecs    = a?.monthTotalSeconds     ?? (38 * 3600 + 12 * 60);
-    final readDays     = a?.monthReadDays          ?? 18;
-    final choseoCount  = a?.monthChoseoCount       ?? 183;
-    final prevSecs     = a?.prevMonthTotalSeconds  ?? (35 * 3600 + 20 * 60);
-    final heatmap      = a?.heatmap                ?? AnalyticsMockData.heatmap2026;
-    final totalDays    = a?.monthTotalDays         ?? 31;
-    final maxStreak    = a?.monthMaxStreak         ?? 5;
-    final focusScore   = a?.monthFocusScore        ?? 79;
-    final maxSessMin   = a?.monthMaxSessionMinutes ?? 222;
-    final avgSessMin   = a?.monthAvgSessionMinutes ?? 44;
+    final totalSecs = a?.monthTotalSeconds ?? (38 * 3600 + 12 * 60);
+    final readDays = a?.monthReadDays ?? 18;
+    final choseoCount = a?.monthChoseoCount ?? 183;
+    final prevSecs = a?.prevMonthTotalSeconds ?? (35 * 3600 + 20 * 60);
+    final heatmap = a?.heatmap ?? AnalyticsMockData.heatmap2026;
+    final totalDays = a?.monthTotalDays ?? 31;
+    final maxStreak = a?.monthMaxStreak ?? 5;
+    final focusScore = a?.monthFocusScore ?? 79;
+    final maxSessMin = a?.monthMaxSessionMinutes ?? 222;
+    final avgSessMin = a?.monthAvgSessionMinutes ?? 44;
     final monthSubtitle = kUseMock ? '2026년 3월' : '${now.year}년 ${now.month}월';
-    final heatmapYear   = kUseMock ? 2026 : now.year;
+    final heatmapYear = kUseMock ? 2026 : now.year;
 
     final monthBooks = a != null
         ? a.completedBooks
-            .where((b) => b.updatedAt.year == now.year && b.updatedAt.month == now.month)
-            .map((b) => (
+              .where(
+                (b) =>
+                    b.updatedAt.year == now.year &&
+                    b.updatedAt.month == now.month,
+              )
+              .map(
+                (b) => (
                   title: b.title,
                   author: b.author,
                   date: '${b.updatedAt.month}월 ${b.updatedAt.day}일',
                   pages: b.totalPages,
-                )).toList()
+                ),
+              )
+              .toList()
         : const <({String title, String author, String date, int pages})>[
             (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
             (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
@@ -351,9 +453,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         mainValue: _mainVal(totalSecs),
         mainUnit: _mainUnit(totalSecs),
         stats: [
-          (icon: Icons.calendar_today_rounded, label: '독서 일수', value: '$readDays일', color: null),
-          (icon: Icons.format_quote_rounded, label: '수집 문장', value: '$choseoCount개', color: context.appAccentColor),
-          (icon: Icons.trending_up_rounded, label: '전월 대비', value: _pct(totalSecs, prevSecs), color: context.appPrimaryAccent),
+          (
+            icon: Icons.calendar_today_rounded,
+            label: '독서 일수',
+            value: '$readDays일',
+            color: null,
+          ),
+          (
+            icon: Icons.format_quote_rounded,
+            label: '수집 문장',
+            value: '$choseoCount개',
+            color: context.appAccentColor,
+          ),
+          (
+            icon: Icons.trending_up_rounded,
+            label: '전월 대비',
+            value: _pct(totalSecs, prevSecs),
+            color: context.appPrimaryAccent,
+          ),
         ],
       ),
       const SizedBox(height: AppTheme.spaceXL),
@@ -375,8 +492,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
       ChorokSectionHeader(
         title: '집중도',
-        trailing: Text('이번 달 $focusScore점',
-            style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
+        trailing: Text(
+          '이번 달 $focusScore점',
+          style: AppTheme.captionLarge.copyWith(
+            color: context.appPrimaryAccent,
+          ),
+        ),
       ),
       const SizedBox(height: AppTheme.spaceMD),
       FocusCard(
@@ -404,26 +525,54 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       if (kUseMock) ...[
         const ChorokSectionHeader(title: '이번 달 베스트 문장'),
         const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(sentences: [
-          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 89, isTop: true),
-          (text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.', book: '아몬드 — 손원평', reactions: 54, isTop: false),
-          (text: '역사는 우리가 어떻게 살았는지를 기억한다.', book: '파친코 — 이민진', reactions: 31, isTop: false),
-        ]),
+        const SentenceReactionsCard(
+          sentences: [
+            (
+              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+              book: '채식주의자 — 한강',
+              reactions: 89,
+              isTop: true,
+            ),
+            (
+              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+              book: '아몬드 — 손원평',
+              reactions: 54,
+              isTop: false,
+            ),
+            (
+              text: '역사는 우리가 어떻게 살았는지를 기억한다.',
+              book: '파친코 — 이민진',
+              reactions: 31,
+              isTop: false,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(highlights: [
-          (text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.', book: '채식주의자 — 한강', reactions: 312),
-          (text: '누군가를 사랑한다는 것은 그 사람의 이야기를 끝까지 듣는 것이다.', book: '아몬드 — 손원평', reactions: 241),
-        ]),
+        const CommunityHighlightsCard(
+          highlights: [
+            (
+              text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
+              book: '채식주의자 — 한강',
+              reactions: 312,
+            ),
+            (
+              text: '누군가를 사랑한다는 것은 그 사람의 이야기를 끝까지 듣는 것이다.',
+              book: '아몬드 — 손원평',
+              reactions: 241,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '이번 달 인사이트'),
         const SizedBox(height: AppTheme.spaceMD),
         const QualitativeInsightCard(
           icon: Icons.auto_awesome_rounded,
-          message: '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
+          message:
+              '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
           subMessage: '같은 시간에 더 많은 페이지를 읽었다는 건, 집중력이 자라고 있다는 신호예요.',
         ),
       ],
@@ -432,21 +581,27 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   // ─── 올해 콘텐츠 ────────────────────────────────────────────────────
   List<Widget> _buildYearContent(AnalyticsState? a, DateTime now) {
-    final totalSecs      = a?.yearTotalSeconds     ?? (142 * 3600);
-    final readDays       = a?.yearReadDays          ?? 68;
-    final choseoCount    = a?.yearChoseoCount       ?? 712;
+    final totalSecs = a?.yearTotalSeconds ?? (142 * 3600);
+    final readDays = a?.yearReadDays ?? 68;
+    final choseoCount = a?.yearChoseoCount ?? 712;
     final completedCount = a?.completedBooks.length ?? 9;
-    final monthlyMin     = a?.yearMonthlyMinutes    ?? const [620, 480, 560, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    final focusScore     = a?.yearFocusScore        ?? 81;
-    final yearSubtitle   = kUseMock ? '2026년' : '${now.year}년';
+    final monthlyMin =
+        a?.yearMonthlyMinutes ??
+        const [620, 480, 560, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    final focusScore = a?.yearFocusScore ?? 81;
+    final yearSubtitle = kUseMock ? '2026년' : '${now.year}년';
 
     final allBooks = a != null
-        ? a.completedBooks.map((b) => (
-              title: b.title,
-              author: b.author,
-              date: '${b.updatedAt.month}월 ${b.updatedAt.day}일',
-              pages: b.totalPages,
-            )).toList()
+        ? a.completedBooks
+              .map(
+                (b) => (
+                  title: b.title,
+                  author: b.author,
+                  date: '${b.updatedAt.month}월 ${b.updatedAt.day}일',
+                  pages: b.totalPages,
+                ),
+              )
+              .toList()
         : const <({String title, String author, String date, int pages})>[
             (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
             (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
@@ -461,9 +616,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         mainValue: _mainVal(totalSecs),
         mainUnit: _mainUnit(totalSecs),
         stats: [
-          (icon: Icons.calendar_today_rounded, label: '독서 일수', value: '$readDays일', color: null),
-          (icon: Icons.menu_book_rounded, label: '완독', value: '$completedCount권', color: AppTheme.accent),
-          (icon: Icons.format_quote_rounded, label: '수집 문장', value: '$choseoCount개', color: null),
+          (
+            icon: Icons.calendar_today_rounded,
+            label: '독서 일수',
+            value: '$readDays일',
+            color: null,
+          ),
+          (
+            icon: Icons.menu_book_rounded,
+            label: '완독',
+            value: '$completedCount권',
+            color: AppTheme.accent,
+          ),
+          (
+            icon: Icons.format_quote_rounded,
+            label: '수집 문장',
+            value: '$choseoCount개',
+            color: null,
+          ),
         ],
       ),
       const SizedBox(height: AppTheme.spaceXL),
@@ -477,7 +647,20 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       const SizedBox(height: AppTheme.spaceMD),
       ChorokCard(
         child: BarChart(
-          labels: const ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+          labels: const [
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            '10',
+            '11',
+            '12',
+          ],
           values: monthlyMin,
           highlightIndex: now.month - 1,
           labelSuffix: '월',
@@ -492,8 +675,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
       ChorokSectionHeader(
         title: '집중도',
-        trailing: Text('올해 평균 $focusScore점',
-            style: AppTheme.captionLarge.copyWith(color: context.appPrimaryAccent)),
+        trailing: Text(
+          '올해 평균 $focusScore점',
+          style: AppTheme.captionLarge.copyWith(
+            color: context.appPrimaryAccent,
+          ),
+        ),
       ),
       const SizedBox(height: AppTheme.spaceMD),
       FocusCard(
@@ -535,33 +722,66 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const ReaderIdentityCard(
           identity: '소설 탐험가',
           icon: Icons.explore_rounded,
-          description: '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
+          description:
+              '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
         ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
         const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(sentences: [
-          (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강', reactions: 341, isTop: true),
-          (text: '역사는 우리가 어떻게 살았는지를 기억한다.', book: '파친코 — 이민진', reactions: 189, isTop: false),
-          (text: '나는 살아있다고 느끼는 순간이 거의 없었어.', book: '아몬드 — 손원평', reactions: 124, isTop: false),
-        ]),
+        const SentenceReactionsCard(
+          sentences: [
+            (
+              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+              book: '채식주의자 — 한강',
+              reactions: 341,
+              isTop: true,
+            ),
+            (
+              text: '역사는 우리가 어떻게 살았는지를 기억한다.',
+              book: '파친코 — 이민진',
+              reactions: 189,
+              isTop: false,
+            ),
+            (
+              text: '나는 살아있다고 느끼는 순간이 거의 없었어.',
+              book: '아몬드 — 손원평',
+              reactions: 124,
+              isTop: false,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(highlights: [
-          (text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.', book: '채식주의자 — 한강', reactions: 2841),
-          (text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.', book: '파친코 — 이민진', reactions: 1932),
-          (text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.', book: '소년이 온다 — 한강', reactions: 1547),
-        ]),
+        const CommunityHighlightsCard(
+          highlights: [
+            (
+              text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
+              book: '채식주의자 — 한강',
+              reactions: 2841,
+            ),
+            (
+              text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
+              book: '파친코 — 이민진',
+              reactions: 1932,
+            ),
+            (
+              text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
+              book: '소년이 온다 — 한강',
+              reactions: 1547,
+            ),
+          ],
+        ),
         const SizedBox(height: AppTheme.spaceXL),
 
         const ChorokSectionHeader(title: '올해 인사이트'),
         const SizedBox(height: AppTheme.spaceMD),
         const QualitativeInsightCard(
           icon: Icons.emoji_events_rounded,
-          message: '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
+          message:
+              '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
           subMessage: '연간 목표의 45%를 3개월 만에 달성했어요. 이 속도라면 연말엔 목표를 훌쩍 넘어설 거예요.',
         ),
       ],
@@ -592,13 +812,19 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  Text('전체 독서 세션',
-                      style: AppTheme.headingMedium
-                          .copyWith(color: context.appTextPrimary)),
+                  Text(
+                    '전체 독서 세션',
+                    style: AppTheme.headingMedium.copyWith(
+                      color: context.appTextPrimary,
+                    ),
+                  ),
                   const Spacer(),
-                  Text('${sessions.length}회',
-                      style: AppTheme.captionLarge
-                          .copyWith(color: AppTheme.accent)),
+                  Text(
+                    '${sessions.length}회',
+                    style: AppTheme.captionLarge.copyWith(
+                      color: AppTheme.accent,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -607,8 +833,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: sessions.length,
-                separatorBuilder: (_, i) =>
-                    Divider(color: context.appBorder, height: 1, indent: 64),
+                separatorBuilder: (_, i) => const SizedBox(height: AppTheme.spaceSM),
                 itemBuilder: (_, i) {
                   final s = sessions[i];
                   return SessionTile(
@@ -629,57 +854,36 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
 // ─── 탭 선택 ───────────────────────────────────────────────────────────
 
-
 // ─── 요약 카드 (공통) ──────────────────────────────────────────────────
-
 
 // ─── 바 차트 (공통) ────────────────────────────────────────────────────
 
-
 // ─── 라인 리듬 차트 ────────────────────────────────────────────────────
-
-
-
 
 // ─── 집중도 카드 (공통) ────────────────────────────────────────────────
 
-
 // ─── 최근 세션 목록 ────────────────────────────────────────────────────
-
-
-
 
 // ─── 시간대별 독서 패턴 ─────────────────────────────────────────────────
 
-
 // ─── 정성적 인사이트 카드 ─────────────────────────────────────────────
-
 
 // ─── 수집 문장 미리보기 ────────────────────────────────────────────────
 
-
 // ─── 연간 목표 진행 ───────────────────────────────────────────────────
-
 
 // ─── 장르 분포 ────────────────────────────────────────────────────────
 
-
 // ─── 완독 책 목록 ──────────────────────────────────────────────────────
-
 
 // ─── 이번 주 독서 성향 카드 ────────────────────────────────────────────
 
-
 // ─── 이번 달 독서 밀도 카드 ───────────────────────────────────────────
-
 
 // ─── 올해의 독서 정체성 카드 ──────────────────────────────────────────
 
-
 // ─── 내 문장 반응 카드 ────────────────────────────────────────────────
 
-
 // ─── 커뮤니티 하이라이트 카드 ─────────────────────────────────────────
-
 
 // ─── 연간: 월별 원형 다이얼 차트 ─────────────────────────────────────────

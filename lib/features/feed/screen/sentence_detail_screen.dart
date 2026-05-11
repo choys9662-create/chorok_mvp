@@ -44,7 +44,6 @@ class _ReaderThought {
   });
 }
 
-
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
 
 List<_ReaderThought> _buildMockThoughts() => [
@@ -142,7 +141,6 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
       if (mounted) setState(() => _isSubmitting = false);
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -266,12 +264,6 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                           decoration: BoxDecoration(
                             color: context.appCard,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border(
-                              left: BorderSide(
-                                color: context.appPrimaryAccent,
-                                width: 4,
-                              ),
-                            ),
                           ),
                           child: Text(
                             '"${d.sentenceContent}"',
@@ -338,14 +330,14 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                 ),
 
                 // ── 구분선 ───────────────────────────────────
-                SliverToBoxAdapter(
-                  child: Divider(
-                    height: 1,
-                    color: context.appBorder,
-                    indent: AppTheme.screenPadding,
-                    endIndent: AppTheme.screenPadding,
-                  ),
-                ),
+                // SliverToBoxAdapter(
+                //   child: Divider(
+                //     height: 1,
+                //     color: context.appBorder,
+                //     indent: AppTheme.screenPadding,
+                //     endIndent: AppTheme.screenPadding,
+                //   ),
+                // ),
 
                 // ── 다른 독자들의 생각 헤더 ───────────────────
                 SliverToBoxAdapter(
@@ -427,10 +419,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
               AppTheme.screenPadding,
               bottomPad + 10,
             ),
-            decoration: BoxDecoration(
-              color: context.appBg,
-              border: Border(top: BorderSide(color: context.appBorder)),
-            ),
+            decoration: BoxDecoration(color: context.appBg),
             child: Row(
               children: [
                 Expanded(
@@ -440,7 +429,7 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                     decoration: AppTheme.smoothBox(
                       color: context.appCard,
                       radius: 22,
-                      side: BorderSide(color: context.appBorder),
+                      side: BorderSide.none,
                     ),
                     child: TextField(
                       controller: _myThoughtController,
@@ -527,7 +516,7 @@ class _ThoughtCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

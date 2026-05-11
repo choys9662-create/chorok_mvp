@@ -81,8 +81,12 @@ Future<Database> openAppDatabase() async {
       }
       if (oldVersion < 4) {
         // reading_sessions에 이탈 횟수/시간 컬럼 추가
-        await db.execute('ALTER TABLE reading_sessions ADD COLUMN exit_count INTEGER NOT NULL DEFAULT 0');
-        await db.execute('ALTER TABLE reading_sessions ADD COLUMN exit_duration_seconds INTEGER NOT NULL DEFAULT 0');
+        await db.execute(
+          'ALTER TABLE reading_sessions ADD COLUMN exit_count INTEGER NOT NULL DEFAULT 0',
+        );
+        await db.execute(
+          'ALTER TABLE reading_sessions ADD COLUMN exit_duration_seconds INTEGER NOT NULL DEFAULT 0',
+        );
         // choseo에 reflection 컬럼 추가
         await db.execute('ALTER TABLE choseo ADD COLUMN reflection TEXT');
       }
@@ -240,8 +244,10 @@ class BookRepository {
 
     if (existing != null) {
       final wasCompleted = existing.status == IsarReadingStatus.completed;
-      final pagesRead =
-          (newCurrentPage - existing.currentPage).clamp(0, 999999);
+      final pagesRead = (newCurrentPage - existing.currentPage).clamp(
+        0,
+        999999,
+      );
 
       IsarReadingStatus newStatus = existing.status;
       if (!wasCompleted &&
@@ -347,8 +353,7 @@ class BookRepository {
         justCompleted = true;
       }
 
-      final completedAt =
-          justCompleted ? DateTime.now() : existing.completedAt;
+      final completedAt = justCompleted ? DateTime.now() : existing.completedAt;
 
       if (endPage > existing.currentPage) {
         await _db.update(
@@ -356,8 +361,7 @@ class BookRepository {
           {
             'current_page': newCurrentPage,
             'status': newStatus.name,
-            if (justCompleted)
-              'completed_at': completedAt!.toIso8601String(),
+            if (justCompleted) 'completed_at': completedAt!.toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           },
           where: 'book_id = ?',
@@ -374,8 +378,7 @@ class BookRepository {
     }
 
     // 세션 레코드 저장 — sessionDate를 started_at으로 사용
-    final sessionId =
-        'manual_${sessionDate.millisecondsSinceEpoch}_$bookId';
+    final sessionId = 'manual_${sessionDate.millisecondsSinceEpoch}_$bookId';
     final session = IsarReadingSession(
       sessionId: sessionId,
       bookId: bookId,
@@ -466,11 +469,7 @@ class BookRepository {
   }
 
   Future<void> deleteByBookId(String bookId) async {
-    await _db.delete(
-      'books',
-      where: 'book_id = ?',
-      whereArgs: [bookId],
-    );
+    await _db.delete('books', where: 'book_id = ?', whereArgs: [bookId]);
   }
 
   // ── 완독 회고 저장 ────────────────────────────────────────────────────────
@@ -490,8 +489,9 @@ class BookRepository {
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       starRating: starRating,
-      memorableLine:
-          memorableLine != null && memorableLine.trim().isNotEmpty ? memorableLine.trim() : null,
+      memorableLine: memorableLine != null && memorableLine.trim().isNotEmpty
+          ? memorableLine.trim()
+          : null,
       legacy: legacy != null && legacy.trim().isNotEmpty ? legacy.trim() : null,
       createdAt: now,
     );
@@ -526,12 +526,15 @@ class BookRepository {
   }) async {
     final now = DateTime.now();
     final choseo = IsarChoseo(
-      choseoId: 'choseo_${now.millisecondsSinceEpoch}_${content.hashCode.abs()}',
+      choseoId:
+          'choseo_${now.millisecondsSinceEpoch}_${content.hashCode.abs()}',
       bookId: bookId,
       bookTitle: bookTitle,
       bookAuthor: bookAuthor,
       content: content.trim(),
-      myThought: myThought?.trim().isNotEmpty == true ? myThought!.trim() : null,
+      myThought: myThought?.trim().isNotEmpty == true
+          ? myThought!.trim()
+          : null,
       coverUrl: coverUrl,
       pageNumber: pageNumber,
       createdAt: now,
@@ -545,7 +548,11 @@ class BookRepository {
   }
 
   Future<List<IsarChoseo>> getAllChoseo({int? limit}) async {
-    final rows = await _db.query('choseo', orderBy: 'created_at DESC', limit: limit);
+    final rows = await _db.query(
+      'choseo',
+      orderBy: 'created_at DESC',
+      limit: limit,
+    );
     return rows.map(IsarChoseo.fromMap).toList();
   }
 
@@ -558,7 +565,8 @@ class BookRepository {
     final q = '%${query.trim()}%';
     final rows = await _db.query(
       'choseo',
-      where: 'content LIKE ? OR my_thought LIKE ? OR book_title LIKE ? OR book_author LIKE ?',
+      where:
+          'content LIKE ? OR my_thought LIKE ? OR book_title LIKE ? OR book_author LIKE ?',
       whereArgs: [q, q, q, q],
       orderBy: 'created_at DESC',
     );
@@ -577,7 +585,10 @@ class BookRepository {
 
   // ── 초서 리플렉션 메모 업데이트 ─────────────────────────────────────────────
 
-  Future<void> updateChoseoReflection(String choseoId, String? reflection) async {
+  Future<void> updateChoseoReflection(
+    String choseoId,
+    String? reflection,
+  ) async {
     await _db.update(
       'choseo',
       {'reflection': reflection},
@@ -592,9 +603,7 @@ class BookRepository {
     final rows = await _db.rawQuery(
       'SELECT book_id, COUNT(*) as cnt FROM choseo GROUP BY book_id',
     );
-    return {
-      for (final r in rows) r['book_id'] as String: r['cnt'] as int,
-    };
+    return {for (final r in rows) r['book_id'] as String: r['cnt'] as int};
   }
 
   Future<int> getChoseoCountForBook(String bookId) async {
@@ -631,8 +640,19 @@ class BookRepository {
   /// 오늘 독서 세션 목록
   Future<List<IsarReadingSession>> getTodaySessions() async {
     final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day).toIso8601String();
-    final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59).toIso8601String();
+    final startOfDay = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).toIso8601String();
+    final endOfDay = DateTime(
+      today.year,
+      today.month,
+      today.day,
+      23,
+      59,
+      59,
+    ).toIso8601String();
     final rows = await _db.query(
       'reading_sessions',
       where: 'started_at BETWEEN ? AND ?',
@@ -663,7 +683,9 @@ class BookRepository {
   // ── 날짜 범위 조회 ────────────────────────────────────────────────────────
 
   Future<List<IsarBook>> getCompletedBooksInRange(
-      DateTime from, DateTime to) async {
+    DateTime from,
+    DateTime to,
+  ) async {
     final rows = await _db.query(
       'books',
       where: 'completed_at >= ? AND completed_at < ?',
@@ -673,7 +695,9 @@ class BookRepository {
   }
 
   Future<List<IsarReadingSession>> getSessionsInRange(
-      DateTime from, DateTime to) async {
+    DateTime from,
+    DateTime to,
+  ) async {
     final rows = await _db.query(
       'reading_sessions',
       where: 'started_at >= ? AND started_at < ?',
@@ -694,8 +718,11 @@ class BookRepository {
   }
 
   Future<List<Map<String, dynamic>>> getReadingLogsInRange(
-      DateTime from, DateTime to) async {
-    return _db.rawQuery('''
+    DateTime from,
+    DateTime to,
+  ) async {
+    return _db.rawQuery(
+      '''
       SELECT rs.started_at, rs.duration_seconds, rs.pages_read,
              COALESCE(b.title, '알 수 없는 책') AS book_title,
              COALESCE(b.author, '') AS book_author
@@ -703,19 +730,24 @@ class BookRepository {
       LEFT JOIN books b ON rs.book_id = b.book_id
       WHERE rs.started_at >= ? AND rs.started_at < ?
       ORDER BY rs.started_at DESC
-    ''', [from.toIso8601String(), to.toIso8601String()]);
+    ''',
+      [from.toIso8601String(), to.toIso8601String()],
+    );
   }
 
   // 날짜별 독서 분(分) 맵 (히트맵 데이터)
   Future<Map<DateTime, int>> getHeatmapDataForYear(int year) async {
     final from = DateTime(year, 1, 1).toIso8601String();
     final to = DateTime(year + 1, 1, 1).toIso8601String();
-    final rows = await _db.rawQuery('''
+    final rows = await _db.rawQuery(
+      '''
       SELECT date(started_at) as day, SUM(duration_seconds) as total
       FROM reading_sessions
       WHERE started_at >= ? AND started_at < ?
       GROUP BY date(started_at)
-    ''', [from, to]);
+    ''',
+      [from, to],
+    );
     final result = <DateTime, int>{};
     for (final row in rows) {
       final day = DateTime.parse(row['day'] as String);
@@ -729,13 +761,16 @@ class BookRepository {
   Future<List<int>> getMonthlyMinutesForYear(int year) async {
     final from = DateTime(year, 1, 1).toIso8601String();
     final to = DateTime(year + 1, 1, 1).toIso8601String();
-    final rows = await _db.rawQuery('''
+    final rows = await _db.rawQuery(
+      '''
       SELECT CAST(strftime('%m', started_at) AS INTEGER) as month,
              SUM(duration_seconds) as total
       FROM reading_sessions
       WHERE started_at >= ? AND started_at < ?
       GROUP BY month
-    ''', [from, to]);
+    ''',
+      [from, to],
+    );
     final result = List<int>.filled(12, 0);
     for (final row in rows) {
       final idx = (row['month'] as int) - 1;
@@ -748,13 +783,11 @@ class BookRepository {
 
   /// 오늘부터 역순으로 연속 독서 일수 반환
   Future<int> getReadingStreak() async {
-    final rows = await _db.rawQuery(
-      '''
+    final rows = await _db.rawQuery('''
       SELECT DISTINCT date(started_at) AS day
       FROM reading_sessions
       ORDER BY day DESC
-      ''',
-    );
+      ''');
     if (rows.isEmpty) return 0;
 
     int streak = 0;

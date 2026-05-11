@@ -119,7 +119,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
       ),
     );
     if (newTotal == null || !mounted) return;
-    ref.read(libraryProvider.notifier).updateTotalPages(widget.book.id, newTotal);
+    ref
+        .read(libraryProvider.notifier)
+        .updateTotalPages(widget.book.id, newTotal);
     if (_currentPage > newTotal) {
       setState(() {
         _currentPage = newTotal;
@@ -136,7 +138,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('서재에서 제거'),
-        content: Text('\'${widget.book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.'),
+        content: Text(
+          '\'${widget.book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -172,10 +176,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // 라이브러리 상태와 동기화 — 페이지 수 수정 시 즉시 반영되도록
-    final book = ref.watch(libraryProvider).firstWhere(
-          (b) => b.id == widget.book.id,
-          orElse: () => widget.book,
-        );
+    final book = ref
+        .watch(libraryProvider)
+        .firstWhere((b) => b.id == widget.book.id, orElse: () => widget.book);
     final isReading = book.status == ReadingStatus.reading;
     final isCompleted = book.status == ReadingStatus.completed;
     final progress = _currentPage / (book.totalPages > 0 ? book.totalPages : 1);
@@ -194,7 +197,8 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
             children: [
               BookCover(
                 coverUrl: book.coverUrl,
-                gradientIndex: book.title.hashCode.abs() % AppTheme.coverGradients.length,
+                gradientIndex:
+                    book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 64,
                 height: 88,
                 radius: 8,
@@ -227,7 +231,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                         color: isCompleted
                             ? context.primaryBg(0.12)
                             : isReading
-                            ? context.appPrimaryAccent.withValues(alpha: isDark ? 0.12 : 0.15)
+                            ? context.appPrimaryAccent.withValues(
+                                alpha: isDark ? 0.12 : 0.15,
+                              )
                             : context.appCardElevated,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -301,12 +307,6 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                       decoration: BoxDecoration(
                         color: context.appCardElevated,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border(
-                          left: BorderSide(
-                            color: context.appPrimaryAccent,
-                            width: 3,
-                          ),
-                        ),
                       ),
                       child: Text(
                         '"$s"',
@@ -346,7 +346,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
               decoration: AppTheme.smoothBox(
                 color: context.appCardElevated,
                 radius: 14,
-                side: BorderSide(color: context.appBorder),
+                side: BorderSide.none,
               ),
               child: Column(
                 children: [
@@ -391,12 +391,6 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                color: context.appPrimaryAccent,
-                              ),
-                            ),
                           ),
                           onChanged: (v) {
                             final parsed = int.tryParse(v);
@@ -424,7 +418,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                       onPressed: () => _savePage(context),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.primary,
-                        foregroundColor: isDark ? AppTheme.primaryLight : Colors.white,
+                        foregroundColor: isDark
+                            ? AppTheme.primaryLight
+                            : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: AppTheme.smoothShape(radius: 10),
                       ),
@@ -461,7 +457,10 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                 style: TextButton.styleFrom(
                   foregroundColor: context.appPrimaryAccent,
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ),
@@ -505,7 +504,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
-                    foregroundColor: isDark ? AppTheme.primaryLight : Colors.white,
+                    foregroundColor: isDark
+                        ? AppTheme.primaryLight
+                        : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
                   ),
@@ -550,9 +551,7 @@ class _PageAdjustButton extends StatelessWidget {
                 ? AppTheme.primary.withValues(alpha: 0.15)
                 : AppTheme.lightPrimaryAccent,
             radius: 10,
-            side: BorderSide(
-              color: context.appPrimaryAccent.withValues(alpha: 0.3),
-            ),
+            side: BorderSide.none,
           ),
           child: Text(
             label,
@@ -601,9 +600,7 @@ class _DetailStat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: AppTheme.captionSmall.copyWith(
-            color: context.appTextTertiary,
-          ),
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
         ),
       ],
     );

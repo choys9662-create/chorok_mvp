@@ -111,12 +111,11 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 decoration: ShapeDecoration(
                   color: context.appCardElevated,
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-                    side: BorderSide(
-                      color: _sentenceCtrl.text.isNotEmpty
-                          ? context.appPrimaryAccent.withValues(alpha: 0.4)
-                          : context.appBorder,
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 12,
+                      cornerSmoothing: 0.6,
                     ),
+                    side: BorderSide.none,
                   ),
                 ),
                 child: TextField(
@@ -166,12 +165,11 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 decoration: ShapeDecoration(
                   color: context.appCardElevated,
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
-                    side: BorderSide(
-                      color: _thoughtCtrl.text.isNotEmpty
-                          ? context.appAccentColor.withValues(alpha: 0.4)
-                          : context.appBorder,
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 12,
+                      cornerSmoothing: 0.6,
                     ),
+                    side: BorderSide.none,
                   ),
                 ),
                 child: TextField(
@@ -207,7 +205,10 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: 12,
+                        cornerSmoothing: 0.6,
+                      ),
                     ),
                   ),
                   child: _saved
@@ -274,7 +275,9 @@ class _FieldLabel extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '선택',
-            style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+            ),
           ),
         ],
       ],
@@ -303,8 +306,11 @@ class _InputTool extends StatelessWidget {
         decoration: ShapeDecoration(
           color: context.appCardElevated,
           shape: SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-            side: BorderSide(color: context.appBorder),
+            borderRadius: SmoothBorderRadius(
+              cornerRadius: 8,
+              cornerSmoothing: 0.6,
+            ),
+            side: BorderSide.none,
           ),
         ),
         child: Row(

@@ -38,16 +38,13 @@ class SupabaseBookRepository {
       try {
         final gbRow = await _client
             .from('global_books')
-            .upsert(
-              {
-                'isbn13': book.isbn,
-                'title': book.title,
-                'author': book.author,
-                'cover_url': book.coverUrl,
-                'total_pages': book.totalPages,
-              },
-              onConflict: 'isbn13',
-            )
+            .upsert({
+              'isbn13': book.isbn,
+              'title': book.title,
+              'author': book.author,
+              'cover_url': book.coverUrl,
+              'total_pages': book.totalPages,
+            }, onConflict: 'isbn13')
             .select('id')
             .single();
         globalBookId = gbRow['id'] as String?;
@@ -56,29 +53,26 @@ class SupabaseBookRepository {
       }
     }
 
-    await _client.from('books').upsert(
-      {
-        'user_id': userId,
-        'book_id': book.id,
-        'title': book.title,
-        'author': book.author,
-        'isbn': book.isbn,
-        'cover_url': book.coverUrl,
-        'current_page': book.currentPage,
-        'total_pages': book.totalPages,
-        'status': switch (book.status) {
-          ReadingStatus.reading => 'reading',
-          ReadingStatus.completed => 'completed',
-          ReadingStatus.wantToRead => 'wantToRead',
-        },
-        'total_reading_hours': book.totalReadingHours,
-        'saved_sentences': book.savedSentences,
-        'global_book_id': globalBookId,
-        'completed_at': book.completedAt?.toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+    await _client.from('books').upsert({
+      'user_id': userId,
+      'book_id': book.id,
+      'title': book.title,
+      'author': book.author,
+      'isbn': book.isbn,
+      'cover_url': book.coverUrl,
+      'current_page': book.currentPage,
+      'total_pages': book.totalPages,
+      'status': switch (book.status) {
+        ReadingStatus.reading => 'reading',
+        ReadingStatus.completed => 'completed',
+        ReadingStatus.wantToRead => 'wantToRead',
       },
-      onConflict: 'user_id,book_id',
-    );
+      'total_reading_hours': book.totalReadingHours,
+      'saved_sentences': book.savedSentences,
+      'global_book_id': globalBookId,
+      'completed_at': book.completedAt?.toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    }, onConflict: 'user_id,book_id');
   }
 
   Future<void> deleteByBookId(String bookId) async {
@@ -106,8 +100,7 @@ class SupabaseBookRepository {
         'wantToRead' => ReadingStatus.wantToRead,
         _ => ReadingStatus.wantToRead,
       },
-      totalReadingHours:
-          (r['total_reading_hours'] as num?)?.toDouble() ?? 0,
+      totalReadingHours: (r['total_reading_hours'] as num?)?.toDouble() ?? 0,
       savedSentences: ((r['saved_sentences'] as List?) ?? const [])
           .map((s) => s.toString())
           .toList(),
@@ -118,7 +111,6 @@ class SupabaseBookRepository {
   }
 }
 
-final supabaseBookRepositoryProvider =
-    Provider<SupabaseBookRepository>((ref) {
+final supabaseBookRepositoryProvider = Provider<SupabaseBookRepository>((ref) {
   return SupabaseBookRepository(Supabase.instance.client);
 });

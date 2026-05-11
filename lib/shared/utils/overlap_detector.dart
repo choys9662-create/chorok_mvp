@@ -165,8 +165,10 @@ class OverlapDetector {
       if (indices.length < 2) continue;
 
       // 가장 긴 문장을 base로 선정
-      indices.sort((a, b) =>
-          sentences[b].content.length.compareTo(sentences[a].content.length));
+      indices.sort(
+        (a, b) =>
+            sentences[b].content.length.compareTo(sentences[a].content.length),
+      );
       final baseIdx = indices.first;
       final baseSentence = sentences[baseIdx];
 
@@ -177,15 +179,17 @@ class OverlapDetector {
       for (final idx in indices) {
         final s = sentences[idx];
         if (idx == baseIdx) {
-          members.add(OverlapMember(
-            sentenceId: s.id,
-            content: s.content,
-            username: s.username,
-            bookTitle: s.bookTitle,
-            coverUrl: s.coverUrl,
-            overlapRatio: 1.0,
-            highlights: [HighlightRange(0, s.content.length)],
-          ));
+          members.add(
+            OverlapMember(
+              sentenceId: s.id,
+              content: s.content,
+              username: s.username,
+              bookTitle: s.bookTitle,
+              coverUrl: s.coverUrl,
+              overlapRatio: 1.0,
+              highlights: [HighlightRange(0, s.content.length)],
+            ),
+          );
           continue;
         }
 
@@ -198,15 +202,17 @@ class OverlapDetector {
           }
 
           final hl = baseIdx < idx ? result.highlightsB : result.highlightsA;
-          members.add(OverlapMember(
-            sentenceId: s.id,
-            content: s.content,
-            username: s.username,
-            bookTitle: s.bookTitle,
-            coverUrl: s.coverUrl,
-            overlapRatio: result.ratio,
-            highlights: hl,
-          ));
+          members.add(
+            OverlapMember(
+              sentenceId: s.id,
+              content: s.content,
+              username: s.username,
+              bookTitle: s.bookTitle,
+              coverUrl: s.coverUrl,
+              overlapRatio: result.ratio,
+              highlights: hl,
+            ),
+          );
         }
       }
 
@@ -214,12 +220,14 @@ class OverlapDetector {
         commonPhrase = baseSentence.content;
       }
 
-      groups.add(OverlapGroup(
-        id: 'group_${entry.key}',
-        commonPhrase: commonPhrase,
-        baseMember: members.first,
-        members: members,
-      ));
+      groups.add(
+        OverlapGroup(
+          id: 'group_${entry.key}',
+          commonPhrase: commonPhrase,
+          baseMember: members.first,
+          members: members,
+        ),
+      );
     }
 
     return groups;
@@ -233,15 +241,20 @@ class OverlapDetector {
   static String normalize(String text) {
     return text
         .replaceAll(RegExp('[\u201C\u201D\u2018\u2019""\'\']+'), '') // 따옴표
-        .replaceAll(RegExp(r'[.,!?;:…—\-–()\[\]{}]'), '')           // 구두점
-        .replaceAll(RegExp(r'\s+'), '')                              // 공백
+        .replaceAll(RegExp(r'[.,!?;:…—\-–()\[\]{}]'), '') // 구두점
+        .replaceAll(RegExp(r'\s+'), '') // 공백
         .toLowerCase();
   }
 
   /// 의미 단위 토큰 분리
   static List<String> tokenize(String text) {
     return text
-        .replaceAll(RegExp('[\u201C\u201D\u2018\u2019""\'\'.,!?;:…\u2014\\-\\u2013()\\[\\]{}]'), ' ')
+        .replaceAll(
+          RegExp(
+            '[\u201C\u201D\u2018\u2019""\'\'.,!?;:…\u2014\\-\\u2013()\\[\\]{}]',
+          ),
+          ' ',
+        )
         .split(RegExp(r'\s+'))
         .where((t) => t.length > 1) // 1글자 조사/접속사 제외
         .map((t) => t.toLowerCase())
@@ -260,8 +273,9 @@ class OverlapDetector {
     if (tokensA.isEmpty || tokensB.isEmpty) return 0.0;
 
     final intersection = tokensA.intersection(tokensB);
-    final smaller =
-        tokensA.length <= tokensB.length ? tokensA.length : tokensB.length;
+    final smaller = tokensA.length <= tokensB.length
+        ? tokensA.length
+        : tokensB.length;
 
     return intersection.length / smaller;
   }
@@ -276,8 +290,9 @@ class OverlapDetector {
     if (a.isEmpty || b.isEmpty) return LcsResult.empty;
 
     // 공간 최적화: 짧은 쪽을 내부 루프로
-    final (s1, s2, swapped) =
-        a.length <= b.length ? (a, b, false) : (b, a, true);
+    final (s1, s2, swapped) = a.length <= b.length
+        ? (a, b, false)
+        : (b, a, true);
     final m = s1.length;
     final n = s2.length;
 
@@ -342,8 +357,12 @@ class OverlapDetector {
 
     for (int i = 0; i < original.length; i++) {
       final ch = original[i];
-      final normCh = ch
-          .replaceAll(RegExp('[\u201C\u201D\u2018\u2019""\'\'.,!?;:…\u2014\\-\u2013()\\[\\]{}\\s]'), '');
+      final normCh = ch.replaceAll(
+        RegExp(
+          '[\u201C\u201D\u2018\u2019""\'\'.,!?;:…\u2014\\-\u2013()\\[\\]{}\\s]',
+        ),
+        '',
+      );
       if (normCh.isNotEmpty) {
         buf.write(normCh.toLowerCase());
         origChars.add(i);

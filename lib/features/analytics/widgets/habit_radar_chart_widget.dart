@@ -36,8 +36,8 @@ class HabitRadarChartWidget extends StatelessWidget {
                 tickCount: 5,
                 ticksTextStyle: const TextStyle(color: Colors.transparent),
                 radarBorderData: const BorderSide(color: Colors.transparent),
-                gridBorderData: BorderSide(color: context.appBorder, width: 1),
-                tickBorderData: BorderSide(color: context.appBorder, width: 1),
+                gridBorderData: BorderSide.none,
+                tickBorderData: BorderSide.none,
                 titlePositionPercentageOffset: 0.15,
                 titleTextStyle: AppTheme.captionSmall.copyWith(
                   color: _kLabel,
@@ -108,12 +108,7 @@ class _LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(
-          label,
-          style: AppTheme.captionSmall.copyWith(
-            color: _kLabel,
-          ),
-        ),
+        Text(label, style: AppTheme.captionSmall.copyWith(color: _kLabel)),
       ],
     );
   }

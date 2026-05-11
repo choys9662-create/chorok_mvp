@@ -23,13 +23,6 @@ class HighlightPreview extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        width: 3,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.greenGradientVertical,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
                       const SizedBox(width: AppTheme.spaceMD),
                       Expanded(
                         child: Column(
@@ -47,7 +40,9 @@ class HighlightPreview extends StatelessWidget {
                             const SizedBox(height: AppTheme.spaceSM),
                             Text(
                               '— ${h.book}',
-                              style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+                              style: AppTheme.captionSmall.copyWith(
+                                color: context.appTextTertiary,
+                              ),
                             ),
                           ],
                         ),
@@ -56,8 +51,7 @@ class HighlightPreview extends StatelessWidget {
                   ),
                 ),
               ),
-              if (i < highlights.length - 1)
-                Divider(height: 1, color: context.appBorder, indent: 35),
+              if (i < highlights.length - 1) const SizedBox(height: 4),
             ],
           );
         }),
@@ -85,23 +79,6 @@ class SentenceReactionsCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 3,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: s.isTop
-                            ? AppTheme.greenGradientVertical
-                            : LinearGradient(
-                                colors: [
-                                  AppTheme.primary.withValues(alpha: 0.6),
-                                  AppTheme.primary.withValues(alpha: 0.3),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                     const SizedBox(width: AppTheme.spaceMD),
                     Expanded(
                       child: Column(
@@ -120,7 +97,8 @@ class SentenceReactionsCard extends StatelessWidget {
                           Text(
                             '— ${s.book}',
                             style: AppTheme.captionSmall.copyWith(
-                                color: context.appTextTertiary),
+                              color: context.appTextTertiary,
+                            ),
                           ),
                         ],
                       ),
@@ -132,7 +110,9 @@ class SentenceReactionsCard extends StatelessWidget {
                         if (s.isTop)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: AppTheme.smoothPill(
                               gradient: AppTheme.greenGradient,
                             ),
@@ -148,8 +128,11 @@ class SentenceReactionsCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.favorite_rounded,
-                                size: 12, color: context.appPrimaryAccent),
+                            Icon(
+                              Icons.favorite_rounded,
+                              size: 12,
+                              color: context.appPrimaryAccent,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               '${s.reactions}',
@@ -165,8 +148,7 @@ class SentenceReactionsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (i < sentences.length - 1)
-                Divider(height: 1, color: context.appBorder, indent: 19),
+              if (i < sentences.length - 1) const SizedBox(height: 4),
             ],
           );
         }),
@@ -200,11 +182,15 @@ class CommunityHighlightsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 32, height: 32,
+                      width: 32,
+                      height: 32,
                       decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 8,
+                            cornerSmoothing: 0.6,
+                          ),
                         ),
                       ),
                       child: Center(
@@ -237,11 +223,15 @@ class CommunityHighlightsCard extends StatelessWidget {
                               Text(
                                 '— ${h.book}',
                                 style: AppTheme.captionSmall.copyWith(
-                                    color: context.appTextTertiary),
+                                  color: context.appTextTertiary,
+                                ),
                               ),
                               const Spacer(),
-                              const Icon(Icons.favorite_rounded,
-                                  size: 11, color: AppTheme.accent),
+                              const Icon(
+                                Icons.favorite_rounded,
+                                size: 11,
+                                color: AppTheme.accent,
+                              ),
                               const SizedBox(width: 3),
                               Text(
                                 _formatReactions(h.reactions),
@@ -258,8 +248,7 @@ class CommunityHighlightsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (i < highlights.length - 1)
-                Divider(height: 1, color: context.appBorder, indent: 64),
+              if (i < highlights.length - 1) const SizedBox(height: 4),
             ],
           );
         }),

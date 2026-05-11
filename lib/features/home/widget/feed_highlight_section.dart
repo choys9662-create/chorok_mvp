@@ -25,6 +25,7 @@ class HighlightSentence {
     this.gradientIndex = 0,
   });
 }
+
 const kHighlightSentences = [
   HighlightSentence(
     content: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
@@ -128,6 +129,7 @@ class FeedHighlightSection extends StatelessWidget {
     );
   }
 }
+
 class HighlightCard extends StatelessWidget {
   final HighlightSentence sentence;
   const HighlightCard({super.key, required this.sentence});
@@ -147,7 +149,7 @@ class HighlightCard extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: BorderSide(color: context.appBorder),
+            side: BorderSide.none,
           ),
           child: IntrinsicHeight(
             child: Row(
@@ -178,11 +180,7 @@ class HighlightCard extends StatelessWidget {
                                     cornerRadius: 6,
                                     cornerSmoothing: 0.6,
                                   ),
-                                  side: BorderSide(
-                                    color: context.appPrimaryAccent.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                  ),
+                                  side: BorderSide.none,
                                 ),
                               ),
                               child: Row(

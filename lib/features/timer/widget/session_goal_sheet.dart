@@ -55,10 +55,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
     } else {
       final page = int.tryParse(_pageController.text);
       if (page == null || page <= widget.currentPage) return null;
-      return SessionGoal.pages(
-        target: page,
-        startPage: widget.currentPage,
-      );
+      return SessionGoal.pages(target: page, startPage: widget.currentPage);
     }
   }
 
@@ -220,10 +217,7 @@ class _GoalTypeSelector extends StatelessWidget {
   final bool isTimeGoal;
   final ValueChanged<bool> onChanged;
 
-  const _GoalTypeSelector({
-    required this.isTimeGoal,
-    required this.onChanged,
-  });
+  const _GoalTypeSelector({required this.isTimeGoal, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +303,6 @@ class _TimeGoalSection extends StatelessWidget {
     required this.onCustomTap,
   });
 
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -319,11 +312,13 @@ class _TimeGoalSection extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            ...presets.map((min) => _PresetChip(
-                  label: time_fmt.formatMinutes(min),
-                  isSelected: selectedMinutes == min && !customMode,
-                  onTap: () => onPresetTap(min),
-                )),
+            ...presets.map(
+              (min) => _PresetChip(
+                label: time_fmt.formatMinutes(min),
+                isSelected: selectedMinutes == min && !customMode,
+                onTap: () => onPresetTap(min),
+              ),
+            ),
             _PresetChip(
               label: '직접 입력',
               isSelected: customMode,
@@ -342,7 +337,7 @@ class _TimeGoalSection extends StatelessWidget {
                   decoration: AppTheme.smoothBox(
                     color: context.appCardElevated,
                     radius: AppTheme.radiusMD,
-                    side: BorderSide(color: context.appBorder),
+                    side: BorderSide.none,
                   ),
                   child: TextField(
                     controller: customController,
@@ -403,9 +398,7 @@ class _PresetChip extends StatelessWidget {
             color: isSelected
                 ? context.appAccentColor.withValues(alpha: 0.15)
                 : context.appCardElevated,
-            side: BorderSide(
-              color: isSelected ? AppTheme.accent : context.appBorder,
-            ),
+            side: BorderSide.none,
           ),
           child: Text(
             label,
@@ -438,10 +431,9 @@ class _PageGoalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final targetPage = int.tryParse(controller.text);
-    final remaining =
-        targetPage != null && targetPage > currentPage
-            ? targetPage - currentPage
-            : null;
+    final remaining = targetPage != null && targetPage > currentPage
+        ? targetPage - currentPage
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +457,7 @@ class _PageGoalSection extends StatelessWidget {
                 decoration: AppTheme.smoothBox(
                   color: context.appCardElevated,
                   radius: AppTheme.radiusMD,
-                  side: BorderSide(color: context.appBorder),
+                  side: BorderSide.none,
                 ),
                 child: TextField(
                   controller: controller,
@@ -476,7 +468,8 @@ class _PageGoalSection extends StatelessWidget {
                   ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: '목표 페이지 (예: ${(currentPage + 30).clamp(0, totalPages)})',
+                    hintText:
+                        '목표 페이지 (예: ${(currentPage + 30).clamp(0, totalPages)})',
                     hintStyle: AppTheme.bodyMedium.copyWith(
                       color: context.appTextTertiary,
                     ),

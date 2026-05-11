@@ -9,6 +9,7 @@ import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
 import 'home_helpers.dart';
 import 'package:figma_squircle/figma_squircle.dart';
+
 class WeeklyStatusCard extends ConsumerWidget {
   const WeeklyStatusCard({super.key});
 
@@ -201,8 +202,12 @@ class WeeklyStatusCard extends ConsumerWidget {
                   child: LinearProgressIndicator(
                     value: (todayMin / goalMin).clamp(0.0, 1.0),
                     minHeight: 8,
-                    backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation<Color>(context.appPrimaryAccent),
+                    backgroundColor: context.appPrimaryAccent.withValues(
+                      alpha: 0.15,
+                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      context.appPrimaryAccent,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),

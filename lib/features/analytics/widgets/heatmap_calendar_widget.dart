@@ -3,9 +3,9 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-const Color _kLv1   = Color(0xFF0F6E56);
-const Color _kLv2   = Color(0xFF1D9E75);
-const Color _kLv3   = Color(0xFF3BC49A);
+const Color _kLv1 = Color(0xFF0F6E56);
+const Color _kLv2 = Color(0xFF1D9E75);
+const Color _kLv3 = Color(0xFF3BC49A);
 const Color _kLabel = Color(0xFF7A8597);
 
 /// 월간 독서 캘린더 히트맵 — 이전/다음 달 이동 가능
@@ -32,13 +32,17 @@ class _HeatmapCalendarWidgetState extends State<HeatmapCalendarWidget> {
     _month = DateTime(DateTime.now().year, DateTime.now().month);
   }
 
-  void _prev() => setState(() => _month = DateTime(_month.year, _month.month - 1));
-  void _next() => setState(() => _month = DateTime(_month.year, _month.month + 1));
+  void _prev() =>
+      setState(() => _month = DateTime(_month.year, _month.month - 1));
+  void _next() =>
+      setState(() => _month = DateTime(_month.year, _month.month + 1));
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final emptyColor = isDark ? const Color(0xFF2A2D2A) : const Color(0xFFE2EDE9);
+    final emptyColor = isDark
+        ? const Color(0xFF2A2D2A)
+        : const Color(0xFFE2EDE9);
     final lv4Color = context.appPrimaryAccent;
 
     return ChorokCard(
@@ -71,7 +75,11 @@ class _MonthHeader extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onNext;
 
-  const _MonthHeader({required this.month, required this.onPrev, required this.onNext});
+  const _MonthHeader({
+    required this.month,
+    required this.onPrev,
+    required this.onNext,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -109,14 +117,21 @@ class _DayOfWeekRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: AppConstants.weekdaysMonFirst.map((d) => Expanded(
-        child: Center(
-          child: Text(
-            d,
-            style: AppTheme.captionSmall.copyWith(color: _kLabel, fontSize: 11),
-          ),
-        ),
-      )).toList(),
+      children: AppConstants.weekdaysMonFirst
+          .map(
+            (d) => Expanded(
+              child: Center(
+                child: Text(
+                  d,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: _kLabel,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -154,18 +169,21 @@ class _MonthGrid extends StatelessWidget {
     // 날짜 셀
     for (int d = 1; d <= daysInMonth; d++) {
       final date = DateTime(month.year, month.month, d);
-      final key  = DateTime(date.year, date.month, date.day);
+      final key = DateTime(date.year, date.month, date.day);
       final mins = data[key] ?? 0;
-      final isToday = date.year == today.year &&
+      final isToday =
+          date.year == today.year &&
           date.month == today.month &&
           date.day == today.day;
 
-      cells.add(_DayCell(
-        day: d,
-        color: _intensityColor(mins, emptyColor, lv4Color),
-        isToday: isToday,
-        minutes: mins,
-      ));
+      cells.add(
+        _DayCell(
+          day: d,
+          color: _intensityColor(mins, emptyColor, lv4Color),
+          isToday: isToday,
+          minutes: mins,
+        ),
+      );
     }
 
     return GridView.count(
@@ -179,10 +197,10 @@ class _MonthGrid extends StatelessWidget {
   }
 
   Color _intensityColor(int minutes, Color empty, Color lv4) {
-    if (minutes == 0)   return empty;
-    if (minutes < 30)   return _kLv1;
-    if (minutes < 60)   return _kLv2;
-    if (minutes < 120)  return _kLv3;
+    if (minutes == 0) return empty;
+    if (minutes < 30) return _kLv1;
+    if (minutes < 60) return _kLv2;
+    if (minutes < 120) return _kLv3;
     return lv4;
   }
 }
@@ -195,7 +213,12 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final int minutes; // added to determine emoji
 
-  const _DayCell({required this.day, required this.color, required this.isToday, required this.minutes});
+  const _DayCell({
+    required this.day,
+    required this.color,
+    required this.isToday,
+    required this.minutes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +235,9 @@ class _DayCell extends StatelessWidget {
           '$day',
           style: AppTheme.captionSmall.copyWith(
             fontSize: 11,
-            color: color == const Color(0xFF2A2D2A) || color == const Color(0xFFE2EDE9)
+            color:
+                color == const Color(0xFF2A2D2A) ||
+                    color == const Color(0xFFE2EDE9)
                 ? _kLabel
                 : Colors.white,
             fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
@@ -235,35 +260,40 @@ class _Legend extends StatelessWidget {
   Widget build(BuildContext context) {
     final levels = [
       (color: emptyColor, label: '없음'),
-      (color: _kLv1,      label: '~30분'),
-      (color: _kLv2,      label: '~1h'),
-      (color: _kLv3,      label: '~2h'),
-      (color: lv4Color,   label: '2h+'),
+      (color: _kLv1, label: '~30분'),
+      (color: _kLv2, label: '~1h'),
+      (color: _kLv3, label: '~2h'),
+      (color: lv4Color, label: '2h+'),
     ];
     return Row(
       children: [
         Text('독서량', style: AppTheme.captionSmall.copyWith(color: _kLabel)),
         const SizedBox(width: 8),
-        ...levels.map((l) => Padding(
-          padding: const EdgeInsets.only(right: 6),
-          child: Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: l.color,
-                  borderRadius: BorderRadius.circular(2),
+        ...levels.map(
+          (l) => Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: l.color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 3),
-              Text(
-                l.label,
-                style: AppTheme.captionSmall.copyWith(color: _kLabel, fontSize: 10),
-              ),
-            ],
+                const SizedBox(width: 3),
+                Text(
+                  l.label,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: _kLabel,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
           ),
-        )),
+        ),
       ],
     );
   }

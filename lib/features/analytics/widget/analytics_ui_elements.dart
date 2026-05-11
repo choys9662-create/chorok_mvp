@@ -6,7 +6,11 @@ class TabSelector extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
 
-  const TabSelector({super.key, required this.selected, required this.onChanged});
+  const TabSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
 
   static const double _trackHeight = 48;
 
@@ -18,7 +22,7 @@ class TabSelector extends StatelessWidget {
       child: Container(
         decoration: AppTheme.smoothPill(
           color: context.appCard,
-          side: BorderSide(color: context.appBorder),
+          side: BorderSide.none,
         ),
         padding: const EdgeInsets.all(4),
         child: Row(
@@ -45,8 +49,12 @@ class TabSelector extends StatelessWidget {
                       e.value,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? Colors.white : context.appTextTertiary,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: isSelected
+                            ? Colors.white
+                            : context.appTextTertiary,
                       ),
                     ),
                   ),

@@ -212,7 +212,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _nameCtrl,
                 hint: '2~10자',
                 error: _nameError,
-                isValid: _nameTouched && _nameCtrl.text.isNotEmpty && _isNameValid,
+                isValid:
+                    _nameTouched && _nameCtrl.text.isNotEmpty && _isNameValid,
                 onFocusLost: () => setState(() => _nameTouched = true),
               ),
               const SizedBox(height: 20),
@@ -225,7 +226,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 hint: 'example@email.com',
                 keyboardType: TextInputType.emailAddress,
                 error: _emailError,
-                isValid: _emailTouched && _emailCtrl.text.isNotEmpty && _isEmailValid,
+                isValid:
+                    _emailTouched &&
+                    _emailCtrl.text.isNotEmpty &&
+                    _isEmailValid,
                 onFocusLost: () => setState(() => _emailTouched = true),
               ),
               const SizedBox(height: 20),
@@ -267,7 +271,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 hint: '비밀번호를 다시 입력해주세요',
                 obscure: _obscureConfirm,
                 error: _pwConfirmError,
-                isValid: _pwConfirmTouched &&
+                isValid:
+                    _pwConfirmTouched &&
                     _pwConfirmCtrl.text.isNotEmpty &&
                     _isPwConfirmValid,
                 onFocusLost: () => setState(() => _pwConfirmTouched = true),
@@ -292,7 +297,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onAllAgree: _toggleAllAgree,
                 onTerms: (v) => setState(() => _agreeTerms = v ?? false),
                 onPrivacy: (v) => setState(() => _agreePrivacy = v ?? false),
-                onMarketing: (v) => setState(() => _agreeMarketing = v ?? false),
+                onMarketing: (v) =>
+                    setState(() => _agreeMarketing = v ?? false),
               ),
               const SizedBox(height: 28),
 
@@ -366,7 +372,11 @@ class _ValidatedFieldState extends State<_ValidatedField> {
       } else if (widget.isValid) {
         suffixWidget = const Padding(
           padding: EdgeInsets.only(right: 12),
-          child: Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20),
+          child: Icon(
+            Icons.check_circle_rounded,
+            color: Color(0xFF10B981),
+            size: 20,
+          ),
         );
       }
     }
@@ -374,9 +384,17 @@ class _ValidatedFieldState extends State<_ValidatedField> {
     if (widget.suffix != null && hasText) {
       Widget? statusIcon;
       if (widget.error != null) {
-        statusIcon = const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 18);
+        statusIcon = const Icon(
+          Icons.close_rounded,
+          color: Color(0xFFEF4444),
+          size: 18,
+        );
       } else if (widget.isValid) {
-        statusIcon = const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18);
+        statusIcon = const Icon(
+          Icons.check_circle_rounded,
+          color: Color(0xFF10B981),
+          size: 18,
+        );
       }
       if (statusIcon != null) {
         suffixWidget = Row(
@@ -389,8 +407,8 @@ class _ValidatedFieldState extends State<_ValidatedField> {
     final borderColor = widget.error != null
         ? const Color(0xFFEF4444).withValues(alpha: 0.6)
         : _focused
-            ? AppTheme.primaryLight.withValues(alpha: 0.5)
-            : AppTheme.darkBorder.withValues(alpha: 0.5);
+        ? AppTheme.primaryLight.withValues(alpha: 0.5)
+        : AppTheme.darkBorder.withValues(alpha: 0.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,31 +423,32 @@ class _ValidatedFieldState extends State<_ValidatedField> {
             obscureText: widget.obscure,
             keyboardType: widget.keyboardType,
             style: const TextStyle(
-fontSize: 15,
-              fontWeight: FontWeight.w400, color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: TextStyle(
-fontSize: 15,
-                color: AppTheme.textTertiary,
-              ),
+              hintStyle: TextStyle(fontSize: 15, color: AppTheme.textTertiary),
               suffixIcon: suffixWidget,
               suffixIconConstraints: const BoxConstraints(minHeight: 20),
               filled: true,
               fillColor: AppTheme.darkSurface,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: borderColor),
+                borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: borderColor),
+                borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: borderColor),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -438,10 +457,7 @@ fontSize: 15,
           const SizedBox(height: 6),
           Text(
             widget.error!,
-            style: const TextStyle(
-fontSize: 12,
-              color: Color(0xFFEF4444),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444)),
           ),
         ],
       ],
@@ -456,7 +472,9 @@ class _PasswordStrengthBar extends StatelessWidget {
   final Color color;
 
   const _PasswordStrengthBar({
-    required this.strength, required this.label, required this.color,
+    required this.strength,
+    required this.label,
+    required this.color,
   });
 
   @override
@@ -477,10 +495,14 @@ class _PasswordStrengthBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text(label, style: TextStyle(
-fontSize: 12,
-          fontWeight: FontWeight.w500, color: color,
-        )),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -492,10 +514,14 @@ class _TermsSection extends StatelessWidget {
   final ValueChanged<bool?> onAllAgree, onTerms, onPrivacy, onMarketing;
 
   const _TermsSection({
-    required this.allAgree, required this.agreeTerms,
-    required this.agreePrivacy, required this.agreeMarketing,
-    required this.onAllAgree, required this.onTerms,
-    required this.onPrivacy, required this.onMarketing,
+    required this.allAgree,
+    required this.agreeTerms,
+    required this.agreePrivacy,
+    required this.agreeMarketing,
+    required this.onAllAgree,
+    required this.onTerms,
+    required this.onPrivacy,
+    required this.onMarketing,
   });
 
   @override
@@ -505,17 +531,34 @@ class _TermsSection extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: AppTheme.darkSurface,
         radius: 12,
-        side: BorderSide(color: AppTheme.darkBorder.withValues(alpha: 0.5)),
+        side: BorderSide.none,
       ),
       child: Column(
         children: [
-          _TermRow(label: '전체 동의', checked: allAgree, onChanged: onAllAgree, bold: true),
-          Divider(color: AppTheme.darkBorder.withValues(alpha: 0.5), height: 20),
-          _TermRow(label: '[필수] 서비스 이용약관 동의', checked: agreeTerms, onChanged: onTerms),
+          _TermRow(
+            label: '전체 동의',
+            checked: allAgree,
+            onChanged: onAllAgree,
+            bold: true,
+          ),
+          const SizedBox(height: 12),
+          _TermRow(
+            label: '[필수] 서비스 이용약관 동의',
+            checked: agreeTerms,
+            onChanged: onTerms,
+          ),
           const SizedBox(height: 8),
-          _TermRow(label: '[필수] 개인정보 처리방침 동의', checked: agreePrivacy, onChanged: onPrivacy),
+          _TermRow(
+            label: '[필수] 개인정보 처리방침 동의',
+            checked: agreePrivacy,
+            onChanged: onPrivacy,
+          ),
           const SizedBox(height: 8),
-          _TermRow(label: '[선택] 마케팅 정보 수신 동의', checked: agreeMarketing, onChanged: onMarketing),
+          _TermRow(
+            label: '[선택] 마케팅 정보 수신 동의',
+            checked: agreeMarketing,
+            onChanged: onMarketing,
+          ),
         ],
       ),
     );
@@ -529,8 +572,10 @@ class _TermRow extends StatelessWidget {
   final bool bold;
 
   const _TermRow({
-    required this.label, required this.checked,
-    required this.onChanged, this.bold = false,
+    required this.label,
+    required this.checked,
+    required this.onChanged,
+    this.bold = false,
   });
 
   @override
@@ -542,14 +587,13 @@ class _TermRow extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 22, height: 22,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: checked ? AppTheme.primaryLight : Colors.transparent,
-              border: Border.all(
-                color: checked ? AppTheme.primaryLight : AppTheme.textTertiary,
-                width: 1.5,
-              ),
+              color: checked
+                  ? AppTheme.primaryLight
+                  : AppTheme.darkSurface,
             ),
             child: checked
                 ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
@@ -557,11 +601,14 @@ class _TermRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(label, style: TextStyle(
-              fontSize: bold ? 14 : 13,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-              color: bold ? Colors.white : AppTheme.textSecondary,
-            )),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: bold ? 14 : 13,
+                fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+                color: bold ? Colors.white : AppTheme.textSecondary,
+              ),
+            ),
           ),
         ],
       ),
@@ -577,8 +624,10 @@ class _SubmitButton extends StatelessWidget {
   final bool enabled;
 
   const _SubmitButton({
-    required this.label, required this.loading,
-    required this.onTap, this.enabled = true,
+    required this.label,
+    required this.loading,
+    required this.onTap,
+    this.enabled = true,
   });
 
   @override
@@ -593,24 +642,35 @@ class _SubmitButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           decoration: AppTheme.smoothBox(
             gradient: isDisabled
-                ? LinearGradient(colors: [
-                    AppTheme.primaryLight.withValues(alpha: 0.2),
-                    AppTheme.accent.withValues(alpha: 0.2),
-                  ])
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryLight.withValues(alpha: 0.2),
+                      AppTheme.accent.withValues(alpha: 0.2),
+                    ],
+                  )
                 : AppTheme.greenGradient,
             radius: 12,
           ),
           child: Center(
             child: loading
                 ? const SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : Text(label, style: TextStyle(
-fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDisabled ? Colors.white.withValues(alpha: 0.4) : Colors.white,
-                  )),
+                : Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDisabled
+                          ? Colors.white.withValues(alpha: 0.4)
+                          : Colors.white,
+                    ),
+                  ),
           ),
         ),
       ),

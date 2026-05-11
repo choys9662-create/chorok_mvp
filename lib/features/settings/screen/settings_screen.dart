@@ -11,7 +11,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/screen/auth_screen.dart';
 import '../../../shared/providers/theme_provider.dart';
 
-
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
 class _ReadingGoal {
   final int dailyMinutes;
@@ -24,12 +23,15 @@ class _ReadingGoal {
     this.yearlyBooks = 24,
   });
 
-  _ReadingGoal copyWith({int? dailyMinutes, int? weeklyDays, int? yearlyBooks}) =>
-      _ReadingGoal(
-        dailyMinutes: dailyMinutes ?? this.dailyMinutes,
-        weeklyDays: weeklyDays ?? this.weeklyDays,
-        yearlyBooks: yearlyBooks ?? this.yearlyBooks,
-      );
+  _ReadingGoal copyWith({
+    int? dailyMinutes,
+    int? weeklyDays,
+    int? yearlyBooks,
+  }) => _ReadingGoal(
+    dailyMinutes: dailyMinutes ?? this.dailyMinutes,
+    weeklyDays: weeklyDays ?? this.weeklyDays,
+    yearlyBooks: yearlyBooks ?? this.yearlyBooks,
+  );
 }
 
 class _GoalNotifier extends Notifier<_ReadingGoal> {
@@ -41,7 +43,9 @@ class _GoalNotifier extends Notifier<_ReadingGoal> {
   void setYearlyBooks(int v) => state = state.copyWith(yearlyBooks: v);
 }
 
-final _goalProvider = NotifierProvider<_GoalNotifier, _ReadingGoal>(_GoalNotifier.new);
+final _goalProvider = NotifierProvider<_GoalNotifier, _ReadingGoal>(
+  _GoalNotifier.new,
+);
 
 // ─── 알림 설정 상태 ────────────────────────────────────────────────────────
 class _NotifState {
@@ -55,12 +59,15 @@ class _NotifState {
     this.reminderTime = const TimeOfDay(hour: 21, minute: 0),
   });
 
-  _NotifState copyWith({bool? reminder, bool? streakAlert, TimeOfDay? reminderTime}) =>
-      _NotifState(
-        reminder: reminder ?? this.reminder,
-        streakAlert: streakAlert ?? this.streakAlert,
-        reminderTime: reminderTime ?? this.reminderTime,
-      );
+  _NotifState copyWith({
+    bool? reminder,
+    bool? streakAlert,
+    TimeOfDay? reminderTime,
+  }) => _NotifState(
+    reminder: reminder ?? this.reminder,
+    streakAlert: streakAlert ?? this.streakAlert,
+    reminderTime: reminderTime ?? this.reminderTime,
+  );
 }
 
 class _NotifNotifier extends Notifier<_NotifState> {
@@ -68,11 +75,14 @@ class _NotifNotifier extends Notifier<_NotifState> {
   _NotifState build() => const _NotifState();
 
   void toggleReminder() => state = state.copyWith(reminder: !state.reminder);
-  void toggleStreak() => state = state.copyWith(streakAlert: !state.streakAlert);
+  void toggleStreak() =>
+      state = state.copyWith(streakAlert: !state.streakAlert);
   void setTime(TimeOfDay t) => state = state.copyWith(reminderTime: t);
 }
 
-final _notifProvider = NotifierProvider<_NotifNotifier, _NotifState>(_NotifNotifier.new);
+final _notifProvider = NotifierProvider<_NotifNotifier, _NotifState>(
+  _NotifNotifier.new,
+);
 
 // ─── 메인 화면 ─────────────────────────────────────────────────────────────
 class SettingsScreen extends ConsumerWidget {
@@ -88,7 +98,11 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: context.appBg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: context.appTextPrimary),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: context.appTextPrimary,
+          ),
           onPressed: () {
             HapticFeedback.selectionClick();
             context.pop();
@@ -96,9 +110,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
         title: Text(
           '설정',
-          style: AppTheme.headingSmall.copyWith(
-            color: context.appTextPrimary,
-          ),
+          style: AppTheme.headingSmall.copyWith(color: context.appTextPrimary),
         ),
         centerTitle: true,
       ),
@@ -111,9 +123,7 @@ class SettingsScreen extends ConsumerWidget {
           // ─── 테마 ───────────────────────────────────────────────────
           _SectionLabel('화면'),
           _SettingsCard(
-            children: [
-              _ThemeTile(themeMode: themeMode, ref: ref),
-            ],
+            children: [_ThemeTile(themeMode: themeMode, ref: ref)],
           ),
           const SizedBox(height: AppTheme.space2XL),
 
@@ -140,7 +150,7 @@ class SettingsScreen extends ConsumerWidget {
                 },
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20),
               ),
-              _Divider(),
+
               _InfoTile(
                 icon: Icons.info_outline_rounded,
                 label: '버전 정보',
@@ -151,21 +161,21 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              _Divider(),
+
               _InfoTile(
                 icon: Icons.privacy_tip_outlined,
                 label: '개인정보처리방침',
                 onTap: () => HapticFeedback.selectionClick(),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20),
               ),
-              _Divider(),
+
               _InfoTile(
                 icon: Icons.description_outlined,
                 label: '서비스 이용약관',
                 onTap: () => HapticFeedback.selectionClick(),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20),
               ),
-              _Divider(),
+
               _InfoTile(
                 icon: Icons.mail_outline_rounded,
                 label: '문의하기',
@@ -236,7 +246,11 @@ class _ThemeTile extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           child: Row(
             children: [
-              Icon(Icons.palette_outlined, size: 18, color: context.appPrimaryAccent),
+              Icon(
+                Icons.palette_outlined,
+                size: 18,
+                color: context.appPrimaryAccent,
+              ),
               const SizedBox(width: 10),
               Text(
                 '테마',
@@ -319,7 +333,7 @@ class _ThemeChip extends StatelessWidget {
               : AppTheme.smoothBox(
                   color: context.appCardElevated,
                   radius: AppTheme.radiusMD,
-                  side: BorderSide(color: context.appBorder),
+                  side: BorderSide.none,
                 ),
           child: Column(
             children: [
@@ -360,9 +374,10 @@ class _GoalSection extends ConsumerWidget {
           min: 10,
           max: 120,
           divisions: 11,
-          onChanged: (v) => ref.read(_goalProvider.notifier).setDailyMinutes(v.round()),
+          onChanged: (v) =>
+              ref.read(_goalProvider.notifier).setDailyMinutes(v.round()),
         ),
-        _Divider(),
+
         _SliderTile(
           icon: Icons.calendar_today_outlined,
           label: '주간 목표',
@@ -371,9 +386,10 @@ class _GoalSection extends ConsumerWidget {
           min: 1,
           max: 7,
           divisions: 6,
-          onChanged: (v) => ref.read(_goalProvider.notifier).setWeeklyDays(v.round()),
+          onChanged: (v) =>
+              ref.read(_goalProvider.notifier).setWeeklyDays(v.round()),
         ),
-        _Divider(),
+
         _SliderTile(
           icon: Icons.menu_book_outlined,
           label: '연간 목표',
@@ -382,7 +398,8 @@ class _GoalSection extends ConsumerWidget {
           min: 1,
           max: 100,
           divisions: 99,
-          onChanged: (v) => ref.read(_goalProvider.notifier).setYearlyBooks(v.round()),
+          onChanged: (v) =>
+              ref.read(_goalProvider.notifier).setYearlyBooks(v.round()),
         ),
       ],
     );
@@ -503,7 +520,7 @@ class _NotifSection extends ConsumerWidget {
                 }
               : null,
         ),
-        _Divider(),
+
         _ToggleTile(
           icon: Icons.local_fire_department_outlined,
           label: '스트릭 경고',
@@ -610,7 +627,7 @@ class _SettingsCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorder),
+        side: BorderSide.none,
       ),
       child: Column(children: children),
     );
@@ -635,7 +652,7 @@ void _showLogoutConfirm(BuildContext context) {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(ctx).dividerColor,
+                color: context.appBorder,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -746,14 +763,3 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      indent: 44,
-      color: context.appDivider,
-    );
-  }
-}

@@ -40,13 +40,15 @@ Future<void> main() async {
 
   if (kIsWeb) {
     _initDeepLinks();
-    runApp(ProviderScope(
-      overrides: [
-        initialLocationProvider.overrideWithValue(initialLocation),
-        initialThemeModeProvider.overrideWithValue(savedThemeMode),
-      ],
-      child: const ChorokApp(),
-    ));
+    runApp(
+      ProviderScope(
+        overrides: [
+          initialLocationProvider.overrideWithValue(initialLocation),
+          initialThemeModeProvider.overrideWithValue(savedThemeMode),
+        ],
+        child: const ChorokApp(),
+      ),
+    );
     return;
   }
 
@@ -55,14 +57,16 @@ Future<void> main() async {
 
   _initDeepLinks();
 
-  runApp(ProviderScope(
-    overrides: [
-      dbProvider.overrideWithValue(db),
-      initialLocationProvider.overrideWithValue(initialLocation),
-      initialThemeModeProvider.overrideWithValue(savedThemeMode),
-    ],
-    child: const ChorokApp(),
-  ));
+  runApp(
+    ProviderScope(
+      overrides: [
+        dbProvider.overrideWithValue(db),
+        initialLocationProvider.overrideWithValue(initialLocation),
+        initialThemeModeProvider.overrideWithValue(savedThemeMode),
+      ],
+      child: const ChorokApp(),
+    ),
+  );
 }
 
 void _initDeepLinks() {

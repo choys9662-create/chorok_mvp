@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/repositories/book_repository.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'home_helpers.dart';
+
 class StreakBanner extends ConsumerWidget {
   const StreakBanner({super.key});
 
@@ -34,11 +35,7 @@ class StreakBanner extends ConsumerWidget {
                   cornerRadius: AppTheme.radiusMD * 1.8,
                   cornerSmoothing: 0.6,
                 ),
-                side: BorderSide(
-                  color: hasReadToday
-                      ? AppTheme.warningColor.withValues(alpha: 0.3)
-                      : context.appBorder,
-                ),
+                side: BorderSide.none,
               ),
             ),
             child: Row(
