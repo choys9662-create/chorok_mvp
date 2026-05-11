@@ -17,14 +17,26 @@ String localizeAuthError(String msg) {
 
 /// 인증 화면 전용 에러 스낵바 — 다크 테마 고정 (인증 화면이 다크-only)
 void showAuthError(BuildContext context, String rawMessage) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        localizeAuthError(rawMessage),
-        style: const TextStyle(fontFamily: 'Pretendard'),
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          localizeAuthError(rawMessage),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        backgroundColor: const Color(0xFFB00020),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(seconds: 4),
       ),
-      backgroundColor: const Color(0xFF1A0A0A),
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
+    );
 }
