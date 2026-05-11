@@ -21,8 +21,13 @@ const _kBg = Color(0xFF121212); // AppTheme.darkBg
 const _kBorder = Color(0xFF2C2C2C); // AppTheme.darkBorder
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
+// serverClientId: Supabase/웹에서 검증에 사용하는 Web OAuth client ID
+// clientId: iOS 네이티브 sign-in에 사용하는 iOS OAuth client ID
+//   → Info.plist REVERSED_CLIENT_ID의 역순이 clientId
+//     예) com.googleusercontent.apps.XXXX-YYY → XXXX-YYY.apps.googleusercontent.com
 final _googleSignIn = GoogleSignIn(
   serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
+  clientId: dotenv.env['GOOGLE_IOS_CLIENT_ID'],
   scopes: ['email', 'profile'],
 );
 
@@ -93,7 +98,8 @@ class _AuthScreenState extends State<AuthScreen> {
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError('Google 로그인 중 오류가 발생했어요.');
+      debugPrint('[Google로그인 오류] $e');
+      _showError('Google 로그인 실패\n${e.toString()}');
     } finally {
       if (!kIsWeb) _setLoading(false);
     }
