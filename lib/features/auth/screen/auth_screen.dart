@@ -358,6 +358,7 @@ class _SocialButton extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
@@ -535,6 +536,7 @@ class _SubmitButton extends StatelessWidget {
         height: 52,
         child: GestureDetector(
           onTap: isDisabled ? null : onTap,
+          behavior: HitTestBehavior.opaque,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,

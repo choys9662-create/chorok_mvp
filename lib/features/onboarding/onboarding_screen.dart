@@ -480,6 +480,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
         widget.onTap();
       },
       onTapCancel: () => _ctrl.reverse(),
+      behavior: HitTestBehavior.opaque,
       child: AnimatedBuilder(
         animation: _scale,
         builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
