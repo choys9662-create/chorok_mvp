@@ -38,8 +38,30 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // 앱이 백그라운드 → 포어그라운드로 복귀할 때 _loading 리셋
+  // (Google 브라우저 인증 후 돌아올 때 버튼이 비활성화되는 문제 방지)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _loading) {
+      // 처리 완료를 위해 잠시 대기 후 초기화
+      Future.delayed(const Duration(seconds: 2), () => _setLoading(false));
+    }
+  }
 
   void _setLoading(bool v) {
     if (mounted) setState(() => _loading = v);
