@@ -74,6 +74,7 @@ class SupabaseBookRepository {
         'total_reading_hours': book.totalReadingHours,
         'saved_sentences': book.savedSentences,
         'global_book_id': globalBookId,
+        'completed_at': book.completedAt?.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       },
       onConflict: 'user_id,book_id',
@@ -110,6 +111,9 @@ class SupabaseBookRepository {
       savedSentences: ((r['saved_sentences'] as List?) ?? const [])
           .map((s) => s.toString())
           .toList(),
+      completedAt: r['completed_at'] != null
+          ? DateTime.tryParse(r['completed_at'] as String)
+          : null,
     );
   }
 }

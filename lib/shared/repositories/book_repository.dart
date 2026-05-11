@@ -178,7 +178,7 @@ class BookRepository {
 
     final existing = await getBook(bookId);
     if (existing != null) {
-      // 존재하면 title/author/meta만 업데이트, 진행 상황은 유지
+      // 존재하면 전체 정보를 업데이트
       await _db.update(
         'books',
         {
@@ -186,7 +186,9 @@ class BookRepository {
           'author': author,
           'isbn': isbn,
           'cover_url': coverUrl,
+          'current_page': currentPage,
           'total_pages': totalPages,
+          'status': status.name,
           'updated_at': now.toIso8601String(),
         },
         where: 'book_id = ?',

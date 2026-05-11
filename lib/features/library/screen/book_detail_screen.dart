@@ -69,28 +69,37 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       // 다시 읽기 상태로 변경 (페이지 0으로 리셋)
       ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, 0);
     } else {
-      // 완독 처리 (페이지 끝까지)
-      ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, book.totalPages);
-      _showCompletionDialog(book.title);
+      // 완독 처리
+      setState(() {
+        _currentPage = book.totalPages;
+        _pageController.text = '$_currentPage';
+      });
+      ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
+      _showCompletionDialog(book);
     }
   }
 
-  void _showCompletionDialog(String title) {
+  void _showCompletionDialog(Book book) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: context.appSurface,
         title: const Text('완독을 축하합니다! 🎉'),
-        content: Text('\'$title\' 책을 끝까지 읽으셨네요.\n완독 회고를 작성하러 가볼까요?'),
+        content: Text('\'${book.title}\' 책을 끝까지 읽으셨네요.\n완독 회고를 작성하러 가볼까요?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('나중에'),
+            child: Text('나중에', style: TextStyle(color: context.appTextTertiary)),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // TODO: 회고 화면 연결
+              context.push(AppConstants.routeReflection, extra: book);
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: context.appPrimaryAccent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('회고 작성'),
           ),
         ],

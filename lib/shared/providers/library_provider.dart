@@ -72,28 +72,67 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   void updateCurrentPage(String bookId, int newPage) {
+    debugPrint('LibraryProvider: updateCurrentPage($bookId, $newPage)');
     final idx = state.indexWhere((b) => b.id == bookId);
-    if (idx < 0) return;
+    if (idx < 0) {
+      debugPrint('LibraryProvider: Book NOT FOUND for id: $bookId');
+      return;
+    }
     final old = state[idx];
     final clamped = old.totalPages > 0 ? newPage.clamp(0, old.totalPages) : newPage;
-    final updated = Book(
-      id: old.id,
-      title: old.title,
-      author: old.author,
-      isbn: old.isbn,
-      coverUrl: old.coverUrl,
+    
+    // 상태 결정 로직: 
+    // 1. 페이지가 끝까지 도달하면 completed
+    // 2. 페이지가 0보다 크고 끝보다 작으면 reading
+    // 3. 페이지가 0이면 기존 상태 유지 (혹은 독서 시작 전으로 간주할지 고민 필요)
+    ReadingStatus newStatus = old.status;
+    if (old.totalPages > 0) {
+      if (clamped >= old.totalPages) {
+        newStatus = ReadingStatus.completed;
+      } else if (clamped > 0) {
+        newStatus = ReadingStatus.reading;
+      }
+    }
+
+    final updated = old.copyWith(
       currentPage: clamped,
-      totalPages: old.totalPages,
-      status: clamped >= old.totalPages && old.totalPages > 0
-          ? ReadingStatus.completed
-          : old.status,
-      totalReadingHours: old.totalReadingHours,
-      savedSentences: old.savedSentences,
-      completedAt: (clamped >= old.totalPages && old.totalPages > 0 && old.status != ReadingStatus.completed) 
-          ? DateTime.now() 
-          : old.completedAt,
+      status: newStatus,
+      completedAt: (newStatus == ReadingStatus.completed && old.status != ReadingStatus.completed)
+          ? DateTime.now()
+          : (newStatus != ReadingStatus.completed ? null : old.completedAt),
     );
+
+    debugPrint('LibraryProvider: Updated status to ${updated.status}');
     state = [...state]..[idx] = updated;
+
+    if (kUseMock) return;
+    if (kIsWeb) {
+      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    } else {
+      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+    }
+  }
+
+  /// 명시적으로 완독 처리
+  void markAsCompleted(String bookId) {
+    debugPrint('LibraryProvider: markAsCompleted($bookId)');
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+    
+    final old = state[idx];
+    if (old.totalPages <= 0) {
+      debugPrint('LibraryProvider: Cannot complete book with 0 total pages');
+      return;
+    }
+
+    final updated = old.copyWith(
+      currentPage: old.totalPages,
+      status: ReadingStatus.completed,
+      completedAt: DateTime.now(),
+    );
+    
+    state = [...state]..[idx] = updated;
+
     if (kUseMock) return;
     if (kIsWeb) {
       ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
