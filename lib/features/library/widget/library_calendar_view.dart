@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +7,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 
+import '../../../shared/widgets/book_cover.dart';
+
 // ─── 독서 기록 타입 ───────────────────────────────────────────────────────
 typedef ReadingLog = ({
   DateTime date,
@@ -15,6 +16,8 @@ typedef ReadingLog = ({
   String bookAuthor,
   int minutes,
   int pages,
+  String? coverUrl,
+  int gradientIndex,
 });
 
 
@@ -22,24 +25,26 @@ typedef ReadingLog = ({
 List<ReadingLog> get mockReadingLogs {
   if (!kUseMock) return const [];
   final now = DateTime.now();
+  const c1 = 'https://picsum.photos/seed/chorok1/300/400';
+  const c2 = 'https://picsum.photos/seed/chorok2/300/400';
   return [
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18),
-    (date: DateTime(now.year, now.month, now.day), bookTitle: '파친코', bookAuthor: '이민진', minutes: 25, pages: 12),
-    (date: now.subtract(const Duration(days: 1)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 55, pages: 24),
-    (date: now.subtract(const Duration(days: 2)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 38, pages: 16),
-    (date: now.subtract(const Duration(days: 3)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 20, pages: 8),
-    (date: now.subtract(const Duration(days: 5)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 65, pages: 30),
-    (date: now.subtract(const Duration(days: 6)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 30, pages: 14),
-    (date: now.subtract(const Duration(days: 8)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 48, pages: 22),
-    (date: now.subtract(const Duration(days: 10)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 35, pages: 15),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 52, pages: 25),
-    (date: now.subtract(const Duration(days: 12)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 18, pages: 7),
-    (date: now.subtract(const Duration(days: 14)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 40, pages: 19),
-    (date: now.subtract(const Duration(days: 15)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 28, pages: 13),
-    (date: now.subtract(const Duration(days: 18)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 60, pages: 28),
-    (date: now.subtract(const Duration(days: 20)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 33, pages: 16),
-    (date: now.subtract(const Duration(days: 22)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 45, pages: 20),
-    (date: now.subtract(const Duration(days: 25)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 50, pages: 24),
+    (date: DateTime(now.year, now.month, now.day), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 42, pages: 18, coverUrl: c1, gradientIndex: 0),
+    (date: DateTime(now.year, now.month, now.day), bookTitle: '파친코', bookAuthor: '이민진', minutes: 25, pages: 12, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 1)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 55, pages: 24, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 2)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 38, pages: 16, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 3)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 20, pages: 8, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 5)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 65, pages: 30, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 6)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 30, pages: 14, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 8)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 48, pages: 22, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 10)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 35, pages: 15, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 12)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 52, pages: 25, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 12)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 18, pages: 7, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 14)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 40, pages: 19, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 15)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 28, pages: 13, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 18)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 60, pages: 28, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 20)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 33, pages: 16, coverUrl: c2, gradientIndex: 1),
+    (date: now.subtract(const Duration(days: 22)), bookTitle: '채식주의자', bookAuthor: '한강', minutes: 45, pages: 20, coverUrl: c1, gradientIndex: 0),
+    (date: now.subtract(const Duration(days: 25)), bookTitle: '파친코', bookAuthor: '이민진', minutes: 50, pages: 24, coverUrl: c2, gradientIndex: 1),
   ];
 }
 
@@ -476,14 +481,12 @@ class _ReadingLogCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
+          BookCover(
+            coverUrl: log.coverUrl,
+            gradientIndex: log.gradientIndex,
             width: 44,
             height: 44,
-            decoration: AppTheme.smoothBox(
-              color: AppTheme.primary.withValues(alpha: 0.2),
-              radius: 10,
-            ),
-            child: Icon(Icons.menu_book_rounded, size: 20, color: context.appPrimaryAccent),
+            radius: 10,
           ),
           const SizedBox(width: 12),
           Expanded(

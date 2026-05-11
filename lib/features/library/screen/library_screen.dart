@@ -21,7 +21,8 @@ import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
 import '../widget/library_calendar_view.dart';
 import '../widget/library_stats_view.dart';
-import '../widget/book_detail_sheet.dart';
+import '../../../shared/widgets/book_cover.dart';
+import '../../home/screen/book_detail_screen.dart';
 import '../widget/today_goal_banner.dart';
 
 
@@ -745,32 +746,7 @@ class _MonthlyAchievementCard extends StatelessWidget {
 
 
 
-// ─── 커버 플레이스홀더 ────────────────────────────────────────────────────
-class _CoverPlaceholder extends StatelessWidget {
-  final String bookId;
-  const _CoverPlaceholder({required this.bookId});
 
-  @override
-  Widget build(BuildContext context) {
-    final gradColors = AppTheme.coverGradientFor(bookId);
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradColors,
-        ),
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.menu_book_rounded,
-          size: 40,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 도서 카드 ────────────────────────────────────────────────────────────
 class _BookCard extends StatelessWidget {
@@ -809,18 +785,13 @@ class _BookCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     // ── 배경 (커버 or 그라디언트 플레이스홀더) ─────
-                    if (book.coverUrl != null && book.coverUrl!.isNotEmpty)
-                      Image.network(
-                        book.coverUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            _CoverPlaceholder(bookId: book.id),
-                        loadingBuilder: (_, child, progress) => progress == null
-                            ? child
-                            : _CoverPlaceholder(bookId: book.id),
-                      )
-                    else
-                      _CoverPlaceholder(bookId: book.id),
+                    BookCover(
+                      coverUrl: book.coverUrl,
+                      gradientIndex: book.title.hashCode.abs() % AppTheme.coverGradients.length,
+                      width: double.infinity,
+                      height: double.infinity,
+                      radius: 0,
+                    ),
                     // ── 완독 배지 ──────────────────────────────────
                     if (isCompleted)
                       Positioned(
@@ -1108,24 +1079,12 @@ class _BookListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 커버 썸네일
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 52,
-                  height: 72,
-                  child: book.coverUrl != null && book.coverUrl!.isNotEmpty
-                      ? Image.network(
-                          book.coverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              _CoverPlaceholder(bookId: book.id),
-                          loadingBuilder: (_, child, progress) =>
-                              progress == null
-                              ? child
-                              : _CoverPlaceholder(bookId: book.id),
-                        )
-                      : _CoverPlaceholder(bookId: book.id),
-                ),
+              BookCover(
+                coverUrl: book.coverUrl,
+                gradientIndex: book.title.hashCode.abs() % AppTheme.coverGradients.length,
+                width: 52,
+                height: 72,
+                radius: 8,
               ),
               const SizedBox(width: 12),
               // 정보

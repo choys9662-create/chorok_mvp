@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import 'package:figma_squircle/figma_squircle.dart';
+import '../../../shared/widgets/book_cover.dart';
+
 typedef RecommendedBook = ({
   String title,
   String author,
   String reason,
   int gradientIndex,
   double matchScore,
+  String coverUrl,
 });
 
 const List<RecommendedBook> kRecommendedBooks = [
@@ -17,6 +20,7 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '"채식주의자"에서 수집한 문장과 비슷한 감성',
     gradientIndex: 3,
     matchScore: 0.94,
+    coverUrl: 'https://picsum.photos/seed/chorok6/300/400',
   ),
   (
     title: '아몬드',
@@ -24,6 +28,7 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '감정과 공감에 대한 문장을 자주 기록하셨어요',
     gradientIndex: 4,
     matchScore: 0.89,
+    coverUrl: 'https://picsum.photos/seed/chorok5/300/400',
   ),
   (
     title: '작별하지 않는다',
@@ -31,6 +36,7 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '"파친코"에서 저장한 가족 서사와 닮은 이야기',
     gradientIndex: 5,
     matchScore: 0.86,
+    coverUrl: 'https://picsum.photos/seed/chorok9/300/400',
   ),
   (
     title: '불편한 편의점',
@@ -38,6 +44,7 @@ const List<RecommendedBook> kRecommendedBooks = [
     reason: '따뜻한 일상 문장을 좋아하시는 취향에 맞춰',
     gradientIndex: 6,
     matchScore: 0.82,
+    coverUrl: 'https://picsum.photos/seed/chorok7/300/400',
   ),
 ];
 
@@ -197,54 +204,45 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
           child: Row(
             children: [
               // 표지 썸네일
-              Container(
+              BookCover(
+                coverUrl: b.coverUrl,
+                gradientIndex: b.gradientIndex,
                 width: 88,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradColors,
+                radius: 0,
+                fallbackIcon: Positioned(
+                  right: -8,
+                  bottom: -8,
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 48,
+                    color: context.primaryBg(0.08),
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -8,
-                      bottom: -8,
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 48,
-                        color: context.primaryBg(0.08),
-                      ),
+                child: Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
                     ),
-                    // 매칭 점수
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: context.appSurface.withValues(alpha: 0.8),
-                          shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 6,
-                              cornerSmoothing: 0.6,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          '${(b.matchScore * 100).round()}%',
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    decoration: ShapeDecoration(
+                      color: context.appSurface.withValues(alpha: 0.8),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(
+                          cornerRadius: 6,
+                          cornerSmoothing: 0.6,
                         ),
                       ),
                     ),
-                  ],
+                    child: Text(
+                      '${(b.matchScore * 100).round()}%',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               // 책 정보
