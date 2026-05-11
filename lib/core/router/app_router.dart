@@ -17,7 +17,7 @@ import '../../features/feed/screen/feed_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/screen/search_screen.dart';
 import '../../shared/models/session_goal.dart';
-import '../../features/home/screen/book_detail_screen.dart';
+import '../../features/library/screen/book_detail_screen.dart';
 import '../../features/home/screen/home_screen.dart';
 import '../../features/home/screen/notification_screen.dart';
 import '../../features/home/screen/reading_session_screen.dart';
@@ -126,8 +126,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeBookDetail,
         builder: (context, state) {
-          final data = state.extra as BookDetailExtra;
-          return BookDetailScreen(book: data);
+          final bookId = state.extra as String;
+          return BookDetailScreen(bookId: bookId);
         },
       ),
 

@@ -311,6 +311,89 @@ class BookRepository {
     return const ProgressResult(justCompleted: false, book: null);
   }
 
+  /// 세션 없이 읽은 독서 기록을 수동으로 추가한다.
+  ///
+  /// - [startPage] / [endPage] 기준으로 pages_read 계산
+  /// - [endPage]가 currentPage보다 크면 책의 currentPage와 status 갱신
+  /// - [sessionDate]를 started_at으로 사용하여 캘린더/히트맵에 정확히 반영
+  Future<ProgressResult> addManualSession({
+    required String bookId,
+    required int startPage,
+    required int endPage,
+    required int durationSeconds,
+    required DateTime sessionDate,
+  }) async {
+    final existing = await getBook(bookId);
+    bool justCompleted = false;
+    IsarBook? updatedBook;
+
+    final pagesRead = (endPage - startPage).clamp(0, 999999);
+
+    if (existing != null) {
+      final wasCompleted = existing.status == IsarReadingStatus.completed;
+      IsarReadingStatus newStatus = existing.status;
+
+      // 종료 페이지가 현재 기록보다 앞서면 currentPage는 그대로
+      final newCurrentPage = endPage > existing.currentPage
+          ? endPage
+          : existing.currentPage;
+
+      if (!wasCompleted &&
+          existing.totalPages > 0 &&
+          newCurrentPage >= existing.totalPages) {
+        newStatus = IsarReadingStatus.completed;
+        justCompleted = true;
+      }
+
+      final completedAt =
+          justCompleted ? DateTime.now() : existing.completedAt;
+
+      if (endPage > existing.currentPage) {
+        await _db.update(
+          'books',
+          {
+            'current_page': newCurrentPage,
+            'status': newStatus.name,
+            if (justCompleted)
+              'completed_at': completedAt!.toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          },
+          where: 'book_id = ?',
+          whereArgs: [bookId],
+        );
+      }
+
+      updatedBook = existing.copyWith(
+        currentPage: newCurrentPage,
+        status: newStatus,
+        completedAt: completedAt,
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    // 세션 레코드 저장 — sessionDate를 started_at으로 사용
+    final sessionId =
+        'manual_${sessionDate.millisecondsSinceEpoch}_$bookId';
+    final session = IsarReadingSession(
+      sessionId: sessionId,
+      bookId: bookId,
+      startedAt: sessionDate,
+      endedAt: sessionDate.add(Duration(seconds: durationSeconds)),
+      durationSeconds: durationSeconds,
+      pagesRead: pagesRead,
+      choseoCount: 0,
+      exitCount: 0,
+      exitDurationSeconds: 0,
+    );
+    await _db.insert(
+      'reading_sessions',
+      session.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    return ProgressResult(justCompleted: justCompleted, book: updatedBook);
+  }
+
   // ── 조회 ──────────────────────────────────────────────────────────────────
 
   Future<IsarBook?> getBook(String bookId) async {

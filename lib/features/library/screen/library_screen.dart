@@ -764,7 +764,7 @@ class _BookCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        showBookDetail(context, book);
+        context.push(AppConstants.routeBookDetail, extra: book.id);
       },
       child: Container(
         decoration: AppTheme.smoothBox(
@@ -1071,7 +1071,7 @@ class _BookListTile extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
-          showBookDetail(context, book);
+          context.push(AppConstants.routeBookDetail, extra: book.id);
         },
         child: Container(
           padding: const EdgeInsets.all(12),

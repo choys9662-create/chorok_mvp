@@ -93,6 +93,9 @@ class WishlistBookCardState extends State<WishlistBookCard> {
     const daysText = '위시리스트';
 
     return GestureDetector(
+      onTap: () {
+        context.push(AppConstants.routeBookDetail, extra: b.id);
+      },
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);

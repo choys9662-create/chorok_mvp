@@ -249,20 +249,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
 
     return GestureDetector(
       onTap: () {
-        context.push(
-          AppConstants.routeBookDetail,
-          extra: BookDetailExtra(
-            bookId: b.id,
-            title: b.title,
-            author: b.author,
-            currentPage: b.currentPage,
-            totalPages: b.totalPages,
-            lastRead: '최근 읽음',
-            coverUrl: b.coverUrl,
-            gradientIndex: b.title.hashCode.abs() % AppTheme.coverGradients.length,
-            savedSentences: b.savedSentences,
-          ),
-        );
+        context.push(AppConstants.routeBookDetail, extra: b.id);
       },
       onTapDown: (_) {
         HapticFeedback.selectionClick();

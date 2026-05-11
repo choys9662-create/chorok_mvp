@@ -79,6 +79,34 @@ class Book {
 
   double get readingProgress =>
       totalPages > 0 ? currentPage / totalPages : 0.0;
+
+  Book copyWith({
+    String? id,
+    String? title,
+    String? author,
+    String? coverUrl,
+    String? isbn,
+    ReadingStatus? status,
+    int? totalPages,
+    int? currentPage,
+    double? totalReadingHours,
+    List<String>? savedSentences,
+    DateTime? completedAt,
+  }) {
+    return Book(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      coverUrl: coverUrl ?? this.coverUrl,
+      isbn: isbn ?? this.isbn,
+      status: status ?? this.status,
+      totalPages: totalPages ?? this.totalPages,
+      currentPage: currentPage ?? this.currentPage,
+      totalReadingHours: totalReadingHours ?? this.totalReadingHours,
+      savedSentences: savedSentences ?? this.savedSentences,
+      completedAt: completedAt ?? this.completedAt,
+    );
+  }
 }
 
 enum ReadingStatus {
