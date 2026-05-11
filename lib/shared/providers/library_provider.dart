@@ -153,6 +153,41 @@ class LibraryNotifier extends Notifier<List<Book>> {
   bool containsByTitleAuthor(String title, String author) {
     return state.any((b) => b.title == title && b.author == author);
   }
+
+  /// 수동 독서 기록 추가
+  Future<void> addManualReadingLog({
+    required String bookId,
+    required int startPage,
+    required int endPage,
+    required int durationSeconds,
+    required DateTime sessionDate,
+  }) async {
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return;
+
+    final result = await repo.addManualSession(
+      bookId: bookId,
+      startPage: startPage,
+      endPage: endPage,
+      durationSeconds: durationSeconds,
+      sessionDate: sessionDate,
+    );
+
+    if (result.book != null) {
+      final idx = state.indexWhere((b) => b.id == bookId);
+      if (idx >= 0) {
+        final b = state[idx];
+        final updated = b.copyWith(
+          currentPage: result.book!.currentPage,
+          status: result.book!.status == IsarReadingStatus.completed
+              ? ReadingStatus.completed
+              : ReadingStatus.reading,
+          completedAt: result.book!.completedAt,
+        );
+        state = [...state]..[idx] = updated;
+      }
+    }
+  }
 }
 
 final libraryProvider = NotifierProvider<LibraryNotifier, List<Book>>(

@@ -10,6 +10,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/book_cover.dart';
+import 'manual_reading_log_sheet.dart';
 
 void showBookDetail(BuildContext context, Book book) {
   showModalBottomSheet(
@@ -437,6 +438,31 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (isReading) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => ManualReadingLogSheet(book: book),
+                  );
+                },
+                icon: const Icon(Icons.history_edu_rounded, size: 18),
+                label: const Text(
+                  '세션 없이 읽은 기록 추가',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: context.appPrimaryAccent,
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
               ),
             ),
           ],
