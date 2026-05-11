@@ -9,7 +9,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
 import 'package:figma_squircle/figma_squircle.dart';
-import '../screen/book_detail_screen.dart';
+
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/widgets/book_cover.dart';
 

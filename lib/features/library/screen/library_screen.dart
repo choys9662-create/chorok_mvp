@@ -22,7 +22,7 @@ import '../widget/profile_header.dart';
 import '../widget/library_calendar_view.dart';
 import '../widget/library_stats_view.dart';
 import '../../../shared/widgets/book_cover.dart';
-import '../widget/book_detail_sheet.dart';
+
 import '../widget/today_goal_banner.dart';
 
 

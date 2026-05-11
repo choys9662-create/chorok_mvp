@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
-import '../../../shared/repositories/book_repository.dart';
+
 import '../../../shared/widgets/sheet_handle.dart';
 
 /// 세션 없이 읽은 독서 기록을 수동으로 추가하는 바텀 시트

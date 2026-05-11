@@ -5,11 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/reading_status.dart';
-import '../../../shared/models/book.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
-import '../../../shared/widgets/sheet_handle.dart';
+
 import '../widget/manual_reading_log_sheet.dart';
 
 /// 도서 상세 통합 화면 (바텀시트 기능 통합)
@@ -124,8 +123,6 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       _isInitialized = true;
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final progress = book.totalPages > 0 ? book.currentPage / book.totalPages : 0.0;
     final isCompleted = book.status == ReadingStatus.completed;
 
     return Scaffold(
@@ -360,8 +357,6 @@ class _HeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors = AppTheme.coverGradientByIndex(book.title.hashCode.abs() % AppTheme.coverGradients.length);
-    
     return Container(
       padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 12, 24, 24),
       child: Column(
@@ -389,7 +384,7 @@ class _HeroSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('${(book.progress * 100).toInt()}%', style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent)),
+              Text('${(book.readingProgress * 100).toInt()}%', style: AppTheme.headingSmall.copyWith(color: context.appPrimaryAccent)),
               const SizedBox(width: 12),
               Text('${book.currentPage} / ${book.totalPages}쪽', style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary)),
             ],
@@ -398,7 +393,7 @@ class _HeroSection extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: book.progress,
+              value: book.readingProgress,
               minHeight: 6,
               backgroundColor: context.appBorder,
               valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
@@ -466,7 +461,7 @@ class _StatsRow extends StatelessWidget {
         children: [
           _StatItem(label: '세션', value: '$sessions'),
           _StatItem(label: '누적 시간', value: '${totalHours.toStringAsFixed(1)}h'),
-          _StatItem(label: '평균', value: '${avgMinutes}분'),
+          _StatItem(label: '평균', value: '$avgMinutes분'),
           _StatItem(label: '문장', value: '$sentenceCount'),
         ],
       ),
