@@ -27,6 +27,7 @@ class ReadingSessionScreen extends ConsumerStatefulWidget {
   final String? bookId;
   final String bookTitle;
   final String bookAuthor;
+  final String? coverUrl;
   final int startPage;
   final int totalPages;
 
@@ -36,6 +37,7 @@ class ReadingSessionScreen extends ConsumerStatefulWidget {
     this.bookId,
     this.bookTitle = '채식주의자',
     this.bookAuthor = '한강',
+    this.coverUrl,
     this.startPage = 0,
     this.totalPages = 0,
   });
@@ -222,6 +224,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         seconds: seconds,
         bookTitle: widget.bookTitle,
         bookAuthor: widget.bookAuthor,
+        coverUrl: widget.coverUrl,
         sentences: List.from(_collectedSentences),
         bookId: widget.bookId,
         startPage: widget.startPage,

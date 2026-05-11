@@ -163,7 +163,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final gradColors = AppTheme.coverGradientByIndex(b.gradientIndex);
 
     return GestureDetector(
       onTapDown: (_) {

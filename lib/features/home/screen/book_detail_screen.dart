@@ -10,6 +10,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/book_cover.dart';
 
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
@@ -376,6 +377,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       extra: SessionExtra(
         bookTitle: widget.book.title,
         bookAuthor: widget.book.author,
+        coverUrl: widget.book.coverUrl,
         startPage: widget.book.currentPage,
         totalPages: widget.book.totalPages,
       ),
@@ -634,16 +636,8 @@ class _HeroSection extends StatelessWidget {
 
               // ── 책 표지 ───────────────────────────────────────────
               Container(
-                width: 120,
-                height: 168,
-                decoration: AppTheme.smoothBox(
-                  radius: AppTheme.radiusLG,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradColors,
-                  ),
-                  shadows: [
+                decoration: BoxDecoration(
+                  boxShadow: [
                     BoxShadow(
                       color: gradColors[0].withValues(alpha: 0.3),
                       blurRadius: 24,
@@ -651,25 +645,19 @@ class _HeroSection extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -8,
-                      bottom: -8,
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 80,
-                        color: Colors.white.withValues(alpha: 0.08),
-                      ),
+                child: BookCover(
+                  coverUrl: book.coverUrl,
+                  gradientIndex: book.gradientIndex,
+                  width: 120,
+                  height: 168,
+                  radius: 16,
+                  fallbackIcon: Center(
+                    child: Icon(
+                      Icons.menu_book_rounded,
+                      size: 40,
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
-                    Center(
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 40,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

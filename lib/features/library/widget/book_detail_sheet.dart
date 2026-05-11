@@ -456,6 +456,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                           bookId: book.id,
                           bookTitle: book.title,
                           bookAuthor: book.author,
+                          coverUrl: book.coverUrl,
                           startPage: _currentPage,
                           totalPages: book.totalPages,
                         ),

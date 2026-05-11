@@ -22,7 +22,7 @@ import '../widget/profile_header.dart';
 import '../widget/library_calendar_view.dart';
 import '../widget/library_stats_view.dart';
 import '../../../shared/widgets/book_cover.dart';
-import '../../home/screen/book_detail_screen.dart';
+import '../widget/book_detail_sheet.dart';
 import '../widget/today_goal_banner.dart';
 
 
@@ -47,6 +47,8 @@ final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
         bookAuthor: book?['author'] as String? ?? '',
         minutes: (secs / 60).round(),
         pages: 0,
+        coverUrl: null,
+        gradientIndex: (book?['title'] as String? ?? '').hashCode.abs() % AppTheme.coverGradients.length,
       );
     }).toList();
   }
@@ -59,6 +61,8 @@ final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
     bookAuthor: r['book_author'] as String,
     minutes: ((r['duration_seconds'] as num?)?.toInt() ?? 0) ~/ 60,
     pages: (r['pages_read'] as num?)?.toInt() ?? 0,
+    coverUrl: null,
+    gradientIndex: (r['book_title'] as String).hashCode.abs() % AppTheme.coverGradients.length,
   )).toList();
 });
 
@@ -933,6 +937,7 @@ class _BookCard extends StatelessWidget {
                               bookId: book.id,
                               bookTitle: book.title,
                               bookAuthor: book.author,
+                              coverUrl: book.coverUrl,
                               startPage: book.currentPage,
                               totalPages: book.totalPages,
                             ),
@@ -1229,6 +1234,7 @@ class _BookListTile extends StatelessWidget {
                           bookId: book.id,
                           bookTitle: book.title,
                           bookAuthor: book.author,
+                          coverUrl: book.coverUrl,
                           startPage: book.currentPage,
                           totalPages: book.totalPages,
                         ),

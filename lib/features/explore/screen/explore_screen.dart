@@ -366,7 +366,6 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
 
   @override
   Widget build(BuildContext context) {
-    final gradientColors = AppTheme.coverGradientByIndex(widget.rank - 1);
     final lib = ref.watch(libraryProvider);
     final isAdded = widget.book.isbn13 != null && widget.book.isbn13!.isNotEmpty
         ? lib.any((b) => b.isbn == widget.book.isbn13)

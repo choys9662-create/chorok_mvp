@@ -83,6 +83,7 @@ class SessionExtra {
   final String? bookId;
   final String bookTitle;
   final String bookAuthor;
+  final String? coverUrl;
   final int startPage;
   final int totalPages;
 
@@ -91,6 +92,7 @@ class SessionExtra {
     this.bookId,
     this.bookTitle = '',
     this.bookAuthor = '',
+    this.coverUrl,
     this.startPage = 0,
     this.totalPages = 0,
   });

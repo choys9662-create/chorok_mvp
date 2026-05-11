@@ -48,6 +48,7 @@ class OverlapMember {
   final String content;
   final String username;
   final String bookTitle;
+  final String? coverUrl;
   final double overlapRatio;
   final List<HighlightRange> highlights;
 
@@ -56,6 +57,7 @@ class OverlapMember {
     required this.content,
     required this.username,
     required this.bookTitle,
+    this.coverUrl,
     required this.overlapRatio,
     required this.highlights,
   });

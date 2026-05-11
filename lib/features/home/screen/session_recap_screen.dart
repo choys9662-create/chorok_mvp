@@ -19,12 +19,14 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/book_cover.dart';
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
   final int seconds;
   final String bookTitle;
   final String bookAuthor;
+  final String? coverUrl;
   final List<CollectedSentence> sentences;
 
   /// 페이지 진행 기록용 — 없으면 DB 저장 생략
@@ -41,6 +43,7 @@ class RecapData {
     required this.seconds,
     required this.bookTitle,
     required this.bookAuthor,
+    this.coverUrl,
     required this.sentences,
     this.bookId,
     this.startPage = 0,
@@ -407,6 +410,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         _SessionHeroCard(
                           bookTitle: widget.data.bookTitle,
                           bookAuthor: widget.data.bookAuthor,
+                          coverUrl: widget.data.coverUrl,
                           timeText: _timeText,
                           sentenceCount: widget.data.sentences.length,
                         ),
@@ -1800,12 +1804,14 @@ class _ReceiptRow extends StatelessWidget {
 class _SessionHeroCard extends StatelessWidget {
   final String bookTitle;
   final String bookAuthor;
+  final String? coverUrl;
   final String timeText;
   final int sentenceCount;
 
   const _SessionHeroCard({
     required this.bookTitle,
     required this.bookAuthor,
+    this.coverUrl,
     required this.timeText,
     required this.sentenceCount,
   });
@@ -1823,24 +1829,12 @@ class _SessionHeroCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
+          BookCover(
+            coverUrl: coverUrl,
+            gradientIndex: bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
             width: 56,
             height: 72,
-            decoration: ShapeDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 8,
-                  cornerSmoothing: 0.6,
-                ),
-                side: const BorderSide(color: Colors.white24),
-              ),
-            ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: Colors.white,
-              size: 26,
-            ),
+            radius: 8,
           ),
           const SizedBox(width: 16),
           Expanded(

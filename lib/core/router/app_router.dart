@@ -142,6 +142,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               bookId: extra.bookId,
               bookTitle: extra.bookTitle,
               bookAuthor: extra.bookAuthor,
+              coverUrl: extra.coverUrl,
               startPage: extra.startPage,
               totalPages: extra.totalPages,
             );

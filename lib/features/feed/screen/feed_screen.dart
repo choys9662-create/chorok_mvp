@@ -73,6 +73,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '거부의 시작이 꿈이라는 건, 의지가 아닌 무의식의 선택이라는 뜻. 영혜의 저항은 논리가 아니라 본능에서 왔다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
+      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
       username: 'reader_jin',
       savedAt: now.subtract(const Duration(minutes: 23)),
       empathyCount: 42,
@@ -84,6 +85,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '꿈이 현실을 바꾸는 순간. 우리도 설명할 수 없는 감각으로 삶을 바꾼 적이 있지 않나.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
+      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
       username: 'leafy_reader',
       savedAt: now.subtract(const Duration(minutes: 45)),
       empathyCount: 28,
@@ -95,6 +97,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '채식이 곧 저항이고, 꿈이 곧 각성이다.',
       bookTitle: '채식주의자',
       bookAuthor: '한강',
+      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
       username: 'green_pages',
       savedAt: now.subtract(const Duration(hours: 2)),
       empathyCount: 15,
@@ -105,6 +108,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '사랑의 정의가 이렇게 아플 수 있다니. 지영이의 상처를 "보듬는" 사람은 결국 아무도 없었다는 게 더 아프다.',
       bookTitle: '82년생 김지영',
       bookAuthor: '조남주',
+      coverUrl: 'https://picsum.photos/seed/chorok5/300/400',
       username: 'bookworm_su',
       savedAt: now.subtract(const Duration(hours: 1)),
       empathyCount: 87,
@@ -117,6 +121,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '"다름"과 "틀림"의 경계에서 선재가 내뱉은 이 한마디가 소설 전체를 관통한다.',
       bookTitle: '아몬드',
       bookAuthor: '손원평',
+      coverUrl: 'https://picsum.photos/seed/chorok3/300/400',
       username: 'seoulreader',
       savedAt: now.subtract(const Duration(hours: 3)),
       empathyCount: 156,
@@ -128,6 +133,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '외로움의 반대가 사랑이 아니라 "연결"이라는 걸 이 문장이 증명한다.',
       bookTitle: '밤을 걷는 선비',
       bookAuthor: '이지운',
+      coverUrl: 'https://picsum.photos/seed/chorok1/300/400',
       username: 'midnight_books',
       savedAt: now.subtract(const Duration(hours: 5)),
       empathyCount: 23,
@@ -138,6 +144,7 @@ List<FeedSentence> _kMockSentences() {
       thought: '헤세가 이 말을 했을 때, 그는 분명 데미안을 쓰면서 자기 자신을 느끼고 있었을 것이다.',
       bookTitle: '독서의 기쁨',
       bookAuthor: '헤르만 헤세',
+      coverUrl: 'https://picsum.photos/seed/chorok2/300/400',
       username: 'hesse_lover',
       savedAt: now.subtract(const Duration(hours: 8)),
       empathyCount: 64,
@@ -170,6 +177,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               content: s.content,
               username: s.username,
               bookTitle: s.bookTitle,
+              coverUrl: s.coverUrl,
             ))
         .toList();
     _cachedGroups = OverlapDetector.findGroups(entries);
@@ -535,7 +543,6 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
   @override
   Widget build(BuildContext context) {
     final b = widget.book;
-    final gradColors = AppTheme.coverGradientByIndex(b.gradientIndex);
 
     return GestureDetector(
       onTapDown: (_) {

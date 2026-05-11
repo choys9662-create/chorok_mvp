@@ -182,6 +182,7 @@ class OverlapDetector {
             content: s.content,
             username: s.username,
             bookTitle: s.bookTitle,
+            coverUrl: s.coverUrl,
             overlapRatio: 1.0,
             highlights: [HighlightRange(0, s.content.length)],
           ));
@@ -202,6 +203,7 @@ class OverlapDetector {
             content: s.content,
             username: s.username,
             bookTitle: s.bookTitle,
+            coverUrl: s.coverUrl,
             overlapRatio: result.ratio,
             highlights: hl,
           ));
@@ -401,11 +403,13 @@ class SentenceEntry {
   final String content;
   final String username;
   final String bookTitle;
+  final String? coverUrl;
 
   const SentenceEntry({
     required this.id,
     required this.content,
     required this.username,
     required this.bookTitle,
+    this.coverUrl,
   });
 }

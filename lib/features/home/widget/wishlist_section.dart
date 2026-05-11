@@ -201,6 +201,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                             bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
+                            coverUrl: b.coverUrl,
                             startPage: 0,
                             totalPages: b.totalPages,
                           ),

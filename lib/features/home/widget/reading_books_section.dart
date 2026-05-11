@@ -246,7 +246,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final progress = b.totalPages > 0 ? b.currentPage / b.totalPages : 0.0;
-    final gradColors = AppTheme.coverGradientFor(b.title);
 
     return GestureDetector(
       onTap: () {
@@ -379,6 +378,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                             bookId: b.id,
                             bookTitle: b.title,
                             bookAuthor: b.author,
+                            coverUrl: b.coverUrl,
                             startPage: b.currentPage,
                             totalPages: b.totalPages,
                           ),
