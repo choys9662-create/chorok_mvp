@@ -32,27 +32,43 @@ class LibraryNotifier extends Notifier<List<Book>> {
   @override
   List<Book> build() {
     if (kUseMock) return List.from(_kMockBooks);
-    Future.microtask(_loadFromDb);
+    // 앱 시작 시 혹은 로그아웃 후 재로그인 시에만 로드
+    if (state.isEmpty) {
+      Future.microtask(_loadFromDb);
+    }
     return [];
   }
 
+  bool _isLoading = false;
+
   Future<void> _loadFromDb() async {
-    if (kIsWeb) {
-      // 웹: 로그인된 사용자의 책을 Supabase에서 불러옴
-      final repo = ref.read(supabaseBookRepositoryProvider);
-      final loaded = await repo.getAllBooks();
+    if (_isLoading) return;
+    _isLoading = true;
+    debugPrint('LibraryProvider: Starting _loadFromDb');
+    try {
+      final List<Book> loaded;
+      if (kIsWeb) {
+        final repo = ref.read(supabaseBookRepositoryProvider);
+        loaded = await repo.getAllBooks();
+      } else {
+        final repo = ref.read(bookRepositoryProvider);
+        if (repo == null) {
+          _isLoading = false;
+          return;
+        }
+        final rows = await repo.getAllBooks();
+        loaded = rows.map(_fromIsarBook).toList();
+      }
+      
       // _loadFromDb 대기 중 addBook으로 추가된 책 보존
       final extra = state.where((b) => !loaded.any((lb) => lb.id == b.id)).toList();
       state = [...loaded, ...extra];
-      return;
+      debugPrint('LibraryProvider: Loaded ${loaded.length} books');
+    } catch (e) {
+      debugPrint('LibraryProvider: Error loading books: $e');
+    } finally {
+      _isLoading = false;
     }
-    final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return;
-    final rows = await repo.getAllBooks();
-    final loaded = rows.map(_fromIsarBook).toList();
-    // _loadFromDb 대기 중 addBook으로 추가된 책 보존
-    final extra = state.where((b) => !loaded.any((lb) => lb.id == b.id)).toList();
-    state = [...loaded, ...extra];
   }
 
   bool addBook(Book book) {

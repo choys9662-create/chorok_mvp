@@ -406,24 +406,40 @@ class _HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           GestureDetector(
-            onTap: onToggleCompletion,
+            onTap: () {
+              onToggleCompletion();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(isCompleted ? '다시 읽는 중으로 변경되었습니다.' : '완독 처리가 완료되었습니다! 🎉'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                ),
+              );
+            },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16), // 터치 영역 확장
               decoration: AppTheme.smoothBox(
-                color: isCompleted ? context.appPrimaryAccent.withValues(alpha: 0.15) : context.appCardElevated,
+                color: isCompleted ? context.appPrimaryAccent.withValues(alpha: 0.1) : context.appCardElevated,
                 radius: 12,
                 side: BorderSide(color: isCompleted ? context.appPrimaryAccent : context.appBorder),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(isCompleted ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded, 
-                       color: isCompleted ? context.appPrimaryAccent : context.appTextTertiary),
+                  Icon(
+                    isCompleted ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+                    color: isCompleted ? context.appPrimaryAccent : context.appTextTertiary,
+                  ),
                   const SizedBox(width: 8),
-                  Text('완독', style: TextStyle(
-                    color: isCompleted ? context.appPrimaryAccent : context.appTextSecondary,
-                    fontWeight: FontWeight.w700,
-                  )),
+                  Text(
+                    '완독하기',
+                    style: TextStyle(
+                      color: isCompleted ? context.appPrimaryAccent : context.appTextSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
