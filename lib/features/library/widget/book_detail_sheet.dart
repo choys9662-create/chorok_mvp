@@ -9,6 +9,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/sheet_handle.dart';
+import '../../../shared/widgets/book_cover.dart';
 
 void showBookDetail(BuildContext context, Book book) {
   showModalBottomSheet(
@@ -190,20 +191,12 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              BookCover(
+                coverUrl: book.coverUrl,
+                gradientIndex: book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 64,
                 height: 88,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppTheme.primary.withValues(alpha: 0.3)
-                      : AppTheme.lightPrimaryAccent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.menu_book_rounded,
-                  color: Colors.white.withValues(alpha: 0.85),
-                  size: 28,
-                ),
+                radius: 8,
               ),
               const SizedBox(width: 16),
               Expanded(

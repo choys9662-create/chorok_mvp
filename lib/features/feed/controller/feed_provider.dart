@@ -14,6 +14,7 @@ FeedSentence _toFeedSentence(IsarChoseo c) => FeedSentence(
       thought: c.myThought,
       bookTitle: c.bookTitle.isNotEmpty ? c.bookTitle : '알 수 없는 책',
       bookAuthor: c.bookAuthor,
+      coverUrl: null, // To be implemented later if IsarChoseo stores it
       username: '나',
       savedAt: c.createdAt,
     );
@@ -59,6 +60,7 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
         content: map['content'] as String? ?? '',
         bookTitle: book?['title'] as String? ?? '알 수 없는 책',
         bookAuthor: book?['author'] as String? ?? '',
+        coverUrl: book?['cover_url'] as String?,
         username: '나',
         savedAt: createdAt,
       );

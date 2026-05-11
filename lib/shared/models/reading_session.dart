@@ -105,6 +105,7 @@ class FeedSentence {
   final String? thought; // 유저의 생각/해석
   final String bookTitle;
   final String bookAuthor;
+  final String? coverUrl;
   final String username;
   final DateTime savedAt;
   final int empathyCount;
@@ -118,6 +119,7 @@ class FeedSentence {
     this.thought,
     required this.bookTitle,
     required this.bookAuthor,
+    this.coverUrl,
     required this.username,
     required this.savedAt,
     this.empathyCount = 0,

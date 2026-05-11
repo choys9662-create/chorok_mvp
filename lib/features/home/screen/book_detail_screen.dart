@@ -20,6 +20,7 @@ class BookDetailExtra {
   final int currentPage;
   final int totalPages;
   final String lastRead;
+  final String? coverUrl;
   final int gradientIndex;
   final List<String> savedSentences;
 
@@ -30,6 +31,7 @@ class BookDetailExtra {
     required this.currentPage,
     required this.totalPages,
     required this.lastRead,
+    this.coverUrl,
     required this.gradientIndex,
     this.savedSentences = const [],
   });

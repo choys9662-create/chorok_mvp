@@ -11,6 +11,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/book_cover.dart';
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
@@ -19,16 +20,17 @@ import 'sentence_detail_screen.dart';
 typedef _TrendingBook = ({
   String title,
   String author,
+  String? coverUrl,
   int sentenceCount,
   int gradientIndex,
 });
 
 const List<_TrendingBook> _kMockTrendingBooks = [
-  (title: '채식주의자', author: '한강', sentenceCount: 142, gradientIndex: 0),
-  (title: '파친코', author: '이민진', sentenceCount: 98, gradientIndex: 2),
-  (title: '아몬드', author: '손원평', sentenceCount: 87, gradientIndex: 4),
-  (title: '소년이 온다', author: '한강', sentenceCount: 76, gradientIndex: 3),
-  (title: '82년생 김지영', author: '조남주', sentenceCount: 61, gradientIndex: 1),
+  (title: '채식주의자', author: '한강', coverUrl: 'https://picsum.photos/seed/chorok1/300/400', sentenceCount: 142, gradientIndex: 0),
+  (title: '파친코', author: '이민진', coverUrl: 'https://picsum.photos/seed/chorok2/300/400', sentenceCount: 98, gradientIndex: 2),
+  (title: '아몬드', author: '손원평', coverUrl: 'https://picsum.photos/seed/chorok3/300/400', sentenceCount: 87, gradientIndex: 4),
+  (title: '소년이 온다', author: '한강', coverUrl: 'https://picsum.photos/seed/chorok1/300/400', sentenceCount: 76, gradientIndex: 3),
+  (title: '82년생 김지영', author: '조남주', coverUrl: 'https://picsum.photos/seed/chorok5/300/400', sentenceCount: 61, gradientIndex: 1),
 ];
 
 List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
@@ -45,6 +47,7 @@ List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
   return sorted.take(5).toList().asMap().entries.map((e) => (
         title: e.value.key,
         author: e.value.value.author,
+        coverUrl: null,
         sentenceCount: e.value.value.count,
         gradientIndex: e.key,
       )).toList();
@@ -555,15 +558,12 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
           ),
           child: Row(
             children: [
-              Container(
+              BookCover(
+                coverUrl: b.coverUrl,
+                gradientIndex: b.gradientIndex,
                 width: 6,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: gradColors,
-                  ),
-                ),
+                height: double.infinity,
+                radius: 0,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -762,15 +762,12 @@ class _SentenceCardState extends State<_SentenceCard> {
                 // 책 정보
                 Row(
                   children: [
-                    Container(
+                    BookCover(
+                      coverUrl: s.coverUrl,
+                      gradientIndex: s.bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
                       width: 28,
                       height: 36,
-                      decoration: BoxDecoration(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(Icons.menu_book_rounded,
-                          size: 14, color: context.appPrimaryAccent),
+                      radius: 4,
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Expanded(
@@ -1058,15 +1055,12 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                 // ── 책 정보 ──────────────────────────────────────
                 Row(
                   children: [
-                    Container(
+                    BookCover(
+                      coverUrl: base.coverUrl,
+                      gradientIndex: base.bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
                       width: 28,
                       height: 36,
-                      decoration: BoxDecoration(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(Icons.menu_book_rounded,
-                          size: 14, color: context.appPrimaryAccent),
+                      radius: 4,
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Expanded(

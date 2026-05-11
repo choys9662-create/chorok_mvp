@@ -11,6 +11,7 @@ import '../../../shared/utils/reading_insight_engine.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import '../screen/book_detail_screen.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/book_cover.dart';
 
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
@@ -258,6 +259,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
             currentPage: b.currentPage,
             totalPages: b.totalPages,
             lastRead: '최근 읽음',
+            coverUrl: b.coverUrl,
             gradientIndex: b.title.hashCode.abs() % AppTheme.coverGradients.length,
             savedSentences: b.savedSentences,
           ),
@@ -285,54 +287,46 @@ class ReadingBookCardState extends State<ReadingBookCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 표지
-              Container(
+              BookCover(
+                coverUrl: b.coverUrl,
+                gradientIndex: b.title.hashCode.abs() % AppTheme.coverGradients.length,
                 height: 110,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradColors,
+                width: double.infinity,
+                radius: 0, // 컨테이너 클리핑에 의존
+                fallbackIcon: Positioned(
+                  right: -10,
+                  bottom: -10,
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 64,
+                    color: context.primaryBg(0.08),
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -10,
-                      bottom: -10,
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 64,
-                        color: context.primaryBg(0.08),
-                      ),
+                child: Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    // 진행률 배지
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: context.appSurface.withValues(alpha: 0.75),
-                          shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 8,
-                              cornerSmoothing: 0.6,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          '${(progress * 100).round()}%',
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    decoration: ShapeDecoration(
+                      color: context.appSurface.withValues(alpha: 0.75),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(
+                          cornerRadius: 8,
+                          cornerSmoothing: 0.6,
                         ),
                       ),
                     ),
-                  ],
+                    child: Text(
+                      '${(progress * 100).round()}%',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               // 책 정보

@@ -11,6 +11,7 @@ import '../../search/controller/book_search_controller.dart';
 import '../../search/model/aladin_book.dart';
 import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
+import '../../../shared/widgets/book_cover.dart';
 
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -400,38 +401,12 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
+              BookCover(
+                coverUrl: widget.book.coverUrl,
+                gradientIndex: widget.rank - 1,
                 width: 44,
                 height: 60,
-                decoration: ShapeDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradientColors,
-                  ),
-                  shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(cornerRadius: 8, cornerSmoothing: 0.6),
-                    side: BorderSide(color: context.appBorder, width: 1),
-                  ),
-                ),
-                child: widget.book.coverUrl != null && widget.book.coverUrl!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          widget.book.coverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Icon(
-                            Icons.menu_book_rounded,
-                            size: 20,
-                            color: context.appPrimaryAccent.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        Icons.menu_book_rounded,
-                        size: 20,
-                        color: context.appPrimaryAccent.withValues(alpha: 0.6),
-                      ),
+                radius: 8,
               ),
               const SizedBox(width: 12),
               Expanded(
