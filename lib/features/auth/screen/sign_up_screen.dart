@@ -356,8 +356,6 @@ class _ValidatedField extends StatefulWidget {
 }
 
 class _ValidatedFieldState extends State<_ValidatedField> {
-  bool _focused = false;
-
   @override
   Widget build(BuildContext context) {
     Widget? suffixWidget = widget.suffix;
@@ -404,18 +402,11 @@ class _ValidatedFieldState extends State<_ValidatedField> {
       }
     }
 
-    final borderColor = widget.error != null
-        ? const Color(0xFFEF4444).withValues(alpha: 0.6)
-        : _focused
-        ? AppTheme.primaryLight.withValues(alpha: 0.5)
-        : AppTheme.darkBorder.withValues(alpha: 0.5);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Focus(
           onFocusChange: (f) {
-            setState(() => _focused = f);
             if (!f) widget.onFocusLost?.call();
           },
           child: TextField(

@@ -67,7 +67,7 @@ class BookCover extends StatelessWidget {
             ),
 
           // 추가 자식 위젯 (이미지 위에 렌더링)
-          if (child != null) child,
+          if (child != null) child!,
         ],
       ),
     );

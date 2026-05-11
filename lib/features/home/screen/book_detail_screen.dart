@@ -731,9 +731,7 @@ class _HeroSection extends StatelessWidget {
                               ? AppTheme.accent.withValues(alpha: 0.15)
                               : Colors.white.withValues(alpha: 0.06),
                           radius: AppTheme.radiusMD,
-                          radius: AppTheme.radiusMD,
                           side: BorderSide.none,
-                        ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

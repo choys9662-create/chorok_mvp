@@ -14,7 +14,6 @@ import '../search/widget/add_to_library_sheet.dart';
 const _kBg = Color(0xFF000000);
 const _kGreen = Color(0xFF00FF00);
 const _kSurface = Color(0xFF111111);
-const _kBorder = Color(0xFF1E1E1E);
 const _kTextPrimary = Color(0xFFF0FAF4);
 const _kTextSecondary = Color(0xFF6B8C74);
 const _kOverlay = Color(0xCC000000);

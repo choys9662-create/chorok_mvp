@@ -32,10 +32,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
   @override
   List<Book> build() {
     if (kUseMock) return List.from(_kMockBooks);
-    // 앱 시작 시 혹은 로그아웃 후 재로그인 시에만 로드
-    if (state.isEmpty) {
-      Future.microtask(_loadFromDb);
-    }
+    Future.microtask(_loadFromDb);
     return [];
   }
 
