@@ -110,9 +110,14 @@ class WishlistBookCardState extends State<WishlistBookCard> {
           width: 150,
           clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
-            color: context.appCard,
+            color: context.appCardElevated,
             radius: 20,
-            side: BorderSide.none,
+            side: isDark
+                ? BorderSide(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    width: 0.5,
+                  )
+                : BorderSide.none,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,7 +220,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothPill(
                         color: isDark
-                            ? AppTheme.primary.withValues(alpha: 0.5)
+                            ? context.appPrimaryAccent.withValues(alpha: 0.15)
                             : AppTheme.lightPrimaryAccent,
                         side: BorderSide.none,
                       ),
