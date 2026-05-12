@@ -50,10 +50,25 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   Future<void> _toggleCompletion(Book book) async {
     HapticFeedback.heavyImpact();
     if (book.status == ReadingStatus.completed) {
-      // 다시 읽기 상태로 변경 (페이지 0으로 리셋)
       ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, 0);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              '완독이 취소되었어요',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppTheme.primary,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          ),
+        );
+      }
     } else {
-      // 완독 처리
       setState(() => _currentPage = book.totalPages);
       ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
       _showCompletionDialog(book);
@@ -348,24 +363,7 @@ class _HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           GestureDetector(
-            onTap: () {
-              onToggleCompletion();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isCompleted ? '다시 읽는 중으로 변경되었습니다.' : '완독 처리가 완료되었습니다! 🎉',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppTheme.primary,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                ),
-              );
-            },
+            onTap: onToggleCompletion,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24,

@@ -759,10 +759,16 @@ class _SentenceCardState extends State<_SentenceCard> {
     _empathyCount = widget.sentence.empathyCount;
   }
 
-  void _toggleLike() => setState(() {
-    _isLiked = !_isLiked;
-    _empathyCount += _isLiked ? 1 : -1;
-  });
+  void _toggleLike() {
+    final willLike = !_isLiked;
+    willLike
+        ? HapticFeedback.mediumImpact()
+        : HapticFeedback.selectionClick();
+    setState(() {
+      _isLiked = willLike;
+      _empathyCount += willLike ? 1 : -1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
