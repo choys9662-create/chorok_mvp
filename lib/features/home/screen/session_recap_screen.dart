@@ -18,6 +18,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 
@@ -168,10 +169,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('공유 준비 중 오류가 발생했어요'),
-            behavior: SnackBarBehavior.floating,
-          ),
+          chorokSnackBar(context, '공유 준비 중 오류가 발생했어요', success: false),
         );
       }
     }

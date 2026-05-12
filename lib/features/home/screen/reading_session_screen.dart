@@ -346,6 +346,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                         '꾹 눌러서 세션을 종료하세요',
                                         style: TextStyle(
                                           fontFamily: 'Pretendard',
+                                          color: Colors.white,
                                         ),
                                       ),
                                       duration: Duration(milliseconds: 1500),

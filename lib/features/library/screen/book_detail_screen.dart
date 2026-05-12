@@ -55,7 +55,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$_currentPage쪽으로 업데이트했어요'),
+          content: Text(
+            '$_currentPage쪽으로 업데이트했어요',
+            style: const TextStyle(color: Colors.white),
+          ),
           backgroundColor: AppTheme.primary,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
@@ -481,7 +484,9 @@ class _HeroSection extends StatelessWidget {
                 SnackBar(
                   content: Text(
                     isCompleted ? '다시 읽는 중으로 변경되었습니다.' : '완독 처리가 완료되었습니다! 🎉',
+                    style: const TextStyle(color: Colors.white),
                   ),
+                  backgroundColor: AppTheme.primary,
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
