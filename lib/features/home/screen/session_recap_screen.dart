@@ -21,6 +21,7 @@ import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/page_slider_card.dart';
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
@@ -125,7 +126,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   late final int _score;
 
   // 페이지 기록 상태
-  late final TextEditingController _pageCtrl;
   bool _pageRecorded = false;
   bool _isSavingPage = false;
 
@@ -179,9 +179,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   void initState() {
     super.initState();
     _score = _calcScore(widget.data.seconds, widget.data.sentences.length);
-    _pageCtrl = TextEditingController(
-      text: widget.data.startPage > 0 ? '${widget.data.startPage}' : '',
-    );
 
     _enterCtrl = AnimationController(
       vsync: this,
@@ -202,18 +199,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   @override
   void dispose() {
     _enterCtrl.dispose();
-    _pageCtrl.dispose();
     super.dispose();
   }
 
   // ─── 페이지 기록 저장 ───────────────────────────────────────────────
-  Future<void> _savePage() async {
+  Future<void> _savePage(int newPage) async {
     final bookId = widget.data.bookId;
     if (bookId == null) return;
-
-    final pageText = _pageCtrl.text.trim();
-    final newPage = int.tryParse(pageText);
-    if (newPage == null || newPage < 0) return;
 
     setState(() => _isSavingPage = true);
     HapticFeedback.mediumImpact();
@@ -581,7 +573,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         // 페이지 기록 카드 (bookId 있을 때만)
                         if (widget.data.bookId != null)
                           _PageRecordCard(
-                            controller: _pageCtrl,
+                            initialPage: widget.data.startPage,
                             totalPages: widget.data.totalPages,
                             isRecorded: _pageRecorded,
                             isSaving: _isSavingPage,
@@ -1152,14 +1144,14 @@ class _RecapActions extends StatelessWidget {
 
 // ─── 페이지 기록 카드 ─────────────────────────────────────────────────
 class _PageRecordCard extends StatelessWidget {
-  final TextEditingController controller;
+  final int initialPage;
   final int totalPages;
   final bool isRecorded;
   final bool isSaving;
-  final VoidCallback onSave;
+  final Future<void> Function(int page) onSave;
 
   const _PageRecordCard({
-    required this.controller,
+    required this.initialPage,
     required this.totalPages,
     required this.isRecorded,
     required this.isSaving,
@@ -1182,7 +1174,7 @@ class _PageRecordCard extends StatelessWidget {
               color: context.appPrimaryAccent,
               size: 20,
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 12),
             Text(
               '페이지 기록이 저장됐어요',
               style: TextStyle(
@@ -1197,126 +1189,13 @@ class _PageRecordCard extends StatelessWidget {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: AppTheme.radiusLG,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.bookmark_rounded,
-                color: context.appPrimaryAccent,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '오늘 몇 쪽까지 읽었나요?',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: context.appTextPrimary,
-                  height: 1.4,
-                ),
-              ),
-              const Spacer(),
-              if (totalPages > 0)
-                Text(
-                  '/ $totalPages쪽',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: context.appTextTertiary,
-                    height: 1.5,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 48,
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCardElevated,
-                    radius: AppTheme.radiusSM,
-                  ),
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: context.appTextPrimary,
-                      height: 1.4,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '현재 페이지',
-                      hintStyle: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextTertiary,
-                        height: 1.4,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      suffixText: '쪽',
-                      suffixStyle: TextStyle(
-                        fontSize: 14,
-                        color: context.appTextSecondary,
-                      ),
-                    ),
-                    cursorColor: context.appPrimaryAccent,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Semantics(
-                button: true,
-                label: '페이지 기록 저장',
-                child: GestureDetector(
-                  onTap: isSaving ? null : onSave,
-                  child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: AppTheme.smoothBox(
-                      gradient: AppTheme.greenGradient,
-                      radius: AppTheme.radiusSM,
-                    ),
-                    alignment: Alignment.center,
-                    child: isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.darkBg,
-                            ),
-                          )
-                        : const Text(
-                            '기록',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.darkBg,
-                              height: 1.4,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return PageSliderCard(
+      initialPage: initialPage,
+      totalPages: totalPages,
+      title: '오늘 몇 쪽까지 읽었나요?',
+      saveLabel: '기록',
+      isSaving: isSaving,
+      onSave: onSave,
     );
   }
 }

@@ -8,7 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
-
+import '../../../shared/widgets/page_slider_card.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
 /// 도서 상세 통합 화면 (바텀시트 기능 통합)
@@ -22,29 +22,8 @@ class BookDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
-  late final TextEditingController _pageController;
   int _currentPage = 0;
   bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _adjustPage(int delta, int total) {
-    HapticFeedback.selectionClick();
-    setState(() {
-      _currentPage = (_currentPage + delta).clamp(0, total);
-      _pageController.text = '$_currentPage';
-    });
-  }
 
   Future<void> _savePage() async {
     HapticFeedback.mediumImpact();
@@ -74,10 +53,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, 0);
     } else {
       // 완독 처리
-      setState(() {
-        _currentPage = book.totalPages;
-        _pageController.text = '$_currentPage';
-      });
+      setState(() => _currentPage = book.totalPages);
       ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
       _showCompletionDialog(book);
     }
@@ -127,7 +103,6 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
     if (!_isInitialized) {
       _currentPage = book.currentPage;
-      _pageController.text = '$_currentPage';
       _isInitialized = true;
     }
 
@@ -156,7 +131,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
           ),
 
-          // ── 현재 페이지 업데이트 (바텀시트에서 이식) ──────────────────────
+          // ── 현재 페이지 업데이트 ────────────────────────────────────────
           if (!isCompleted)
             SliverToBoxAdapter(
               child: Padding(
@@ -164,20 +139,28 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   horizontal: 24,
                   vertical: 12,
                 ),
-                child: _PageUpdateCard(
-                  currentPage: _currentPage,
+                child: PageSliderCard(
+                  key: ValueKey(book.totalPages),
+                  initialPage: _currentPage,
                   totalPages: book.totalPages,
-                  controller: _pageController,
-                  onAdjust: (d) => _adjustPage(d, book.totalPages),
-                  onSave: _savePage,
-                  onManualLog: () {
-                    showModalBottomSheet(
+                  onPageChanged: (p) => setState(() => _currentPage = p),
+                  onSave: (page) async => _savePage(),
+                  trailing: TextButton.icon(
+                    onPressed: () => showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
                       builder: (_) => ManualReadingLogSheet(book: book),
-                    );
-                  },
+                    ),
+                    icon: const Icon(Icons.history_edu_rounded, size: 16),
+                    label: const Text('수동 기록',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: context.appPrimaryAccent,
+                      minimumSize: Size.zero,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -265,131 +248,6 @@ class _BottomActionBar extends StatelessWidget {
   }
 }
 
-// ─── 페이지 업데이트 카드 ───────────────────────────────────────────────────
-
-class _PageUpdateCard extends StatelessWidget {
-  final int currentPage, totalPages;
-  final TextEditingController controller;
-  final Function(int) onAdjust;
-  final VoidCallback onSave;
-  final VoidCallback onManualLog;
-
-  const _PageUpdateCard({
-    required this.currentPage,
-    required this.totalPages,
-    required this.controller,
-    required this.onAdjust,
-    required this.onSave,
-    required this.onManualLog,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        color: context.appCardElevated,
-        radius: 16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '현재 페이지 업데이트',
-                style: AppTheme.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: onManualLog,
-                icon: const Icon(Icons.history_edu_rounded, size: 16),
-                label: const Text('수동 기록', style: TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(
-                  foregroundColor: context.appPrimaryAccent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _QuickAdjust(label: '-10', onTap: () => onAdjust(-10)),
-              const SizedBox(width: 8),
-              _QuickAdjust(label: '+10', onTap: () => onAdjust(10)),
-              const SizedBox(width: 8),
-              _QuickAdjust(label: '+50', onTap: () => onAdjust(50)),
-              const Spacer(),
-              SizedBox(
-                width: 60,
-                child: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.all(8),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text('/ $totalPages쪽', style: AppTheme.captionSmall),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onSave,
-              style: FilledButton.styleFrom(
-                backgroundColor: context.appPrimaryAccent.withValues(
-                  alpha: 0.1,
-                ),
-                foregroundColor: context.appPrimaryAccent,
-                shape: AppTheme.smoothShape(radius: 8),
-              ),
-              child: const Text(
-                '페이지 저장',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickAdjust extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _QuickAdjust({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: context.appPrimaryAccent.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: context.appPrimaryAccent,
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── 서브 위젯들 (Hero, Stats, Header 등) ──────────────────────────────────
 

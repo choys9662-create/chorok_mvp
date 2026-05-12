@@ -10,7 +10,9 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/page_slider_card.dart';
 import 'manual_reading_log_sheet.dart';
+
 
 void showBookDetail(BuildContext context, Book book) {
   showModalBottomSheet(
@@ -39,37 +41,17 @@ class BookDetailSheet extends ConsumerStatefulWidget {
 
 class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
   late int _currentPage;
-  late TextEditingController _pageController;
 
   @override
   void initState() {
     super.initState();
     _currentPage = widget.book.currentPage;
-    _pageController = TextEditingController(text: '$_currentPage');
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _adjustPage(int delta) {
-    final newPage = (_currentPage + delta).clamp(0, widget.book.totalPages);
-    setState(() {
-      _currentPage = newPage;
-      _pageController
-        ..text = '$newPage'
-        ..selection = TextSelection.collapsed(offset: '$newPage'.length);
-    });
-    HapticFeedback.selectionClick();
-  }
-
-  void _savePage(BuildContext context) {
+  void _savePage(BuildContext context, int page) {
     HapticFeedback.heavyImpact();
-    ref
-        .read(libraryProvider.notifier)
-        .updateCurrentPage(widget.book.id, _currentPage);
+    setState(() => _currentPage = page);
+    ref.read(libraryProvider.notifier).updateCurrentPage(widget.book.id, page);
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -123,12 +105,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
         .read(libraryProvider.notifier)
         .updateTotalPages(widget.book.id, newTotal);
     if (_currentPage > newTotal) {
-      setState(() {
-        _currentPage = newTotal;
-        _pageController
-          ..text = '$newTotal'
-          ..selection = TextSelection.collapsed(offset: '$newTotal'.length);
-      });
+      setState(() => _currentPage = newTotal);
     }
   }
 
@@ -332,115 +309,16 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                 minHeight: 6,
               ),
             ),
-            // ── 현재 페이지 빠른 업데이트 ────────────────────────
-            const SizedBox(height: 20),
-            Text(
-              '현재 페이지 업데이트',
-              style: AppTheme.headingSmall.copyWith(
-                color: context.appTextPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AppTheme.smoothBox(
-                color: context.appCardElevated,
-                radius: 14,
-                side: BorderSide.none,
-              ),
-              child: Column(
-                children: [
-                  // 빠른 조절 버튼 행
-                  Row(
-                    children: [
-                      _PageAdjustButton(
-                        label: '-10',
-                        onTap: () => _adjustPage(-10),
-                      ),
-                      const SizedBox(width: 8),
-                      _PageAdjustButton(
-                        label: '+10',
-                        onTap: () => _adjustPage(10),
-                      ),
-                      const SizedBox(width: 8),
-                      _PageAdjustButton(
-                        label: '+50',
-                        onTap: () => _adjustPage(50),
-                      ),
-                      const Spacer(),
-                      // 직접 입력 필드
-                      SizedBox(
-                        width: 72,
-                        child: TextField(
-                          controller: _pageController,
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: context.appTextPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 8,
-                            ),
-                            filled: true,
-                            fillColor: context.appCard,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          onChanged: (v) {
-                            final parsed = int.tryParse(v);
-                            if (parsed != null) {
-                              setState(() {
-                                _currentPage = parsed.clamp(0, book.totalPages);
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '/ ${book.totalPages}쪽',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appTextTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => _savePage(context),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: isDark
-                            ? AppTheme.primaryLight
-                            : Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: AppTheme.smoothShape(radius: 10),
-                      ),
-                      child: const Text(
-                        '저장',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (isReading) ...[
-            const SizedBox(height: 8),
-            Center(
-              child: TextButton.icon(
+            // ── 현재 페이지 업데이트 (슬라이더) ─────────────────
+            const SizedBox(height: 16),
+            PageSliderCard(
+              key: ValueKey(book.totalPages),
+              initialPage: _currentPage,
+              totalPages: book.totalPages,
+              saveLabel: '저장',
+              onPageChanged: (p) => setState(() => _currentPage = p),
+              onSave: (page) async => _savePage(context, page),
+              trailing: TextButton.icon(
                 onPressed: () {
                   showModalBottomSheet(
                     context: context,
@@ -449,18 +327,13 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     builder: (_) => ManualReadingLogSheet(book: book),
                   );
                 },
-                icon: const Icon(Icons.history_edu_rounded, size: 18),
-                label: const Text(
-                  '세션 없이 읽은 기록 추가',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                ),
+                icon: const Icon(Icons.history_edu_rounded, size: 16),
+                label: const Text('수동 기록',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 style: TextButton.styleFrom(
                   foregroundColor: context.appPrimaryAccent,
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
               ),
             ),
@@ -531,42 +404,6 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
   }
 }
 
-class _PageAdjustButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _PageAdjustButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '$label 페이지',
-      button: true,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: AppTheme.smoothBox(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppTheme.primary.withValues(alpha: 0.15)
-                : AppTheme.lightPrimaryAccent,
-            radius: 10,
-            side: BorderSide.none,
-          ),
-          child: Text(
-            label,
-            style: AppTheme.captionLarge.copyWith(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppTheme.primaryLight
-                  : Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _DetailStat extends StatelessWidget {
   final String label, value;
