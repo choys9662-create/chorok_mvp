@@ -225,10 +225,42 @@ class BookRepository {
 
   // ── 진행 업데이트 + 세션 저장 ─────────────────────────────────────────────
 
+  /// 세션만 저장 (페이지 기록 없이) — 리캡 화면 진입 시 즉시 호출
+  ///
+  /// [sessionId]를 결정론적으로 지정하면 이후 updateProgress에서 같은 ID로
+  /// ConflictAlgorithm.replace하여 pagesRead만 갱신할 수 있다.
+  Future<void> saveSessionOnly({
+    required String sessionId,
+    String? bookId,
+    required int durationSeconds,
+    int choseoCount = 0,
+    DateTime? startedAt,
+    int exitCount = 0,
+    int exitDurationSeconds = 0,
+  }) async {
+    final now = DateTime.now();
+    final session = IsarReadingSession(
+      sessionId: sessionId,
+      bookId: bookId,
+      startedAt: startedAt ?? now,
+      endedAt: now,
+      durationSeconds: durationSeconds,
+      pagesRead: 0,
+      choseoCount: choseoCount,
+      exitCount: exitCount,
+      exitDurationSeconds: exitDurationSeconds,
+    );
+    await _db.insert(
+      'reading_sessions',
+      session.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   /// 세션 완료 시 호출:
   ///   1. bookId → currentPage 업데이트
   ///   2. currentPage >= totalPages → status = completed
-  ///   3. IsarReadingSession 저장
+  ///   3. IsarReadingSession 저장 (existingSessionId 제공 시 replace로 pagesRead 갱신)
   Future<ProgressResult> updateProgress({
     required String bookId,
     required int newCurrentPage,
@@ -237,6 +269,7 @@ class BookRepository {
     DateTime? startedAt,
     int exitCount = 0,
     int exitDurationSeconds = 0,
+    String? existingSessionId,
   }) async {
     final existing = await getBook(bookId);
     bool justCompleted = false;
@@ -277,9 +310,10 @@ class BookRepository {
         updatedAt: DateTime.now(),
       );
 
-      // 세션 저장
+      final sid = existingSessionId ??
+          'session_${DateTime.now().millisecondsSinceEpoch}_$bookId';
       final session = IsarReadingSession(
-        sessionId: 'session_${DateTime.now().millisecondsSinceEpoch}_$bookId',
+        sessionId: sid,
         bookId: bookId,
         startedAt: startedAt ?? DateTime.now(),
         endedAt: DateTime.now(),
@@ -299,8 +333,10 @@ class BookRepository {
     }
 
     // 책 없이도 orphan 세션은 저장
+    final sid = existingSessionId ??
+        'session_${DateTime.now().millisecondsSinceEpoch}';
     final session = IsarReadingSession(
-      sessionId: 'session_${DateTime.now().millisecondsSinceEpoch}',
+      sessionId: sid,
       bookId: bookId,
       startedAt: startedAt ?? DateTime.now(),
       endedAt: DateTime.now(),
@@ -733,6 +769,58 @@ class BookRepository {
     ''',
       [from.toIso8601String(), to.toIso8601String()],
     );
+  }
+
+  /// 책별 누적 독서 시간 반환 — 트리맵용, 내림차순 최대 [limit]개
+  Future<List<({String title, double hours})>> getBookReadingTimes({
+    int limit = 12,
+  }) async {
+    final rows = await _db.rawQuery(
+      '''
+      SELECT
+        COALESCE(b.title, '알 수 없는 책') AS title,
+        SUM(rs.duration_seconds) AS total_seconds
+      FROM reading_sessions rs
+      LEFT JOIN books b ON rs.book_id = b.book_id
+      GROUP BY rs.book_id
+      ORDER BY total_seconds DESC
+      LIMIT ?
+      ''',
+      [limit],
+    );
+    return rows.map((r) {
+      final secs = (r['total_seconds'] as int?) ?? 0;
+      return (
+        title: r['title'] as String? ?? '알 수 없는 책',
+        hours: secs / 3600.0,
+      );
+    }).toList();
+  }
+
+  /// 이번 주(월~일) 요일별 독서 분(分) 반환 — 인덱스 0=월, 6=일
+  Future<List<int>> getWeeklyMinutes() async {
+    final now = DateTime.now();
+    final monday = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    final nextMonday = monday.add(const Duration(days: 7));
+    final rows = await _db.rawQuery(
+      '''
+      SELECT
+        CAST(strftime('%w', started_at) AS INTEGER) as dow,
+        SUM(duration_seconds) as total
+      FROM reading_sessions
+      WHERE started_at >= ? AND started_at < ?
+      GROUP BY dow
+      ''',
+      [monday.toIso8601String(), nextMonday.toIso8601String()],
+    );
+    final result = List<int>.filled(7, 0);
+    for (final row in rows) {
+      // SQLite %w: 0=일, 1=월 … 6=토 → 앱 인덱스: 0=월 … 6=일
+      final dow = row['dow'] as int;
+      final idx = dow == 0 ? 6 : dow - 1;
+      result[idx] = ((row['total'] as int?) ?? 0) ~/ 60;
+    }
+    return result;
   }
 
   // 날짜별 독서 분(分) 맵 (히트맵 데이터)

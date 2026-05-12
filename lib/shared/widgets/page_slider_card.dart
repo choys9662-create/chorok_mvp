@@ -114,26 +114,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
               if (widget.trailing != null) widget.trailing!,
             ],
           ),
-          const SizedBox(height: 4),
-
-          // 슬라이더
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              activeTrackColor: context.appPrimaryAccent,
-              inactiveTrackColor: context.appBorder,
-              thumbColor: context.appPrimaryAccent,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
-              overlayColor: context.appPrimaryAccent.withValues(alpha: 0.12),
-            ),
-            child: Slider(
-              value: _page.toDouble().clamp(0, sliderMax),
-              min: 0,
-              max: sliderMax,
-              onChanged: (v) => _setPage(v.round()),
-            ),
-          ),
+          const SizedBox(height: 12),
 
           // 페이지 숫자 — 탭하면 키보드 열림
           GestureDetector(
@@ -189,7 +170,26 @@ class _PageSliderCardState extends State<PageSliderCard> {
               ),
             ),
 
-          const SizedBox(height: 16),
+          // 슬라이더
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              activeTrackColor: context.appPrimaryAccent,
+              inactiveTrackColor: context.appBorder,
+              thumbColor: context.appPrimaryAccent,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+              overlayColor: context.appPrimaryAccent.withValues(alpha: 0.12),
+            ),
+            child: Slider(
+              value: _page.toDouble().clamp(0, sliderMax),
+              min: 0,
+              max: sliderMax,
+              onChanged: (v) => _setPage(v.round()),
+            ),
+          ),
+
+          const SizedBox(height: 4),
 
           // 저장 버튼
           SizedBox(

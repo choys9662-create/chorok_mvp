@@ -5,15 +5,16 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../timer/controller/timer_controller.dart';
+import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
 class HomeAppBar extends ConsumerWidget {
   const HomeAppBar({super.key});
 
-  String _subtext(TimerData timer) {
+  String _subtext(TimerData timer, List<int> dbWeekly, int dbTodayMin) {
     final now = DateTime.now();
     final todayIndex = (now.weekday - 1).clamp(0, 6);
-    final todayMin = timer.seconds ~/ 60;
+    final todayMin = dbTodayMin + timer.seconds ~/ 60;
     final isInSession = !timer.isIdle;
     const goalMin = 30;
     final seed = now.day;
@@ -29,18 +30,17 @@ class HomeAppBar extends ConsumerWidget {
       return '$remain분만 더요, 거의 다 왔어요';
     }
 
-    // 오늘 아직 안 읽은 상태
-    final streak = calcReadStreak(todayIndex);
+    final streak = calcReadStreak(todayIndex, dbWeekly);
     if (streak >= 3) {
       final suffix = kStreakSuffix[seed % kStreakSuffix.length];
       return '$streak일 연속! $suffix';
     }
 
     final readYesterday =
-        todayIndex > 0 && kWeeklyMinutes[todayIndex - 1] >= goalMin;
+        todayIndex > 0 && dbWeekly.length > todayIndex - 1 && dbWeekly[todayIndex - 1] >= goalMin;
     if (readYesterday) return '어제는 읽으셨는데, 오늘은요?';
 
-    final daysSince = daysSinceLastRead(todayIndex);
+    final daysSince = daysSinceLastRead(todayIndex, dbWeekly);
     if (daysSince >= 3) {
       return kSlackMessages[seed % kSlackMessages.length];
     }
@@ -51,6 +51,9 @@ class HomeAppBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
+    final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ?? kWeeklyMinutes;
+    final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
+    final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
       child: Row(
@@ -61,7 +64,7 @@ class HomeAppBar extends ConsumerWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                _subtext(timer),
+                _subtext(timer, dbWeekly, dbTodayMin),
                 style: AppTheme.headingLarge.copyWith(
                   color: context.appTextPrimary,
                 ),

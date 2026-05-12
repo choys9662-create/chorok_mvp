@@ -124,6 +124,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
   late final int _score;
+  late final String _sessionId;
 
   // 페이지 기록 상태
   bool _pageRecorded = false;
@@ -179,6 +180,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   void initState() {
     super.initState();
     _score = _calcScore(widget.data.seconds, widget.data.sentences.length);
+    _sessionId =
+        'session_${(widget.data.sessionStartedAt ?? DateTime.now()).millisecondsSinceEpoch}_${widget.data.bookId ?? 'free'}';
 
     _enterCtrl = AnimationController(
       vsync: this,
@@ -193,7 +196,23 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       _enterCtrl.forward();
+      _autoSaveSession();
     });
+  }
+
+  Future<void> _autoSaveSession() async {
+    if (widget.data.seconds <= 0) return;
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return;
+    await repo.saveSessionOnly(
+      sessionId: _sessionId,
+      bookId: widget.data.bookId,
+      durationSeconds: widget.data.seconds,
+      choseoCount: widget.data.sentences.length,
+      startedAt: widget.data.sessionStartedAt,
+      exitCount: widget.data.exitCount,
+      exitDurationSeconds: widget.data.exitDurationSeconds,
+    );
   }
 
   @override
@@ -232,6 +251,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         startedAt: widget.data.sessionStartedAt,
         exitCount: widget.data.exitCount,
         exitDurationSeconds: widget.data.exitDurationSeconds,
+        existingSessionId: _sessionId,
       );
 
       // 초서 문장 병렬 저장

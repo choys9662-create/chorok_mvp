@@ -330,7 +330,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 },
               )
             else if (_viewIndex == 1)
-              const LibraryStatsView(scrollController: null)
+              LibraryStatsView(scrollController: null)
             else
               Consumer(
                 builder: (ctx2, r, child) {

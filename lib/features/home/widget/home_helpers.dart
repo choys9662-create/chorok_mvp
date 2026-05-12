@@ -17,10 +17,10 @@ const kSlackMessages = [
 
 const kNudgeMessages = ['오늘 첫 독서를 시작해볼까요?', '딱 10분만 읽어볼까요?', '책이 기다리고 있어요'];
 
-int calcReadStreak(int todayIndex) {
+int calcReadStreak(int todayIndex, List<int> weeklyMinutes) {
   int streak = 0;
   for (int i = todayIndex - 1; i >= 0; i--) {
-    if (kWeeklyMinutes[i] >= 30) {
+    if (weeklyMinutes[i] >= 30) {
       streak++;
     } else {
       break;
@@ -29,9 +29,9 @@ int calcReadStreak(int todayIndex) {
   return streak;
 }
 
-int daysSinceLastRead(int todayIndex) {
+int daysSinceLastRead(int todayIndex, List<int> weeklyMinutes) {
   for (int i = todayIndex - 1; i >= 0; i--) {
-    if (kWeeklyMinutes[i] > 0) return todayIndex - i;
+    if (weeklyMinutes[i] > 0) return todayIndex - i;
   }
   return todayIndex + 1;
 }

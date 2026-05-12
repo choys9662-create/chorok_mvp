@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
+import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 
@@ -16,26 +17,27 @@ class WeeklyStatusCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
+    final weeklyAsync = ref.watch(weeklyMinutesProvider);
+    final dbWeekly = weeklyAsync.valueOrNull ?? kWeeklyMinutes;
 
     // 오늘 요일 (월=0)
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
-    // 오늘 값은 타이머 실시간 반영
-    final todayMin = timer.seconds ~/ 60;
+    // 오늘 값: DB 누적 + 현재 실행 중인 타이머
+    final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
+    final todayMin = dbTodayMin + timer.seconds ~/ 60;
 
     const goalMin = 30;
     final weekTotal =
-        kWeeklyMinutes.sublist(0, todayIndex).fold<int>(0, (a, b) => a + b) +
-        todayMin;
-    final daysAchieved =
-        kWeeklyMinutes
-            .sublist(0, todayIndex)
-            .where((m) => m >= goalMin)
-            .length +
-        (todayMin >= goalMin ? 1 : 0);
-    final maxMin = [
-      ...kWeeklyMinutes,
-      todayMin,
-    ].fold<int>(goalMin, (a, b) => a > b ? a : b);
+        List.generate(7, (i) => i == todayIndex ? todayMin : dbWeekly[i])
+            .fold<int>(0, (a, b) => a + b);
+    final daysAchieved = List.generate(7, (i) {
+      final m = i == todayIndex ? todayMin : dbWeekly[i];
+      return m >= goalMin ? 1 : 0;
+    }).fold<int>(0, (a, b) => a + b);
+    final maxMin = List.generate(
+      7,
+      (i) => i == todayIndex ? todayMin : dbWeekly[i],
+    ).fold<int>(goalMin, (a, b) => a > b ? a : b);
 
     final weekTotalText = weekTotal >= 60
         ? '${weekTotal ~/ 60}시간 ${weekTotal % 60}분'
@@ -101,7 +103,7 @@ class WeeklyStatusCard extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: List.generate(7, (i) {
-                  final min = i == todayIndex ? todayMin : kWeeklyMinutes[i];
+                  final min = i == todayIndex ? todayMin : dbWeekly[i];
                   final ratio = maxMin > 0
                       ? (min / maxMin).clamp(0.0, 1.0)
                       : 0.0;

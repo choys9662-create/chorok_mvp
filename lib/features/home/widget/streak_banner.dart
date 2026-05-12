@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/repositories/book_repository.dart';
 import 'package:figma_squircle/figma_squircle.dart';
+import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
 class StreakBanner extends ConsumerWidget {
@@ -17,9 +18,9 @@ class StreakBanner extends ConsumerWidget {
       data: (days) {
         if (days < 2) return const SizedBox.shrink();
         final today = DateTime.now();
-        // 오늘 독서 여부 — 주간 목업 데이터 기반
         final todayIndex = (today.weekday - 1).clamp(0, 6);
-        final todayMin = kWeeklyMinutes[todayIndex];
+        final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ?? kWeeklyMinutes;
+        final todayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
         final hasReadToday = todayMin > 0;
 
         return Padding(
