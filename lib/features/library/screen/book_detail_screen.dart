@@ -326,8 +326,8 @@ class _HeroSection extends StatelessWidget {
                 onTap: onToggleCompletion,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: 16,
+                    vertical: 10,
                   ),
                   decoration: AppTheme.smoothBox(
                     color: isCompleted
@@ -342,20 +342,20 @@ class _HeroSection extends StatelessWidget {
                         isCompleted
                             ? Icons.check_circle_rounded
                             : Icons.check_circle_outline_rounded,
-                        size: 16,
+                        size: 18,
                         color: isCompleted
                             ? context.appPrimaryAccent
                             : context.appTextTertiary,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
-                        '완독',
+                        '완독하기',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isCompleted
                               ? context.appPrimaryAccent
-                              : context.appTextTertiary,
+                              : context.appTextSecondary,
                         ),
                       ),
                     ],
