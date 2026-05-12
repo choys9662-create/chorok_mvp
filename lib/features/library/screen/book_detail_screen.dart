@@ -54,7 +54,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: context.appSurface,
+        backgroundColor: ctx.appSurface,
         title: const Text('총 페이지 수'),
         content: TextField(
           controller: ctrl,
@@ -65,7 +65,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('취소', style: TextStyle(color: context.appTextTertiary)),
+            child: Text('취소', style: TextStyle(color: ctx.appTextTertiary)),
           ),
           FilledButton(
             onPressed: () {
@@ -78,7 +78,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               Navigator.pop(ctx);
             },
             style: FilledButton.styleFrom(
-              backgroundColor: context.appPrimaryAccent,
+              backgroundColor: ctx.appPrimaryAccent,
               foregroundColor: Colors.white,
             ),
             child: const Text('저장'),
@@ -137,7 +137,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       backgroundColor: context.appBg,
       body: CustomScrollView(
         slivers: [
-          // ── 히어로 섹션 (표지 + 기본 정보) ───────────────────────────
+          // ── 히어로 섹션 ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _HeroSection(
               book: book,
@@ -147,24 +147,21 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
           ),
 
-          // ── 독서 통계 ──────────────────────────────────────────
+          // ── 독서 통계 ──────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _StatsRow(
-              sessions: 12, // TODO: 실제 세션 데이터 연동
+              sessions: 12,
               totalHours: book.totalReadingHours,
               avgMinutes: 45,
               sentenceCount: book.savedSentences.length,
             ),
           ),
 
-          // ── 현재 페이지 업데이트 ────────────────────────────────────────
+          // ── 현재 페이지 업데이트 ────────────────────────────────────
           if (!isCompleted)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
                 child: PageSliderCard(
                   key: ValueKey(book.totalPages),
                   initialPage: _currentPage,
@@ -250,7 +247,6 @@ class _BottomActionBar extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: context.appBg.withValues(alpha: 0.8),
-        // border: Border(top: BorderSide(color: context.appBorder, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -272,7 +268,7 @@ class _BottomActionBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           IconButton(
-            onPressed: () {}, // TODO: 삭제/메뉴
+            onPressed: () {},
             icon: const Icon(Icons.more_vert_rounded),
             style: IconButton.styleFrom(
               backgroundColor: context.appCardElevated,
@@ -285,8 +281,7 @@ class _BottomActionBar extends StatelessWidget {
   }
 }
 
-
-// ─── 서브 위젯들 (Hero, Stats, Header 등) ──────────────────────────────────
+// ─── 히어로 섹션 ──────────────────────────────────────────────────────────
 
 class _HeroSection extends StatelessWidget {
   final Book book;
@@ -304,181 +299,246 @@ class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasTotal = book.totalPages > 0;
+    final gradientIndex =
+        book.title.hashCode.abs() % AppTheme.coverGradients.length;
+    final coverColors = AppTheme.coverGradients[gradientIndex];
+    final topPad = MediaQuery.of(context).padding.top;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        MediaQuery.of(context).padding.top + 12,
-        24,
-        24,
-      ),
-      child: Column(
-        children: [
-          // ── 헤더: 뒤로가기 + 완독하기 ──────────────────────────────
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+    return Stack(
+      children: [
+        // 책 표지 컬러 기반 대기권 그라디언트
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: topPad + 340,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  coverColors[0].withValues(alpha: 0.55),
+                  coverColors[0].withValues(alpha: 0.18),
+                  context.appBg.withValues(alpha: 0),
+                ],
+                stops: const [0.0, 0.55, 1.0],
               ),
-              const Spacer(),
-              GestureDetector(
-                onTap: onToggleCompletion,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: EdgeInsets.fromLTRB(24, topPad + 12, 24, 32),
+          child: Column(
+            children: [
+              // ── 헤더: 뒤로가기 + 완독하기 ──────────────────────────
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                   ),
-                  decoration: AppTheme.smoothBox(
-                    color: isCompleted
-                        ? context.appPrimaryAccent.withValues(alpha: 0.12)
-                        : context.appCardElevated,
-                    radius: 20,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isCompleted
-                            ? Icons.check_circle_rounded
-                            : Icons.check_circle_outline_rounded,
-                        size: 18,
-                        color: isCompleted
-                            ? context.appPrimaryAccent
-                            : context.appTextTertiary,
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: onToggleCompletion,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '완독하기',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted
-                              ? context.appPrimaryAccent
-                              : context.appTextSecondary,
+                      decoration: AppTheme.smoothBox(
+                        color: isCompleted
+                            ? context.appPrimaryAccent.withValues(alpha: 0.12)
+                            : context.appCardElevated,
+                        radius: 20,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isCompleted
+                                ? Icons.check_circle_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 18,
+                            color: isCompleted
+                                ? context.appPrimaryAccent
+                                : context.appTextTertiary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '완독하기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isCompleted
+                                  ? context.appPrimaryAccent
+                                  : context.appTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+
+              // ── 책 표지 (컬러 글로우 그림자) ──────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: coverColors[1].withValues(alpha: 0.4),
+                      blurRadius: 40,
+                      offset: const Offset(0, 16),
+                      spreadRadius: -4,
+                    ),
+                  ],
+                ),
+                child: BookCover(
+                  coverUrl: book.coverUrl,
+                  gradientIndex: gradientIndex,
+                  width: 148,
+                  height: 210,
+                  radius: 16,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // ── 제목 + 저자 ─────────────────────────────────────────
+              Text(
+                book.title,
+                style: AppTheme.headingLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                book.author,
+                style: AppTheme.bodyMedium.copyWith(
+                  color: context.appTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // ── 진행률 ─────────────────────────────────────────────
+              if (hasTotal) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${(book.readingProgress * 100).toInt()}%',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: context.appPrimaryAccent,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${book.currentPage} / ${book.totalPages}쪽',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: context.appTextSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        GestureDetector(
+                          onTap: onSetTotalPages,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_rounded,
+                                size: 11,
+                                color: context.appTextTertiary,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '총 쪽수 수정',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.appTextTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: book.readingProgress,
+                    minHeight: 8,
+                    backgroundColor: context.appCardElevated,
+                    valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+                  ),
+                ),
+              ] else
+                GestureDetector(
+                  onTap: onSetTotalPages,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (book.currentPage > 0) ...[
+                        Text(
+                          '${book.currentPage}쪽',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: AppTheme.smoothBox(
+                          color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                          radius: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 13,
+                              color: context.appPrimaryAccent,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '총 쪽수 입력',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: context.appPrimaryAccent,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
             ],
           ),
-          const SizedBox(height: 20),
-          BookCover(
-            coverUrl: book.coverUrl,
-            gradientIndex:
-                book.title.hashCode.abs() % AppTheme.coverGradients.length,
-            width: 140,
-            height: 200,
-            radius: 16,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            book.title,
-            style: AppTheme.headingLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            book.author,
-            style: AppTheme.bodyMedium.copyWith(
-              color: context.appTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ── 진전도 ──────────────────────────────────────────────
-          if (hasTotal) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${(book.readingProgress * 100).toInt()}%',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appPrimaryAccent,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${book.currentPage} / ${book.totalPages}쪽',
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: onSetTotalPages,
-                  child: Icon(
-                    Icons.edit_rounded,
-                    size: 13,
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: book.readingProgress,
-                minHeight: 6,
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-              ),
-            ),
-          ] else
-            GestureDetector(
-              onTap: onSetTotalPages,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (book.currentPage > 0) ...[
-                    Text(
-                      '${book.currentPage}쪽',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: AppTheme.smoothBox(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.08),
-                      radius: 12,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.add_rounded,
-                          size: 13,
-                          color: context.appPrimaryAccent,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          '총 쪽수 입력',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: context.appPrimaryAccent,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
+
+// ─── 독서 통계 ────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
   final int sessions, sentenceCount;
@@ -495,47 +555,67 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _StatItem(label: '세션', value: '$sessions'),
-          _StatItem(label: '누적 시간', value: '${totalHours.toStringAsFixed(1)}h'),
-          _StatItem(label: '평균', value: '$avgMinutes분'),
-          _StatItem(label: '문장', value: '$sentenceCount'),
+          _StatCard(label: '세션', value: '$sessions'),
+          const SizedBox(width: 8),
+          _StatCard(
+            label: '누적 시간',
+            value: '${totalHours.toStringAsFixed(1)}h',
+          ),
+          const SizedBox(width: 8),
+          _StatCard(label: '평균', value: '$avgMinutes분'),
+          const SizedBox(width: 8),
+          _StatCard(label: '문장', value: '$sentenceCount'),
         ],
       ),
     );
   }
 }
 
-class _StatItem extends StatelessWidget {
+class _StatCard extends StatelessWidget {
   final String label, value;
-  const _StatItem({required this.label, required this.value});
+  const _StatCard({required this.label, required this.value});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: AppTheme.headingSmall.copyWith(
-            color: context.appPrimaryAccent,
-          ),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: AppTheme.smoothBox(
+          color: context.appCardElevated,
+          radius: 14,
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: AppTheme.headingSmall.copyWith(
+                color: context.appPrimaryAccent,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
+
+// ─── 공통 서브 위젯 ───────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
   final int count;
   const _SectionHeader({required this.title, required this.count});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -560,6 +640,7 @@ class _SectionHeader extends StatelessWidget {
 class _SentenceItem extends StatelessWidget {
   final String content;
   const _SentenceItem({required this.content});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
