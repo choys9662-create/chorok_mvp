@@ -50,7 +50,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   Future<void> _toggleCompletion(Book book) async {
     HapticFeedback.heavyImpact();
     if (book.status == ReadingStatus.completed) {
-      ref.read(libraryProvider.notifier).updateCurrentPage(widget.bookId, 0);
+      ref.read(libraryProvider.notifier).cancelCompletion(widget.bookId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -71,39 +71,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     } else {
       setState(() => _currentPage = book.totalPages);
       ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
-      _showCompletionDialog(book);
     }
-  }
-
-  void _showCompletionDialog(Book book) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.appSurface,
-        title: const Text('완독을 축하합니다! 🎉'),
-        content: Text('\'${book.title}\' 책을 끝까지 읽으셨네요.\n완독 회고를 작성하러 가볼까요?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              '나중에',
-              style: TextStyle(color: context.appTextTertiary),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.push(AppConstants.routeReflection, extra: book);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: context.appPrimaryAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('회고 작성'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

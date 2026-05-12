@@ -133,6 +133,39 @@ class LibraryNotifier extends Notifier<List<Book>> {
     }
   }
 
+  /// 완독 취소 — status를 reading으로 되돌리고 completedAt 초기화
+  void cancelCompletion(String bookId) {
+    debugPrint('LibraryProvider: cancelCompletion($bookId)');
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+
+    final old = state[idx];
+    if (old.status != ReadingStatus.completed) return;
+
+    final updated = Book(
+      id: old.id,
+      title: old.title,
+      author: old.author,
+      isbn: old.isbn,
+      coverUrl: old.coverUrl,
+      currentPage: old.currentPage,
+      totalPages: old.totalPages,
+      status: ReadingStatus.reading,
+      totalReadingHours: old.totalReadingHours,
+      savedSentences: old.savedSentences,
+      completedAt: null,
+    );
+
+    state = [...state]..[idx] = updated;
+
+    if (kUseMock) return;
+    if (kIsWeb) {
+      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    } else {
+      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+    }
+  }
+
   /// 명시적으로 완독 처리
   void markAsCompleted(String bookId) {
     debugPrint('LibraryProvider: markAsCompleted($bookId)');
