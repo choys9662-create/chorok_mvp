@@ -47,6 +47,47 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     }
   }
 
+  void _showSetTotalPages(int currentTotal) {
+    final ctrl = TextEditingController(
+      text: currentTotal > 0 ? '$currentTotal' : '',
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.appSurface,
+        title: const Text('총 페이지 수'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '예: 300'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('취소', style: TextStyle(color: context.appTextTertiary)),
+          ),
+          FilledButton(
+            onPressed: () {
+              final pages = int.tryParse(ctrl.text.trim());
+              if (pages != null && pages > 0) {
+                ref
+                    .read(libraryProvider.notifier)
+                    .updateTotalPages(widget.bookId, pages);
+              }
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: context.appPrimaryAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _toggleCompletion(Book book) async {
     HapticFeedback.heavyImpact();
     if (book.status == ReadingStatus.completed) {
@@ -102,6 +143,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               book: book,
               isCompleted: isCompleted,
               onToggleCompletion: () => _toggleCompletion(book),
+              onSetTotalPages: () => _showSetTotalPages(book.totalPages),
             ),
           ),
 
@@ -250,15 +292,19 @@ class _HeroSection extends StatelessWidget {
   final Book book;
   final bool isCompleted;
   final VoidCallback onToggleCompletion;
+  final VoidCallback onSetTotalPages;
 
   const _HeroSection({
     required this.book,
     required this.isCompleted,
     required this.onToggleCompletion,
+    required this.onSetTotalPages,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasTotal = book.totalPages > 0;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         24,
@@ -268,14 +314,54 @@ class _HeroSection extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // ── 헤더: 뒤로가기 + 완독하기 ──────────────────────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
                 onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
               ),
               const Spacer(),
+              GestureDetector(
+                onTap: onToggleCompletion,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: AppTheme.smoothBox(
+                    color: isCompleted
+                        ? context.appPrimaryAccent.withValues(alpha: 0.12)
+                        : context.appCardElevated,
+                    radius: 20,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCompleted
+                            ? Icons.check_circle_rounded
+                            : Icons.check_circle_outline_rounded,
+                        size: 16,
+                        color: isCompleted
+                            ? context.appPrimaryAccent
+                            : context.appTextTertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '완독',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted
+                              ? context.appPrimaryAccent
+                              : context.appTextTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -301,73 +387,93 @@ class _HeroSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${(book.readingProgress * 100).toInt()}%',
-                style: AppTheme.headingSmall.copyWith(
-                  color: context.appPrimaryAccent,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${book.currentPage} / ${book.totalPages}쪽',
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: book.readingProgress,
-              minHeight: 6,
-              backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-            ),
-          ),
-          const SizedBox(height: 24),
-          GestureDetector(
-            onTap: onToggleCompletion,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 16,
-              ), // 터치 영역 확장
-              decoration: AppTheme.smoothBox(
-                color: isCompleted
-                    ? context.appPrimaryAccent.withValues(alpha: 0.1)
-                    : context.appCardElevated,
-                radius: 12,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isCompleted
-                        ? Icons.check_circle_rounded
-                        : Icons.check_circle_outline_rounded,
-                    color: isCompleted
-                        ? context.appPrimaryAccent
-                        : context.appTextTertiary,
+
+          // ── 진전도 ──────────────────────────────────────────────
+          if (hasTotal) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${(book.readingProgress * 100).toInt()}%',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appPrimaryAccent,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '완독하기',
-                    style: TextStyle(
-                      color: isCompleted
-                          ? context.appPrimaryAccent
-                          : context.appTextSecondary,
-                      fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '${book.currentPage} / ${book.totalPages}쪽',
+                  style: AppTheme.bodySmall.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: onSetTotalPages,
+                  child: Icon(
+                    Icons.edit_rounded,
+                    size: 13,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: book.readingProgress,
+                minHeight: 6,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+              ),
+            ),
+          ] else
+            GestureDetector(
+              onTap: onSetTotalPages,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (book.currentPage > 0) ...[
+                    Text(
+                      '${book.currentPage}쪽',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: AppTheme.smoothBox(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                      radius: 12,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.add_rounded,
+                          size: 13,
+                          color: context.appPrimaryAccent,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          '총 쪽수 입력',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: context.appPrimaryAccent,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
         ],
       ),
     );
