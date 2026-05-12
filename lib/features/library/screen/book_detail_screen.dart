@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/page_slider_card.dart';
@@ -188,7 +189,17 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       bottomNavigationBar: _BottomActionBar(
         book: book,
         onStartSession: () {
-          context.push(AppConstants.routeSession, extra: book);
+          context.push(
+            AppConstants.routeSession,
+            extra: SessionExtra(
+              bookId: book.id,
+              bookTitle: book.title,
+              bookAuthor: book.author,
+              coverUrl: book.coverUrl,
+              startPage: _currentPage,
+              totalPages: book.totalPages,
+            ),
+          );
         },
       ),
     );
@@ -228,6 +239,7 @@ class _BottomActionBar extends StatelessWidget {
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: AppTheme.smoothShape(radius: 12),
               ),
