@@ -206,6 +206,24 @@ List<FeedSentence> _kMockSentences() {
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   _FeedFilter _filter = _FeedFilter.latest;
   bool _isRefreshing = false;
+  final Map<String, bool> _likedOverrides = {};
+
+  bool _isLiked(FeedSentence s) => _likedOverrides[s.id] ?? s.isLiked;
+
+  int _empathyCount(FeedSentence s) {
+    if (!_likedOverrides.containsKey(s.id)) return s.empathyCount;
+    final override = _likedOverrides[s.id]!;
+    if (override && !s.isLiked) return s.empathyCount + 1;
+    if (!override && s.isLiked) return s.empathyCount - 1;
+    return s.empathyCount;
+  }
+
+  void _toggleLike(String id, bool willLike) {
+    willLike
+        ? HapticFeedback.mediumImpact()
+        : HapticFeedback.selectionClick();
+    setState(() => _likedOverrides[id] = willLike);
+  }
 
   // sentences 참조가 동일하면 overlap/trending 재계산 생략
   List<FeedSentence>? _derivedFromSentences;
@@ -437,6 +455,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               itemBuilder: (_, i) => _SentenceCard(
                                 sentence: filtered[i],
                                 isOverlap: overlapIds.contains(filtered[i].id),
+                                isLiked: _isLiked(filtered[i]),
+                                empathyCount: _empathyCount(filtered[i]),
+                                onToggleLike: _toggleLike,
                               ),
                             ),
                           ),
@@ -738,42 +759,25 @@ class _FeedFilterChip extends StatelessWidget {
   }
 }
 
-class _SentenceCard extends StatefulWidget {
+class _SentenceCard extends StatelessWidget {
   final FeedSentence sentence;
   final bool isOverlap;
+  final bool isLiked;
+  final int empathyCount;
+  final void Function(String id, bool willLike) onToggleLike;
 
-  const _SentenceCard({required this.sentence, required this.isOverlap});
-
-  @override
-  State<_SentenceCard> createState() => _SentenceCardState();
-}
-
-class _SentenceCardState extends State<_SentenceCard> {
-  late bool _isLiked;
-  late int _empathyCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _isLiked = widget.sentence.isLiked;
-    _empathyCount = widget.sentence.empathyCount;
-  }
-
-  void _toggleLike() {
-    final willLike = !_isLiked;
-    willLike
-        ? HapticFeedback.mediumImpact()
-        : HapticFeedback.selectionClick();
-    setState(() {
-      _isLiked = willLike;
-      _empathyCount += willLike ? 1 : -1;
-    });
-  }
+  const _SentenceCard({
+    required this.sentence,
+    required this.isOverlap,
+    required this.isLiked,
+    required this.empathyCount,
+    required this.onToggleLike,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.sentence;
-    final overlap = widget.isOverlap;
+    final s = sentence;
+    final overlap = isOverlap;
 
     return GestureDetector(
       onTap: () {
@@ -980,23 +984,23 @@ class _SentenceCardState extends State<_SentenceCard> {
                   Row(
                     children: [
                       GestureDetector(
-                        onTap: _toggleLike,
+                        onTap: () => onToggleLike(s.id, !isLiked),
                         child: Row(
                           children: [
                             Icon(
-                              _isLiked
+                              isLiked
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
                               size: 16,
-                              color: _isLiked
+                              color: isLiked
                                   ? const Color(0xFFFF6B6B)
                                   : context.appTextTertiary,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '$_empathyCount',
+                              '$empathyCount',
                               style: AppTheme.captionLarge.copyWith(
-                                color: _isLiked
+                                color: isLiked
                                     ? const Color(0xFFFF6B6B)
                                     : context.appTextTertiary,
                               ),

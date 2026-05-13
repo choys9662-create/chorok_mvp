@@ -265,16 +265,16 @@ List<_OtherReaderSentence> _buildMockOtherReaders() => [
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 
-class BookDetailScreen extends StatefulWidget {
+class BookDetailScreen extends ConsumerStatefulWidget {
   final BookDetailExtra book;
 
   const BookDetailScreen({super.key, required this.book});
 
   @override
-  State<BookDetailScreen> createState() => _BookDetailScreenState();
+  ConsumerState<BookDetailScreen> createState() => _BookDetailScreenState();
 }
 
-class _BookDetailScreenState extends State<BookDetailScreen> {
+class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   bool _isCompleted = false;
   final Set<String> _expandedIds = {};
   late final List<_CollectedSentence> _sentences;
@@ -320,17 +320,17 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   Future<void> _toggleCompletion() async {
     HapticFeedback.mediumImpact();
     if (_isCompleted) {
-      // 이미 완독 상태인 경우 취소 처리 (단순 토글)
       setState(() => _isCompleted = false);
+      ref.read(libraryProvider.notifier).cancelCompletion(widget.book.bookId);
       return;
     }
 
-    // 완독 체크 시 축하 다이얼로그 표시
     await _showCompletionDialog();
   }
 
   Future<void> _showCompletionDialog() async {
     HapticFeedback.heavyImpact();
+    ref.read(libraryProvider.notifier).markAsCompleted(widget.book.bookId);
 
     await showDialog<void>(
       context: context,

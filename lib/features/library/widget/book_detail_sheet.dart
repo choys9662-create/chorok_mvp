@@ -48,6 +48,14 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     _currentPage = widget.book.currentPage;
   }
 
+  @override
+  void didUpdateWidget(BookDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.book.currentPage != widget.book.currentPage) {
+      setState(() => _currentPage = widget.book.currentPage);
+    }
+  }
+
   void _savePage(BuildContext context, int page) {
     HapticFeedback.heavyImpact();
     setState(() => _currentPage = page);

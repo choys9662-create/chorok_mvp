@@ -24,7 +24,14 @@ class BookDetailScreen extends ConsumerStatefulWidget {
 
 class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   int _currentPage = 0;
-  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final books = ref.read(libraryProvider);
+    final idx = books.indexWhere((b) => b.id == widget.bookId);
+    if (idx >= 0) _currentPage = books[idx].currentPage;
+  }
 
   Future<void> _savePage() async {
     HapticFeedback.mediumImpact();
@@ -117,6 +124,15 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<List<Book>>(libraryProvider, (prev, next) {
+      final prevIdx = prev?.indexWhere((b) => b.id == widget.bookId) ?? -1;
+      final nextIdx = next.indexWhere((b) => b.id == widget.bookId);
+      if (prevIdx >= 0 && nextIdx >= 0 &&
+          prev![prevIdx].status != next[nextIdx].status) {
+        setState(() => _currentPage = next[nextIdx].currentPage);
+      }
+    });
+
     final bookList = ref.watch(libraryProvider);
     final bookIndex = bookList.indexWhere((b) => b.id == widget.bookId);
 
@@ -125,12 +141,6 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     }
 
     final book = bookList[bookIndex];
-
-    if (!_isInitialized) {
-      _currentPage = book.currentPage;
-      _isInitialized = true;
-    }
-
     final isCompleted = book.status == ReadingStatus.completed;
 
     return Scaffold(
