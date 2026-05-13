@@ -8,9 +8,28 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
+import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/page_slider_card.dart';
 import '../widget/manual_reading_log_sheet.dart';
+
+// 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
+final _bookSessionStatsProvider = FutureProvider.family<
+  ({int sessions, double totalHours, int avgMinutes}),
+  String
+>((ref, bookId) async {
+  final repo = ref.read(bookRepositoryProvider);
+  if (repo == null) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
+  final sessions = await repo.getSessionsForBook(bookId);
+  final count = sessions.length;
+  if (count == 0) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
+  final totalSecs = sessions.fold(0, (s, r) => s + r.durationSeconds);
+  return (
+    sessions: count,
+    totalHours: totalSecs / 3600.0,
+    avgMinutes: totalSecs ~/ count ~/ 60,
+  );
+});
 
 /// 도서 상세 통합 화면 (바텀시트 기능 통합)
 class BookDetailScreen extends ConsumerStatefulWidget {
@@ -95,6 +114,71 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     );
   }
 
+  void _showMenu(Book book) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: ctx.appSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24, 16, 24, MediaQuery.of(ctx).padding.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: ctx.appTextTertiary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              title: const Text('책 삭제', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDelete(book);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(Book book) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appSurface,
+        title: const Text('책 삭제'),
+        content: Text(
+          '${book.title}을(를) 서재에서 삭제할까요?\n독서 기록도 함께 사라져요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('취소', style: TextStyle(color: ctx.appTextTertiary)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(libraryProvider.notifier).deleteBook(widget.bookId);
+              context.pop();
+            },
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _toggleCompletion(Book book) async {
     HapticFeedback.heavyImpact();
     if (book.status == ReadingStatus.completed) {
@@ -125,11 +209,16 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<List<Book>>(libraryProvider, (prev, next) {
-      final prevIdx = prev?.indexWhere((b) => b.id == widget.bookId) ?? -1;
       final nextIdx = next.indexWhere((b) => b.id == widget.bookId);
-      if (prevIdx >= 0 && nextIdx >= 0 &&
-          prev![prevIdx].status != next[nextIdx].status) {
-        setState(() => _currentPage = next[nextIdx].currentPage);
+      if (nextIdx < 0) return;
+      final prevIdx = prev?.indexWhere((b) => b.id == widget.bookId) ?? -1;
+      if (prevIdx >= 0) {
+        final prevBook = prev![prevIdx];
+        final nextBook = next[nextIdx];
+        if (prevBook.status != nextBook.status ||
+            prevBook.currentPage != nextBook.currentPage) {
+          setState(() => _currentPage = nextBook.currentPage);
+        }
       }
     });
 
@@ -137,6 +226,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final bookIndex = bookList.indexWhere((b) => b.id == widget.bookId);
 
     if (bookIndex < 0) {
+      if (bookList.isEmpty) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
       return const Scaffold(body: Center(child: Text('책을 찾을 수 없습니다.')));
     }
 
@@ -159,12 +251,17 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
           // ── 독서 통계 ──────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _StatsRow(
-              sessions: 12,
-              totalHours: book.totalReadingHours,
-              avgMinutes: 45,
-              sentenceCount: book.savedSentences.length,
-            ),
+            child: Builder(builder: (context) {
+              final stats = ref
+                  .watch(_bookSessionStatsProvider(widget.bookId))
+                  .valueOrNull;
+              return _StatsRow(
+                sessions: stats?.sessions ?? 0,
+                totalHours: stats?.totalHours ?? 0.0,
+                avgMinutes: stats?.avgMinutes ?? 0,
+                sentenceCount: book.savedSentences.length,
+              );
+            }),
           ),
 
           // ── 현재 페이지 업데이트 ────────────────────────────────────
@@ -233,6 +330,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
           );
         },
+        onMenu: () => _showMenu(book),
       ),
     );
   }
@@ -243,8 +341,13 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 class _BottomActionBar extends StatelessWidget {
   final Book book;
   final VoidCallback onStartSession;
+  final VoidCallback onMenu;
 
-  const _BottomActionBar({required this.book, required this.onStartSession});
+  const _BottomActionBar({
+    required this.book,
+    required this.onStartSession,
+    required this.onMenu,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +381,7 @@ class _BottomActionBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           IconButton(
-            onPressed: () {},
+            onPressed: onMenu,
             icon: const Icon(Icons.more_vert_rounded),
             style: IconButton.styleFrom(
               backgroundColor: context.appCardElevated,
@@ -482,16 +585,6 @@ class _HeroSection extends StatelessWidget {
                       ],
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: book.readingProgress,
-                    minHeight: 8,
-                    backgroundColor: context.appCardElevated,
-                    valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-                  ),
                 ),
               ] else
                 GestureDetector(

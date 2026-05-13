@@ -16,6 +16,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../analytics/controller/analytics_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
@@ -213,6 +214,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       exitCount: widget.data.exitCount,
       exitDurationSeconds: widget.data.exitDurationSeconds,
     );
+    ref.invalidate(analyticsProvider);
+    ref.invalidate(readingStreakProvider);
   }
 
   @override
@@ -273,6 +276,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
       // libraryProvider 인메모리 상태 즉시 반영 (홈/서재 화면 기닥 없이 업데이트)
       ref.read(libraryProvider.notifier).updateCurrentPage(bookId, newPage);
+      ref.invalidate(analyticsProvider);
+      ref.invalidate(readingStreakProvider);
 
       setState(() {
         _isSavingPage = false;

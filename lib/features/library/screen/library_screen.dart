@@ -125,6 +125,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kUseMock) {
+      ref.listen(_readingLogsProvider, (_, next) {
+        if (next.hasError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '독서 기록을 불러오지 못했어요',
+                style: TextStyle(color: Colors.white),
+              ),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,

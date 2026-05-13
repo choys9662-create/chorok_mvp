@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,8 +41,8 @@ class HomeScreen extends ConsumerWidget {
               controller: scrollCtrl,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // 스트릭 배너 (2일 이상일 때만, 목업 or 모바일만)
-                if (kUseMock) SliverToBoxAdapter(child: StreakBanner()),
+                // 스트릭 배너 (2일 이상일 때만 렌더링, 내부에서 days < 2 체크)
+                SliverToBoxAdapter(child: StreakBanner()),
                 // ① 이번 주 독서 현황 (목업 전용 — 실데이터 연동 전)
                 if (kUseMock) ...[
                   SliverToBoxAdapter(
@@ -67,8 +68,8 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   const SliverToBoxAdapter(child: FeedHighlightSection()),
                 ],
-                // ⑥ 타임캡슐 문장 (sqflite 기반 — 목업 or 모바일)
-                if (kUseMock) ...[
+                // ⑥ 타임캡슐 문장 (sqflite 기반 — 웹 미지원, 내부에서 null 체크)
+                if (!kIsWeb) ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 8)),
                   const SliverToBoxAdapter(child: TimeCapsuleSection()),
                 ],

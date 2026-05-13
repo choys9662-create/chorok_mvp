@@ -287,9 +287,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kUseMock) {
+      ref.listen(feedProvider, (_, next) {
+        if (next.hasError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                '문장을 불러오지 못했어요',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: AppTheme.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
+    final feedAsync = kUseMock ? null : ref.watch(feedProvider);
+    final isLoading = !kUseMock && (feedAsync?.isLoading ?? false);
     final sentences = kUseMock
         ? _kMockSentences()
-        : (ref.watch(feedProvider).valueOrNull ?? const <FeedSentence>[]);
+        : (feedAsync!.valueOrNull ?? const <FeedSentence>[]);
     _ensureDerived(
       sentences,
       mockTrending: kUseMock ? _kMockTrendingBooks : null,
@@ -418,7 +437,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       // child: Divider(height: 1, color: context.appBorder),
                     ),
                   ],
-                  if (_filter == _FeedFilter.overlap)
+                  if (isLoading)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_filter == _FeedFilter.overlap)
                     groups.isEmpty
                         ? SliverFillRemaining(
                             hasScrollBody: false,
