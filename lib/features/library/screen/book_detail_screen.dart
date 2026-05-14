@@ -275,7 +275,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   initialPage: _currentPage,
                   totalPages: book.totalPages,
                   onPageChanged: (p) => setState(() => _currentPage = p),
-                  onSave: (page) async => _savePage(),
+                  onSave: (page) async {
+                    setState(() => _currentPage = page);
+                    await _savePage();
+                  },
                   trailing: TextButton.icon(
                     onPressed: () => showModalBottomSheet(
                       context: context,
