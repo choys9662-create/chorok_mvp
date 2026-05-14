@@ -428,7 +428,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 ),
               ),
 
-              // ④ 녹음 오버레이 (STT 중일 때)
+              // ④ OCR 로딩 오버레이
+              if (_isOcrLoading)
+                const _OcrLoadingOverlay(),
+
+              // ⑤ 녹음 오버레이 (STT 중일 때)
               if (_isRecording)
                 _RecordingOverlay(
                   recognizedText: _recognizedText,
@@ -1187,6 +1191,42 @@ class _GlowOrb extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── OCR 로딩 오버레이 ─────────────────────────────────────────────────
+class _OcrLoadingOverlay extends StatelessWidget {
+  const _OcrLoadingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.6),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.document_scanner_outlined,
+                color: Colors.white,
+                size: 48,
+              ),
+              SizedBox(height: 16),
+              CircularProgressIndicator(
+                color: _kGreen,
+                strokeWidth: 2,
+              ),
+              SizedBox(height: 16),
+              Text(
+                '텍스트 인식 중...',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ),
     );
