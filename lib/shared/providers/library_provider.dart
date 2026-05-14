@@ -177,13 +177,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
     if (idx < 0) return;
 
     final old = state[idx];
-    if (old.totalPages <= 0) {
-      debugPrint('LibraryProvider: Cannot complete book with 0 total pages');
-      return;
-    }
 
     final updated = old.copyWith(
-      currentPage: old.totalPages,
+      currentPage: old.totalPages > 0 ? old.totalPages : old.currentPage,
       status: ReadingStatus.completed,
       completedAt: DateTime.now(),
     );

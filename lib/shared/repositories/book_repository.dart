@@ -177,6 +177,7 @@ class BookRepository {
     int totalPages = 0,
     int currentPage = 0,
     IsarReadingStatus status = IsarReadingStatus.reading,
+    DateTime? completedAt,
   }) async {
     final now = DateTime.now();
 
@@ -193,6 +194,7 @@ class BookRepository {
           'current_page': currentPage,
           'total_pages': totalPages,
           'status': status.name,
+          'completed_at': completedAt?.toIso8601String(),
           'updated_at': now.toIso8601String(),
         },
         where: 'book_id = ?',
@@ -501,6 +503,7 @@ class BookRepository {
       totalPages: book.totalPages,
       currentPage: book.currentPage,
       status: status,
+      completedAt: book.completedAt,
     );
   }
 
