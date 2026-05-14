@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../main.dart';
+import '../../shared/utils/sentence_normalizer.dart';
 
 final dbServiceProvider = Provider<DbService>((ref) => DbService());
 
@@ -67,6 +68,7 @@ class DbService {
     String? bookId,
     required int durationSeconds,
     required List<String> sentences,
+    List<String?>? thoughts,  // 추가 — nullable, 기존 호출부 변경 불필요
     int? score,
   }) async {
     // 1) 세션 행 생성
@@ -90,13 +92,18 @@ class DbService {
       await supabase
           .from('sentences')
           .insert(
-            sentences
+            sentences.asMap().entries
                 .map(
-                  (s) => {
+                  (e) => {
                     'user_id': _uid,
                     'book_id': ?bookId,
                     'session_id': sessionId,
-                    'content': s,
+                    'content': e.value,
+                    'normalized_sentences':
+                        SentenceNormalizer.tokenizeAndNormalize(e.value),
+                    'thought': thoughts != null && e.key < thoughts.length
+                        ? thoughts[e.key]
+                        : null,
                   },
                 )
                 .toList(),
@@ -154,6 +161,28 @@ class DbService {
         .eq('content', content)
         .neq('user_id', _uid);
     return (res as List).length;
+  }
+
+  /// 정규화된 문장과 exact-match되는 다른 유저들의 문장을 조회한다.
+  ///
+  /// Supabase GIN 인덱스를 통해 normalized_sentences 배열 포함 검색.
+  /// 반환: [{ id, content, thought, created_at, profiles, books }]
+  Future<List<Map<String, dynamic>>> findOverlappingSentences(
+    String normalizedText,
+  ) async {
+    if (normalizedText.isEmpty) return const [];
+    final res = await supabase
+        .from('sentences')
+        .select(
+          'id, content, thought, created_at, '
+          'profiles(username, display_name, avatar_url), '
+          'books(title)',
+        )
+        .filter('normalized_sentences', 'cs', '{"$normalizedText"}')
+        .neq('user_id', _uid)
+        .order('created_at', ascending: false)
+        .limit(20);
+    return List<Map<String, dynamic>>.from(res);
   }
 
   // ────────────────────────────────────────────────────────────────────
