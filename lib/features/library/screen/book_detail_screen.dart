@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
@@ -12,6 +14,17 @@ import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/page_slider_card.dart';
 import '../widget/manual_reading_log_sheet.dart';
+
+// 책별 수집 문장 (모바일 SQLite choseo 테이블 — 웹/목업은 book.savedSentences 사용)
+final _bookChoseoProvider = FutureProvider.family<List<String>, String>(
+  (ref, bookId) async {
+    if (kIsWeb || kUseMock) return const [];
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return const [];
+    final rows = await repo.getChoseoByBook(bookId);
+    return rows.map((c) => c.content).toList();
+  },
+);
 
 // 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
 final _bookSessionStatsProvider = FutureProvider.family<
@@ -236,6 +249,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final book = bookList[bookIndex];
     final isCompleted = book.status == ReadingStatus.completed;
 
+    final dbChoseo = ref
+        .watch(_bookChoseoProvider(widget.bookId))
+        .valueOrNull ?? const [];
+    final sentences = (kUseMock || kIsWeb) ? book.savedSentences : dbChoseo;
+
     return Scaffold(
       backgroundColor: context.appBg,
       body: CustomScrollView(
@@ -260,7 +278,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 sessions: stats?.sessions ?? 0,
                 totalHours: stats?.totalHours ?? 0.0,
                 avgMinutes: stats?.avgMinutes ?? 0,
-                sentenceCount: book.savedSentences.length,
+                sentenceCount: sentences.length,
               );
             }),
           ),
@@ -300,18 +318,17 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
 
           // ── 수집한 문장 리스트 ──────────────────────────────────────
-          if (book.savedSentences.isNotEmpty) ...[
+          if (sentences.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: _SectionHeader(
                 title: '수집한 문장',
-                count: book.savedSentences.length,
+                count: sentences.length,
               ),
             ),
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) =>
-                    _SentenceItem(content: book.savedSentences[index]),
-                childCount: book.savedSentences.length,
+                (context, index) => _SentenceItem(content: sentences[index]),
+                childCount: sentences.length,
               ),
             ),
           ],
