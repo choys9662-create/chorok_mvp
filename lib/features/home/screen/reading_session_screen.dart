@@ -409,6 +409,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                 isOcrLoading: _isOcrLoading,
                                 onTypeSentence: (text) =>
                                     _openChosuSheet(initialText: text),
+                                onFocusChanged: (focused) {
+                                  setState(() => _isTyping = focused);
+                                  if (focused) {
+                                    _uiHideTimer?.cancel();
+                                    setState(() => _isUiVisible = true);
+                                  } else {
+                                    _resetUiTimer();
+                                  }
+                                },
                               ),
                             ),
                           ),
@@ -609,6 +618,7 @@ class _BottomArea extends StatelessWidget {
   final bool isRecording;
   final bool isOcrLoading;
   final ValueChanged<String> onTypeSentence;
+  final ValueChanged<bool> onFocusChanged;
 
   const _BottomArea({
     required this.chosuCount,
@@ -619,6 +629,7 @@ class _BottomArea extends StatelessWidget {
     required this.isRecording,
     required this.isOcrLoading,
     required this.onTypeSentence,
+    required this.onFocusChanged,
   });
 
   @override
@@ -721,6 +732,7 @@ class _BottomArea extends StatelessWidget {
             isRecording: isRecording,
             isOcrLoading: isOcrLoading,
             onTypeSentence: onTypeSentence,
+            onFocusChanged: onFocusChanged,
           ),
         ],
       ),
@@ -735,6 +747,7 @@ class _ChosuActionBar extends StatefulWidget {
   final bool isRecording;
   final bool isOcrLoading;
   final ValueChanged<String> onTypeSentence;
+  final ValueChanged<bool> onFocusChanged;
 
   const _ChosuActionBar({
     required this.onOcrTap,
@@ -742,6 +755,7 @@ class _ChosuActionBar extends StatefulWidget {
     required this.isRecording,
     required this.isOcrLoading,
     required this.onTypeSentence,
+    required this.onFocusChanged,
   });
 
   @override
@@ -750,10 +764,20 @@ class _ChosuActionBar extends StatefulWidget {
 
 class _ChosuActionBarState extends State<_ChosuActionBar> {
   final _ctrl = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      widget.onFocusChanged(_focusNode.hasFocus);
+    });
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -783,6 +807,7 @@ class _ChosuActionBarState extends State<_ChosuActionBar> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
+                    focusNode: _focusNode,
                     style: const TextStyle(fontSize: 14, color: Colors.white),
                     decoration: InputDecoration(
                       hintText: '문장을 입력하세요...',
