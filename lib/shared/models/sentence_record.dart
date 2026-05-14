@@ -27,9 +27,10 @@ class SentenceRecord {
     sessionId: m['session_id'] as String?,
     content: m['content'] as String,
     thought: m['thought'] as String?,
-    normalizedSentences: ((m['normalized_sentences'] as List?) ?? [])
-        .map((s) => s.toString())
-        .toList(),
+    normalizedSentences: (m['normalized_sentences'] as List<dynamic>?)
+        ?.map((s) => s.toString())
+        .toList() ??
+    [],
     createdAt: DateTime.parse(m['created_at'] as String),
   );
 }
