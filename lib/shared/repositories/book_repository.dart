@@ -771,6 +771,20 @@ class BookRepository {
     );
   }
 
+  /// bookId → 누적 독서 초(秒) 맵 — library_provider에서 totalReadingHours 계산용
+  Future<Map<String, int>> getBookTotalSecondsByBookId() async {
+    final rows = await _db.rawQuery('''
+      SELECT book_id, SUM(duration_seconds) AS total_seconds
+      FROM reading_sessions
+      WHERE book_id IS NOT NULL
+      GROUP BY book_id
+    ''');
+    return {
+      for (final r in rows)
+        r['book_id'] as String: (r['total_seconds'] as int?) ?? 0,
+    };
+  }
+
   /// 책별 누적 독서 시간 반환 — 트리맵용, 내림차순 최대 [limit]개
   Future<List<({String title, double hours})>> getBookReadingTimes({
     int limit = 12,

@@ -60,6 +60,14 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Environment Synchronization (Project Specific)
+
+**Mirror design changes across environments immediately.**
+
+- If you modify the UI/UX or layout in the "Design App" (mockup environment), you MUST apply the exact same visual changes to the "Test App" (real data environment).
+- Keep the look, feel, and component structure 100% identical across both environments. Only the data source (mock data vs. real database/API) should differ.
+- Always verify both sides are synced before completing a design task.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

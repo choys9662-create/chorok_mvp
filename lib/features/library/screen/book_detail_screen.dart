@@ -187,7 +187,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              '완독이 취소되었어요',
+              '읽음이 취소되었어요',
               style: TextStyle(color: Colors.white),
             ),
             backgroundColor: AppTheme.primary,
@@ -203,6 +203,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     } else {
       setState(() => _currentPage = book.totalPages);
       ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
+      if (mounted) context.pop();
     }
   }
 
@@ -480,7 +481,7 @@ class _HeroSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '완독하기',
+                            '읽었어요',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

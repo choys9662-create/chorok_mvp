@@ -54,7 +54,11 @@ class LibraryNotifier extends Notifier<List<Book>> {
           return;
         }
         final rows = await repo.getAllBooks();
-        loaded = rows.map(_fromIsarBook).toList();
+        final totalSecsMap = await repo.getBookTotalSecondsByBookId();
+        loaded = rows.map((b) {
+          final secs = totalSecsMap[b.bookId] ?? 0;
+          return _fromIsarBook(b).copyWith(totalReadingHours: secs / 3600.0);
+        }).toList();
       }
 
       // _loadFromDb 대기 중 addBook으로 추가된 책 보존

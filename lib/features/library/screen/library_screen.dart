@@ -16,6 +16,7 @@ import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/sheet_handle.dart';
+import '../../analytics/controller/analytics_provider.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
@@ -450,18 +451,17 @@ class _LibraryTabState extends State<_LibraryTab> {
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         // ── 이번 달 성과 뱃지 ──────────────────────────────────────
-        if (kUseMock)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding,
-                12,
-                AppTheme.screenPadding,
-                0,
-              ),
-              child: const _MonthlyAchievementCard(),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              12,
+              AppTheme.screenPadding,
+              0,
             ),
+            child: const _MonthlyAchievementCard(),
           ),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
         // ── 섹션 헤더 ──────────────────────────────────────────────
@@ -723,15 +723,40 @@ class _LibraryTabState extends State<_LibraryTab> {
 }
 
 // ─── 이번 달 독서 성과 뱃지 ──────────────────────────────────────────────────
-class _MonthlyAchievementCard extends StatelessWidget {
+class _MonthlyAchievementCard extends ConsumerWidget {
   const _MonthlyAchievementCard();
 
   @override
-  Widget build(BuildContext context) {
-    const items = [
-      (icon: Icons.menu_book_rounded, value: '2권', label: '이번 달 완독'),
-      (icon: Icons.local_fire_department_rounded, value: '5일', label: '최장 연속'),
-      (icon: Icons.format_quote_rounded, value: '47개', label: '수집 문장'),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final analytics = ref.watch(analyticsProvider).valueOrNull;
+    final books = ref.watch(libraryProvider);
+    final now = DateTime.now();
+    final monthCompleted = books
+        .where(
+          (b) =>
+              b.status == ReadingStatus.completed &&
+              b.completedAt != null &&
+              b.completedAt!.year == now.year &&
+              b.completedAt!.month == now.month,
+        )
+        .length;
+
+    final items = [
+      (
+        icon: Icons.menu_book_rounded,
+        value: kUseMock ? '2권' : '$monthCompleted권',
+        label: '이번 달 완독',
+      ),
+      (
+        icon: Icons.local_fire_department_rounded,
+        value: kUseMock ? '5일' : '${analytics?.monthMaxStreak ?? 0}일',
+        label: '최장 연속',
+      ),
+      (
+        icon: Icons.format_quote_rounded,
+        value: kUseMock ? '47개' : '${analytics?.monthChoseoCount ?? 0}개',
+        label: '수집 문장',
+      ),
     ];
 
     return Semantics(
