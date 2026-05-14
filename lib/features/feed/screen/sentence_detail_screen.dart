@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/utils/sentence_normalizer.dart';
+import '../controller/overlap_provider.dart';
+import '../widget/split_highlight_widget.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
@@ -88,16 +92,18 @@ List<_ReaderThought> _buildMockThoughts() => [
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 
-class SentenceDetailScreen extends StatefulWidget {
+class SentenceDetailScreen extends ConsumerStatefulWidget {
   final SentenceDetailExtra data;
 
   const SentenceDetailScreen({super.key, required this.data});
 
   @override
-  State<SentenceDetailScreen> createState() => _SentenceDetailScreenState();
+  ConsumerState<SentenceDetailScreen> createState() =>
+      _SentenceDetailScreenState();
 }
 
-class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
+class _SentenceDetailScreenState
+    extends ConsumerState<SentenceDetailScreen> {
   late final List<_ReaderThought> _thoughts;
   final _myThoughtController = TextEditingController();
   final _focusNode = FocusNode();
@@ -140,6 +146,59 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) setState(() => _isSubmitting = false);
     });
+  }
+
+  Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
+    if (kUseMock) return const SizedBox.shrink();
+
+    final normalizedText = SentenceNormalizer.normalize(d.sentenceContent);
+    final overlapsAsync = ref.watch(overlappingSentencesProvider(normalizedText));
+
+    return overlapsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (matches) {
+        if (matches.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            0,
+            AppTheme.screenPadding,
+            AppTheme.spaceLG,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  '같은 문장, 다른 생각',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextPrimary,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  '${matches.length}명이 이 문장을 함께 수집했어요',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ),
+              SplitHighlightWidget(
+                anchorText: d.sentenceContent,
+                collectorUsername: d.collectorUsername ?? '나',
+                collectorThought: d.collectorThought,
+                matches: matches,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -327,6 +386,11 @@ class _SentenceDetailScreenState extends State<SentenceDetailScreen> {
                       ),
                     ),
                   ),
+                ),
+
+                // ── 겹문장 섹션 ─────────────────────────────
+                SliverToBoxAdapter(
+                  child: _buildOverlapSection(context, d),
                 ),
 
                 // ── 구분선 ───────────────────────────────────
