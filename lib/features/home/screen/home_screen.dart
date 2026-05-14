@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_flags.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -43,31 +42,25 @@ class HomeScreen extends ConsumerWidget {
               slivers: [
                 // 스트릭 배너 (2일 이상일 때만 렌더링, 내부에서 days < 2 체크)
                 SliverToBoxAdapter(child: StreakBanner()),
-                // ① 이번 주 독서 현황 (목업 전용 — 실데이터 연동 전)
-                if (kUseMock) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: const WeeklyStatusCard(),
-                    ),
+                // ① 이번 주 독서 현황
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: const WeeklyStatusCard(),
                   ),
-                ],
+                ),
                 // ② 지금 읽는 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: ReadingBooksSection()),
-                // ③ 문장 기반 추천 (목업 전용 — AI 추천 연동 전)
-                if (kUseMock) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  const SliverToBoxAdapter(child: RecommendedBooksSection()),
-                ],
+                // ③ 문장 기반 추천 (AI 추천 연동 전 placeholder)
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: RecommendedBooksSection()),
                 // ④ 다음에 읽을 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: WishlistSection()),
-                // ⑤ 피드 하이라이트 (목업 전용 — 커뮤니티 기능 연동 전)
-                if (kUseMock) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                  const SliverToBoxAdapter(child: FeedHighlightSection()),
-                ],
+                // ⑤ 피드 하이라이트 (커뮤니티 기능 연동 전 placeholder)
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                const SliverToBoxAdapter(child: FeedHighlightSection()),
                 // ⑥ 타임캡슐 문장 (sqflite 기반 — 웹 미지원, 내부에서 null 체크)
                 if (!kIsWeb) ...[
                   const SliverToBoxAdapter(child: SizedBox(height: 8)),
