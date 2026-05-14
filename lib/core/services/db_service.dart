@@ -99,8 +99,9 @@ class DbService {
                     'book_id': ?bookId,
                     'session_id': sessionId,
                     'content': e.value,
-                    'normalized_sentences':
-                        SentenceNormalizer.tokenizeAndNormalize(e.value),
+                    'normalized_sentences': [
+                      SentenceNormalizer.normalize(e.value),
+                    ],
                     'thought': thoughts != null && e.key < thoughts.length
                         ? thoughts[e.key]
                         : null,
