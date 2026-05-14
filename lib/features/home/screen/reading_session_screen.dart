@@ -57,11 +57,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final Animation<double> _entryTimer;
   late final Animation<double> _entryBottom;
   bool _isUiVisible = true;
+  bool _isTyping = false;
   Timer? _uiHideTimer;
 
   void _resetUiTimer() {
     setState(() => _isUiVisible = true);
     _uiHideTimer?.cancel();
+    if (_isTyping) return;
     _uiHideTimer = Timer(const Duration(seconds: 4), () {
       final t = ref.read(timerProvider);
       if (mounted && t.isRunning) {
@@ -90,13 +92,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
+    ref.read(timerProvider.notifier).pause();
     setState(() => _isOcrLoading = true);
     final text = await ref.read(ocrServiceProvider).extractTextFromCamera();
     if (!mounted) return;
     setState(() => _isOcrLoading = false);
-    if (text != null && text.isNotEmpty) {
-      _openChosuSheet(initialText: text);
+    if (text == null || text.isEmpty) {
+      ref.read(timerProvider.notifier).resume();
+      return;
     }
+    _openChosuSheet(initialText: text);
   }
 
   Future<void> _toggleRecording() async {
@@ -105,11 +110,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       await stt.stop();
       if (!mounted) return;
       setState(() => _isRecording = false);
-      if (_recognizedText.isNotEmpty) {
-        final text = _recognizedText;
-        _recognizedText = '';
-        _openChosuSheet(initialText: text);
+      if (_recognizedText.isEmpty) {
+        ref.read(timerProvider.notifier).resume();
+        return;
       }
+      final text = _recognizedText;
+      _recognizedText = '';
+      _openChosuSheet(initialText: text);
     } else {
       final initialized = await stt.initialize();
       if (!initialized && mounted) {
@@ -124,6 +131,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         return;
       }
       if (!mounted) return;
+      ref.read(timerProvider.notifier).pause();
       setState(() {
         _isRecording = true;
         _recognizedText = '';
@@ -223,14 +231,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     super.dispose();
   }
 
-  // 초서 시트 열기 (공통)
-  // ignore: unused_element
   Future<void> _openChosuSheet({String initialText = ''}) async {
+    ref.read(timerProvider.notifier).pause();
     final result = await showModalBottomSheet<CollectedSentence>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ChosuSheet(initialText: initialText),
+      builder: (_) => ChosuSheet(
+        initialText: initialText,
+        bookTitle: widget.bookTitle,
+      ),
     );
     if (!mounted) return;
     if (result != null && result.content.isNotEmpty) {
