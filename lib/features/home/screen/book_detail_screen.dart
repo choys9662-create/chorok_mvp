@@ -321,7 +321,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     HapticFeedback.mediumImpact();
     if (_isCompleted) {
       setState(() => _isCompleted = false);
-      ref.read(libraryProvider.notifier).cancelCompletion(widget.book.bookId);
+      await ref.read(libraryProvider.notifier).cancelCompletion(widget.book.bookId);
       return;
     }
 
@@ -330,7 +330,8 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
   Future<void> _showCompletionDialog() async {
     HapticFeedback.heavyImpact();
-    ref.read(libraryProvider.notifier).markAsCompleted(widget.book.bookId);
+    await ref.read(libraryProvider.notifier).markAsCompleted(widget.book.bookId);
+    if (!mounted) return;
 
     await showDialog<void>(
       context: context,

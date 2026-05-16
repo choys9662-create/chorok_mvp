@@ -138,7 +138,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   /// 완독 취소 — status를 reading으로 되돌리고 completedAt 초기화
-  void cancelCompletion(String bookId) {
+  Future<void> cancelCompletion(String bookId) async {
     debugPrint('LibraryProvider: cancelCompletion($bookId)');
     final idx = state.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
@@ -164,14 +164,14 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
     if (kUseMock) return;
     if (kIsWeb) {
-      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
-      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
     }
   }
 
   /// 명시적으로 완독 처리
-  void markAsCompleted(String bookId) {
+  Future<void> markAsCompleted(String bookId) async {
     debugPrint('LibraryProvider: markAsCompleted($bookId)');
     final idx = state.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
@@ -188,9 +188,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
     if (kUseMock) return;
     if (kIsWeb) {
-      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
-      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
     }
   }
 
