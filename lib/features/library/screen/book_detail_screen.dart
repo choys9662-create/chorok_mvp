@@ -195,7 +195,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   Future<void> _toggleCompletion(Book book) async {
     HapticFeedback.heavyImpact();
     if (book.status == ReadingStatus.completed) {
-      ref.read(libraryProvider.notifier).cancelCompletion(widget.bookId);
+      await ref.read(libraryProvider.notifier).cancelCompletion(widget.bookId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -215,7 +215,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       }
     } else {
       setState(() => _currentPage = book.totalPages);
-      ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
+      await ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
       if (mounted) context.pop();
     }
   }
