@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
@@ -12,6 +14,17 @@ import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/page_slider_card.dart';
 import '../widget/manual_reading_log_sheet.dart';
+
+// 책별 수집 문장 (모바일 SQLite choseo 테이블 — 웹/목업은 book.savedSentences 사용)
+final _bookChoseoProvider = FutureProvider.family<List<String>, String>(
+  (ref, bookId) async {
+    if (kIsWeb || kUseMock) return const [];
+    final repo = ref.read(bookRepositoryProvider);
+    if (repo == null) return const [];
+    final rows = await repo.getChoseoByBook(bookId);
+    return rows.map((c) => c.content).toList();
+  },
+);
 
 // 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
 final _bookSessionStatsProvider = FutureProvider.family<
@@ -187,7 +200,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              '완독이 취소되었어요',
+              '읽음이 취소되었어요',
               style: TextStyle(color: Colors.white),
             ),
             backgroundColor: AppTheme.primary,
@@ -203,6 +216,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     } else {
       setState(() => _currentPage = book.totalPages);
       ref.read(libraryProvider.notifier).markAsCompleted(widget.bookId);
+      if (mounted) context.pop();
     }
   }
 
@@ -235,6 +249,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final book = bookList[bookIndex];
     final isCompleted = book.status == ReadingStatus.completed;
 
+    final dbChoseo = ref
+        .watch(_bookChoseoProvider(widget.bookId))
+        .valueOrNull ?? const [];
+    final sentences = (kUseMock || kIsWeb) ? book.savedSentences : dbChoseo;
+
     return Scaffold(
       backgroundColor: context.appBg,
       body: CustomScrollView(
@@ -259,7 +278,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 sessions: stats?.sessions ?? 0,
                 totalHours: stats?.totalHours ?? 0.0,
                 avgMinutes: stats?.avgMinutes ?? 0,
-                sentenceCount: book.savedSentences.length,
+                sentenceCount: sentences.length,
               );
             }),
           ),
@@ -274,7 +293,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                   initialPage: _currentPage,
                   totalPages: book.totalPages,
                   onPageChanged: (p) => setState(() => _currentPage = p),
-                  onSave: (page) async => _savePage(),
+                  onSave: (page) async {
+                    setState(() => _currentPage = page);
+                    await _savePage();
+                  },
                   trailing: TextButton.icon(
                     onPressed: () => showModalBottomSheet(
                       context: context,
@@ -296,18 +318,17 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
 
           // ── 수집한 문장 리스트 ──────────────────────────────────────
-          if (book.savedSentences.isNotEmpty) ...[
+          if (sentences.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: _SectionHeader(
                 title: '수집한 문장',
-                count: book.savedSentences.length,
+                count: sentences.length,
               ),
             ),
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) =>
-                    _SentenceItem(content: book.savedSentences[index]),
-                childCount: book.savedSentences.length,
+                (context, index) => _SentenceItem(content: sentences[index]),
+                childCount: sentences.length,
               ),
             ),
           ],
@@ -445,53 +466,12 @@ class _HeroSection extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(24, topPad + 12, 24, 32),
           child: Column(
             children: [
-              // ── 헤더: 뒤로가기 + 완독하기 ──────────────────────────
+              // ── 헤더: 뒤로가기 ──────────────────────────────────
               Row(
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: onToggleCompletion,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: AppTheme.smoothBox(
-                        color: isCompleted
-                            ? context.appPrimaryAccent.withValues(alpha: 0.12)
-                            : context.appCardElevated,
-                        radius: 20,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isCompleted
-                                ? Icons.check_circle_rounded
-                                : Icons.check_circle_outline_rounded,
-                            size: 18,
-                            color: isCompleted
-                                ? context.appPrimaryAccent
-                                : context.appTextTertiary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '완독하기',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isCompleted
-                                  ? context.appPrimaryAccent
-                                  : context.appTextSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -523,7 +503,7 @@ class _HeroSection extends StatelessWidget {
               // ── 제목 + 저자 ─────────────────────────────────────────
               Text(
                 book.title,
-                style: AppTheme.headingLarge,
+                style: AppTheme.headingMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
@@ -544,8 +524,8 @@ class _HeroSection extends StatelessWidget {
                     Text(
                       '${(book.readingProgress * 100).toInt()}%',
                       style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
                         color: context.appPrimaryAccent,
                         height: 1.0,
                       ),
@@ -584,54 +564,142 @@ class _HeroSection extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ] else
-                GestureDetector(
-                  onTap: onSetTotalPages,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (book.currentPage > 0) ...[
-                        Text(
-                          '${book.currentPage}쪽',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: context.appTextTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Container(
+                    const SizedBox(width: 16),
+                    GestureDetector(
+                      onTap: onToggleCompletion,
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                          horizontal: 14,
+                          vertical: 8,
                         ),
                         decoration: AppTheme.smoothBox(
-                          color: context.appPrimaryAccent.withValues(alpha: 0.08),
-                          radius: 12,
+                          color: isCompleted
+                              ? context.appPrimaryAccent.withValues(alpha: 0.12)
+                              : context.appCardElevated,
+                          radius: 20,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.add_rounded,
-                              size: 13,
-                              color: context.appPrimaryAccent,
+                              isCompleted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              size: 16,
+                              color: isCompleted
+                                  ? context.appPrimaryAccent
+                                  : context.appTextTertiary,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: 5),
                             Text(
-                              '총 쪽수 입력',
+                              '읽었어요',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: context.appPrimaryAccent,
+                                color: isCompleted
+                                    ? context.appPrimaryAccent
+                                    : context.appTextSecondary,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ] else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: onSetTotalPages,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (book.currentPage > 0) ...[
+                            Text(
+                              '${book.currentPage}쪽',
+                              style: AppTheme.bodySmall.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: AppTheme.smoothBox(
+                              color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                              radius: 12,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  size: 13,
+                                  color: context.appPrimaryAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '총 쪽수 입력',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.appPrimaryAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: onToggleCompletion,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: AppTheme.smoothBox(
+                          color: isCompleted
+                              ? context.appPrimaryAccent.withValues(alpha: 0.12)
+                              : context.appCardElevated,
+                          radius: 20,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isCompleted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              size: 16,
+                              color: isCompleted
+                                  ? context.appPrimaryAccent
+                                  : context.appTextTertiary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '읽었어요',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isCompleted
+                                    ? context.appPrimaryAccent
+                                    : context.appTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),

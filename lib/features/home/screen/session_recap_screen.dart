@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/reading_session.dart';
@@ -201,21 +203,43 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     });
   }
 
+  Future<void> _uploadToSupabase(
+    String bookId,
+    List<CollectedSentence> sentences,
+  ) async {
+    try {
+      final dbService = ref.read(dbServiceProvider);
+      await dbService.saveSession(
+        bookId: bookId,
+        durationSeconds: widget.data.seconds,
+        sentences: sentences.map((e) => e.content).toList(),
+        thoughts: sentences
+            .map((e) => e.thought.isNotEmpty ? e.thought : null)
+            .toList(),
+      );
+    } catch (_) {
+      // 소셜 업로드 실패는 무시 — 로컬 저장이 우선
+    }
+  }
+
   Future<void> _autoSaveSession() async {
     if (widget.data.seconds <= 0) return;
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return;
-    await repo.saveSessionOnly(
-      sessionId: _sessionId,
-      bookId: widget.data.bookId,
-      durationSeconds: widget.data.seconds,
-      choseoCount: widget.data.sentences.length,
-      startedAt: widget.data.sessionStartedAt,
-      exitCount: widget.data.exitCount,
-      exitDurationSeconds: widget.data.exitDurationSeconds,
-    );
-    ref.invalidate(analyticsProvider);
-    ref.invalidate(readingStreakProvider);
+    try {
+      await repo.saveSessionOnly(
+        sessionId: _sessionId,
+        bookId: widget.data.bookId,
+        durationSeconds: widget.data.seconds,
+        choseoCount: widget.data.sentences.length,
+        startedAt: widget.data.sessionStartedAt,
+        exitCount: widget.data.exitCount,
+        exitDurationSeconds: widget.data.exitDurationSeconds,
+      );
+    } finally {
+      ref.invalidate(analyticsProvider);
+      ref.invalidate(readingStreakProvider);
+    }
   }
 
   @override
@@ -272,6 +296,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
             ),
       );
 
+      unawaited(_uploadToSupabase(bookId, widget.data.sentences));
+
       if (!mounted) return;
 
       // libraryProvider 인메모리 상태 즉시 반영 (홈/서재 화면 기닥 없이 업데이트)
@@ -290,6 +316,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSavingPage = false);
+      // updateProgress가 성공했을 수 있으므로 통계 갱신 시도
+      ref.invalidate(analyticsProvider);
+      ref.invalidate(readingStreakProvider);
     }
   }
 

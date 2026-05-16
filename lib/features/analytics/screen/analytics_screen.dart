@@ -120,7 +120,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final AnalyticsState? a = kUseMock
         ? null
-        : ref.watch(analyticsProvider).valueOrNull;
+        : (ref.watch(analyticsProvider).valueOrNull ?? const AnalyticsState());
 
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
@@ -350,63 +350,61 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '내 문장에 온 반응'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(
-          sentences: [
-            (
-              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
-              book: '채식주의자 — 한강',
-              reactions: 34,
-              isTop: true,
-            ),
-            (
-              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
-              book: '아몬드 — 손원평',
-              reactions: 21,
-              isTop: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '내 문장에 온 반응'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const SentenceReactionsCard(
+        sentences: [
+          (
+            text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+            book: '채식주의자 — 한강',
+            reactions: 34,
+            isTop: true,
+          ),
+          (
+            text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+            book: '아몬드 — 손원평',
+            reactions: 21,
+            isTop: false,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(
-          highlights: [
-            (
-              text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
-              book: '파친코 — 이민진',
-              reactions: 128,
-            ),
-            (
-              text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
-              book: '소년이 온다 — 한강',
-              reactions: 97,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const CommunityHighlightsCard(
+        highlights: [
+          (
+            text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
+            book: '파친코 — 이민진',
+            reactions: 128,
+          ),
+          (
+            text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
+            book: '소년이 온다 — 한강',
+            reactions: 97,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '이번 주 독서 성향'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const ReadingPersonaCard(
-          persona: '저녁형 독서가',
-          icon: Icons.nights_stay_rounded,
-          description:
-              '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '이번 주 독서 성향'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const ReadingPersonaCard(
+        persona: '저녁형 독서가',
+        icon: Icons.nights_stay_rounded,
+        description:
+            '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '이번 주 인사이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const QualitativeInsightCard(
-          icon: Icons.auto_awesome_rounded,
-          message:
-              '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
-        ),
-      ],
+      const ChorokSectionHeader(title: '이번 주 인사이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const QualitativeInsightCard(
+        icon: Icons.auto_awesome_rounded,
+        message:
+            '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
+      ),
     ];
   }
 
@@ -522,60 +520,58 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '이번 달 베스트 문장'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(
-          sentences: [
-            (
-              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
-              book: '채식주의자 — 한강',
-              reactions: 89,
-              isTop: true,
-            ),
-            (
-              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
-              book: '아몬드 — 손원평',
-              reactions: 54,
-              isTop: false,
-            ),
-            (
-              text: '역사는 우리가 어떻게 살았는지를 기억한다.',
-              book: '파친코 — 이민진',
-              reactions: 31,
-              isTop: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '이번 달 베스트 문장'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const SentenceReactionsCard(
+        sentences: [
+          (
+            text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+            book: '채식주의자 — 한강',
+            reactions: 89,
+            isTop: true,
+          ),
+          (
+            text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+            book: '아몬드 — 손원평',
+            reactions: 54,
+            isTop: false,
+          ),
+          (
+            text: '역사는 우리가 어떻게 살았는지를 기억한다.',
+            book: '파친코 — 이민진',
+            reactions: 31,
+            isTop: false,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(
-          highlights: [
-            (
-              text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
-              book: '채식주의자 — 한강',
-              reactions: 312,
-            ),
-            (
-              text: '누군가를 사랑한다는 것은 그 사람의 이야기를 끝까지 듣는 것이다.',
-              book: '아몬드 — 손원평',
-              reactions: 241,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const CommunityHighlightsCard(
+        highlights: [
+          (
+            text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
+            book: '채식주의자 — 한강',
+            reactions: 312,
+          ),
+          (
+            text: '누군가를 사랑한다는 것은 그 사람의 이야기를 끝까지 듣는 것이다.',
+            book: '아몬드 — 손원평',
+            reactions: 241,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '이번 달 인사이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const QualitativeInsightCard(
-          icon: Icons.auto_awesome_rounded,
-          message:
-              '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
-          subMessage: '같은 시간에 더 많은 페이지를 읽었다는 건, 집중력이 자라고 있다는 신호예요.',
-        ),
-      ],
+      const ChorokSectionHeader(title: '이번 달 인사이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const QualitativeInsightCard(
+        icon: Icons.auto_awesome_rounded,
+        message:
+            '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
+        subMessage: '같은 시간에 더 많은 페이지를 읽었다는 건, 집중력이 자라고 있다는 신호예요.',
+      ),
     ];
   }
 
@@ -705,86 +701,84 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceXL),
       ],
 
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '장르 분포'),
-        const SizedBox(height: AppTheme.spaceMD),
-        GenreChart(
-          genres: [
-            (name: '소설', count: 6, color: context.appPrimaryAccent),
-            (name: '에세이', count: 2, color: AppTheme.accent),
-            (name: '자기계발', count: 1, color: context.appTextSecondary),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '장르 분포'),
+      const SizedBox(height: AppTheme.spaceMD),
+      GenreChart(
+        genres: [
+          (name: '소설', count: 6, color: context.appPrimaryAccent),
+          (name: '에세이', count: 2, color: AppTheme.accent),
+          (name: '자기계발', count: 1, color: context.appTextSecondary),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '올해의 독서 정체성'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const ReaderIdentityCard(
-          identity: '소설 탐험가',
-          icon: Icons.explore_rounded,
-          description:
-              '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '올해의 독서 정체성'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const ReaderIdentityCard(
+        identity: '소설 탐험가',
+        icon: Icons.explore_rounded,
+        description:
+            '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(
-          sentences: [
-            (
-              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
-              book: '채식주의자 — 한강',
-              reactions: 341,
-              isTop: true,
-            ),
-            (
-              text: '역사는 우리가 어떻게 살았는지를 기억한다.',
-              book: '파친코 — 이민진',
-              reactions: 189,
-              isTop: false,
-            ),
-            (
-              text: '나는 살아있다고 느끼는 순간이 거의 없었어.',
-              book: '아몬드 — 손원평',
-              reactions: 124,
-              isTop: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const SentenceReactionsCard(
+        sentences: [
+          (
+            text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+            book: '채식주의자 — 한강',
+            reactions: 341,
+            isTop: true,
+          ),
+          (
+            text: '역사는 우리가 어떻게 살았는지를 기억한다.',
+            book: '파친코 — 이민진',
+            reactions: 189,
+            isTop: false,
+          ),
+          (
+            text: '나는 살아있다고 느끼는 순간이 거의 없었어.',
+            book: '아몬드 — 손원평',
+            reactions: 124,
+            isTop: false,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(
-          highlights: [
-            (
-              text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
-              book: '채식주의자 — 한강',
-              reactions: 2841,
-            ),
-            (
-              text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
-              book: '파친코 — 이민진',
-              reactions: 1932,
-            ),
-            (
-              text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
-              book: '소년이 온다 — 한강',
-              reactions: 1547,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
+      const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const CommunityHighlightsCard(
+        highlights: [
+          (
+            text: '삶은 우리가 원하는 대로 흘러가지 않는다. 하지만 그 흐름 속에서 우리는 자신을 발견한다.',
+            book: '채식주의자 — 한강',
+            reactions: 2841,
+          ),
+          (
+            text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
+            book: '파친코 — 이민진',
+            reactions: 1932,
+          ),
+          (
+            text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
+            book: '소년이 온다 — 한강',
+            reactions: 1547,
+          ),
+        ],
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
 
-        const ChorokSectionHeader(title: '올해 인사이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const QualitativeInsightCard(
-          icon: Icons.emoji_events_rounded,
-          message:
-              '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
-          subMessage: '연간 목표의 45%를 3개월 만에 달성했어요. 이 속도라면 연말엔 목표를 훌쩍 넘어설 거예요.',
-        ),
-      ],
+      const ChorokSectionHeader(title: '올해 인사이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      const QualitativeInsightCard(
+        icon: Icons.emoji_events_rounded,
+        message:
+            '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
+        subMessage: '연간 목표의 45%를 3개월 만에 달성했어요. 이 속도라면 연말엔 목표를 훌쩍 넘어설 거예요.',
+      ),
     ];
   }
 

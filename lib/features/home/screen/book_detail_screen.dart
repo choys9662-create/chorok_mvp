@@ -684,83 +684,33 @@ class _HeroSection extends StatelessWidget {
                 progress: book.progress,
                 currentPage: book.currentPage,
                 totalPages: book.totalPages,
+                isCompleted: isCompleted,
+                onToggleCompletion: onToggleCompletion,
               ),
               const SizedBox(height: 20),
 
               // ── 액션 버튼 ─────────────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      label: '${book.title} 이어 읽기',
-                      button: true,
-                      child: GestureDetector(
-                        onTap: onStartSession,
-                        child: Container(
-                          height: 48,
-                          alignment: Alignment.center,
-                          decoration: AppTheme.smoothBox(
-                            gradient: AppTheme.greenGradient,
-                            radius: AppTheme.radiusMD,
-                          ),
-                          child: Text(
-                            '이어 읽기',
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: context.appBg,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+              Semantics(
+                label: '${book.title} 이어 읽기',
+                button: true,
+                child: GestureDetector(
+                  onTap: onStartSession,
+                  child: Container(
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: AppTheme.smoothBox(
+                      gradient: AppTheme.greenGradient,
+                      radius: AppTheme.radiusMD,
+                    ),
+                    child: Text(
+                      '이어 읽기',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appBg,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Semantics(
-                    label: isCompleted ? '완독 취소' : '완독 체크',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: onToggleCompletion,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        height: 48,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        alignment: Alignment.center,
-                        decoration: AppTheme.smoothBox(
-                          color: isCompleted
-                              ? AppTheme.accent.withValues(alpha: 0.15)
-                              : Colors.white.withValues(alpha: 0.06),
-                          radius: AppTheme.radiusMD,
-                          side: BorderSide.none,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isCompleted
-                                  ? Icons.check_circle_rounded
-                                  : Icons.check_circle_outline_rounded,
-                              size: 20,
-                              color: isCompleted
-                                  ? AppTheme.accent
-                                  : context.appTextTertiary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '완독',
-                              style: AppTheme.bodySmall.copyWith(
-                                color: isCompleted
-                                    ? AppTheme.accent
-                                    : context.appTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -818,11 +768,15 @@ class _ProgressSection extends StatelessWidget {
   final double progress;
   final int currentPage;
   final int totalPages;
+  final bool isCompleted;
+  final VoidCallback onToggleCompletion;
 
   const _ProgressSection({
     required this.progress,
     required this.currentPage,
     required this.totalPages,
+    required this.isCompleted,
+    required this.onToggleCompletion,
   });
 
   @override
@@ -838,12 +792,63 @@ class _ProgressSection extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
-            Text(
-              '${(progress * 100).round()}%',
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${(progress * 100).round()}%',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appPrimaryAccent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Semantics(
+                  label: isCompleted ? '완독 취소' : '완독 체크',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: onToggleCompletion,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      height: 28,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      alignment: Alignment.center,
+                      decoration: AppTheme.smoothBox(
+                        color: isCompleted
+                            ? AppTheme.accent.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.06),
+                        radius: AppTheme.radiusMD,
+                        side: BorderSide.none,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isCompleted
+                                ? Icons.check_circle_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 15,
+                            color: isCompleted
+                                ? AppTheme.accent
+                                : context.appTextTertiary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '완독',
+                            style: AppTheme.bodySmall.copyWith(
+                              color: isCompleted
+                                  ? AppTheme.accent
+                                  : context.appTextSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

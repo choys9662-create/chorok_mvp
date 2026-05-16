@@ -57,11 +57,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final Animation<double> _entryTimer;
   late final Animation<double> _entryBottom;
   bool _isUiVisible = true;
+  bool _isTyping = false;
   Timer? _uiHideTimer;
 
   void _resetUiTimer() {
     setState(() => _isUiVisible = true);
     _uiHideTimer?.cancel();
+    if (_isTyping) return;
     _uiHideTimer = Timer(const Duration(seconds: 4), () {
       final t = ref.read(timerProvider);
       if (mounted && t.isRunning) {
@@ -90,13 +92,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
+    ref.read(timerProvider.notifier).pause();
     setState(() => _isOcrLoading = true);
     final text = await ref.read(ocrServiceProvider).extractTextFromCamera();
     if (!mounted) return;
     setState(() => _isOcrLoading = false);
-    if (text != null && text.isNotEmpty) {
-      _openChosuSheet(initialText: text);
+    if (text == null || text.isEmpty) {
+      ref.read(timerProvider.notifier).resume();
+      return;
     }
+    _openChosuSheet(initialText: text);
   }
 
   Future<void> _toggleRecording() async {
@@ -105,11 +110,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       await stt.stop();
       if (!mounted) return;
       setState(() => _isRecording = false);
-      if (_recognizedText.isNotEmpty) {
-        final text = _recognizedText;
-        _recognizedText = '';
-        _openChosuSheet(initialText: text);
+      if (_recognizedText.isEmpty) {
+        ref.read(timerProvider.notifier).resume();
+        return;
       }
+      final text = _recognizedText;
+      _recognizedText = '';
+      _openChosuSheet(initialText: text);
     } else {
       final initialized = await stt.initialize();
       if (!initialized && mounted) {
@@ -124,6 +131,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         return;
       }
       if (!mounted) return;
+      ref.read(timerProvider.notifier).pause();
       setState(() {
         _isRecording = true;
         _recognizedText = '';
@@ -223,14 +231,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     super.dispose();
   }
 
-  // 초서 시트 열기 (공통)
-  // ignore: unused_element
   Future<void> _openChosuSheet({String initialText = ''}) async {
+    ref.read(timerProvider.notifier).pause();
     final result = await showModalBottomSheet<CollectedSentence>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ChosuSheet(initialText: initialText),
+      builder: (_) => ChosuSheet(
+        initialText: initialText,
+        bookTitle: widget.bookTitle,
+      ),
     );
     if (!mounted) return;
     if (result != null && result.content.isNotEmpty) {
@@ -399,6 +409,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                 isOcrLoading: _isOcrLoading,
                                 onTypeSentence: (text) =>
                                     _openChosuSheet(initialText: text),
+                                onFocusChanged: (focused) {
+                                  setState(() => _isTyping = focused);
+                                  if (focused) {
+                                    _uiHideTimer?.cancel();
+                                    setState(() => _isUiVisible = true);
+                                  } else {
+                                    _resetUiTimer();
+                                  }
+                                },
                               ),
                             ),
                           ),
@@ -409,7 +428,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 ),
               ),
 
-              // ④ 녹음 오버레이 (STT 중일 때)
+              // ④ OCR 로딩 오버레이
+              if (_isOcrLoading)
+                const _OcrLoadingOverlay(),
+
+              // ⑤ 녹음 오버레이 (STT 중일 때)
               if (_isRecording)
                 _RecordingOverlay(
                   recognizedText: _recognizedText,
@@ -599,6 +622,7 @@ class _BottomArea extends StatelessWidget {
   final bool isRecording;
   final bool isOcrLoading;
   final ValueChanged<String> onTypeSentence;
+  final ValueChanged<bool> onFocusChanged;
 
   const _BottomArea({
     required this.chosuCount,
@@ -609,6 +633,7 @@ class _BottomArea extends StatelessWidget {
     required this.isRecording,
     required this.isOcrLoading,
     required this.onTypeSentence,
+    required this.onFocusChanged,
   });
 
   @override
@@ -711,6 +736,7 @@ class _BottomArea extends StatelessWidget {
             isRecording: isRecording,
             isOcrLoading: isOcrLoading,
             onTypeSentence: onTypeSentence,
+            onFocusChanged: onFocusChanged,
           ),
         ],
       ),
@@ -725,6 +751,7 @@ class _ChosuActionBar extends StatefulWidget {
   final bool isRecording;
   final bool isOcrLoading;
   final ValueChanged<String> onTypeSentence;
+  final ValueChanged<bool> onFocusChanged;
 
   const _ChosuActionBar({
     required this.onOcrTap,
@@ -732,6 +759,7 @@ class _ChosuActionBar extends StatefulWidget {
     required this.isRecording,
     required this.isOcrLoading,
     required this.onTypeSentence,
+    required this.onFocusChanged,
   });
 
   @override
@@ -740,10 +768,20 @@ class _ChosuActionBar extends StatefulWidget {
 
 class _ChosuActionBarState extends State<_ChosuActionBar> {
   final _ctrl = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      widget.onFocusChanged(_focusNode.hasFocus);
+    });
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -773,6 +811,7 @@ class _ChosuActionBarState extends State<_ChosuActionBar> {
                 Expanded(
                   child: TextField(
                     controller: _ctrl,
+                    focusNode: _focusNode,
                     style: const TextStyle(fontSize: 14, color: Colors.white),
                     decoration: InputDecoration(
                       hintText: '문장을 입력하세요...',
@@ -1152,6 +1191,42 @@ class _GlowOrb extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── OCR 로딩 오버레이 ─────────────────────────────────────────────────
+class _OcrLoadingOverlay extends StatelessWidget {
+  const _OcrLoadingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.6),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.document_scanner_outlined,
+                color: Colors.white,
+                size: 48,
+              ),
+              SizedBox(height: 16),
+              CircularProgressIndicator(
+                color: _kGreen,
+                strokeWidth: 2,
+              ),
+              SizedBox(height: 16),
+              Text(
+                '텍스트 인식 중...',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ),
     );

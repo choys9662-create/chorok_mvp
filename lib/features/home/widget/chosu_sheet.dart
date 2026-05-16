@@ -8,8 +8,9 @@ import '../../../shared/widgets/sheet_handle.dart';
 class ChosuSheet extends StatefulWidget {
   /// OCR / STT로 인식된 텍스트를 미리 채울 때 사용
   final String initialText;
+  final String bookTitle;
 
-  const ChosuSheet({super.key, this.initialText = ''});
+  const ChosuSheet({super.key, this.initialText = '', this.bookTitle = ''});
 
   @override
   State<ChosuSheet> createState() => _ChosuSheetState();
@@ -90,12 +91,13 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    '채식주의자 · 186쪽',
-                    style: AppTheme.captionSmall.copyWith(
-                      color: context.appTextTertiary,
+                  if (widget.bookTitle.isNotEmpty)
+                    Text(
+                      widget.bookTitle,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),

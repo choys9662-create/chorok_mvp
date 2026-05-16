@@ -3,7 +3,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
 /// 불릿 그래프 — 목표 독서 시간 달성도
-/// 얇은 바(h 20) 안에 배경 트랙 → 현재 진행률 → 목표 마커 3개 레이어
 class BulletGraphWidget extends StatelessWidget {
   final String label;
   final double currentHours;
@@ -19,7 +18,6 @@ class BulletGraphWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = (currentHours / goalHours).clamp(0.0, 1.0);
-    const goalMarkerRatio = 1.0;
 
     return ChorokCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
@@ -44,47 +42,31 @@ class BulletGraphWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spaceMD),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return SizedBox(
-                height: 20,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(9999),
-                  child: Stack(
-                    clipBehavior: Clip.antiAlias,
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF1A1A1A)
-                            : context.appBg,
-                      ),
-                      // 2. 현재 진행률
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: AppTheme.greenGradient,
-                          ),
-                        ),
-                      ),
-                      // 3. 목표 마커 (흰색 세로선 2px)
-                      Positioned(
-                        left: (constraints.maxWidth * goalMarkerRatio - 2)
-                            .clamp(0.0, constraints.maxWidth - 2),
-                        top: 2,
-                        bottom: 2,
-                        width: 2,
-                        child: Container(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
+          SizedBox(
+            height: 20,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9999),
+              child: Stack(
+                clipBehavior: Clip.antiAlias,
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1A1A1A)
+                        : context.appBg,
                   ),
-                ),
-              );
-            },
+                  FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: progress,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: AppTheme.greenGradient,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: AppTheme.spaceSM),
           Row(

@@ -195,7 +195,12 @@ class _PageSliderCardState extends State<PageSliderCard> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: widget.isSaving ? null : () => widget.onSave(_page),
+              onPressed: widget.isSaving
+                  ? null
+                  : () {
+                      _commitText();
+                      widget.onSave(_page);
+                    },
               style: FilledButton.styleFrom(
                 backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.1),
                 foregroundColor: context.appPrimaryAccent,

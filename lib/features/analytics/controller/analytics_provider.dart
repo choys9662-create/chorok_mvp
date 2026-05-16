@@ -586,6 +586,13 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       0,
       (s, r) => s + r.durationSeconds,
     );
+    final mFocus = monthSess.isEmpty
+        ? 0
+        : (monthSess.fold(0, (s, r) => s + r.sentenceCount) /
+                  monthSess.length *
+                  10)
+              .round()
+              .clamp(40, 100);
 
     int maxStreak = 0, curStreak = 0;
     for (int d = 1; d <= monthTotalDays; d++) {
@@ -603,6 +610,13 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     for (final s in allSess) {
       yearDaySet.add('${s.date.year}-${s.date.month}-${s.date.day}');
     }
+    final yFocus = allSess.isEmpty
+        ? 0
+        : (allSess.fold(0, (s, r) => s + r.sentenceCount) /
+                  allSess.length *
+                  10)
+              .round()
+              .clamp(40, 100);
 
     final wRadar = _radar(
       totalSeconds: wStats.totalSeconds,
@@ -637,7 +651,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       heatmap: heatmap,
       monthMaxStreak: maxStreak,
       monthTotalDays: monthTotalDays,
-      monthFocusScore: 0,
+      monthFocusScore: mFocus,
       monthMaxSessionMinutes: mStats.maxSessionMinutes,
       monthAvgSessionMinutes: mStats.avgSessionMinutes,
       yearTotalSeconds: yearTotal,
@@ -645,7 +659,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       yearChoseoCount: yearChoseo.length,
       completedBooks: completedBooks,
       yearMonthlyMinutes: yearMonthlyMinutes,
-      yearFocusScore: 0,
+      yearFocusScore: yFocus,
       allRecentSessions: _sessToEntries(allSess.take(20).toList()),
     );
   }
