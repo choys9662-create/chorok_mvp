@@ -503,7 +503,7 @@ class _HeroSection extends StatelessWidget {
               // ── 제목 + 저자 ─────────────────────────────────────────
               Text(
                 book.title,
-                style: AppTheme.headingLarge,
+                style: AppTheme.headingMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
@@ -524,8 +524,8 @@ class _HeroSection extends StatelessWidget {
                     Text(
                       '${(book.readingProgress * 100).toInt()}%',
                       style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
                         color: context.appPrimaryAccent,
                         height: 1.0,
                       ),

@@ -226,17 +226,20 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     if (widget.data.seconds <= 0) return;
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return;
-    await repo.saveSessionOnly(
-      sessionId: _sessionId,
-      bookId: widget.data.bookId,
-      durationSeconds: widget.data.seconds,
-      choseoCount: widget.data.sentences.length,
-      startedAt: widget.data.sessionStartedAt,
-      exitCount: widget.data.exitCount,
-      exitDurationSeconds: widget.data.exitDurationSeconds,
-    );
-    ref.invalidate(analyticsProvider);
-    ref.invalidate(readingStreakProvider);
+    try {
+      await repo.saveSessionOnly(
+        sessionId: _sessionId,
+        bookId: widget.data.bookId,
+        durationSeconds: widget.data.seconds,
+        choseoCount: widget.data.sentences.length,
+        startedAt: widget.data.sessionStartedAt,
+        exitCount: widget.data.exitCount,
+        exitDurationSeconds: widget.data.exitDurationSeconds,
+      );
+    } finally {
+      ref.invalidate(analyticsProvider);
+      ref.invalidate(readingStreakProvider);
+    }
   }
 
   @override
@@ -313,6 +316,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSavingPage = false);
+      // updateProgress가 성공했을 수 있으므로 통계 갱신 시도
+      ref.invalidate(analyticsProvider);
+      ref.invalidate(readingStreakProvider);
     }
   }
 

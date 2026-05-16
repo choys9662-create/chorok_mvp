@@ -120,7 +120,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final AnalyticsState? a = kUseMock
         ? null
-        : ref.watch(analyticsProvider).valueOrNull;
+        : (ref.watch(analyticsProvider).valueOrNull ?? const AnalyticsState());
 
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
