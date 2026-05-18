@@ -24,7 +24,7 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
     }
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
-      () => _invoke({'query': q, 'queryType': _typeParam(_type)}),
+      () => invoke({'query': q, 'queryType': _typeParam(_type)}),
     );
   }
 
@@ -42,7 +42,7 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
   }
 
   static Future<List<AladinBook>> searchByIsbn(String isbn13) =>
-      _invoke({'isbn': isbn13});
+      invoke({'isbn': isbn13});
 
   static String _typeParam(BookSearchType t) => switch (t) {
     BookSearchType.keyword => 'Keyword',
@@ -50,7 +50,7 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
     BookSearchType.author => 'Author',
   };
 
-  static Future<List<AladinBook>> _invoke(Map<String, dynamic> body) async {
+  static Future<List<AladinBook>> invoke(Map<String, dynamic> body) async {
     try {
       final res = await Supabase.instance.client.functions.invoke(
         'aladin-search',
