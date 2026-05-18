@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../feed/controller/feed_provider.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
@@ -56,15 +59,42 @@ const kHighlightSentences = [
   ),
 ];
 
-class FeedHighlightSection extends StatelessWidget {
+class FeedHighlightSection extends ConsumerWidget {
   const FeedHighlightSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final List<HighlightSentence> highlights;
+    final String title;
+    final String subtitle;
+
+    if (kUseMock) {
+      highlights = kHighlightSentences;
+      title = '지금 많이 기록된 문장';
+      subtitle = '독자들이 가장 많이 수집한 문장이에요';
+    } else {
+      final sentences = ref.watch(feedProvider).valueOrNull ?? const [];
+      if (sentences.isEmpty) return const SizedBox.shrink();
+      highlights = sentences
+          .take(3)
+          .map(
+            (s) => HighlightSentence(
+              content: s.content,
+              bookTitle: s.bookTitle,
+              author: s.bookAuthor,
+              recordCount: 1,
+              empathyCount: s.empathyCount,
+              gradientIndex: s.bookTitle.hashCode.abs() % 7,
+            ),
+          )
+          .toList();
+      title = '최근 기록한 문장';
+      subtitle = '내가 최근에 기록한 문장이에요';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 헤더
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -76,7 +106,7 @@ class FeedHighlightSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '지금 많이 기록된 문장',
+                      title,
                       style: AppTheme.headingSmall.copyWith(
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w700,
@@ -84,7 +114,7 @@ class FeedHighlightSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '독자들이 가장 많이 수집한 문장이에요',
+                      subtitle,
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appTextTertiary,
                       ),
@@ -105,19 +135,18 @@ class FeedHighlightSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // 문장 카드 리스트
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
           child: Column(
-            children: kHighlightSentences
+            children: highlights
                 .asMap()
                 .entries
                 .map(
                   (e) => Padding(
                     padding: EdgeInsets.only(
-                      bottom: e.key < kHighlightSentences.length - 1 ? 10 : 0,
+                      bottom: e.key < highlights.length - 1 ? 10 : 0,
                     ),
                     child: HighlightCard(sentence: e.value),
                   ),

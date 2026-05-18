@@ -381,9 +381,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               ],
             ),
           ),
-          const _ActivityBanner(),
-          // const SizedBox(height: 10),
-          // Divider(height: 1, color: context.appBorder),
+          if (kUseMock) const _ActivityBanner(),
 
           // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
           Expanded(

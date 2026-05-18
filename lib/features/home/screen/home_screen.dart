@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../widget/weekly_status_card.dart';
@@ -52,9 +53,11 @@ class HomeScreen extends ConsumerWidget {
                 // ② 지금 읽는 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: ReadingBooksSection()),
-                // ③ 문장 기반 추천 (AI 추천 연동 전 placeholder)
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: RecommendedBooksSection()),
+                // ③ 문장 기반 추천 (AI 추천 연동 전 placeholder — 목업 환경에서만 표시)
+                if (kUseMock) ...[
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(child: RecommendedBooksSection()),
+                ],
                 // ④ 다음에 읽을 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: WishlistSection()),
