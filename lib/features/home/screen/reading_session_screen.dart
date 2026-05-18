@@ -59,6 +59,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   bool _isUiVisible = true;
   bool _isTyping = false;
   Timer? _uiHideTimer;
+  bool _goalReachedNotified = false;
 
   void _resetUiTimer() {
     setState(() => _isUiVisible = true);
@@ -281,6 +282,29 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final mutualCount = firefly?.mutualCount ?? 0;
     final nearbyCount = firefly?.nearbyCount ?? 0;
     final readersCount = mutualCount + nearbyCount;
+
+    if (timer.goalReached && !_goalReachedNotified) {
+      _goalReachedNotified = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              '목표를 달성했어요! 🎉',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            duration: const Duration(seconds: 3),
+            backgroundColor: const Color(0xFF1A3D2B),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
 
     return Theme(
       data: AppTheme.dark,
