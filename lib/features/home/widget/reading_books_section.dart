@@ -12,6 +12,7 @@ import 'package:figma_squircle/figma_squircle.dart';
 
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_shimmer.dart';
 
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
@@ -19,6 +20,8 @@ class ReadingBooksSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allBooks = ref.watch(libraryProvider);
+    final isLoading = allBooks.isEmpty &&
+        ref.read(libraryProvider.notifier).isLoading;
     final readingBooks = allBooks
         .where((b) => b.status == ReadingStatus.reading)
         .toList();
@@ -41,19 +44,38 @@ class ReadingBooksSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '${readingBooks.length}권',
-                style: AppTheme.captionLarge.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w600,
+              if (!isLoading)
+                Text(
+                  '${readingBooks.length}권',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appPrimaryAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
 
+        // ── 로딩 중: shimmer 카드 ──────────────────────────────────
+        if (isLoading) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 240,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              children: const [
+                ChorokShimmer(width: 160, height: 240, radius: 16),
+                SizedBox(width: 12),
+                ChorokShimmer(width: 160, height: 240, radius: 16),
+              ],
+            ),
+          ),
         // ── 빈 상태: 책이 0권일 때 ─────────────────────────────────
-        if (readingBooks.isEmpty) ...[
+        ] else if (readingBooks.isEmpty) ...[
           const SizedBox(height: 12),
           const EmptyBooksState(),
         ] else ...[
