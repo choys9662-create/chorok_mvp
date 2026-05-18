@@ -1374,7 +1374,10 @@ class _SortSheet extends StatelessWidget {
               button: true,
               selected: opt == current,
               child: GestureDetector(
-                onTap: () => onSelected(opt),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelected(opt);
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
