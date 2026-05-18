@@ -680,7 +680,13 @@ class _ScoreCardState extends State<_ScoreCard>
       end: widget.score / 100,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) _ctrl.forward();
+      if (!mounted) return;
+      _ctrl.forward();
+      _ctrl.addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          HapticFeedback.mediumImpact();
+        }
+      });
     });
   }
 
