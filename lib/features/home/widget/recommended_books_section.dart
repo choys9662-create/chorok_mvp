@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import 'package:figma_squircle/figma_squircle.dart';
+import '../../../shared/models/reading_session.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../controller/recommended_books_provider.dart';
 
@@ -162,43 +165,40 @@ class RecommendedBooksSection extends ConsumerWidget {
   }
 }
 
-class RecommendedBookCard extends StatefulWidget {
+class RecommendedBookCard extends ConsumerStatefulWidget {
   final RecommendedBook book;
   const RecommendedBookCard({super.key, required this.book});
 
   @override
-  State<RecommendedBookCard> createState() => RecommendedBookCardState();
+  ConsumerState<RecommendedBookCard> createState() => RecommendedBookCardState();
 }
 
-class RecommendedBookCardState extends State<RecommendedBookCard> {
+class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
   bool _isPressed = false;
-  bool _isAdded = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
+    final library = ref.watch(libraryProvider);
+    final isAdded = library.any(
+      (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
+    );
 
     return GestureDetector(
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);
       },
-      onTapUp: (_) {
+      onTapUp: (_) async {
         setState(() => _isPressed = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${b.title} 상세 정보 (곧 지원)',
-              style:
-                  AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
-            ),
-            backgroundColor: context.appCardElevated,
-            behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          ),
+        final query = Uri.encodeQueryComponent('${b.title} ${b.author}');
+        final url = Uri.parse(
+          'https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=$query',
         );
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
@@ -316,20 +316,34 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                       ),
                       const Spacer(),
                       Semantics(
-                        label: _isAdded
+                        label: isAdded
                             ? '${b.title} 서재에서 제거'
                             : '${b.title} 서재에 추가',
                         button: true,
                         child: GestureDetector(
                           onTap: () {
                             HapticFeedback.mediumImpact();
-                            setState(() => _isAdded = !_isAdded);
+                            final notifier = ref.read(libraryProvider.notifier);
+                            if (isAdded) {
+                              final existing = ref.read(libraryProvider).firstWhere(
+                                (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
+                              );
+                              notifier.deleteBook(existing.id);
+                            } else {
+                              notifier.addBook(Book(
+                                id: 'rec_${b.title.hashCode.abs()}',
+                                title: b.title,
+                                author: b.author,
+                                coverUrl: b.coverUrl.isEmpty ? null : b.coverUrl,
+                                status: ReadingStatus.wantToRead,
+                              ));
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  _isAdded
-                                      ? '${b.title}을(를) 읽고 싶은 책에 추가했어요'
-                                      : '${b.title}을(를) 서재에서 제거했어요',
+                                  isAdded
+                                      ? '${b.title}을(를) 서재에서 제거했어요'
+                                      : '${b.title}을(를) 읽고 싶은 책에 추가했어요',
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 backgroundColor: AppTheme.primary,
@@ -337,12 +351,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                 shape: AppTheme.smoothShape(
                                   radius: AppTheme.radiusMD,
                                 ),
-                                margin: const EdgeInsets.fromLTRB(
-                                  20,
-                                  0,
-                                  20,
-                                  16,
-                                ),
+                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                               ),
                             );
                           },
@@ -352,7 +361,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              color: _isAdded
+                              color: isAdded
                                   ? context.appPrimaryAccent
                                       .withValues(alpha: 0.15)
                                   : isDark
@@ -369,11 +378,11 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  _isAdded
+                                  isAdded
                                       ? Icons.check_rounded
                                       : Icons.add_rounded,
                                   size: 14,
-                                  color: _isAdded
+                                  color: isAdded
                                       ? context.appPrimaryAccent
                                       : isDark
                                           ? context.appPrimaryAccent
@@ -381,9 +390,9 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _isAdded ? '추가됨' : '서재에 추가',
+                                  isAdded ? '추가됨' : '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
-                                    color: _isAdded
+                                    color: isAdded
                                         ? context.appPrimaryAccent
                                         : isDark
                                             ? context.appPrimaryAccent

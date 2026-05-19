@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../widget/weekly_status_card.dart';
@@ -15,6 +14,7 @@ import '../widget/feed_highlight_section.dart';
 import '../widget/time_capsule_section.dart';
 
 import '../../../shared/providers/tab_scroll_controllers.dart';
+import '../controller/recommended_books_provider.dart';
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
 
@@ -37,9 +37,15 @@ class HomeScreen extends ConsumerWidget {
           SizedBox(height: topPad),
           const HomeAppBar(),
           Expanded(
-            child: CustomScrollView(
-              controller: scrollCtrl,
-              physics: const AlwaysScrollableScrollPhysics(),
+            child: RefreshIndicator(
+              color: AppTheme.accent,
+              onRefresh: () async {
+                ref.invalidate(recommendedBooksProvider);
+                await ref.read(recommendedBooksProvider.future).catchError((_) => <RecommendedBook>[]);
+              },
+              child: CustomScrollView(
+                controller: scrollCtrl,
+                physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 // 스트릭 배너 (2일 이상일 때만 렌더링, 내부에서 days < 2 체크)
                 SliverToBoxAdapter(child: StreakBanner()),
@@ -53,11 +59,9 @@ class HomeScreen extends ConsumerWidget {
                 // ② 지금 읽는 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: ReadingBooksSection()),
-                // ③ 문장 기반 추천 (AI 추천 연동 전 placeholder — 목업 환경에서만 표시)
-                if (kUseMock) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  const SliverToBoxAdapter(child: RecommendedBooksSection()),
-                ],
+                // ③ 문장 기반 추천
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: RecommendedBooksSection()),
                 // ④ 다음에 읽을 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: WishlistSection()),
@@ -71,6 +75,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
+            ),
             ),
           ),
         ],
