@@ -131,22 +131,40 @@ final recommendedBooksProvider =
   if (kUseMock) {
     return [
       (
+        title: '흰',
+        author: '한강',
+        reason: '"채식주의자"과 같은 한강의 다른 작품',
+        gradientIndex: 1,
+        matchScore: 0.94,
+        coverUrl:
+            'https://image.aladin.co.kr/product/10920/22/cover500/8936434349_2.jpg',
+      ),
+      (
         title: '소년이 온다',
         author: '한강',
-        reason: '"채식주의자"에서 수집한 문장과 비슷한 감성',
-        gradientIndex: 3,
-        matchScore: 0.94,
+        reason: '"채식주의자"과 같은 한강의 다른 작품',
+        gradientIndex: 2,
+        matchScore: 0.93,
         coverUrl:
             'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
       ),
       (
         title: '아몬드',
         author: '손원평',
-        reason: '감정과 공감에 대한 문장을 자주 기록하셨어요',
-        gradientIndex: 4,
-        matchScore: 0.89,
+        reason: "'삶', '고통' 감성을 자주 기록하셨어요",
+        gradientIndex: 3,
+        matchScore: 0.88,
         coverUrl:
             'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+      ),
+      (
+        title: '82년생 김지영',
+        author: '조남주',
+        reason: "'삶', '고통' 감성을 자주 기록하셨어요",
+        gradientIndex: 4,
+        matchScore: 0.86,
+        coverUrl:
+            'https://image.aladin.co.kr/product/10743/98/cover500/8954637930_2.jpg',
       ),
     ];
   }

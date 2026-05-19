@@ -27,6 +27,10 @@ extension AppThemeExt on BuildContext {
   Color get appAccentColor =>
       _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
 
+  // 진행 바 트랙 색상 (비어 있는 구간 배경)
+  Color get appProgressTrack =>
+      _isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E8EB);
+
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
@@ -47,30 +51,30 @@ extension AppThemeExt on BuildContext {
 /// 초록 앱 테마 정의
 class AppTheme {
   // ─── 브랜드 색상 팔레트 ───────────────────────────────────────────
-  static const Color primary = Color(0xFF1A3D2B); // 어두운 숲 초록 (CTA 버튼 fill)
-  static const Color primaryLight = Color(0xFF10B981); // 다크 모드 브랜드 에메랄드
-  static const Color accent = Color(0xFF059669); // 보조 강조 (그라디언트 끝값)
-  static const Color fireflyColor = Color(0xFF00FF00); // 반딧불 이펙트 전용
+  static const Color primary = Color(0xFF131313); // 어두운 배경 (CTA 버튼 fill 등)
+  static const Color primaryLight = Color(0xFF8DFF54); // 다크 모드 브랜드 네온 그린
+  static const Color accent = Color(0xFF6DE034); // 보조 강조 (그라디언트 끝값)
+  static const Color fireflyColor = Color(0xFF8DFF54); // 반딧불 이펙트 전용
   static const Color warningColor = Color(0xFFFF8C42); // 경고/연속 독서
 
   // ─── 그린 그라디언트 ─────────────────────────────────────────────
-  /// #10B981 → #059669: 에메랄드 그린 그라디언트
+  /// #8DFF54 → #6DE034: 네온 그린 그라디언트
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    colors: [Color(0xFF8DFF54), Color(0xFF6DE034)],
   );
   static const LinearGradient greenGradientVertical = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    colors: [Color(0xFF8DFF54), Color(0xFF6DE034)],
   );
 
   /// 카드/배경에 쓸 어두운 그린 그라디언트
   static const LinearGradient greenCardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1A4D2E), Color(0xFF0D2B18)],
+    colors: [Color(0xFF132A13), Color(0xFF0D1A0D)],
   );
 
   // ─── 책 표지 그라디언트 팔레트 ──────────────────────────────────────
@@ -95,12 +99,12 @@ class AppTheme {
       coverGradients[index.abs() % coverGradients.length];
 
   // ─── 다크 배경 (중립 다크 — DESIGN.md §1) ──────────────────────
-  static const Color darkBg = Color(0xFF121212);
-  static const Color darkSurface = Color(0xFF1A1A1A);
-  static const Color darkCard = Color(0xFF1A1A1A);
-  static const Color darkCardElevated = Color(0xFF222222);
-  static const Color darkBorder = Colors.transparent;
-  static const Color darkPrimaryContainer = Color(0xFF1E3A2F);
+  static const Color darkBg = Colors.black;
+  static const Color darkSurface = Color(0xFF131313);
+  static const Color darkCard = Color(0xFF131313);
+  static const Color darkCardElevated = Color(0xFF1E1E1E);
+  static const Color darkBorder = Color(0x338DFF54); // 네온 그린 투명 테두리 (20% 투명도)
+  static const Color darkPrimaryContainer = Color(0xFF132A13);
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
   static const Color lightBg = Color(0xFFF2F4F6);
@@ -110,8 +114,8 @@ class AppTheme {
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFADADAD);
-  static const Color textTertiary = Color(0xFF6B6B6B);
+  static const Color textSecondary = Color(0xFF646464); // 기존 0xFFADADAD -> 0xFF646464 (Reading Session의 서브 텍스트)
+  static const Color textTertiary = Color(0xFF424242);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
   static const Color lightTextPrimary = Color(0xFF191F28);
@@ -273,6 +277,7 @@ class AppTheme {
 
   // ─── 다크 테마 ───────────────────────────────────────────────────
   static ThemeData get dark => ThemeData(
+    fontFamily: '조선굴림체',
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: ColorScheme(
@@ -294,7 +299,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: darkCard,
       elevation: 0,
-      shape: smoothShape(radius: 16),
+      shape: smoothShape(radius: 20, side: const BorderSide(color: darkBorder, width: 1)),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurface,
@@ -327,14 +332,20 @@ class AppTheme {
     ),
     dividerColor: Colors.transparent,
     chipTheme: ChipThemeData(
-      backgroundColor: darkCard,
+      backgroundColor: darkSurface,
       labelStyle: captionLarge.copyWith(color: textSecondary),
-      shape: const StadiumBorder(),
+      shape: StadiumBorder(side: const BorderSide(color: darkBorder, width: 1)),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: darkBorder,
+      thickness: 1,
+      space: 1,
     ),
   );
 
   // ─── 라이트 테마 ─────────────────────────────────────────────────
   static ThemeData get light => ThemeData(
+    fontFamily: '조선굴림체',
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: const ColorScheme(
@@ -356,7 +367,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: lightSurface,
       elevation: 0,
-      shape: smoothShape(radius: radiusLG),
+      shape: smoothShape(radius: 20, side: const BorderSide(color: lightBorderColor, width: 1)),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: lightSurface,

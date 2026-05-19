@@ -194,114 +194,54 @@ class _NavItem extends StatelessWidget {
 
 // ─── 반딧불 오브 FAB ──────────────────────────────────────────────────────────
 
-class _ForestOrbFab extends StatefulWidget {
+class _ForestOrbFab extends StatelessWidget {
   final bool isInSession;
   final VoidCallback onTap;
 
   const _ForestOrbFab({required this.isInSession, required this.onTap});
 
   @override
-  State<_ForestOrbFab> createState() => _ForestOrbFabState();
-}
-
-class _ForestOrbFabState extends State<_ForestOrbFab>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final accent = context.appPrimaryAccent;
     return Semantics(
-      label: widget.isInSession ? '독서 이어하기' : '독서 시작',
+      label: isInSession ? '독서 이어하기' : '독서 시작',
       button: true,
       child: FloatingActionButton(
-        onPressed: widget.onTap,
+        onPressed: onTap,
         backgroundColor: Colors.transparent,
         elevation: 0,
         focusElevation: 0,
         hoverElevation: 0,
         highlightElevation: 0,
         shape: const CircleBorder(),
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, child) {
-            final t = _ctrl.value;
-            final glow = 0.5 + 0.5 * sin(t * 2 * pi);
-            return Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  center: const Alignment(-0.25, -0.3),
-                  colors: [
-                    accent.withValues(alpha: 0.85),
-                    accent,
-                    AppTheme.accent,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.28 + glow * 0.32),
-                    blurRadius: 10 + glow * 18,
-                    spreadRadius: glow * 3,
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  _firefly(t, 0.00, 40.0, 12.0),
-                  _firefly(t, 0.35, 8.0, 20.0),
-                  _firefly(t, 0.68, 30.0, 44.0),
-                  Center(
-                    child: Icon(
-                      Icons.timer_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _firefly(double t, double phase, double left, double top) {
-    final alpha = (0.25 + 0.75 * sin((t + phase) * 2 * pi)).clamp(0.0, 1.0);
-    return Positioned(
-      left: left,
-      top: top,
-      child: Container(
-        width: 4,
-        height: 4,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppTheme.fireflyColor.withValues(alpha: alpha),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.fireflyColor.withValues(alpha: alpha * 0.6),
-              blurRadius: 5,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                accent,
+                accent,
+              ],
             ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.timer_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
         ),
       ),
     );

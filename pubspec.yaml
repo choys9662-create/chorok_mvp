@@ -99,3 +99,7 @@ flutter:
           weight: 800
         - asset: assets/fonts/Pretendard-Black.otf
           weight: 900
+
+    - family: 조선굴림체
+      fonts:
+        - asset: assets/fonts/ChosunGu.ttf

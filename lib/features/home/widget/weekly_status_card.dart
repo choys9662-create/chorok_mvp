@@ -127,7 +127,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: isFuture ? context.appBorder : null,
+                                    color: isFuture ? context.appProgressTrack : null,
                                     gradient: isFuture
                                         ? null
                                         : LinearGradient(
@@ -204,9 +204,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                   child: LinearProgressIndicator(
                     value: (todayMin / goalMin).clamp(0.0, 1.0),
                     minHeight: 8,
-                    backgroundColor: context.appPrimaryAccent.withValues(
-                      alpha: 0.15,
-                    ),
+                    backgroundColor: context.appProgressTrack,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       context.appPrimaryAccent,
                     ),
