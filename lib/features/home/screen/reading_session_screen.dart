@@ -1293,7 +1293,7 @@ class _StopRecordingButton extends StatelessWidget {
           children: [
             AnimatedBuilder(
               animation: pulseCtrl,
-              builder: (_, __) {
+              builder: (_, _) {
                 final t = pulseCtrl.value;
                 final scale = 1.0 + t * 0.4;
                 final opacity = (1.0 - t).clamp(0.0, 1.0) * 0.5;
