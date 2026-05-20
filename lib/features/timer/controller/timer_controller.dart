@@ -75,26 +75,43 @@ class TimerData {
 /// 독서 타이머 컨트롤러
 class TimerNotifier extends Notifier<TimerData> {
   Timer? _timer;
+  DateTime? _runStartedAt;
+  int _accumulatedSeconds = 0;
 
   @override
   TimerData build() {
-    // 프로바이더 소멸 시 타이머 정리
     ref.onDispose(() => _timer?.cancel());
     return TimerData.initial();
   }
 
+  int _computeSeconds() {
+    if (_runStartedAt == null) return _accumulatedSeconds;
+    return _accumulatedSeconds +
+        DateTime.now().difference(_runStartedAt!).inSeconds;
+  }
+
+  void _startTicking() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      state = state.copyWith(seconds: _computeSeconds());
+    });
+  }
+
   void start({SessionGoal? goal}) {
     if (state.isRunning) return;
-    state = state.copyWith(timerState: TimerState.running, goal: goal);
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      state = state.copyWith(seconds: state.seconds + 1);
-    });
+    _accumulatedSeconds = 0;
+    _runStartedAt = DateTime.now();
+    state = state.copyWith(
+        seconds: 0, timerState: TimerState.running, goal: goal);
+    _startTicking();
   }
 
   void pause() {
     if (!state.isRunning) return;
     _timer?.cancel();
-    state = state.copyWith(timerState: TimerState.paused);
+    _accumulatedSeconds = _computeSeconds();
+    _runStartedAt = null;
+    state = state.copyWith(
+        seconds: _accumulatedSeconds, timerState: TimerState.paused);
   }
 
   void updateGoal(SessionGoal goal) {
@@ -103,12 +120,22 @@ class TimerNotifier extends Notifier<TimerData> {
 
   void resume() {
     if (!state.isPaused) return;
-    start();
+    _runStartedAt = DateTime.now();
+    state = state.copyWith(timerState: TimerState.running);
+    _startTicking();
   }
 
   void stop() {
     _timer?.cancel();
+    _accumulatedSeconds = 0;
+    _runStartedAt = null;
     state = TimerData.initial();
+  }
+
+  /// 앱이 백그라운드에서 복귀했을 때 즉시 경과시간을 재계산해 UI에 반영
+  void syncFromWallClock() {
+    if (!state.isRunning) return;
+    state = state.copyWith(seconds: _computeSeconds());
   }
 }
 
