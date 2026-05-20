@@ -103,7 +103,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
-  int? _exitSeconds;
 
   bool _isRecording = false;
   bool _isOcrLoading = false;
@@ -225,20 +224,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      final t = ref.read(timerProvider);
-      if (t.isRunning || t.isPaused) {
-        _exitSeconds = t.seconds;
-        ref.read(timerProvider.notifier).stop();
-      }
-    } else if (state == AppLifecycleState.resumed) {
-      if (_exitSeconds != null) {
-        final seconds = _exitSeconds!;
-        _exitSeconds = null;
-        _navigateToRecap(seconds);
-      } else {
-        WakelockPlus.enable();
-      }
+    if (state == AppLifecycleState.resumed) {
+      WakelockPlus.enable();
     }
   }
 
