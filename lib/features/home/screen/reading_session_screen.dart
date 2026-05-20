@@ -107,6 +107,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   bool _isRecording = false;
   bool _isOcrLoading = false;
+  bool _showSlideToStop = false;
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
@@ -271,6 +272,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final seconds = ref.read(timerProvider).seconds;
     ref.read(timerProvider.notifier).stop();
     _navigateToRecap(seconds);
+  }
+
+  void _showSlideToUnlock() {
+    HapticFeedback.mediumImpact();
+    ref.read(timerProvider.notifier).pause();
+    setState(() => _showSlideToStop = true);
+  }
+
+  void _dismissSlideToUnlock() {
+    setState(() => _showSlideToStop = false);
+    ref.read(timerProvider.notifier).resume();
   }
 
   void _navigateToRecap(int seconds) {
@@ -438,7 +450,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                           ),
                                         );
                                       },
-                                      onStopLongPress: _onStop,
+                                      onStopLongPress: _showSlideToUnlock,
                                     ),
                                     ),
                             ),
@@ -532,6 +544,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 _RecordingOverlay(
                   recognizedText: _recognizedText,
                   onStop: _toggleRecording,
+                ),
+
+              // ⑦ 슬라이드 종료 오버레이
+              if (_showSlideToStop)
+                _SlideToStopOverlay(
+                  onConfirm: () {
+                    setState(() => _showSlideToStop = false);
+                    _onStop();
+                  },
+                  onDismiss: _dismissSlideToUnlock,
                 ),
             ],
           ),
@@ -1331,6 +1353,170 @@ class _StopRecordingButton extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 슬라이드 종료 오버레이 ───────────────────────────────────────────────
+class _SlideToStopOverlay extends StatefulWidget {
+  final VoidCallback onConfirm;
+  final VoidCallback onDismiss;
+
+  const _SlideToStopOverlay({
+    required this.onConfirm,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_SlideToStopOverlay> createState() => _SlideToStopOverlayState();
+}
+
+class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
+  static const double _trackHeight = 64.0;
+  static const double _thumbSize = 52.0;
+  static const double _trackPadding = 6.0;
+
+  double _dragX = 0.0;
+  double _maxDrag = 0.0;
+
+  void _onDragUpdate(DragUpdateDetails d) {
+    setState(() {
+      _dragX = (_dragX + d.delta.dx).clamp(0.0, _maxDrag);
+    });
+  }
+
+  void _onDragEnd(DragEndDetails _) {
+    if (_dragX >= _maxDrag * 0.9) {
+      widget.onConfirm();
+    } else {
+      setState(() => _dragX = 0.0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onDismiss,
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.70),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                // 슬라이더 — 화면 중앙
+                Center(
+                  child: GestureDetector(
+                    onTap: () {}, // 슬라이더 영역 탭은 dismiss 막기
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '스와이프 하여 독서를 종료',
+                            style: TextStyle(
+                              color: _kGreen.withValues(alpha: 0.85),
+                              fontSize: 14,
+                              fontFamily: _kFont,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              _maxDrag = constraints.maxWidth -
+                                  _thumbSize -
+                                  _trackPadding * 2;
+                              final progress =
+                                  _maxDrag > 0 ? _dragX / _maxDrag : 0.0;
+                              return Container(
+                                height: _trackHeight,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: _kGreen.withValues(alpha: 0.5),
+                                    width: 1.5,
+                                  ),
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.centerLeft,
+                                  children: [
+                                    // 진행 트랙
+                                    Positioned(
+                                      left: _trackPadding,
+                                      child: Container(
+                                        width: _dragX + _thumbSize * 0.5,
+                                        height: _thumbSize * 0.25,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          color: _kGreen
+                                              .withValues(alpha: progress * 0.3),
+                                        ),
+                                      ),
+                                    ),
+                                    // 썸 버튼
+                                    Positioned(
+                                      left: _trackPadding + _dragX,
+                                      child: GestureDetector(
+                                        onHorizontalDragUpdate:
+                                            _onDragUpdate,
+                                        onHorizontalDragEnd: _onDragEnd,
+                                        child: Container(
+                                          width: _thumbSize,
+                                          height: _thumbSize,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            color: _kGreen,
+                                          ),
+                                          child: const Icon(
+                                            Icons.arrow_forward_rounded,
+                                            color: Colors.black,
+                                            size: 26,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 우하단 취소(잠금) 버튼
+                Positioned(
+                  bottom: 24,
+                  right: 24,
+                  child: GestureDetector(
+                    onTap: widget.onDismiss,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: _kGreen,
+                      ),
+                      child: const Icon(
+                        Icons.lock_rounded,
+                        color: Colors.black,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
