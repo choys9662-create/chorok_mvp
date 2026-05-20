@@ -73,7 +73,11 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: SizedBox(height: 8)),
                   const SliverToBoxAdapter(child: TimeCapsuleSection()),
                 ],
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 24,
+                  ),
+                ),
               ],
             ),
             ),
