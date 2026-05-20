@@ -225,6 +225,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      ref.read(timerProvider.notifier).syncFromWallClock();
       WakelockPlus.enable();
     }
   }
