@@ -1,66 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import 'package:figma_squircle/figma_squircle.dart';
+import '../../../shared/models/reading_session.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../controller/recommended_books_provider.dart';
 
-typedef RecommendedBook = ({
-  String title,
-  String author,
-  String reason,
-  int gradientIndex,
-  double matchScore,
-  String coverUrl,
-});
-
-const List<RecommendedBook> kRecommendedBooks = [
-  (
-    title: '소년이 온다',
-    author: '한강',
-    reason: '"채식주의자"에서 수집한 문장과 비슷한 감성',
-    gradientIndex: 3,
-    matchScore: 0.94,
-    coverUrl:
-        'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
-  ),
-  (
-    title: '아몬드',
-    author: '손원평',
-    reason: '감정과 공감에 대한 문장을 자주 기록하셨어요',
-    gradientIndex: 4,
-    matchScore: 0.89,
-    coverUrl:
-        'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
-  ),
-  (
-    title: '작별하지 않는다',
-    author: '한강',
-    reason: '"파친코"에서 저장한 가족 서사와 닮은 이야기',
-    gradientIndex: 5,
-    matchScore: 0.86,
-    coverUrl:
-        'https://image.aladin.co.kr/product/27043/33/cover500/8936434454_1.jpg',
-  ),
-  (
-    title: '불편한 편의점',
-    author: '김호연',
-    reason: '따뜻한 일상 문장을 좋아하시는 취향에 맞춰',
-    gradientIndex: 6,
-    matchScore: 0.82,
-    coverUrl:
-        'https://image.aladin.co.kr/product/26942/84/cover500/k582730818_1.jpg',
-  ),
-];
-
-class RecommendedBooksSection extends StatelessWidget {
+class RecommendedBooksSection extends ConsumerWidget {
   const RecommendedBooksSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(recommendedBooksProvider);
+
+    return async.when(
+      loading: () => _scaffold(context, child: _shimmer(context)),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (books) {
+        if (books.isEmpty) {
+          return _scaffold(context, child: _emptyCard(context));
+        }
+        return _scaffold(
+          context,
+          child: SizedBox(
+            height: 200,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              itemCount: books.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: index < books.length - 1 ? 12 : 0,
+                  ),
+                  child: RecommendedBookCard(book: books[index]),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _scaffold(BuildContext context, {required Widget child}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 헤더
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -90,7 +82,8 @@ class RecommendedBooksSection extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: ShapeDecoration(
                   color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
@@ -123,67 +116,89 @@ class RecommendedBooksSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        // 가로 스크롤 추천 카드
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding,
+        child,
+      ],
+    );
+  }
+
+  Widget _shimmer(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.screenPadding,
+        ),
+        itemCount: 2,
+        itemBuilder: (context, index) => Padding(
+          padding: EdgeInsets.only(right: index == 0 ? 12 : 0),
+          child: Container(
+            width: 240,
+            decoration: AppTheme.smoothBox(
+              color: context.appCard,
+              radius: 16,
             ),
-            itemCount: kRecommendedBooks.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index < kRecommendedBooks.length - 1 ? 12 : 0,
-                ),
-                child: RecommendedBookCard(book: kRecommendedBooks[index]),
-              );
-            },
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _emptyCard(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+        child: Text(
+          '문장을 더 기록하면 취향에 맞는 책을 추천해드려요',
+          style: AppTheme.bodySmall.copyWith(
+            color: context.appTextSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
 
-class RecommendedBookCard extends StatefulWidget {
+class RecommendedBookCard extends ConsumerStatefulWidget {
   final RecommendedBook book;
   const RecommendedBookCard({super.key, required this.book});
 
   @override
-  State<RecommendedBookCard> createState() => RecommendedBookCardState();
+  ConsumerState<RecommendedBookCard> createState() => RecommendedBookCardState();
 }
 
-class RecommendedBookCardState extends State<RecommendedBookCard> {
+class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
   bool _isPressed = false;
-  bool _isAdded = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
+    final library = ref.watch(libraryProvider);
+    final isAdded = library.any(
+      (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
+    );
 
     return GestureDetector(
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);
       },
-      onTapUp: (_) {
+      onTapUp: (_) async {
         setState(() => _isPressed = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${b.title} 상세 정보 (곧 지원)',
-              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
-            ),
-            backgroundColor: context.appCardElevated,
-            behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          ),
+        final query = Uri.encodeQueryComponent('${b.title} ${b.author}');
+        final url = Uri.parse(
+          'https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=$query',
         );
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
@@ -196,7 +211,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
           decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
           child: Row(
             children: [
-              // 표지 썸네일
               BookCover(
                 coverUrl: b.coverUrl,
                 gradientIndex: b.gradientIndex,
@@ -238,7 +252,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                   ),
                 ),
               ),
-              // 책 정보
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -262,7 +275,6 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // 추천 이유
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: ShapeDecoration(
@@ -303,22 +315,35 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                         ),
                       ),
                       const Spacer(),
-                      // 서재에 추가 버튼
                       Semantics(
-                        label: _isAdded
+                        label: isAdded
                             ? '${b.title} 서재에서 제거'
                             : '${b.title} 서재에 추가',
                         button: true,
                         child: GestureDetector(
                           onTap: () {
                             HapticFeedback.mediumImpact();
-                            setState(() => _isAdded = !_isAdded);
+                            final notifier = ref.read(libraryProvider.notifier);
+                            if (isAdded) {
+                              final existing = ref.read(libraryProvider).firstWhere(
+                                (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
+                              );
+                              notifier.deleteBook(existing.id);
+                            } else {
+                              notifier.addBook(Book(
+                                id: 'rec_${b.title.hashCode.abs()}',
+                                title: b.title,
+                                author: b.author,
+                                coverUrl: b.coverUrl.isEmpty ? null : b.coverUrl,
+                                status: ReadingStatus.wantToRead,
+                              ));
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  _isAdded
-                                      ? '${b.title}을(를) 읽고 싶은 책에 추가했어요'
-                                      : '${b.title}을(를) 서재에서 제거했어요',
+                                  isAdded
+                                      ? '${b.title}을(를) 서재에서 제거했어요'
+                                      : '${b.title}을(를) 읽고 싶은 책에 추가했어요',
                                   style: const TextStyle(color: Colors.white),
                                 ),
                                 backgroundColor: AppTheme.primary,
@@ -326,12 +351,7 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                                 shape: AppTheme.smoothShape(
                                   radius: AppTheme.radiusMD,
                                 ),
-                                margin: const EdgeInsets.fromLTRB(
-                                  20,
-                                  0,
-                                  20,
-                                  16,
-                                ),
+                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                               ),
                             );
                           },
@@ -341,13 +361,12 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              color: _isAdded
-                                  ? context.appPrimaryAccent.withValues(
-                                      alpha: 0.15,
-                                    )
+                              color: isAdded
+                                  ? context.appPrimaryAccent
+                                      .withValues(alpha: 0.15)
                                   : isDark
-                                  ? AppTheme.primary.withValues(alpha: 0.4)
-                                  : AppTheme.lightPrimaryAccent,
+                                      ? AppTheme.primary.withValues(alpha: 0.4)
+                                      : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
                                 borderRadius: SmoothBorderRadius(
                                   cornerRadius: 8,
@@ -359,25 +378,25 @@ class RecommendedBookCardState extends State<RecommendedBookCard> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  _isAdded
+                                  isAdded
                                       ? Icons.check_rounded
                                       : Icons.add_rounded,
                                   size: 14,
-                                  color: _isAdded
+                                  color: isAdded
                                       ? context.appPrimaryAccent
                                       : isDark
-                                      ? context.appPrimaryAccent
-                                      : Colors.white,
+                                          ? context.appPrimaryAccent
+                                          : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _isAdded ? '추가됨' : '서재에 추가',
+                                  isAdded ? '추가됨' : '서재에 추가',
                                   style: AppTheme.captionSmall.copyWith(
-                                    color: _isAdded
+                                    color: isAdded
                                         ? context.appPrimaryAccent
                                         : isDark
-                                        ? context.appPrimaryAccent
-                                        : Colors.white,
+                                            ? context.appPrimaryAccent
+                                            : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

@@ -181,6 +181,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           ),
           TextButton(
             onPressed: () {
+              HapticFeedback.heavyImpact();
               Navigator.pop(ctx);
               ref.read(libraryProvider.notifier).deleteBook(widget.bookId);
               context.pop();

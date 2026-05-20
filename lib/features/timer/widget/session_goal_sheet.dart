@@ -74,6 +74,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final canSubmit = _buildGoal() != null;
 
     return Container(
       decoration: ShapeDecoration(
@@ -162,18 +163,21 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                 label: '독서 시작',
                 button: true,
                 child: GestureDetector(
-                  onTap: _submit,
-                  child: Container(
+                  onTap: canSubmit ? _submit : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
                     height: 52,
                     alignment: Alignment.center,
                     decoration: AppTheme.smoothBox(
-                      gradient: AppTheme.greenGradient,
+                      gradient: canSubmit ? AppTheme.greenGradient : null,
+                      color: canSubmit ? null : context.appCardElevated,
                       radius: AppTheme.radiusMD,
                     ),
                     child: Text(
                       '독서 시작하기',
                       style: AppTheme.bodyLarge.copyWith(
-                        color: context.appBg,
+                        color: canSubmit ? context.appBg : context.appTextTertiary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

@@ -38,6 +38,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
   bool _isLoading = false;
 
+  bool get isLoading => _isLoading;
+
   Future<void> _loadFromDb() async {
     if (_isLoading) return;
     _isLoading = true;

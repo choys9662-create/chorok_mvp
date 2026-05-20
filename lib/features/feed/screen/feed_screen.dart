@@ -12,6 +12,7 @@ import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_shimmer.dart';
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
@@ -380,9 +381,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               ],
             ),
           ),
-          const _ActivityBanner(),
-          // const SizedBox(height: 10),
-          // Divider(height: 1, color: context.appBorder),
+          if (kUseMock) const _ActivityBanner(),
 
           // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
           Expanded(
@@ -438,9 +437,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                     ),
                   ],
                   if (isLoading)
-                    const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Center(child: CircularProgressIndicator()),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.screenPadding,
+                        vertical: AppTheme.spaceMD,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: 4,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppTheme.spaceMD),
+                        itemBuilder: (_, _) => const ChorokShimmer(
+                          width: double.infinity,
+                          height: 120,
+                          radius: 16,
+                        ),
+                      ),
                     )
                   else if (_filter == _FeedFilter.overlap)
                     groups.isEmpty
