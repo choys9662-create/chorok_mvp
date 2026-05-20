@@ -112,14 +112,36 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   Future<void> _openOcr() async {
     ref.read(timerProvider.notifier).pause();
     setState(() => _isOcrLoading = true);
-    final text = await ref.read(ocrServiceProvider).extractTextFromCamera();
+    final result = await ref.read(ocrServiceProvider).extractTextFromCamera();
     if (!mounted) return;
     setState(() => _isOcrLoading = false);
-    if (text == null || text.isEmpty) {
-      ref.read(timerProvider.notifier).resume();
-      return;
+    switch (result) {
+      case OcrSuccess(text: final text):
+        _openChosuSheet(initialText: text);
+      case OcrNoText():
+        ref.read(timerProvider.notifier).resume();
+        _showOcrSnack('텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.');
+      case OcrError(message: final message):
+        ref.read(timerProvider.notifier).resume();
+        _showOcrSnack(message);
+      case OcrCancelled():
+        ref.read(timerProvider.notifier).resume();
     }
-    _openChosuSheet(initialText: text);
+  }
+
+  void _showOcrSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(fontFamily: _kFont),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   Future<void> _toggleRecording() async {
@@ -1151,50 +1173,164 @@ class _OcrLoadingOverlay extends StatelessWidget {
 }
 
 // ─── 녹음 오버레이 ────────────────────────────────────────────────────────
-class _RecordingOverlay extends StatelessWidget {
+class _RecordingOverlay extends StatefulWidget {
   final String recognizedText;
   final VoidCallback onStop;
 
   const _RecordingOverlay({required this.recognizedText, required this.onStop});
 
   @override
+  State<_RecordingOverlay> createState() => _RecordingOverlayState();
+}
+
+class _RecordingOverlayState extends State<_RecordingOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: GestureDetector(
-        onTap: onStop,
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onStop,
         child: Container(
-          color: Colors.black.withValues(alpha: 0.6),
+          color: Colors.black.withValues(alpha: 0.72),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.mic_rounded, color: Colors.red, size: 48),
-              const SizedBox(height: 16),
+              _StopRecordingButton(
+                pulseCtrl: _pulseCtrl,
+                onTap: widget.onStop,
+              ),
+              const SizedBox(height: 20),
               const Text(
-                '탭하여 중지',
+                '눌러서 중지',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   fontFamily: _kFont,
                 ),
               ),
-              if (recognizedText.isNotEmpty) ...[
-                const SizedBox(height: 24),
+              const SizedBox(height: 6),
+              Text(
+                '듣는 중...',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 13,
+                  fontFamily: _kFont,
+                ),
+              ),
+              if (widget.recognizedText.isNotEmpty) ...[
+                const SizedBox(height: 28),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    recognizedText,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      height: 1.6,
-                      fontFamily: _kFont,
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Text(
+                      widget.recognizedText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.6,
+                        fontFamily: _kFont,
+                      ),
                     ),
                   ),
                 ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StopRecordingButton extends StatelessWidget {
+  final AnimationController pulseCtrl;
+  final VoidCallback onTap;
+
+  const _StopRecordingButton({required this.pulseCtrl, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const double buttonSize = 96;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: buttonSize + 48,
+        height: buttonSize + 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AnimatedBuilder(
+              animation: pulseCtrl,
+              builder: (_, __) {
+                final t = pulseCtrl.value;
+                final scale = 1.0 + t * 0.4;
+                final opacity = (1.0 - t).clamp(0.0, 1.0) * 0.5;
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: buttonSize,
+                    height: buttonSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red.withValues(alpha: opacity),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Container(
+              width: buttonSize,
+              height: buttonSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withValues(alpha: 0.4),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.stop_rounded,
+                color: Colors.white,
+                size: 44,
+              ),
+            ),
+          ],
         ),
       ),
     );
