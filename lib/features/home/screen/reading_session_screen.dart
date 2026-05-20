@@ -231,10 +231,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         _exitSeconds = t.seconds;
         ref.read(timerProvider.notifier).stop();
       }
-    } else if (state == AppLifecycleState.resumed && _exitSeconds != null) {
-      final seconds = _exitSeconds!;
-      _exitSeconds = null;
-      _navigateToRecap(seconds);
+    } else if (state == AppLifecycleState.resumed) {
+      if (_exitSeconds != null) {
+        final seconds = _exitSeconds!;
+        _exitSeconds = null;
+        _navigateToRecap(seconds);
+      } else {
+        WakelockPlus.enable();
+      }
     }
   }
 
