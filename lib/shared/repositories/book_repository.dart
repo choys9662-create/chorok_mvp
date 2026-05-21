@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/isar/isar_book.dart';
 import '../models/isar/isar_book_reflection.dart';
@@ -20,8 +22,42 @@ final bookRepositoryProvider = Provider<BookRepository?>((ref) {
 });
 
 final readingStreakProvider = FutureProvider<int>((ref) async {
+  if (kIsWeb) return _readingStreakFromSupabase();
   return (await ref.read(bookRepositoryProvider)?.getReadingStreak()) ?? 0;
 });
+
+Future<int> _readingStreakFromSupabase() async {
+  final client = Supabase.instance.client;
+  final userId = client.auth.currentUser?.id;
+  if (userId == null) return 0;
+
+  final rows = await client
+      .from('reading_sessions')
+      .select('ended_at')
+      .eq('user_id', userId)
+      .order('ended_at', ascending: false);
+
+  final days = <DateTime>{};
+  for (final row in rows as List) {
+    final dt = DateTime.tryParse(
+      (row as Map<String, dynamic>)['ended_at'] as String? ?? '',
+    );
+    if (dt != null) {
+      days.add(DateTime(dt.year, dt.month, dt.day));
+    }
+  }
+  if (days.isEmpty) return 0;
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  int streak = 0;
+  DateTime cursor = today;
+  while (days.contains(cursor)) {
+    streak++;
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+  return streak;
+}
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
 

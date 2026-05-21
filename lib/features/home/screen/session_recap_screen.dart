@@ -220,8 +220,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
             .map((e) => e.thought.isNotEmpty ? e.thought : null)
             .toList(),
       );
-    } catch (_) {
-      // 소셜 업로드 실패는 무시 — 로컬 저장이 우선
+    } catch (e) {
+      debugPrint('Supabase session upload failed: $e');
     }
   }
 
