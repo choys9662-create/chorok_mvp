@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,7 +59,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulseAnim;
   late final AnimationController _moveCtrl;
-  
+
   UiVisibility _uiState = UiVisibility.minimal;
   Timer? _uiHideTimer;
   bool _goalReachedNotified = false;
@@ -70,7 +69,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       _uiState = toControls ? UiVisibility.controls : UiVisibility.minimal;
     });
     _uiHideTimer?.cancel();
-    
+
     _uiHideTimer = Timer(const Duration(seconds: 4), () {
       final t = ref.read(timerProvider);
       if (mounted && t.isRunning) {
@@ -136,10 +135,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(fontFamily: _kFont),
-          ),
+          content: Text(message, style: const TextStyle(fontFamily: _kFont)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -419,33 +415,37 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                     stops: const [0.0, 1.0],
                                   ),
                                 ),
-                                    child: _TimerTopBar(
-                                      timer: timer,
-                                      onTogglePause: () {
-                                        HapticFeedback.mediumImpact();
-                                        final ctrl = ref.read(timerProvider.notifier);
-                                        timer.isPaused ? ctrl.resume() : ctrl.pause();
-                                        _resetUiTimer();
-                                      },
-                                      onStopPress: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              '꾹 눌러서 세션을 종료하세요',
-                                              style: TextStyle(
-                                                fontFamily: _kFont,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 1500),
-                                            backgroundColor: Color(0xFF0D1A0D),
-                                            behavior: SnackBarBehavior.floating,
+                                child: _TimerTopBar(
+                                  timer: timer,
+                                  onTogglePause: () {
+                                    HapticFeedback.mediumImpact();
+                                    final ctrl = ref.read(
+                                      timerProvider.notifier,
+                                    );
+                                    timer.isPaused
+                                        ? ctrl.resume()
+                                        : ctrl.pause();
+                                    _resetUiTimer();
+                                  },
+                                  onStopPress: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          '꾹 눌러서 세션을 종료하세요',
+                                          style: TextStyle(
+                                            fontFamily: _kFont,
+                                            color: Colors.white,
                                           ),
-                                        );
-                                      },
-                                      onStopLongPress: _showSlideToUnlock,
-                                    ),
-                                    ),
+                                        ),
+                                        duration: Duration(milliseconds: 1500),
+                                        backgroundColor: Color(0xFF0D1A0D),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                  onStopLongPress: _showSlideToUnlock,
+                                ),
+                              ),
                             ),
 
                             // 하단 영역: 책 정보 + 기록 버튼 3종
@@ -494,7 +494,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                     ),
                                     const SizedBox(height: 32),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
                                       children: [
                                         _ActionButton(
                                           icon: Icons.people_alt_rounded,
@@ -505,12 +506,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                           onTap: () => _openChosuSheet(),
                                         ),
                                         _ActionButton(
-                                          icon: _isOcrLoading ? Icons.hourglass_empty_rounded : Icons.camera_alt_rounded,
+                                          icon: _isOcrLoading
+                                              ? Icons.hourglass_empty_rounded
+                                              : Icons.camera_alt_rounded,
                                           onTap: _openOcr,
                                           isActive: _isOcrLoading,
                                         ),
                                         _ActionButton(
-                                          icon: _isRecording ? Icons.stop_rounded : Icons.graphic_eq_rounded,
+                                          icon: _isRecording
+                                              ? Icons.stop_rounded
+                                              : Icons.graphic_eq_rounded,
                                           onTap: _toggleRecording,
                                           isActive: _isRecording,
                                           activeColor: Colors.red,
@@ -523,11 +528,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                             ),
                           ],
                         ),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
               // ⑤ OCR 로딩 오버레이
               if (_isOcrLoading) const _OcrLoadingOverlay(),
@@ -692,7 +697,6 @@ class _PillTimerOnly extends StatelessWidget {
   }
 }
 
-
 // ─── 함께 읽는 독자 CTA ────────────────────────────────────────────────────
 
 // ─── 이름 있는 독자 오브 레이어 ──────────────────────────────────────────
@@ -850,12 +854,16 @@ class _ActionButton extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: isActive ? activeColor.withValues(alpha: 0.15) : const Color(0xFF161616),
+          color: isActive
+              ? activeColor.withValues(alpha: 0.15)
+              : const Color(0xFF161616),
         ),
         child: Icon(
           icon,
           size: 22,
-          color: isActive ? activeColor : const Color(0xFFFFFFFF).withValues(alpha: 0.8),
+          color: isActive
+              ? activeColor
+              : const Color(0xFFFFFFFF).withValues(alpha: 0.8),
         ),
       ),
     );
@@ -1228,10 +1236,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _StopRecordingButton(
-                pulseCtrl: _pulseCtrl,
-                onTap: widget.onStop,
-              ),
+              _StopRecordingButton(pulseCtrl: _pulseCtrl, onTap: widget.onStop),
               const SizedBox(height: 20),
               const Text(
                 '눌러서 중지',
@@ -1357,10 +1362,7 @@ class _SlideToStopOverlay extends StatefulWidget {
   final VoidCallback onConfirm;
   final VoidCallback onDismiss;
 
-  const _SlideToStopOverlay({
-    required this.onConfirm,
-    required this.onDismiss,
-  });
+  const _SlideToStopOverlay({required this.onConfirm, required this.onDismiss});
 
   @override
   State<_SlideToStopOverlay> createState() => _SlideToStopOverlayState();
@@ -1420,11 +1422,13 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                           const SizedBox(height: 16),
                           LayoutBuilder(
                             builder: (context, constraints) {
-                              _maxDrag = constraints.maxWidth -
+                              _maxDrag =
+                                  constraints.maxWidth -
                                   _thumbSize -
                                   _trackPadding * 2;
-                              final progress =
-                                  _maxDrag > 0 ? _dragX / _maxDrag : 0.0;
+                              final progress = _maxDrag > 0
+                                  ? _dragX / _maxDrag
+                                  : 0.0;
                               return Container(
                                 height: _trackHeight,
                                 decoration: BoxDecoration(
@@ -1445,10 +1449,12 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                                         width: _dragX + _thumbSize * 0.5,
                                         height: _thumbSize * 0.25,
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          color: _kGreen
-                                              .withValues(alpha: progress * 0.3),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          color: _kGreen.withValues(
+                                            alpha: progress * 0.3,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1456,15 +1462,15 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                                     Positioned(
                                       left: _trackPadding + _dragX,
                                       child: GestureDetector(
-                                        onHorizontalDragUpdate:
-                                            _onDragUpdate,
+                                        onHorizontalDragUpdate: _onDragUpdate,
                                         onHorizontalDragEnd: _onDragEnd,
                                         child: Container(
                                           width: _thumbSize,
                                           height: _thumbSize,
                                           decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             color: _kGreen,
                                           ),
                                           child: const Icon(

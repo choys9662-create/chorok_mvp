@@ -20,6 +20,7 @@ import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../analytics/controller/analytics_provider.dart';
+import '../../feed/controller/feed_provider.dart';
 import '../controller/weekly_minutes_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
@@ -227,23 +228,48 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   Future<void> _autoSaveSession() async {
     if (widget.data.seconds <= 0) return;
     final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return;
+    final bookId = widget.data.bookId;
+    final validSentences = widget.data.sentences
+        .where((e) => e.content.isNotEmpty)
+        .toList();
+
     try {
-      await repo.saveSessionOnly(
-        sessionId: _sessionId,
-        bookId: widget.data.bookId,
-        durationSeconds: widget.data.seconds,
-        choseoCount: widget.data.sentences.length,
-        startedAt: widget.data.sessionStartedAt,
-        exitCount: widget.data.exitCount,
-        exitDurationSeconds: widget.data.exitDurationSeconds,
-      );
+      if (repo != null) {
+        await repo.saveSessionOnly(
+          sessionId: _sessionId,
+          bookId: bookId,
+          durationSeconds: widget.data.seconds,
+          choseoCount: validSentences.length,
+          startedAt: widget.data.sessionStartedAt,
+          exitCount: widget.data.exitCount,
+          exitDurationSeconds: widget.data.exitDurationSeconds,
+        );
+
+        if (bookId != null && validSentences.isNotEmpty) {
+          await Future.wait(
+            validSentences.map(
+              (entry) => repo.saveChoseo(
+                bookId: bookId,
+                bookTitle: widget.data.bookTitle,
+                bookAuthor: widget.data.bookAuthor,
+                content: entry.content,
+                myThought: entry.thought.isEmpty ? null : entry.thought,
+              ),
+            ),
+          );
+        }
+      }
+
+      if (bookId != null) {
+        unawaited(_uploadToSupabase(bookId, validSentences));
+      }
     } catch (e) {
       debugPrint('Session auto-save failed: $e');
     } finally {
       ref.invalidate(analyticsProvider);
       ref.invalidate(readingStreakProvider);
       ref.invalidate(weeklyMinutesProvider);
+      ref.invalidate(feedProvider);
     }
   }
 
@@ -285,23 +311,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         exitDurationSeconds: widget.data.exitDurationSeconds,
         existingSessionId: _sessionId,
       );
-
-      // 초서 문장 병렬 저장
-      await Future.wait(
-        widget.data.sentences
-            .where((entry) => entry.content.isNotEmpty)
-            .map(
-              (entry) => repo.saveChoseo(
-                bookId: bookId,
-                bookTitle: widget.data.bookTitle,
-                bookAuthor: widget.data.bookAuthor,
-                content: entry.content,
-                myThought: entry.thought.isEmpty ? null : entry.thought,
-              ),
-            ),
-      );
-
-      unawaited(_uploadToSupabase(bookId, widget.data.sentences));
 
       if (!mounted) return;
 
