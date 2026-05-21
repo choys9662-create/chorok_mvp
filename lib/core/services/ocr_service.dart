@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -34,7 +33,7 @@ class CloudVisionOcrService implements OcrService {
   final _imagePicker = ImagePicker();
   static const _endpoint = 'https://vision.googleapis.com/v1/images:annotate';
   static final _httpClient = http.Client();
-  static final _apiKey = dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
+  static const _apiKey = String.fromEnvironment('GOOGLE_CLOUD_VISION_API_KEY');
 
   @override
   Future<OcrResult> extractTextFromCamera() async {
