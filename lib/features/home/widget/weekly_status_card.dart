@@ -18,7 +18,7 @@ class WeeklyStatusCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
     final weeklyAsync = ref.watch(weeklyMinutesProvider);
-    final dbWeekly = weeklyAsync.valueOrNull ?? kWeeklyMinutes;
+    final dbWeekly = weeklyAsync.valueOrNull ?? List.filled(7, 0);
 
     // 오늘 요일 (월=0)
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);

@@ -15,6 +15,7 @@ import '../widget/time_capsule_section.dart';
 
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../controller/recommended_books_provider.dart';
+import '../controller/weekly_minutes_provider.dart';
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ class HomeScreen extends ConsumerWidget {
               color: context.appAccentColor,
               onRefresh: () async {
                 ref.invalidate(recommendedBooksProvider);
+                ref.invalidate(weeklyMinutesProvider);
                 await ref.read(recommendedBooksProvider.future).catchError((_) => <RecommendedBook>[]);
               },
               child: CustomScrollView(

@@ -31,6 +31,7 @@ jobs:
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
           echo "ALADIN_API_KEY=${{ secrets.ALADIN_API_KEY }}" >> .env
           echo "GOOGLE_SERVER_CLIENT_ID=${{ secrets.GOOGLE_SERVER_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLOUD_VISION_API_KEY=${{ secrets.GOOGLE_CLOUD_VISION_API_KEY }}" >> .env
 
       - name: Install dependencies
         run: flutter pub get
@@ -38,7 +39,7 @@ jobs:
       - name: Build Flutter Web (real)
         # 웹 Google 로그인은 Supabase OAuth redirect로 처리. Google client ID는
         # Supabase 대시보드의 Google provider 설정에 등록되어 있으면 됨.
-        run: flutter build web --release --dart-define=GOOGLE_CLOUD_VISION_API_KEY=${{ secrets.GOOGLE_CLOUD_VISION_API_KEY }}
+        run: flutter build web --release
 
       - name: Deploy to Firebase Hosting (prod)
         uses: FirebaseExtended/action-hosting-deploy@v0
