@@ -170,23 +170,47 @@ class _PageSliderCardState extends State<PageSliderCard> {
               ),
             ),
 
-          // 슬라이더
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              activeTrackColor: context.appPrimaryAccent,
-              inactiveTrackColor: context.appBorder,
-              thumbColor: context.appPrimaryAccent,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
-              overlayColor: context.appPrimaryAccent.withValues(alpha: 0.12),
-            ),
-            child: Slider(
-              value: _page.toDouble().clamp(0, sliderMax),
-              min: 0,
-              max: sliderMax,
-              onChanged: (v) => _setPage(v.round()),
-            ),
+          // 슬라이더 + 스텝 버튼
+          Row(
+            children: [
+              _StepButton(
+                icon: Icons.remove,
+                onPressed: () => _setPage(_page - 1),
+                accentColor: context.appPrimaryAccent,
+                cardColor: context.appCard,
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    activeTrackColor: context.appPrimaryAccent,
+                    inactiveTrackColor: context.appBorder,
+                    thumbColor: context.appPrimaryAccent,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 9,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 18,
+                    ),
+                    overlayColor: context.appPrimaryAccent.withValues(
+                      alpha: 0.12,
+                    ),
+                  ),
+                  child: Slider(
+                    value: _page.toDouble().clamp(0, sliderMax),
+                    min: 0,
+                    max: sliderMax,
+                    onChanged: (v) => _setPage(v.round()),
+                  ),
+                ),
+              ),
+              _StepButton(
+                icon: Icons.add,
+                onPressed: () => _setPage(_page + 1),
+                accentColor: context.appPrimaryAccent,
+                cardColor: context.appCard,
+              ),
+            ],
           ),
 
           const SizedBox(height: 4),
@@ -226,6 +250,36 @@ class _PageSliderCardState extends State<PageSliderCard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color accentColor;
+  final Color cardColor;
+
+  const _StepButton({
+    required this.icon,
+    required this.onPressed,
+    required this.accentColor,
+    required this.cardColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: cardColor,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 16, color: accentColor),
       ),
     );
   }

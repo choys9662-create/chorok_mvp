@@ -13,12 +13,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../analytics/controller/analytics_provider.dart';
+import '../controller/weekly_minutes_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
@@ -236,9 +238,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         exitCount: widget.data.exitCount,
         exitDurationSeconds: widget.data.exitDurationSeconds,
       );
+    } catch (e) {
+      debugPrint('Session auto-save failed: $e');
     } finally {
       ref.invalidate(analyticsProvider);
       ref.invalidate(readingStreakProvider);
+      ref.invalidate(weeklyMinutesProvider);
     }
   }
 
@@ -607,10 +612,11 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         if (widget.data.sentences.isNotEmpty) ...[
                           _SentencesSection(sentences: widget.data.sentences),
                           const SizedBox(height: 12),
-                          // 겹문장 힌트 카드
-                          _OverlapHintCard(
-                            sentenceCount: widget.data.sentences.length,
-                          ),
+                          // 겹문장 힌트 카드 — 목업 수치이므로 디자인 앱에서만 노출
+                          if (kUseMock)
+                            _OverlapHintCard(
+                              sentenceCount: widget.data.sentences.length,
+                            ),
                           const SizedBox(height: 16),
                         ] else ...[
                           _EmptySentenceCard(),
@@ -873,7 +879,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tag = _analyzeTag(entry.content);
+    final tag = kUseMock ? _analyzeTag(entry.content) : _SentenceTag.normal;
 
     final (Color tagColor, IconData tagIcon, String tagDesc) = switch (tag) {
       _SentenceTag.resonance => (
@@ -1056,7 +1062,7 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final overlapCount = sentenceCount > 0
+    final overlapCount = (kUseMock && sentenceCount > 0)
         ? (sentenceCount * 0.6).round().clamp(0, sentenceCount)
         : 0;
 
