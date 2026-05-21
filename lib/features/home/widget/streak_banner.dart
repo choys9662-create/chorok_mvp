@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/repositories/book_repository.dart';
 import 'package:figma_squircle/figma_squircle.dart';
@@ -19,7 +20,8 @@ class StreakBanner extends ConsumerWidget {
         if (days < 2) return const SizedBox.shrink();
         final today = DateTime.now();
         final todayIndex = (today.weekday - 1).clamp(0, 6);
-        final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ?? kWeeklyMinutes;
+        final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ??
+            (kUseMock ? kWeeklyMinutes : const [0, 0, 0, 0, 0, 0, 0]);
         final todayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
         final hasReadToday = todayMin > 0;
 

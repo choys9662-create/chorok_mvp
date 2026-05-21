@@ -409,14 +409,15 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           ),
 
           // ── 독서 통계 ──────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _StatsRow(
-              sessions: 12,
-              totalHours: 12.4,
-              avgMinutes: 62,
-              sentenceCount: _sentences.length,
+          if (kUseMock)
+            SliverToBoxAdapter(
+              child: _StatsRow(
+                sessions: 12,
+                totalHours: 12.4,
+                avgMinutes: 62,
+                sentenceCount: _sentences.length,
+              ),
             ),
-          ),
 
           // ── 수집 문장 헤더 ────────────────────────────────────
           SliverToBoxAdapter(

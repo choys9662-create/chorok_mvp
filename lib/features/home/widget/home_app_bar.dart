@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
@@ -51,7 +52,8 @@ class HomeAppBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
-    final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ?? kWeeklyMinutes;
+    final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ??
+        (kUseMock ? kWeeklyMinutes : const [0, 0, 0, 0, 0, 0, 0]);
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
     final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
     return Padding(
@@ -105,35 +107,10 @@ class HomeAppBar extends ConsumerWidget {
                   HapticFeedback.selectionClick();
                   context.push(AppConstants.routeNotifications);
                 },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      Icons.notifications_none_rounded,
-                      color: context.appTextSecondary,
-                      size: 24,
-                    ),
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: context.appPrimaryAccent,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.appPrimaryAccent.withValues(
-                                alpha: 0.6,
-                              ),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Icon(
+                  Icons.notifications_none_rounded,
+                  color: context.appTextSecondary,
+                  size: 24,
                 ),
               ),
             ),
