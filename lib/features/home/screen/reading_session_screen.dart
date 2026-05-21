@@ -1487,26 +1487,6 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                 ),
 
                 // 우하단 취소(잠금) 버튼
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: GestureDetector(
-                    onTap: widget.onDismiss,
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: _kGreen,
-                      ),
-                      child: const Icon(
-                        Icons.lock_rounded,
-                        color: Colors.black,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
