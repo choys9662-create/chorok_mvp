@@ -529,7 +529,7 @@ class _SentenceDetailScreenState
                       height: 44,
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
-                        gradient: AppTheme.greenGradient,
+                        gradient: context.appReadingGradient,
                         radius: 22,
                       ),
                       child: _isSubmitting

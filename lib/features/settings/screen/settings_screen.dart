@@ -325,16 +325,14 @@ class _ThemeChip extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: selected
-              ? AppTheme.smoothBox(
-                  gradient: context.appReadingGradient,
-                  radius: AppTheme.radiusMD,
-                )
-              : AppTheme.smoothBox(
-                  color: context.appCardElevated,
-                  radius: AppTheme.radiusMD,
-                  side: BorderSide.none,
-                ),
+          decoration: AppTheme.smoothBox(
+            gradient: selected
+                ? context.appReadingGradient
+                : LinearGradient(
+                    colors: [context.appCardElevated, context.appCardElevated],
+                  ),
+            radius: AppTheme.radiusMD,
+          ),
           child: Column(
             children: [
               Icon(
