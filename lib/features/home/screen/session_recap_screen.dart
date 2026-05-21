@@ -481,7 +481,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           key: _shareKey,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF9F7F1),
+                              color: AppTheme.receiptBg,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
@@ -766,8 +766,8 @@ class _ScoreCardState extends State<_ScoreCard>
                                   ..shader =
                                       const LinearGradient(
                                         colors: [
-                                          Color(0xFF00FF00),
-                                          Color(0xFF00CC6A),
+                                          AppTheme.primaryLight,
+                                          AppTheme.accent,
                                         ],
                                       ).createShader(
                                         const Rect.fromLTWH(0, 0, 100, 60),
@@ -1297,7 +1297,7 @@ class _CompletionDialog extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: AppTheme.smoothBox(
-                gradient: AppTheme.greenGradient,
+                gradient: context.appReadingGradient,
                 radius: AppTheme.radiusLG,
               ),
               child: const Icon(
@@ -1342,7 +1342,7 @@ class _CompletionDialog extends StatelessWidget {
                   width: double.infinity,
                   height: 52,
                   decoration: AppTheme.smoothBox(
-                    gradient: AppTheme.greenGradient,
+                    gradient: context.appReadingGradient,
                     radius: AppTheme.radiusMD,
                   ),
                   alignment: Alignment.center,
@@ -1505,7 +1505,7 @@ class _FocusGaugeCardState extends State<_FocusGaugeCard>
 
   Color get _gaugeColor {
     if (widget.focusPercent >= 80) return context.appPrimaryAccent;
-    if (widget.focusPercent >= 50) return AppTheme.accent;
+    if (widget.focusPercent >= 50) return context.appAccentColor;
     return const Color(0xFFFF7B7B);
   }
 

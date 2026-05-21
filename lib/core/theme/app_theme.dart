@@ -31,6 +31,30 @@ extension AppThemeExt on BuildContext {
   Color get appProgressTrack =>
       _isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E8EB);
 
+  // 비활성 액션 버튼 fill (다크: #161616 / 라이트: #EAEEF2)
+  Color get appActionBg =>
+      _isDark ? AppTheme.darkActionBg : AppTheme.lightActionBg;
+
+  // 비활성 컨트롤 테두리 (다크: white 12% / 라이트: #191F28 10%)
+  Color get appBorderSubtle => _isDark
+      ? Colors.white.withValues(alpha: 0.12)
+      : const Color(0xFF191F28).withValues(alpha: 0.10);
+
+  // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 딥그린 8%)
+  Color get appActiveFill => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.15)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.08);
+
+  // pill 활성 보더 (다크: 네온그린 45% / 라이트: 딥그린 35%)
+  Color get appPillBorderActive => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.45)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.35);
+
+  // pill 뮤트 보더 — 일시정지 상태 (다크: 네온그린 25% / 라이트: 딥그린 18%)
+  Color get appPillBorderMuted => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.25)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.18);
+
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
@@ -56,6 +80,7 @@ class AppTheme {
   static const Color accent = Color(0xFF6DE034); // 보조 강조 (그라디언트 끝값)
   static const Color fireflyColor = Color(0xFF8DFF54); // 반딧불 이펙트 전용
   static const Color warningColor = Color(0xFFFF8C42); // 경고/연속 독서
+  static const Color empathyColor = Color(0xFFFF6B6B); // 공감/좋아요 하트
 
   // ─── 그린 그라디언트 ─────────────────────────────────────────────
   /// #8DFF54 → #6DE034: 네온 그린 그라디언트
@@ -103,14 +128,18 @@ class AppTheme {
   static const Color darkSurface = Color(0xFF131313);
   static const Color darkCard = Color(0xFF131313);
   static const Color darkCardElevated = Color(0xFF1E1E1E);
+  static const Color darkActionBg = Color(0xFF161616); // 비활성 액션 버튼 fill (다크)
   static const Color darkBorder = Color(0x338DFF54); // 네온 그린 투명 테두리 (20% 투명도)
   static const Color darkPrimaryContainer = Color(0xFF132A13);
+  static const Color primaryPaused = Color(0xFF2A7A3D); // 일시정지/뮤트 그린 (다크 전용)
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
   static const Color lightBg = Color(0xFFF2F4F6);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFFFFFFF);
+  static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
   static const Color lightPrimaryContainer = Color(0xFFE6F5ED);
+  static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFFFFFFF);
@@ -399,6 +428,11 @@ class AppTheme {
       ),
     ),
     dividerColor: Colors.transparent,
+    dividerTheme: const DividerThemeData(
+      color: Colors.transparent,
+      thickness: 0,
+      space: 0,
+    ),
     chipTheme: ChipThemeData(
       backgroundColor: lightCard,
       labelStyle: captionLarge.copyWith(color: lightTextSecondary),

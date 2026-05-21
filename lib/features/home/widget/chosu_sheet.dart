@@ -159,7 +159,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
               _FieldLabel(
                 icon: Icons.edit_note_rounded,
                 label: '내 생각',
-                color: AppTheme.accent,
+                color: context.appAccentColor,
                 optional: true,
               ),
               const SizedBox(height: 6),
@@ -201,7 +201,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                   onPressed: _sentenceCtrl.text.trim().isEmpty ? null : _save,
                   style: FilledButton.styleFrom(
                     backgroundColor: _saved
-                        ? AppTheme.accent
+                        ? context.appAccentColor
                         : context.appPrimaryAccent,
                     disabledBackgroundColor: context.appBorder,
                     foregroundColor: Colors.black,

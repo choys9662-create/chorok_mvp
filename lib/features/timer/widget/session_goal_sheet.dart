@@ -170,8 +170,11 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                     height: 52,
                     alignment: Alignment.center,
                     decoration: AppTheme.smoothBox(
-                      gradient: canSubmit ? AppTheme.greenGradient : null,
-                      color: canSubmit ? null : context.appCardElevated,
+                      gradient: canSubmit
+                          ? context.appReadingGradient
+                          : LinearGradient(
+                              colors: [context.appCardElevated, context.appCardElevated],
+                            ),
                       radius: AppTheme.radiusMD,
                     ),
                     child: Text(
@@ -407,7 +410,7 @@ class _PresetChip extends StatelessWidget {
           child: Text(
             label,
             style: AppTheme.bodySmall.copyWith(
-              color: isSelected ? AppTheme.accent : context.appTextSecondary,
+              color: isSelected ? context.appAccentColor : context.appTextSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
           ),

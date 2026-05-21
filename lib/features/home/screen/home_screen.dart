@@ -38,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
           const HomeAppBar(),
           Expanded(
             child: RefreshIndicator(
-              color: AppTheme.accent,
+              color: context.appAccentColor,
               onRefresh: () async {
                 ref.invalidate(recommendedBooksProvider);
                 await ref.read(recommendedBooksProvider.future).catchError((_) => <RecommendedBook>[]);

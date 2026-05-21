@@ -1028,7 +1028,7 @@ class _SentenceCard extends StatelessWidget {
                                   : Icons.favorite_border_rounded,
                               size: 16,
                               color: isLiked
-                                  ? const Color(0xFFFF6B6B)
+                                  ? AppTheme.empathyColor
                                   : context.appTextTertiary,
                             ),
                             const SizedBox(width: 4),
@@ -1036,7 +1036,7 @@ class _SentenceCard extends StatelessWidget {
                               '$empathyCount',
                               style: AppTheme.captionLarge.copyWith(
                                 color: isLiked
-                                    ? const Color(0xFFFF6B6B)
+                                    ? AppTheme.empathyColor
                                     : context.appTextTertiary,
                               ),
                             ),
