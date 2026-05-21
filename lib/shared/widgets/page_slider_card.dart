@@ -170,14 +170,11 @@ class _PageSliderCardState extends State<PageSliderCard> {
               ),
             ),
 
-          // 슬라이더 + 스텝 버튼
           Row(
             children: [
               _StepButton(
                 icon: Icons.remove,
                 onPressed: () => _setPage(_page - 1),
-                accentColor: context.appPrimaryAccent,
-                cardColor: context.appCard,
               ),
               Expanded(
                 child: SliderTheme(
@@ -207,8 +204,6 @@ class _PageSliderCardState extends State<PageSliderCard> {
               _StepButton(
                 icon: Icons.add,
                 onPressed: () => _setPage(_page + 1),
-                accentColor: context.appPrimaryAccent,
-                cardColor: context.appCard,
               ),
             ],
           ),
@@ -258,14 +253,10 @@ class _PageSliderCardState extends State<PageSliderCard> {
 class _StepButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  final Color accentColor;
-  final Color cardColor;
 
   const _StepButton({
     required this.icon,
     required this.onPressed,
-    required this.accentColor,
-    required this.cardColor,
   });
 
   @override
@@ -276,10 +267,10 @@ class _StepButton extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: cardColor,
+          color: context.appCard,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16, color: accentColor),
+        child: Icon(icon, size: 16, color: context.appPrimaryAccent),
       ),
     );
   }
