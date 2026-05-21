@@ -137,11 +137,11 @@ class AppTheme {
   static const Color primaryPaused = Color(0xFF2A7A3D); // 일시정지/뮤트 그린 (다크 전용)
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
-  static const Color lightBg = Color(0xFFF2F4F6);
+  static const Color lightBg = Color(0xFFF0F0F0);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFFFFFFF);
   static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
-  static const Color lightPrimaryContainer = Color(0xFFE6F5ED);
+  static const Color lightPrimaryContainer = Color(0xFFE8F5E9);
   static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
@@ -150,14 +150,19 @@ class AppTheme {
   static const Color textTertiary = Color(0xFF424242);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
-  static const Color lightTextPrimary = Color(0xFF191F28);
-  static const Color lightTextSecondary = Color(0xFF8B95A1);
-  static const Color lightTextTertiary = Color(0xFFB0B8C1);
+  static const Color lightTextPrimary = Color(0xFF1A1A1A);
+  static const Color lightTextSecondary = Color(0xFF555555);
+  static const Color lightTextTertiary = Color(0xFF888888);
   static const Color lightBorderColor = Colors.transparent;
   static const Color lightDivider = Colors.transparent;
 
   // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
-  static const Color lightPrimaryAccent = Color(0xFF009B58);
+  static const Color lightPrimaryAccent = Color(0xFF16A34A);
+
+  // 라이트 모드 카드 그림자
+  static const List<BoxShadow> lightCardShadows = [
+    BoxShadow(blurRadius: 8, color: Color(0x0F000000)),
+  ];
 
   // ─── Smooth Corner — DESIGN.md §2 Radius Hierarchy ──────────────
   //   radiusSM  =  8  → 태그, 작은 아이콘 배경 (Small)
@@ -312,15 +317,17 @@ class AppTheme {
     fontFamily: '조선굴림체',
     useMaterial3: true,
     brightness: Brightness.dark,
-    colorScheme: ColorScheme(
+    colorScheme: const ColorScheme(
       brightness: Brightness.dark,
       primary: primaryLight,
       onPrimary: Colors.black,
+      primaryContainer: Color(0xFF1B5E20),
+      onPrimaryContainer: primaryLight,
       secondary: accent,
       onSecondary: Colors.black,
       tertiary: fireflyColor,
       onTertiary: Colors.black,
-      error: const Color(0xFFCF6679),
+      error: Color(0xFFCF6679),
       onError: Colors.black,
       surface: darkSurface,
       onSurface: textPrimary,
@@ -382,12 +389,14 @@ class AppTheme {
     brightness: Brightness.light,
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
-      primary: primary,
+      primary: lightPrimaryAccent,
       onPrimary: Colors.white,
-      secondary: primaryLight,
-      onSecondary: Colors.black,
-      tertiary: accent,
-      onTertiary: Colors.black,
+      primaryContainer: lightPrimaryContainer,
+      onPrimaryContainer: Color(0xFF1B5E20),
+      secondary: lightPrimaryAccent,
+      onSecondary: Colors.white,
+      tertiary: lightPrimaryAccent,
+      onTertiary: Colors.white,
       error: Color(0xFFB00020),
       onError: Colors.white,
       surface: lightSurface,

@@ -844,6 +844,7 @@ class _BookCard extends StatelessWidget {
           color: context.appCard,
           radius: 30,
           side: BorderSide.none,
+          shadows: isDark ? null : AppTheme.lightCardShadows,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1021,18 +1022,18 @@ class _BookCard extends StatelessWidget {
                           );
                         },
                         child: Container(
-                          height: 32,
+                          height: 48,
                           alignment: Alignment.center,
-                          decoration: AppTheme.smoothPill(
+                          decoration: AppTheme.smoothBox(
                             color: isDark
                                 ? AppTheme.primary.withValues(alpha: 0.5)
                                 : AppTheme.lightPrimaryAccent,
-                            side: BorderSide.none,
+                            radius: AppTheme.radiusMD,
                           ),
                           child: Text(
-                            '이어 읽기',
+                            '이어 읽기  ${(book.readingProgress * 100).toInt()}%',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: isDark
                                   ? AppTheme.primaryLight
@@ -1154,6 +1155,7 @@ class _BookListTile extends StatelessWidget {
             color: context.appCard,
             radius: 16,
             side: BorderSide.none,
+            shadows: isDark ? null : AppTheme.lightCardShadows,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -69,7 +69,10 @@ class CloudVisionOcrService implements OcrService {
       );
 
       if (response.statusCode != 200) {
-        return OcrError('OCR 요청 실패 (${response.statusCode})');
+        final snippet = response.body.length > 300
+            ? response.body.substring(0, 300)
+            : response.body;
+        return OcrError(snippet);
       }
 
       final data = jsonDecode(response.body);
