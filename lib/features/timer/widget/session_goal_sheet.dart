@@ -170,8 +170,11 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                     height: 52,
                     alignment: Alignment.center,
                     decoration: AppTheme.smoothBox(
-                      gradient: canSubmit ? AppTheme.greenGradient : null,
-                      color: canSubmit ? null : context.appCardElevated,
+                      gradient: canSubmit
+                          ? context.appReadingGradient
+                          : LinearGradient(
+                              colors: [context.appCardElevated, context.appCardElevated],
+                            ),
                       radius: AppTheme.radiusMD,
                     ),
                     child: Text(
@@ -229,7 +232,7 @@ class _GoalTypeSelector extends StatelessWidget {
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: AppTheme.smoothBox(
-        color: context.appCardElevated,
+        color: context.appControlBg,
         radius: AppTheme.radiusMD,
       ),
       child: Row(
@@ -401,13 +404,13 @@ class _PresetChip extends StatelessWidget {
           decoration: AppTheme.smoothPill(
             color: isSelected
                 ? context.appAccentColor.withValues(alpha: 0.15)
-                : context.appCardElevated,
+                : context.appControlBg,
             side: BorderSide.none,
           ),
           child: Text(
             label,
             style: AppTheme.bodySmall.copyWith(
-              color: isSelected ? AppTheme.accent : context.appTextSecondary,
+              color: isSelected ? context.appAccentColor : context.appTextSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
@@ -459,7 +462,7 @@ class _PageGoalSection extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: AppTheme.smoothBox(
-                  color: context.appCardElevated,
+                  color: context.appControlBg,
                   radius: AppTheme.radiusMD,
                   side: BorderSide.none,
                 ),

@@ -18,10 +18,11 @@ import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
 import 'session_recap_screen.dart';
 
-const _kGreen = Color(0xFF8DFF54);
-const _kSurface = Color(0xFF131313);
-const _kSurfaceElevated = Color(0xFF1E1E1E);
-const _kTextSecondary = Color(0xFF646464);
+// 세션 화면은 항상 다크 — AppTheme 상수를 직접 alias
+const _kGreen = AppTheme.primaryLight;
+const _kSurface = AppTheme.darkSurface;
+const _kSurfaceElevated = AppTheme.darkCardElevated;
+const _kTextSecondary = AppTheme.textSecondary;
 const _kFont = '조선굴림체';
 
 /// 독서 세션 화면
@@ -1486,26 +1487,6 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                 ),
 
                 // 우하단 취소(잠금) 버튼
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: GestureDetector(
-                    onTap: widget.onDismiss,
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: _kGreen,
-                      ),
-                      child: const Icon(
-                        Icons.lock_rounded,
-                        color: Colors.black,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

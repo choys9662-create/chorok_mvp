@@ -325,16 +325,14 @@ class _ThemeChip extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: selected
-              ? AppTheme.smoothBox(
-                  gradient: context.appReadingGradient,
-                  radius: AppTheme.radiusMD,
-                )
-              : AppTheme.smoothBox(
-                  color: context.appCardElevated,
-                  radius: AppTheme.radiusMD,
-                  side: BorderSide.none,
-                ),
+          decoration: AppTheme.smoothBox(
+            gradient: selected
+                ? context.appReadingGradient
+                : LinearGradient(
+                    colors: [context.appControlBg, context.appControlBg],
+                  ),
+            radius: AppTheme.radiusMD,
+          ),
           child: Column(
             children: [
               Icon(
@@ -458,7 +456,7 @@ class _SliderTile extends StatelessWidget {
           SliderTheme(
             data: SliderThemeData(
               activeTrackColor: context.appPrimaryAccent,
-              inactiveTrackColor: context.appBorder,
+              inactiveTrackColor: context.appProgressTrack,
               thumbColor: context.appPrimaryAccent,
               overlayColor: context.appPrimaryAccent.withValues(alpha: 0.15),
               trackHeight: 3,

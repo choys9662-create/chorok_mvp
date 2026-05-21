@@ -89,7 +89,7 @@ class WeeklyStatusCard extends ConsumerWidget {
           GradientText(
             weekTotalText,
             style: AppTheme.displayLarge.copyWith(fontSize: 28),
-            gradient: AppTheme.greenGradientVertical,
+            gradient: context.appReadingGradient,
           ),
           const SizedBox(height: 20),
           // ── 주간 바 차트 (풀 너비) ────────────────────────────

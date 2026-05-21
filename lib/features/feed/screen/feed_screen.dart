@@ -768,6 +768,7 @@ class _FeedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -779,13 +780,22 @@ class _FeedFilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
-          color: isSelected ? AppTheme.accent : context.appCard,
-          side: BorderSide.none,
+          color: isSelected ? context.appPrimaryAccent : Colors.transparent,
+          side: isSelected
+              ? BorderSide.none
+              : BorderSide(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : const Color(0xFFDDDDDD),
+                  width: 1,
+                ),
         ),
         child: Text(
           label,
           style: AppTheme.captionLarge.copyWith(
-            color: isSelected ? context.appSurface : context.appTextSecondary,
+            color: isSelected
+                ? (isDark ? Colors.black : Colors.white)
+                : context.appTextTertiary,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -1028,7 +1038,7 @@ class _SentenceCard extends StatelessWidget {
                                   : Icons.favorite_border_rounded,
                               size: 16,
                               color: isLiked
-                                  ? const Color(0xFFFF6B6B)
+                                  ? AppTheme.empathyColor
                                   : context.appTextTertiary,
                             ),
                             const SizedBox(width: 4),
@@ -1036,7 +1046,7 @@ class _SentenceCard extends StatelessWidget {
                               '$empathyCount',
                               style: AppTheme.captionLarge.copyWith(
                                 color: isLiked
-                                    ? const Color(0xFFFF6B6B)
+                                    ? AppTheme.empathyColor
                                     : context.appTextTertiary,
                               ),
                             ),

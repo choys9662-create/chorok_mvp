@@ -179,7 +179,7 @@ class _StatusTileState extends State<_StatusTile> {
                   width: 40,
                   height: 40,
                   decoration: AppTheme.smoothBox(
-                    gradient: AppTheme.greenGradient,
+                    gradient: context.appReadingGradient,
                     radius: AppTheme.radiusSM,
                   ),
                   child: Icon(widget.icon, color: AppTheme.darkBg, size: 20),

@@ -376,6 +376,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     context.push(
       AppConstants.routeSession,
       extra: SessionExtra(
+        bookId: widget.book.bookId,
         bookTitle: widget.book.title,
         bookAuthor: widget.book.author,
         coverUrl: widget.book.coverUrl,
@@ -700,7 +701,7 @@ class _HeroSection extends StatelessWidget {
                     height: 48,
                     alignment: Alignment.center,
                     decoration: AppTheme.smoothBox(
-                      gradient: AppTheme.greenGradient,
+                      gradient: context.appReadingGradient,
                       radius: AppTheme.radiusMD,
                     ),
                     child: Text(
@@ -817,7 +818,7 @@ class _ProgressSection extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
                         color: isCompleted
-                            ? AppTheme.accent.withValues(alpha: 0.15)
+                            ? context.appAccentColor.withValues(alpha: 0.15)
                             : Colors.white.withValues(alpha: 0.06),
                         radius: AppTheme.radiusMD,
                         side: BorderSide.none,
@@ -831,7 +832,7 @@ class _ProgressSection extends StatelessWidget {
                                 : Icons.check_circle_outline_rounded,
                             size: 15,
                             color: isCompleted
-                                ? AppTheme.accent
+                                ? context.appAccentColor
                                 : context.appTextTertiary,
                           ),
                           const SizedBox(width: 5),
@@ -839,7 +840,7 @@ class _ProgressSection extends StatelessWidget {
                             '완독',
                             style: AppTheme.bodySmall.copyWith(
                               color: isCompleted
-                                  ? AppTheme.accent
+                                  ? context.appAccentColor
                                   : context.appTextSecondary,
                               fontWeight: FontWeight.w600,
                             ),
@@ -867,7 +868,7 @@ class _ProgressSection extends StatelessWidget {
                 width: c.maxWidth * progress.clamp(0.0, 1.0),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
-                  gradient: AppTheme.greenGradient,
+                  gradient: context.appReadingGradient,
                 ),
               ),
             ),
@@ -1117,7 +1118,7 @@ class _SentenceCard extends StatelessWidget {
                       Text(
                         '겹 ${s.socialCount}',
                         style: AppTheme.captionSmall.copyWith(
-                          color: AppTheme.accent,
+                          color: context.appAccentColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1473,7 +1474,7 @@ class _MenuSheet extends ConsumerWidget {
           _MenuTile(
             icon: Icons.delete_outline_rounded,
             label: '서재에서 제거',
-            color: const Color(0xFFCF6679),
+            color: Theme.of(context).colorScheme.error,
             onTap: () => _confirmDelete(context, ref),
           ),
           SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
@@ -1567,7 +1568,7 @@ class _OtherReaderCard extends StatelessWidget {
               Icon(
                 Icons.favorite_rounded,
                 size: 12,
-                color: const Color(0xFFFF6B6B).withValues(alpha: 0.6),
+                color: AppTheme.empathyColor.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 4),
               Text(
@@ -1687,7 +1688,7 @@ class _CompletionDialog extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: AppTheme.smoothBox(
-                gradient: AppTheme.greenGradient,
+                gradient: context.appReadingGradient,
                 radius: AppTheme.radiusLG,
               ),
               child: const Icon(
@@ -1732,7 +1733,7 @@ class _CompletionDialog extends StatelessWidget {
                   width: double.infinity,
                   height: 52,
                   decoration: AppTheme.smoothBox(
-                    gradient: AppTheme.greenGradient,
+                    gradient: context.appReadingGradient,
                     radius: AppTheme.radiusMD,
                   ),
                   alignment: Alignment.center,

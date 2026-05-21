@@ -376,16 +376,14 @@ class _BadgesTab extends StatelessWidget {
                       horizontal: 14,
                       vertical: 8,
                     ),
-                    decoration: selected
-                        ? AppTheme.smoothBox(
-                            gradient: context.appReadingGradient,
-                            radius: AppTheme.radiusMD,
-                          )
-                        : AppTheme.smoothBox(
-                            color: context.appCard,
-                            radius: AppTheme.radiusMD,
-                            side: BorderSide.none,
-                          ),
+                    decoration: AppTheme.smoothBox(
+                      gradient: selected
+                          ? context.appReadingGradient
+                          : LinearGradient(
+                              colors: [context.appControlBg, context.appControlBg],
+                            ),
+                      radius: AppTheme.radiusMD,
+                    ),
                     child: Text(
                       cat.label,
                       style: AppTheme.captionLarge.copyWith(

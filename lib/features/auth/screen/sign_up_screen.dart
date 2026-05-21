@@ -639,7 +639,7 @@ class _SubmitButton extends StatelessWidget {
                       AppTheme.accent.withValues(alpha: 0.2),
                     ],
                   )
-                : AppTheme.greenGradient,
+                : context.appReadingGradient,
             radius: 12,
           ),
           child: Center(

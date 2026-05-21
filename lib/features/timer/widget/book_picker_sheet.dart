@@ -18,11 +18,12 @@ class BookPickerSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final readingBooks = ref
-        .watch(libraryProvider)
+    final allBooks = ref.watch(libraryProvider);
+    final isLoading = allBooks.isEmpty &&
+        ref.read(libraryProvider.notifier).isLoading;
+    final readingBooks = allBooks
         .where((b) => b.status == ReadingStatus.reading)
         .toList();
-    final isLoading = ref.read(libraryProvider.notifier).isLoading;
 
     return Container(
       decoration: ShapeDecoration(
@@ -85,8 +86,8 @@ class _BookList extends StatelessWidget {
           itemBuilder: (context, index) => _BookCard(book: books[index]),
         ),
         const SizedBox(height: 8),
-        TextButton(
-          onPressed: () {
+        GestureDetector(
+          onTap: () {
             HapticFeedback.lightImpact();
             Navigator.of(context).pop();
             context.push(AppConstants.routeSearch);
@@ -111,9 +112,7 @@ class _BookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = book.totalPages > 0
-        ? book.currentPage / book.totalPages
-        : 0.0;
+    final progress = book.readingProgress;
 
     return GestureDetector(
       onTap: () {
@@ -133,15 +132,7 @@ class _BookCard extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: ShapeDecoration(
-          color: context.appCardElevated,
-          shape: SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius(
-              cornerRadius: 16,
-              cornerSmoothing: 0.6,
-            ),
-          ),
-        ),
+        decoration: AppTheme.smoothBox(color: context.appCardElevated, radius: 16),
         child: Row(
           children: [
             BookCover(
@@ -254,15 +245,7 @@ class _EmptyState extends StatelessWidget {
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: ShapeDecoration(
-                color: context.appActiveFill,
-                shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: 12,
-                    cornerSmoothing: 0.6,
-                  ),
-                ),
-              ),
+              decoration: AppTheme.smoothBox(color: context.appActiveFill, radius: 12),
               child: Text(
                 '라이브러리 가기',
                 style: TextStyle(

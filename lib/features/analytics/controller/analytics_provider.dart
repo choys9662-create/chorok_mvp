@@ -210,6 +210,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   @override
   Future<AnalyticsState> build() async {
     if (kUseMock) return const AnalyticsState();
+    ref.watch(bookRepositoryProvider);
     return _load();
   }
 

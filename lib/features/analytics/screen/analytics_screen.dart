@@ -118,9 +118,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
+    final asyncA = kUseMock ? null : ref.watch(analyticsProvider);
     final AnalyticsState? a = kUseMock
         ? null
-        : (ref.watch(analyticsProvider).valueOrNull ?? const AnalyticsState());
+        : (asyncA?.valueOrNull ?? const AnalyticsState());
 
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
@@ -129,35 +130,72 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ? '${weekStart.month}월 ${weekStart.day}일 – ${weekEnd.day}일'
         : '${weekStart.month}월 ${weekStart.day}일 – ${weekEnd.month}월 ${weekEnd.day}일';
 
-    return Scaffold(
-      body: ListView(
-        controller: _scrollCtrl,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          topPad + 20,
-          AppTheme.screenPadding,
-          40,
+    if (!kUseMock && asyncA?.hasError == true) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: context.appTextTertiary,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '데이터를 불러오지 못했어요',
+                style: AppTheme.bodyMedium.copyWith(
+                  color: context.appTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () =>
+                    ref.read(analyticsProvider.notifier).refresh(),
+                child: Text(
+                  '다시 시도',
+                  style: TextStyle(color: context.appPrimaryAccent),
+                ),
+              ),
+            ],
+          ),
         ),
-        children: [
-          Text(
-            '분석',
-            style: AppTheme.headingLarge.copyWith(
-              color: context.appTextPrimary,
+      );
+    }
+
+    return Scaffold(
+      body: RefreshIndicator(
+        color: context.appAccentColor,
+        onRefresh: () => ref.read(analyticsProvider.notifier).refresh(),
+        child: ListView(
+          controller: _scrollCtrl,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            topPad + 20,
+            AppTheme.screenPadding,
+            40,
+          ),
+          children: [
+            Text(
+              '분석',
+              style: AppTheme.headingLarge.copyWith(
+                color: context.appTextPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TabSelector(
-            selected: _tab,
-            onChanged: (i) => setState(() => _tab = i),
-          ),
-          const SizedBox(height: 24),
-          ...(_tab == 0
-              ? _buildWeekContent(a, weekSubtitle, now)
-              : _tab == 1
-              ? _buildMonthContent(a, now)
-              : _buildYearContent(a, now)),
-        ],
+            const SizedBox(height: 16),
+            TabSelector(
+              selected: _tab,
+              onChanged: (i) => setState(() => _tab = i),
+            ),
+            const SizedBox(height: 24),
+            ...(_tab == 0
+                ? _buildWeekContent(a, weekSubtitle, now)
+                : _tab == 1
+                ? _buildMonthContent(a, now)
+                : _buildYearContent(a, now)),
+          ],
+        ),
       ),
     );
   }

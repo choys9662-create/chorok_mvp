@@ -529,7 +529,7 @@ class _SentenceDetailScreenState
                       height: 44,
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
-                        gradient: AppTheme.greenGradient,
+                        gradient: context.appReadingGradient,
                         radius: 22,
                       ),
                       child: _isSubmitting
@@ -643,7 +643,7 @@ class _ThoughtCard extends StatelessWidget {
                       : Icons.favorite_border_rounded,
                   size: 16,
                   color: t.isLiked
-                      ? const Color(0xFFFF6B6B)
+                      ? AppTheme.empathyColor
                       : context.appTextTertiary,
                 ),
                 const SizedBox(width: 4),
@@ -651,7 +651,7 @@ class _ThoughtCard extends StatelessWidget {
                   '${t.empathyCount + (t.isLiked ? 1 : 0)}',
                   style: AppTheme.captionLarge.copyWith(
                     color: t.isLiked
-                        ? const Color(0xFFFF6B6B)
+                        ? AppTheme.empathyColor
                         : context.appTextTertiary,
                   ),
                 ),

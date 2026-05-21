@@ -31,6 +31,33 @@ extension AppThemeExt on BuildContext {
   Color get appProgressTrack =>
       _isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E8EB);
 
+  // 비활성 액션 버튼 fill (다크: #161616 / 라이트: #EAEEF2)
+  Color get appActionBg =>
+      _isDark ? AppTheme.darkActionBg : AppTheme.lightActionBg;
+
+  // 비활성 컨트롤 테두리 (다크: white 12% / 라이트: #191F28 10%)
+  Color get appBorderSubtle => _isDark
+      ? Colors.white.withValues(alpha: 0.12)
+      : const Color(0xFF191F28).withValues(alpha: 0.10);
+
+  // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 딥그린 8%)
+  Color get appActiveFill => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.15)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.08);
+
+  // pill 활성 보더 (다크: 네온그린 45% / 라이트: 딥그린 35%)
+  Color get appPillBorderActive => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.45)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.35);
+
+  // pill 뮤트 보더 — 일시정지 상태 (다크: 네온그린 25% / 라이트: 딥그린 18%)
+  Color get appPillBorderMuted => _isDark
+      ? AppTheme.primaryLight.withValues(alpha: 0.25)
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.18);
+
+  // 카드 내 컨트롤(칩·입력) 배경 — 다크: elevated 카드(#1E1E1E), 라이트: 배경색 recessed(#F2F4F6)
+  Color get appControlBg => _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
+
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
@@ -56,6 +83,7 @@ class AppTheme {
   static const Color accent = Color(0xFF6DE034); // 보조 강조 (그라디언트 끝값)
   static const Color fireflyColor = Color(0xFF8DFF54); // 반딧불 이펙트 전용
   static const Color warningColor = Color(0xFFFF8C42); // 경고/연속 독서
+  static const Color empathyColor = Color(0xFFFF6B6B); // 공감/좋아요 하트
 
   // ─── 그린 그라디언트 ─────────────────────────────────────────────
   /// #8DFF54 → #6DE034: 네온 그린 그라디언트
@@ -103,14 +131,18 @@ class AppTheme {
   static const Color darkSurface = Color(0xFF131313);
   static const Color darkCard = Color(0xFF131313);
   static const Color darkCardElevated = Color(0xFF1E1E1E);
+  static const Color darkActionBg = Color(0xFF161616); // 비활성 액션 버튼 fill (다크)
   static const Color darkBorder = Color(0x338DFF54); // 네온 그린 투명 테두리 (20% 투명도)
   static const Color darkPrimaryContainer = Color(0xFF132A13);
+  static const Color primaryPaused = Color(0xFF2A7A3D); // 일시정지/뮤트 그린 (다크 전용)
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
-  static const Color lightBg = Color(0xFFF2F4F6);
+  static const Color lightBg = Color(0xFFF0F0F0);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFFFFFFF);
-  static const Color lightPrimaryContainer = Color(0xFFE6F5ED);
+  static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
+  static const Color lightPrimaryContainer = Color(0xFFE8F5E9);
+  static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFFFFFFF);
@@ -118,14 +150,19 @@ class AppTheme {
   static const Color textTertiary = Color(0xFF424242);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
-  static const Color lightTextPrimary = Color(0xFF191F28);
-  static const Color lightTextSecondary = Color(0xFF8B95A1);
-  static const Color lightTextTertiary = Color(0xFFB0B8C1);
+  static const Color lightTextPrimary = Color(0xFF1A1A1A);
+  static const Color lightTextSecondary = Color(0xFF555555);
+  static const Color lightTextTertiary = Color(0xFF888888);
   static const Color lightBorderColor = Colors.transparent;
   static const Color lightDivider = Colors.transparent;
 
   // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
-  static const Color lightPrimaryAccent = Color(0xFF009B58);
+  static const Color lightPrimaryAccent = Color(0xFF16A34A);
+
+  // 라이트 모드 카드 그림자
+  static const List<BoxShadow> lightCardShadows = [
+    BoxShadow(blurRadius: 8, color: Color(0x0F000000)),
+  ];
 
   // ─── Smooth Corner — DESIGN.md §2 Radius Hierarchy ──────────────
   //   radiusSM  =  8  → 태그, 작은 아이콘 배경 (Small)
@@ -280,15 +317,17 @@ class AppTheme {
     fontFamily: '조선굴림체',
     useMaterial3: true,
     brightness: Brightness.dark,
-    colorScheme: ColorScheme(
+    colorScheme: const ColorScheme(
       brightness: Brightness.dark,
       primary: primaryLight,
       onPrimary: Colors.black,
+      primaryContainer: Color(0xFF1B5E20),
+      onPrimaryContainer: primaryLight,
       secondary: accent,
       onSecondary: Colors.black,
       tertiary: fireflyColor,
       onTertiary: Colors.black,
-      error: const Color(0xFFCF6679),
+      error: Color(0xFFCF6679),
       onError: Colors.black,
       surface: darkSurface,
       onSurface: textPrimary,
@@ -350,12 +389,14 @@ class AppTheme {
     brightness: Brightness.light,
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
-      primary: primary,
+      primary: lightPrimaryAccent,
       onPrimary: Colors.white,
-      secondary: primaryLight,
-      onSecondary: Colors.black,
-      tertiary: accent,
-      onTertiary: Colors.black,
+      primaryContainer: lightPrimaryContainer,
+      onPrimaryContainer: Color(0xFF1B5E20),
+      secondary: lightPrimaryAccent,
+      onSecondary: Colors.white,
+      tertiary: lightPrimaryAccent,
+      onTertiary: Colors.white,
       error: Color(0xFFB00020),
       onError: Colors.white,
       surface: lightSurface,
@@ -399,6 +440,11 @@ class AppTheme {
       ),
     ),
     dividerColor: Colors.transparent,
+    dividerTheme: const DividerThemeData(
+      color: Colors.transparent,
+      thickness: 0,
+      space: 0,
+    ),
     chipTheme: ChipThemeData(
       backgroundColor: lightCard,
       labelStyle: captionLarge.copyWith(color: lightTextSecondary),

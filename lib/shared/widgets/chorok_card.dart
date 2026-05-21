@@ -21,6 +21,7 @@ class ChorokCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = elevated ? context.appCardElevated : context.appCard;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: padding ?? const EdgeInsets.all(AppTheme.cardPaddingMD),
@@ -36,7 +37,9 @@ class ChorokCard extends StatelessWidget {
                   spreadRadius: 2,
                 ),
               ]
-            : null,
+            : isDark
+                ? null
+                : AppTheme.lightCardShadows,
       ),
       child: child,
     );

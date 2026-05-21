@@ -98,8 +98,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   };
 
   Color _colorFor(NotiType type) => switch (type) {
-    NotiType.follow => AppTheme.accent,
-    NotiType.like => const Color(0xFFFF6B6B),
+    NotiType.follow => context.appAccentColor,
+    NotiType.like => AppTheme.empathyColor,
     NotiType.overlap => context.appPrimaryAccent,
     NotiType.system => context.appTextSecondary,
   };

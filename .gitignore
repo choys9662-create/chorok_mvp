@@ -63,3 +63,4 @@ GoogleService-Info.plist
 
 # 외부 자료 (제품 스펙, 디자인 파일 등)
 *.docx
+.vercel
