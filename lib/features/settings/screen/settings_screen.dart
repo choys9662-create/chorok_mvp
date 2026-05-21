@@ -329,7 +329,7 @@ class _ThemeChip extends StatelessWidget {
             gradient: selected
                 ? context.appReadingGradient
                 : LinearGradient(
-                    colors: [context.appCardElevated, context.appCardElevated],
+                    colors: [context.appControlBg, context.appControlBg],
                   ),
             radius: AppTheme.radiusMD,
           ),
@@ -456,7 +456,7 @@ class _SliderTile extends StatelessWidget {
           SliderTheme(
             data: SliderThemeData(
               activeTrackColor: context.appPrimaryAccent,
-              inactiveTrackColor: context.appBorder,
+              inactiveTrackColor: context.appProgressTrack,
               thumbColor: context.appPrimaryAccent,
               overlayColor: context.appPrimaryAccent.withValues(alpha: 0.15),
               trackHeight: 3,

@@ -232,7 +232,7 @@ class _GoalTypeSelector extends StatelessWidget {
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: AppTheme.smoothBox(
-        color: context.appCardElevated,
+        color: context.appControlBg,
         radius: AppTheme.radiusMD,
       ),
       child: Row(
@@ -404,7 +404,7 @@ class _PresetChip extends StatelessWidget {
           decoration: AppTheme.smoothPill(
             color: isSelected
                 ? context.appAccentColor.withValues(alpha: 0.15)
-                : context.appCardElevated,
+                : context.appControlBg,
             side: BorderSide.none,
           ),
           child: Text(
@@ -462,7 +462,7 @@ class _PageGoalSection extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: AppTheme.smoothBox(
-                  color: context.appCardElevated,
+                  color: context.appControlBg,
                   radius: AppTheme.radiusMD,
                   side: BorderSide.none,
                 ),

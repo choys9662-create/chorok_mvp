@@ -380,7 +380,7 @@ class _BadgesTab extends StatelessWidget {
                       gradient: selected
                           ? context.appReadingGradient
                           : LinearGradient(
-                              colors: [context.appCard, context.appCard],
+                              colors: [context.appControlBg, context.appControlBg],
                             ),
                       radius: AppTheme.radiusMD,
                     ),

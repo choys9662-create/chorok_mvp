@@ -55,6 +55,9 @@ extension AppThemeExt on BuildContext {
       ? AppTheme.primaryLight.withValues(alpha: 0.25)
       : AppTheme.lightPrimaryAccent.withValues(alpha: 0.18);
 
+  // 카드 내 컨트롤(칩·입력) 배경 — 다크: elevated 카드(#1E1E1E), 라이트: 배경색 recessed(#F2F4F6)
+  Color get appControlBg => _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
+
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
