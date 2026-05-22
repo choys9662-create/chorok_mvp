@@ -12,6 +12,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/page_slider_card.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
@@ -189,6 +190,11 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         onSaved: () {
           if (!kIsWeb) {
             ref.invalidate(_bookChoseoProvider(widget.bookId));
+          }
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              chorokSnackBar(context, '문장을 저장했어요'),
+            );
           }
         },
       ),
@@ -879,6 +885,9 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
   final _thoughtCtrl = TextEditingController();
   final _contentFocus = FocusNode();
   bool _isSaving = false;
+  bool _hasError = false;
+
+  bool get _hasInput => _contentCtrl.text.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -898,7 +907,10 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
     final content = _contentCtrl.text.trim();
     if (content.isEmpty) return;
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+      _hasError = false;
+    });
     HapticFeedback.mediumImpact();
 
     try {
@@ -912,8 +924,37 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
       widget.onSaved();
       if (mounted) Navigator.pop(context);
     } catch (_) {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _hasError = true;
+        });
+        HapticFeedback.heavyImpact();
+      }
     }
+  }
+
+  Future<bool> _onPop() async {
+    if (!_hasInput) return true;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.appSurface,
+        title: const Text('작성 중인 내용이 있어요'),
+        content: const Text('저장하지 않고 나가면 내용이 사라져요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('계속 작성', style: TextStyle(color: ctx.appTextTertiary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('나가기', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   @override
@@ -921,7 +962,15 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
     final bottomPad = MediaQuery.of(context).viewInsets.bottom +
         MediaQuery.of(context).padding.bottom;
 
-    return Container(
+    return PopScope(
+      canPop: !_hasInput,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final nav = Navigator.of(context);
+        final shouldPop = await _onPop();
+        if (shouldPop && mounted) nav.pop();
+      },
+      child: Container(
       decoration: BoxDecoration(
         color: context.appSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -970,13 +1019,22 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
             hintText: '내 생각 (선택)',
             maxLines: 2,
           ),
+
+          // 에러 메시지
+          if (_hasError) ...[
+            const SizedBox(height: 10),
+            Text(
+              '저장에 실패했어요. 다시 시도해보세요.',
+              style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+            ),
+          ],
           const SizedBox(height: 20),
 
           // 저장 버튼
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: (_contentCtrl.text.trim().isNotEmpty && !_isSaving)
+              onPressed: (_hasInput && !_isSaving)
                   ? _save
                   : null,
               style: FilledButton.styleFrom(
@@ -1007,6 +1065,7 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
           ),
         ],
       ),
+    ),
     );
   }
 }
