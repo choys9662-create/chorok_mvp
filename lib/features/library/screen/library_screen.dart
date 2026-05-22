@@ -186,6 +186,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               },
             ),
 
+            // ── 소셜 피드 스트립 ─────────────────────────────────
+            const _SocialFeedStrip(),
+
             // ── 내 문장장 (Quotes Archive) ──────────────────────
             Consumer(
               builder: (context, ref, _) {
@@ -411,6 +414,9 @@ class _LibraryTabState extends State<_LibraryTab> {
   _LibraryViewMode _viewMode = _LibraryViewMode.grid;
   _SortOption _sortOption = _SortOption.recent;
 
+  ReadingLog? _lastLogFor(Book book) =>
+      widget.logs.where((l) => l.bookTitle == book.title).firstOrNull;
+
   List<Book> get _filteredBooks {
     final list = widget.books
         .where((b) => b.status == _selectedStatus)
@@ -468,7 +474,7 @@ class _LibraryTabState extends State<_LibraryTab> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        // ── 이번 달 성과 뱃지 ──────────────────────────────────────
+        // ── 오늘의 독서 목표 배너 (항상 표시) ───────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -477,19 +483,93 @@ class _LibraryTabState extends State<_LibraryTab> {
               AppTheme.screenPadding,
               0,
             ),
+            child: TodayGoalBanner(
+              todayMinutes: todayMinutes,
+              goalMinutes: 30,
+              firstReadingBook: readingBooks.isEmpty ? null : readingBooks.first,
+            ),
+          ),
+        ),
+
+        // ── 지금 읽는 책 히어로 카드 ──────────────────────────────
+        if (readingBooks.isNotEmpty) ...[
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              child: const ChorokSectionHeader(title: '지금 읽는 책'),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              child: _HeroBookCard(
+                book: readingBooks.first,
+                lastLog: _lastLogFor(readingBooks.first),
+              ),
+            ),
+          ),
+        ],
+
+        // ── 함께 읽는 책 선반 (2권 이상) ────────────────────────────
+        if (readingBooks.length > 1) ...[
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '함께 읽는 책',
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${readingBooks.length - 1}권',
+                    style: AppTheme.captionSmall.copyWith(
+                      color: context.appTextTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          SliverToBoxAdapter(
+            child: _ReadingShelf(books: readingBooks.sublist(1)),
+          ),
+        ],
+
+        // ── 이번 달 성과 ─────────────────────────────────────────
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
             child: const _MonthlyAchievementCard(),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // ── 섹션 헤더 ──────────────────────────────────────────────
+        // ── 전체 서재 섹션 헤더 ──────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.screenPadding,
             ),
             child: ChorokSectionHeader(
-              title: '서재',
+              title: '전체 서재',
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -511,7 +591,6 @@ class _LibraryTabState extends State<_LibraryTab> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // 정렬 버튼
                   Semantics(
                     label: '정렬 방식 변경',
                     button: true,
@@ -544,7 +623,6 @@ class _LibraryTabState extends State<_LibraryTab> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // 뷰 전환 버튼
                   Semantics(
                     label: _viewMode == _LibraryViewMode.grid
                         ? '리스트 보기로 전환'
@@ -645,7 +723,6 @@ class _LibraryTabState extends State<_LibraryTab> {
                   );
                 }),
                 const Spacer(),
-                // 책 추가 동그란 버튼
                 Semantics(
                   label: '책 추가',
                   button: true,
@@ -673,25 +750,6 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
           ),
         ),
-
-        // ── 오늘의 독서 목표 배너 (읽는 중 탭에서만) ────────────────
-        if (_selectedStatus == ReadingStatus.reading) ...[
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding,
-              ),
-              child: TodayGoalBanner(
-                todayMinutes: todayMinutes,
-                goalMinutes: 30,
-                firstReadingBook: readingBooks.isEmpty
-                    ? null
-                    : readingBooks.first,
-              ),
-            ),
-          ),
-        ],
         const SliverToBoxAdapter(child: SizedBox(height: 4)),
 
         // ── 책 그리드 / 리스트 / 빈 상태 ─────────────────────────────
@@ -1442,6 +1500,385 @@ class _SortSheet extends StatelessWidget {
             ),
           )),
         ],
+      ),
+    );
+  }
+}
+
+// ─── 소셜 피드 스트립 ────────────────────────────────────────────────────────
+class _SocialFeedStrip extends StatelessWidget {
+  const _SocialFeedStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    const avatarColors = [Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800)];
+    const avatarLabels = ['김', '박', '이'];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        8,
+        AppTheme.screenPadding,
+        0,
+      ),
+      child: GestureDetector(
+        onTap: () => HapticFeedback.selectionClick(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: AppTheme.radiusMD,
+            side: BorderSide(color: context.appBorder.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 52,
+                height: 26,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < 3; i++)
+                      Positioned(
+                        left: i * 16.0,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: avatarColors[i],
+                            border: Border.all(color: context.appBg, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            avatarLabels[i],
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextSecondary,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '김민준',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      const TextSpan(text: ' 외 2명이 지금 독서 중'),
+                    ],
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: context.appTextTertiary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 히어로 도서 카드 ─────────────────────────────────────────────────────────
+class _HeroBookCard extends StatelessWidget {
+  final Book book;
+  final ReadingLog? lastLog;
+
+  const _HeroBookCard({required this.book, this.lastLog});
+
+  String _lastSessionLabel() {
+    if (lastLog == null) return '';
+    final diff = DateTime.now().difference(lastLog!.date);
+    if (diff.inDays == 0) return '오늘';
+    if (diff.inDays == 1) return '어제';
+    return '${diff.inDays}일 전';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradIdx = book.title.hashCode.abs() % AppTheme.coverGradients.length;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push(AppConstants.routeBookDetail, extra: book.id);
+      },
+      child: Container(
+        height: 200,
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: AppTheme.radiusXL,
+          side: BorderSide(
+            color: context.appPrimaryAccent.withValues(alpha: 0.20),
+          ),
+          shadows: isDark ? null : AppTheme.lightCardShadows,
+        ),
+        child: Row(
+          children: [
+            // ── 커버 ──────────────────────────────────────────────
+            ClipPath(
+              clipper: ShapeBorderClipper(
+                shape: SmoothRectangleBorder(
+                  borderRadius: SmoothBorderRadius.only(
+                    topLeft: const SmoothRadius(
+                      cornerRadius: 23,
+                      cornerSmoothing: 1.0,
+                    ),
+                    bottomLeft: const SmoothRadius(
+                      cornerRadius: 23,
+                      cornerSmoothing: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+              child: BookCover(
+                coverUrl: book.coverUrl,
+                gradientIndex: gradIdx,
+                width: 130,
+                height: 200,
+                radius: 0,
+              ),
+            ),
+            // ── 정보 ──────────────────────────────────────────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (lastLog != null)
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: context.appPrimaryAccent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '마지막 · ${_lastSessionLabel()}',
+                            style: AppTheme.captionSmall.copyWith(
+                              color: context.appPrimaryAccent,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    SizedBox(height: lastLog != null ? 8 : 0),
+                    Text(
+                      book.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.headingSmall.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      book.author,
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                    const Spacer(),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: book.readingProgress,
+                        backgroundColor: context.appBorder,
+                        valueColor: AlwaysStoppedAnimation(
+                          context.appPrimaryAccent,
+                        ),
+                        minHeight: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${book.currentPage}/${book.totalPages}쪽 · ${(book.readingProgress * 100).toInt()}%',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Semantics(
+                      label: '${book.title} 이어 읽기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          context.push(
+                            AppConstants.routeSession,
+                            extra: SessionExtra(
+                              bookId: book.id,
+                              bookTitle: book.title,
+                              bookAuthor: book.author,
+                              coverUrl: book.coverUrl,
+                              startPage: book.currentPage,
+                              totalPages: book.totalPages,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: AppTheme.smoothBox(
+                            color: isDark
+                                ? AppTheme.primary.withValues(alpha: 0.5)
+                                : AppTheme.lightPrimaryAccent,
+                            radius: AppTheme.radiusMD,
+                            side: BorderSide.none,
+                          ),
+                          child: Text(
+                            '이어 읽기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppTheme.primaryLight
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 독서 중 책 선반 ───────────────────────────────────────────────────────────
+class _ReadingShelf extends StatelessWidget {
+  final List<Book> books;
+  const _ReadingShelf({required this.books});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 188,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemCount: books.length,
+        itemBuilder: (_, i) => _ShelfBookCard(book: books[i]),
+      ),
+    );
+  }
+}
+
+class _ShelfBookCard extends StatelessWidget {
+  final Book book;
+  const _ShelfBookCard({required this.book});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradIdx = book.title.hashCode.abs() % AppTheme.coverGradients.length;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        context.push(
+          AppConstants.routeSession,
+          extra: SessionExtra(
+            bookId: book.id,
+            bookTitle: book.title,
+            bookAuthor: book.author,
+            coverUrl: book.coverUrl,
+            startPage: book.currentPage,
+            totalPages: book.totalPages,
+          ),
+        );
+      },
+      child: SizedBox(
+        width: 120,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                BookCover(
+                  coverUrl: book.coverUrl,
+                  gradientIndex: gradIdx,
+                  width: 120,
+                  height: 110,
+                  radius: AppTheme.radiusLG,
+                ),
+                Positioned(
+                  bottom: 6,
+                  left: 6,
+                  right: 6,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: book.readingProgress,
+                      backgroundColor: Colors.white.withValues(alpha: 0.25),
+                      valueColor: AlwaysStoppedAnimation(
+                        isDark ? AppTheme.primaryLight : Colors.white,
+                      ),
+                      minHeight: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              book.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionLarge.copyWith(
+                color: context.appTextPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              book.author,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${(book.readingProgress * 100).toInt()}%',
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appPrimaryAccent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
