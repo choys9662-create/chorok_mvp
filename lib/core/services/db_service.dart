@@ -207,13 +207,15 @@ class DbService {
     String? thought,
   }) async {
     final ids = await _resolveBookIds(bookId);
+    final trimmedContent = content.trim();
+    final trimmedThought = thought?.trim();
     await supabase.from('sentences').insert({
       'user_id': _uid,
       'book_id': ?ids.bookUuid,
       'global_book_id': ?ids.globalBookId,
-      'content': content.trim(),
-      'normalized_sentences': [SentenceNormalizer.normalize(content.trim())],
-      'thought': thought?.trim().isNotEmpty == true ? thought!.trim() : null,
+      'content': trimmedContent,
+      'normalized_sentences': [SentenceNormalizer.normalize(trimmedContent)],
+      'thought': (trimmedThought?.isNotEmpty == true) ? trimmedThought : null,
     });
   }
 

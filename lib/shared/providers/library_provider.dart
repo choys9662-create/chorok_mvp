@@ -253,27 +253,30 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final idx = state.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
 
+    final old = state[idx];
+    final trimmed = content.trim();
+
     if (kIsWeb) {
-      final old = state[idx];
       final updated = old.copyWith(
-        savedSentences: [...old.savedSentences, content.trim()],
+        savedSentences: [...old.savedSentences, trimmed],
       );
       state = [...state]..[idx] = updated;
       await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
       try {
         await ref.read(dbServiceProvider).saveSentenceStandalone(
           bookId: bookId,
-          content: content,
+          content: trimmed,
           thought: thought,
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('saveSentenceStandalone failed: $e');
+      }
     } else {
-      final old = state[idx];
       await ref.read(bookRepositoryProvider)?.saveChoseo(
         bookId: bookId,
         bookTitle: old.title,
         bookAuthor: old.author,
-        content: content,
+        content: trimmed,
         myThought: thought,
       );
     }

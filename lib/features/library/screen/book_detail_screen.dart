@@ -14,6 +14,7 @@ import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/page_slider_card.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
 // 책별 수집 문장 (모바일 SQLite choseo 테이블 — 웹/목업은 book.savedSentences 사용)
@@ -904,22 +905,18 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
   }
 
   Future<void> _save() async {
-    final content = _contentCtrl.text.trim();
-    if (content.isEmpty) return;
-
     setState(() {
       _isSaving = true;
       _hasError = false;
     });
     HapticFeedback.mediumImpact();
 
+    final thought = _thoughtCtrl.text.trim();
     try {
       await ref.read(libraryProvider.notifier).addSentence(
         widget.bookId,
-        content,
-        thought: _thoughtCtrl.text.trim().isNotEmpty
-            ? _thoughtCtrl.text.trim()
-            : null,
+        _contentCtrl.text,
+        thought: thought.isNotEmpty ? thought : null,
       );
       widget.onSaved();
       if (mounted) Navigator.pop(context);
@@ -980,18 +977,8 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 드래그 핸들
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: context.appTextTertiary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          const ChorokSheetHandle(),
+          const SizedBox(height: 16),
 
           Text(
             '문장 추가',
