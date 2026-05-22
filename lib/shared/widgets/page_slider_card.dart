@@ -97,6 +97,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
       decoration: AppTheme.smoothBox(
         color: context.appCardElevated,
         radius: 16,
+        side: BorderSide(color: context.appBorderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,41 +172,34 @@ class _PageSliderCardState extends State<PageSliderCard> {
             ),
 
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _StepButton(
                 icon: Icons.remove,
                 onPressed: () => _setPage(_page - 1),
-              ),
-              Expanded(
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 4,
-                    activeTrackColor: context.appPrimaryAccent,
-                    inactiveTrackColor: context.appBorder,
-                    thumbColor: context.appPrimaryAccent,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 9,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 18,
-                    ),
-                    overlayColor: context.appPrimaryAccent.withValues(
-                      alpha: 0.12,
-                    ),
-                  ),
-                  child: Slider(
-                    value: _page.toDouble().clamp(0, sliderMax),
-                    min: 0,
-                    max: sliderMax,
-                    onChanged: (v) => _setPage(v.round()),
-                  ),
-                ),
               ),
               _StepButton(
                 icon: Icons.add,
                 onPressed: () => _setPage(_page + 1),
               ),
             ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              activeTrackColor: context.appPrimaryAccent,
+              inactiveTrackColor: context.appBorder,
+              thumbColor: context.appPrimaryAccent,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+              overlayColor: context.appPrimaryAccent.withValues(alpha: 0.12),
+            ),
+            child: Slider(
+              value: _page.toDouble().clamp(0, sliderMax),
+              min: 0,
+              max: sliderMax,
+              onChanged: (v) => _setPage(v.round()),
+            ),
           ),
 
           const SizedBox(height: 4),
@@ -221,8 +215,10 @@ class _PageSliderCardState extends State<PageSliderCard> {
                       widget.onSave(_page);
                     },
               style: FilledButton.styleFrom(
-                backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.1),
-                foregroundColor: context.appPrimaryAccent,
+                backgroundColor: context.appPrimaryAccent,
+                foregroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
                 disabledBackgroundColor: context.appPrimaryAccent.withValues(
                   alpha: 0.05,
                 ),
@@ -254,10 +250,7 @@ class _StepButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _StepButton({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _StepButton({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -266,9 +259,9 @@ class _StepButton extends StatelessWidget {
       child: Container(
         width: 32,
         height: 32,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
           color: context.appCard,
-          shape: BoxShape.circle,
+          shape: CircleBorder(side: BorderSide(color: context.appBorderSubtle)),
         ),
         child: Icon(icon, size: 16, color: context.appPrimaryAccent),
       ),

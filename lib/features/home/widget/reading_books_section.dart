@@ -20,8 +20,8 @@ class ReadingBooksSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allBooks = ref.watch(libraryProvider);
-    final isLoading = allBooks.isEmpty &&
-        ref.read(libraryProvider.notifier).isLoading;
+    final isLoading =
+        allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
     final readingBooks = allBooks
         .where((b) => b.status == ReadingStatus.reading)
         .toList();
@@ -74,7 +74,7 @@ class ReadingBooksSection extends ConsumerWidget {
               ],
             ),
           ),
-        // ── 빈 상태: 책이 0권일 때 ─────────────────────────────────
+          // ── 빈 상태: 책이 0권일 때 ─────────────────────────────────
         ] else if (readingBooks.isEmpty) ...[
           const SizedBox(height: 12),
           const EmptyBooksState(),
@@ -115,7 +115,7 @@ class EmptyBooksState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: ChorokCard(
-      padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+        padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -283,7 +283,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: BorderSide.none,
+            side: BorderSide(color: context.appBorderSubtle),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

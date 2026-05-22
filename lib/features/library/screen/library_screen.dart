@@ -26,31 +26,26 @@ import '../../../shared/widgets/book_cover.dart';
 
 import '../widget/today_goal_banner.dart';
 
-final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
+final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
   if (kIsWeb) {
     final client = Supabase.instance.client;
     final userId = client.auth.currentUser?.id;
     if (userId == null) return const [];
-    final rows = await client
-        .from('reading_sessions')
-        .select('ended_at, started_at, duration_seconds, books(title, author)')
-        .eq('user_id', userId)
-        .order('ended_at', ascending: false);
-    return (rows as List).map<ReadingLog>((r) {
+    final rows = await _fetchSupabaseReadingLogs(client, userId);
+    return rows.map<ReadingLog>((r) {
       final book = r['books'] as Map<String, dynamic>?;
       final secs = (r['duration_seconds'] as num?)?.toInt() ?? 0;
       final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
+      final title = book?['title'] as String? ?? '알 수 없는 책';
       return (
         date: dateStr != null ? DateTime.parse(dateStr) : DateTime.now(),
-        bookTitle: book?['title'] as String? ?? '알 수 없는 책',
+        bookTitle: title,
         bookAuthor: book?['author'] as String? ?? '',
         minutes: (secs / 60).round(),
-        pages: 0,
-        coverUrl: null,
-        gradientIndex:
-            (book?['title'] as String? ?? '').hashCode.abs() %
-            AppTheme.coverGradients.length,
+        pages: (r['pages_read'] as num?)?.toInt() ?? 0,
+        coverUrl: book?['cover_url'] as String?,
+        gradientIndex: title.hashCode.abs() % AppTheme.coverGradients.length,
       );
     }).toList();
   }
@@ -65,7 +60,7 @@ final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
           bookAuthor: r['book_author'] as String,
           minutes: ((r['duration_seconds'] as num?)?.toInt() ?? 0) ~/ 60,
           pages: (r['pages_read'] as num?)?.toInt() ?? 0,
-          coverUrl: null,
+          coverUrl: r['cover_url'] as String?,
           gradientIndex:
               (r['book_title'] as String).hashCode.abs() %
               AppTheme.coverGradients.length,
@@ -73,6 +68,29 @@ final _readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
       )
       .toList();
 });
+
+Future<List<dynamic>> _fetchSupabaseReadingLogs(
+  SupabaseClient client,
+  String userId,
+) async {
+  try {
+    return await client
+        .from('reading_sessions')
+        .select(
+          'ended_at, started_at, duration_seconds, pages_read, books(title, author, cover_url)',
+        )
+        .eq('user_id', userId)
+        .order('ended_at', ascending: false);
+  } catch (_) {
+    return await client
+        .from('reading_sessions')
+        .select(
+          'ended_at, started_at, duration_seconds, books(title, author, cover_url)',
+        )
+        .eq('user_id', userId)
+        .order('ended_at', ascending: false);
+  }
+}
 
 // ─── 뷰 모드 / 정렬 옵션 ──────────────────────────────────────────────────
 enum _LibraryViewMode { grid, list }
@@ -127,7 +145,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     if (!kUseMock) {
-      ref.listen(_readingLogsProvider, (_, next) {
+      ref.listen(readingLogsProvider, (_, next) {
         if (next.hasError) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -337,7 +355,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   final books = r.watch(libraryProvider);
                   final logs = kUseMock
                       ? mockReadingLogs
-                      : r.watch(_readingLogsProvider).valueOrNull ??
+                      : r.watch(readingLogsProvider).valueOrNull ??
                             const <ReadingLog>[];
                   return _LibraryTab(
                     books: books,
@@ -353,7 +371,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 builder: (ctx2, r, child) {
                   final logs = kUseMock
                       ? mockReadingLogs
-                      : r.watch(_readingLogsProvider).valueOrNull ??
+                      : r.watch(readingLogsProvider).valueOrNull ??
                             const <ReadingLog>[];
                   final books = r.watch(libraryProvider);
                   return LibraryCalendarView(
@@ -596,7 +614,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                           color: isSelected
                               ? AppTheme.primary
                               : context.appCard,
-                        side: BorderSide.none,
+                          side: BorderSide.none,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

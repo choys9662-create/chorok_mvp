@@ -9,7 +9,7 @@ extension AppThemeExt on BuildContext {
       _isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
   Color get appCard => _isDark ? AppTheme.darkCard : AppTheme.lightCard;
   Color get appCardElevated =>
-      _isDark ? AppTheme.darkCardElevated : AppTheme.lightSurface;
+      _isDark ? AppTheme.darkCardElevated : AppTheme.lightCardElevated;
   Color get appBorder =>
       _isDark ? AppTheme.darkBorder : AppTheme.lightBorderColor;
   Color get appDivider => _isDark ? AppTheme.darkBorder : AppTheme.lightDivider;
@@ -37,8 +37,8 @@ extension AppThemeExt on BuildContext {
 
   // 비활성 컨트롤 테두리 (다크: white 12% / 라이트: #191F28 10%)
   Color get appBorderSubtle => _isDark
-      ? Colors.white.withValues(alpha: 0.12)
-      : const Color(0xFF191F28).withValues(alpha: 0.10);
+      ? Colors.white.withValues(alpha: 0.14)
+      : const Color(0xFF191F28).withValues(alpha: 0.12);
 
   // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 딥그린 8%)
   Color get appActiveFill => _isDark
@@ -56,7 +56,8 @@ extension AppThemeExt on BuildContext {
       : AppTheme.lightPrimaryAccent.withValues(alpha: 0.18);
 
   // 카드 내 컨트롤(칩·입력) 배경 — 다크: elevated 카드(#1E1E1E), 라이트: 배경색 recessed(#F2F4F6)
-  Color get appControlBg => _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
+  Color get appControlBg =>
+      _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
 
   // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
   Color primaryBg(double alpha) => _isDark
@@ -128,40 +129,41 @@ class AppTheme {
 
   // ─── 다크 배경 (중립 다크 — DESIGN.md §1) ──────────────────────
   static const Color darkBg = Colors.black;
-  static const Color darkSurface = Color(0xFF131313);
-  static const Color darkCard = Color(0xFF131313);
-  static const Color darkCardElevated = Color(0xFF1E1E1E);
+  static const Color darkSurface = Color(0xFF0B0D0B);
+  static const Color darkCard = Color(0xFF111411);
+  static const Color darkCardElevated = Color(0xFF1B211B);
   static const Color darkActionBg = Color(0xFF161616); // 비활성 액션 버튼 fill (다크)
-  static const Color darkBorder = Color(0x338DFF54); // 네온 그린 투명 테두리 (20% 투명도)
+  static const Color darkBorder = Color(0x3D8DFF54); // 네온 그린 투명 테두리
   static const Color darkPrimaryContainer = Color(0xFF132A13);
   static const Color primaryPaused = Color(0xFF2A7A3D); // 일시정지/뮤트 그린 (다크 전용)
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
-  static const Color lightBg = Color(0xFFF0F0F0);
+  static const Color lightBg = Color(0xFFEEF3EC);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFFFFFFF);
+  static const Color lightCardElevated = Color(0xFFF7FAF5);
   static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
   static const Color lightPrimaryContainer = Color(0xFFE8F5E9);
   static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF646464); // 기존 0xFFADADAD -> 0xFF646464 (Reading Session의 서브 텍스트)
-  static const Color textTertiary = Color(0xFF424242);
+  static const Color textSecondary = Color(0xFFB8C2B2);
+  static const Color textTertiary = Color(0xFF7D8878);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
   static const Color lightTextPrimary = Color(0xFF1A1A1A);
-  static const Color lightTextSecondary = Color(0xFF555555);
-  static const Color lightTextTertiary = Color(0xFF888888);
-  static const Color lightBorderColor = Colors.transparent;
-  static const Color lightDivider = Colors.transparent;
+  static const Color lightTextSecondary = Color(0xFF465044);
+  static const Color lightTextTertiary = Color(0xFF707A6D);
+  static const Color lightBorderColor = Color(0xFFD1DCCF);
+  static const Color lightDivider = Color(0xFFDDE7DA);
 
   // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
   static const Color lightPrimaryAccent = Color(0xFF16A34A);
 
   // 라이트 모드 카드 그림자
   static const List<BoxShadow> lightCardShadows = [
-    BoxShadow(blurRadius: 8, color: Color(0x0F000000)),
+    BoxShadow(blurRadius: 18, offset: Offset(0, 8), color: Color(0x14000000)),
   ];
 
   // ─── Smooth Corner — DESIGN.md §2 Radius Hierarchy ──────────────
@@ -338,7 +340,10 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: darkCard,
       elevation: 0,
-      shape: smoothShape(radius: 20, side: const BorderSide(color: darkBorder, width: 1)),
+      shape: smoothShape(
+        radius: 16,
+        side: const BorderSide(color: darkBorder, width: 1),
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: darkSurface,
@@ -370,6 +375,38 @@ class AppTheme {
       ),
     ),
     dividerColor: Colors.transparent,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: darkCardElevated,
+      hintStyle: captionLarge.copyWith(color: textTertiary),
+      labelStyle: captionLarge.copyWith(color: textSecondary),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: const BorderSide(color: darkBorder),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: const BorderSide(color: primaryLight, width: 1.4),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: primaryLight,
+        foregroundColor: Colors.black,
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        shape: smoothShape(radius: radiusMD),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: primaryLight,
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+      ),
+    ),
     chipTheme: ChipThemeData(
       backgroundColor: darkSurface,
       labelStyle: captionLarge.copyWith(color: textSecondary),
@@ -408,7 +445,10 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: lightSurface,
       elevation: 0,
-      shape: smoothShape(radius: 20, side: const BorderSide(color: lightBorderColor, width: 1)),
+      shape: smoothShape(
+        radius: 16,
+        side: const BorderSide(color: lightBorderColor, width: 1),
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: lightSurface,
@@ -439,11 +479,43 @@ class AppTheme {
         color: lightTextPrimary,
       ),
     ),
-    dividerColor: Colors.transparent,
+    dividerColor: lightDivider,
     dividerTheme: const DividerThemeData(
-      color: Colors.transparent,
-      thickness: 0,
-      space: 0,
+      color: lightDivider,
+      thickness: 1,
+      space: 1,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: lightSurface,
+      hintStyle: captionLarge.copyWith(color: lightTextTertiary),
+      labelStyle: captionLarge.copyWith(color: lightTextSecondary),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: const BorderSide(color: lightBorderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: const BorderSide(color: lightBorderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusMD),
+        borderSide: const BorderSide(color: lightPrimaryAccent, width: 1.4),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: lightPrimaryAccent,
+        foregroundColor: Colors.white,
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        shape: smoothShape(radius: radiusMD),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: lightPrimaryAccent,
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+      ),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: lightCard,

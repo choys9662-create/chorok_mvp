@@ -106,6 +106,17 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 enum _FeedFilter { latest, popular, overlap }
 
+List<BoxShadow>? _feedCardShadow(BuildContext context) {
+  if (Theme.of(context).brightness == Brightness.dark) return null;
+  return [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.08),
+      blurRadius: 18,
+      offset: const Offset(0, 8),
+    ),
+  ];
+}
+
 // ─── 목업 문장 (USE_MOCK=true 전용) ──────────────────────────────────────────
 List<FeedSentence> _kMockSentences() {
   final now = DateTime.now();
@@ -220,9 +231,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 
   void _toggleLike(String id, bool willLike) {
-    willLike
-        ? HapticFeedback.mediumImpact()
-        : HapticFeedback.selectionClick();
+    willLike ? HapticFeedback.mediumImpact() : HapticFeedback.selectionClick();
     setState(() => _likedOverrides[id] = willLike);
   }
 
@@ -322,6 +331,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
+      backgroundColor: context.appBg,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -351,7 +361,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         decoration: BoxDecoration(
                           color: context.appCard,
                           shape: BoxShape.circle,
-                          border: null,
+                          border: Border.all(color: context.appBorderSubtle),
                         ),
                         child: Icon(
                           Icons.arrow_back_ios_new_rounded,
@@ -550,6 +560,8 @@ class _ActivityBanner extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusMD,
+          side: BorderSide(color: context.appBorderSubtle),
+          shadows: _feedCardShadow(context),
         ),
         child: Row(
           children: [
@@ -684,6 +696,8 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusMD,
+            side: BorderSide(color: context.appBorderSubtle),
+            shadows: _feedCardShadow(context),
           ),
           child: Row(
             children: [
@@ -780,15 +794,10 @@ class _FeedFilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
-          color: isSelected ? context.appPrimaryAccent : Colors.transparent,
+          color: isSelected ? context.appPrimaryAccent : context.appCard,
           side: isSelected
               ? BorderSide.none
-              : BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : const Color(0xFFDDDDDD),
-                  width: 1,
-                ),
+              : BorderSide(color: context.appBorderSubtle, width: 1),
         ),
         child: Text(
           label,
@@ -839,7 +848,12 @@ class _SentenceCard extends StatelessWidget {
         );
       },
       child: Container(
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: 16,
+          side: BorderSide(color: context.appBorderSubtle),
+          shadows: _feedCardShadow(context),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -868,16 +882,16 @@ class _SentenceCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.join_inner_rounded,
                       size: 16,
-                      color: AppTheme.accent,
+                      color: context.appPrimaryAccent,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       '겹문장 감지됨',
                       style: AppTheme.captionLarge.copyWith(
-                        color: AppTheme.accent,
+                        color: context.appPrimaryAccent,
                       ),
                     ),
                   ],
@@ -939,6 +953,7 @@ class _SentenceCard extends StatelessWidget {
                       color: overlap
                           ? context.appPrimaryAccent.withValues(alpha: 0.07)
                           : context.appCardElevated,
+                      border: Border.all(color: context.appBorderSubtle),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -1141,6 +1156,8 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
+        side: BorderSide(color: context.appBorderSubtle),
+        shadows: _feedCardShadow(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1163,17 +1180,17 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.join_inner_rounded,
                   size: 16,
-                  color: AppTheme.accent,
+                  color: context.appPrimaryAccent,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     '겹문장 · ${g.memberCount}명이 같은 문장을 수집했어요',
                     style: AppTheme.captionLarge.copyWith(
-                      color: AppTheme.accent,
+                      color: context.appPrimaryAccent,
                     ),
                   ),
                 ),
@@ -1218,6 +1235,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
                     color: context.appPrimaryAccent.withValues(alpha: 0.07),
+                    border: Border.all(color: context.appBorderSubtle),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -1226,7 +1244,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                       Text(
                         '공통 문구',
                         style: AppTheme.captionSmall.copyWith(
-                          color: AppTheme.accent,
+                          color: context.appPrimaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

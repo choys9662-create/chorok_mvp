@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_flags.dart';
+import '../../core/services/db_service.dart';
 import '../models/isar/isar_book.dart';
 import '../models/reading_session.dart';
 import '../repositories/book_repository.dart';
@@ -258,6 +259,17 @@ class LibraryNotifier extends Notifier<List<Book>> {
     required int durationSeconds,
     required DateTime sessionDate,
   }) async {
+    if (kIsWeb) {
+      await _addManualReadingLogToSupabase(
+        bookId: bookId,
+        startPage: startPage,
+        endPage: endPage,
+        durationSeconds: durationSeconds,
+        sessionDate: sessionDate,
+      );
+      return;
+    }
+
     final repo = ref.read(bookRepositoryProvider);
     if (repo == null) return;
 
@@ -279,10 +291,63 @@ class LibraryNotifier extends Notifier<List<Book>> {
               ? ReadingStatus.completed
               : ReadingStatus.reading,
           completedAt: result.book!.completedAt,
+          totalReadingHours: b.totalReadingHours + durationSeconds / 3600.0,
         );
         state = [...state]..[idx] = updated;
       }
     }
+  }
+
+  Future<void> _addManualReadingLogToSupabase({
+    required String bookId,
+    required int startPage,
+    required int endPage,
+    required int durationSeconds,
+    required DateTime sessionDate,
+  }) async {
+    final pagesRead = (endPage - startPage).clamp(0, 999999);
+    final idx = state.indexWhere((b) => b.id == bookId);
+    Book? updatedBook;
+
+    if (idx >= 0) {
+      final old = state[idx];
+      final newCurrentPage = endPage > old.currentPage
+          ? endPage
+          : old.currentPage;
+      var newStatus = old.status;
+      var completedAt = old.completedAt;
+
+      if (old.status != ReadingStatus.completed &&
+          old.totalPages > 0 &&
+          newCurrentPage >= old.totalPages) {
+        newStatus = ReadingStatus.completed;
+        completedAt = DateTime.now();
+      } else if (newCurrentPage > 0 && old.status == ReadingStatus.wantToRead) {
+        newStatus = ReadingStatus.reading;
+      }
+
+      updatedBook = old.copyWith(
+        currentPage: newCurrentPage,
+        status: newStatus,
+        completedAt: completedAt,
+        totalReadingHours: old.totalReadingHours + durationSeconds / 3600.0,
+      );
+      state = [...state]..[idx] = updatedBook;
+      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updatedBook);
+    }
+
+    await ref
+        .read(dbServiceProvider)
+        .saveSession(
+          bookId: bookId,
+          durationSeconds: durationSeconds,
+          sentences: const [],
+          startedAt: sessionDate,
+          endedAt: sessionDate.add(Duration(seconds: durationSeconds)),
+          pagesRead: pagesRead,
+          clientSessionId:
+              'manual_${sessionDate.millisecondsSinceEpoch}_$bookId',
+        );
   }
 }
 

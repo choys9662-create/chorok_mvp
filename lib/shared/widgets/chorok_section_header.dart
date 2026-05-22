@@ -19,14 +19,24 @@ class ChorokSectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Container(
+          width: 3,
+          height: subtitle == null ? 18 : 32,
+          decoration: BoxDecoration(
+            color: context.appPrimaryAccent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: AppTheme.headingSmall.copyWith(
+                style: AppTheme.headingMedium.copyWith(
                   color: context.appTextPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (subtitle != null) ...[

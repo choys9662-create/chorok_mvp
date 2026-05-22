@@ -28,18 +28,20 @@ class ChorokCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: bg,
         radius: 16,
-        side: BorderSide.none,
+        side: BorderSide(color: borderColor ?? context.appBorderSubtle),
         shadows: hasShadow
             ? [
                 BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  spreadRadius: 2,
+                  color: isDark
+                      ? context.appPrimaryAccent.withValues(alpha: 0.18)
+                      : Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
                 ),
               ]
             : isDark
-                ? null
-                : AppTheme.lightCardShadows,
+            ? null
+            : AppTheme.lightCardShadows,
       ),
       child: child,
     );

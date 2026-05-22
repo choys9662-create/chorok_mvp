@@ -27,6 +27,7 @@ class BookCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gradColors = AppTheme.coverGradientByIndex(gradientIndex);
+    final fallback = coverUrl == null || coverUrl!.isEmpty;
 
     return Container(
       width: width,
@@ -65,6 +66,25 @@ class BookCover extends StatelessWidget {
               errorWidget: (context, url, error) => const SizedBox.shrink(),
               placeholder: (context, url) => const SizedBox.shrink(),
             ),
+
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: fallback
+                    ? Colors.white.withValues(alpha: 0.18)
+                    : Colors.black.withValues(alpha: 0.10),
+              ),
+              borderRadius: BorderRadius.circular(radius),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withValues(alpha: fallback ? 0.06 : 0.02),
+                  Colors.black.withValues(alpha: fallback ? 0.12 : 0.18),
+                ],
+              ),
+            ),
+          ),
 
           // 추가 자식 위젯 (이미지 위에 렌더링)
           ?child,

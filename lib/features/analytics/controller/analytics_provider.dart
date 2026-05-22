@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_flags.dart';
+import '../../../core/services/db_service.dart';
 import '../../../shared/models/isar/isar_book.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/isar/isar_reading_session.dart';
@@ -20,6 +21,12 @@ typedef FinishedBookEntry = ({
   String author,
   String date,
   int pages,
+});
+typedef SocialSentenceEntry = ({
+  String content,
+  String bookTitle,
+  String bookAuthor,
+  int likeCount,
 });
 
 // ─── 내부 통합 세션 타입 (SQLite·Supabase 공통) ──────────────────────────────
@@ -58,6 +65,12 @@ class AnalyticsState {
   final int monthMaxSessionMinutes;
   final int monthAvgSessionMinutes;
 
+  // ─── Week (속도) ─────────────────────────────────────────────────────────
+  final int weekAvgPagesPerMin;
+
+  // ─── Month (속도) ────────────────────────────────────────────────────────
+  final int monthAvgPagesPerMin;
+
   // ─── Year ────────────────────────────────────────────────────────────────
   final int yearTotalSeconds;
   final int yearReadDays;
@@ -65,6 +78,20 @@ class AnalyticsState {
   final List<IsarBook> completedBooks;
   final List<int> yearMonthlyMinutes; // 12개, 1월=0
   final int yearFocusScore;
+  final int yearMaxStreak;
+  final int yearMaxSessionMinutes;
+  final int yearAvgSessionMinutes;
+  final int yearAvgPagesPerMin;
+  final Map<String, int> yearGenreDistribution; // 장르 → 완독 권 수
+  final List<IsarChoseo> yearTopChoseo; // 올해 수집 문장 (최근 순)
+
+  // ─── 소셜 (좋아요·커뮤니티) ────────────────────────────────────────────────
+  final List<SocialSentenceEntry> weekMyReactions;
+  final List<SocialSentenceEntry> weekCommunityHighlights;
+  final List<SocialSentenceEntry> monthMyReactions;
+  final List<SocialSentenceEntry> monthCommunityHighlights;
+  final List<SocialSentenceEntry> yearMyReactions;
+  final List<SocialSentenceEntry> yearCommunityHighlights;
 
   // ─── 전체 세션 (모달용) ───────────────────────────────────────────────────
   final List<SessionEntry> allRecentSessions;
@@ -82,6 +109,7 @@ class AnalyticsState {
     this.weekMaxSessionMinutes = 0,
     this.weekAvgSessionMinutes = 0,
     this.weekRadar = const [0, 0, 0, 0, 0],
+    this.weekAvgPagesPerMin = 0,
     this.monthTotalSeconds = 0,
     this.monthReadDays = 0,
     this.monthChoseoCount = 0,
@@ -92,12 +120,25 @@ class AnalyticsState {
     this.monthFocusScore = 0,
     this.monthMaxSessionMinutes = 0,
     this.monthAvgSessionMinutes = 0,
+    this.monthAvgPagesPerMin = 0,
     this.yearTotalSeconds = 0,
     this.yearReadDays = 0,
     this.yearChoseoCount = 0,
     this.completedBooks = const [],
     this.yearMonthlyMinutes = const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     this.yearFocusScore = 0,
+    this.yearMaxStreak = 0,
+    this.yearMaxSessionMinutes = 0,
+    this.yearAvgSessionMinutes = 0,
+    this.yearAvgPagesPerMin = 0,
+    this.yearGenreDistribution = const {},
+    this.yearTopChoseo = const [],
+    this.weekMyReactions = const [],
+    this.weekCommunityHighlights = const [],
+    this.monthMyReactions = const [],
+    this.monthCommunityHighlights = const [],
+    this.yearMyReactions = const [],
+    this.yearCommunityHighlights = const [],
     this.allRecentSessions = const [],
   });
 }
@@ -344,6 +385,20 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       }
     }
 
+    // Reading speed helpers
+    int avgPagesPerMin(List<IsarReadingSession> sess) {
+      final totalPages = sess.fold(0, (s, r) => s + r.pagesRead);
+      final totalMin = sess.fold(0, (s, r) => s + r.durationSeconds) ~/ 60;
+      if (totalMin == 0) return 0;
+      return (totalPages / totalMin).round();
+    }
+
+    // Week speed
+    final wSpeed = avgPagesPerMin(weekSess);
+
+    // Month speed
+    final mSpeed = avgPagesPerMin(monthSess);
+
     // Year
     final yearTotal = yearSess.fold(0, (s, r) => s + r.durationSeconds);
     final yearDaySet = <String>{};
@@ -353,6 +408,39 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       );
     }
     final yFocus = _focusScoreFromIsarSessions(yearSess);
+    final yMaxSessMin = yearSess.isEmpty
+        ? 0
+        : yearSess
+                  .map((s) => s.durationSeconds)
+                  .reduce((a, b) => a > b ? a : b) ~/
+              60;
+    final yAvgSessMin = yearSess.isEmpty
+        ? 0
+        : yearTotal ~/ yearSess.length ~/ 60;
+    final ySpeed = avgPagesPerMin(yearSess);
+
+    // Year max streak (전체 연도 heatmap 기반)
+    int yearMaxStreak = 0, yearCurStreak = 0;
+    for (int m = 1; m <= 12; m++) {
+      final daysInMonth = DateTime(now.year, m + 1, 0).day;
+      for (int d = 1; d <= daysInMonth; d++) {
+        if (heatmap.containsKey(DateTime(now.year, m, d))) {
+          yearCurStreak++;
+          if (yearCurStreak > yearMaxStreak) yearMaxStreak = yearCurStreak;
+        } else {
+          yearCurStreak = 0;
+        }
+      }
+    }
+
+    // Year genre distribution (완독 책 기준)
+    final genreDistribution = <String, int>{};
+    for (final book in completedBooks) {
+      final g = book.genre;
+      if (g != null && g.isNotEmpty) {
+        genreDistribution[g] = (genreDistribution[g] ?? 0) + 1;
+      }
+    }
 
     final wRadar = _radar(
       totalSeconds: weekTotal,
@@ -386,6 +474,25 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       );
     }).toList();
 
+    // 소셜 데이터 — Supabase에서 비동기로 가져옴 (로그인 안 됐으면 빈 리스트)
+    final db = ref.read(dbServiceProvider);
+    final socialResults = await Future.wait([
+      db.fetchMySentencesWithLikes(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchMySentencesWithLikes(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+    ]);
+
+    List<SocialSentenceEntry> toSocial(List<Map<String, dynamic>> rows) =>
+        rows.map((r) => (
+              content: r['content'] as String,
+              bookTitle: r['book_title'] as String,
+              bookAuthor: r['book_author'] as String,
+              likeCount: r['like_count'] as int,
+            )).toList();
+
     return AnalyticsState(
       weekTotalSeconds: weekTotal,
       weekReadDays: weekDaySet.length,
@@ -404,6 +511,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       weekMaxSessionMinutes: wMaxSessMin,
       weekAvgSessionMinutes: wAvgSessMin,
       weekRadar: wRadar,
+      weekAvgPagesPerMin: wSpeed,
       monthTotalSeconds: monthTotal,
       monthReadDays: monthDaySet.length,
       monthChoseoCount: monthChoseo.length,
@@ -414,12 +522,25 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       monthFocusScore: mFocus,
       monthMaxSessionMinutes: mMaxSessMin,
       monthAvgSessionMinutes: mAvgSessMin,
+      monthAvgPagesPerMin: mSpeed,
       yearTotalSeconds: yearTotal,
       yearReadDays: yearDaySet.length,
       yearChoseoCount: yearChoseo.length,
       completedBooks: completedBooks,
       yearMonthlyMinutes: yearMonthlyMinutes,
       yearFocusScore: yFocus,
+      yearMaxStreak: yearMaxStreak,
+      yearMaxSessionMinutes: yMaxSessMin,
+      yearAvgSessionMinutes: yAvgSessMin,
+      yearAvgPagesPerMin: ySpeed,
+      yearGenreDistribution: genreDistribution,
+      yearTopChoseo: yearChoseo.take(5).toList(),
+      weekMyReactions: toSocial(socialResults[0]),
+      weekCommunityHighlights: toSocial(socialResults[1]),
+      monthMyReactions: toSocial(socialResults[2]),
+      monthCommunityHighlights: toSocial(socialResults[3]),
+      yearMyReactions: toSocial(socialResults[4]),
+      yearCommunityHighlights: toSocial(socialResults[5]),
       allRecentSessions: allSessions,
     );
   }
@@ -618,6 +739,43 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
                   10)
               .round()
               .clamp(40, 100);
+    final yStats = _computeSessStats(allSess);
+
+    // Year max streak
+    int yearMaxStreak = 0, yearCurStreak = 0;
+    for (int m = 1; m <= 12; m++) {
+      final daysInMonth = DateTime(now.year, m + 1, 0).day;
+      for (int d = 1; d <= daysInMonth; d++) {
+        if (heatmap.containsKey(DateTime(now.year, m, d))) {
+          yearCurStreak++;
+          if (yearCurStreak > yearMaxStreak) yearMaxStreak = yearCurStreak;
+        } else {
+          yearCurStreak = 0;
+        }
+      }
+    }
+
+    // Genre distribution (Supabase 경로에서는 genre 미지원 — 빈 맵)
+    final genreDistribution = <String, int>{};
+
+    // 소셜 데이터 — 좋아요 수 + 커뮤니티 하이라이트
+    final db = ref.read(dbServiceProvider);
+    List<SocialSentenceEntry> toSocial(List<Map<String, dynamic>> rows) =>
+        rows.map((r) => (
+              content: r['content'] as String,
+              bookTitle: r['book_title'] as String,
+              bookAuthor: r['book_author'] as String,
+              likeCount: r['like_count'] as int,
+            )).toList();
+
+    final socialResults = await Future.wait([
+      db.fetchMySentencesWithLikes(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchMySentencesWithLikes(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+      db.fetchCommunityHighlights(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+    ]);
 
     final wRadar = _radar(
       totalSeconds: wStats.totalSeconds,
@@ -645,6 +803,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       weekMaxSessionMinutes: wStats.maxSessionMinutes,
       weekAvgSessionMinutes: wStats.avgSessionMinutes,
       weekRadar: wRadar,
+      weekAvgPagesPerMin: 0,
       monthTotalSeconds: mStats.totalSeconds,
       monthReadDays: mStats.readDays,
       monthChoseoCount: monthChoseo.length,
@@ -655,13 +814,26 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       monthFocusScore: mFocus,
       monthMaxSessionMinutes: mStats.maxSessionMinutes,
       monthAvgSessionMinutes: mStats.avgSessionMinutes,
+      monthAvgPagesPerMin: 0,
       yearTotalSeconds: yearTotal,
       yearReadDays: yearDaySet.length,
       yearChoseoCount: yearChoseo.length,
       completedBooks: completedBooks,
       yearMonthlyMinutes: yearMonthlyMinutes,
       yearFocusScore: yFocus,
+      yearMaxStreak: yearMaxStreak,
+      yearMaxSessionMinutes: yStats.maxSessionMinutes,
+      yearAvgSessionMinutes: yStats.avgSessionMinutes,
+      yearAvgPagesPerMin: 0,
+      yearGenreDistribution: genreDistribution,
+      yearTopChoseo: yearChoseo.take(5).toList(),
       allRecentSessions: _sessToEntries(allSess.take(20).toList()),
+      weekMyReactions: toSocial(socialResults[0]),
+      weekCommunityHighlights: toSocial(socialResults[1]),
+      monthMyReactions: toSocial(socialResults[2]),
+      monthCommunityHighlights: toSocial(socialResults[3]),
+      yearMyReactions: toSocial(socialResults[4]),
+      yearCommunityHighlights: toSocial(socialResults[5]),
     );
   }
 

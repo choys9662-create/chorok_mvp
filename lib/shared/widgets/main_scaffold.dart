@@ -89,7 +89,8 @@ class _ChorokBottomBar extends StatelessWidget {
       notchMargin: 8,
       color: context.appSurface,
       surfaceTintColor: Colors.transparent,
-      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.22),
+      elevation: 10,
       child: Row(
         children: [
           _NavItem(
@@ -151,7 +152,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = index == currentIndex;
-    final color = isActive ? context.appPrimaryAccent : context.appTextTertiary;
+    final color = isActive
+        ? context.appPrimaryAccent
+        : context.appTextSecondary;
 
     return Expanded(
       child: Semantics(
@@ -168,7 +171,22 @@ class _NavItem extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(isActive ? activeIcon : icon, color: color, size: 24),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: 36,
+                  height: 26,
+                  decoration: AppTheme.smoothPill(
+                    color: isActive
+                        ? context.appPrimaryAccent.withValues(alpha: 0.14)
+                        : Colors.transparent,
+                  ),
+                  child: Icon(
+                    isActive ? activeIcon : icon,
+                    color: color,
+                    size: 22,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   label,
@@ -217,23 +235,22 @@ class _ForestOrbFab extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                accent,
-                accent,
-              ],
+              colors: [accent, accent],
             ),
             boxShadow: [
               BoxShadow(
-                color: accent.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: accent.withValues(alpha: 0.34),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Center(
+          child: Center(
             child: Icon(
-              Icons.timer_rounded,
-              color: Colors.white,
+              isInSession ? Icons.play_arrow_rounded : Icons.timer_rounded,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black
+                  : Colors.white,
               size: 24,
             ),
           ),
