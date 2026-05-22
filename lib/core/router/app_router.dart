@@ -29,6 +29,8 @@ import '../../features/library/choseo_list_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
 import '../../features/achievements/screen/achievements_screen.dart';
 import '../../features/feed/screen/sentence_detail_screen.dart';
+import '../../features/search/screen/book_info_screen.dart';
+import '../../features/search/model/aladin_book.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
@@ -240,6 +242,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final data = state.extra as SentenceDetailExtra;
           return SentenceDetailScreen(data: data);
+        },
+      ),
+
+      // 검색 결과 책 상세 (공개 정보 + 커뮤니티 문장)
+      GoRoute(
+        path: AppConstants.routeBookInfo,
+        builder: (context, state) {
+          final book = state.extra as AladinBook;
+          return BookInfoScreen(book: book);
         },
       ),
 
