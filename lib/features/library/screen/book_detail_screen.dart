@@ -152,6 +152,20 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               ),
             ),
             ListTile(
+              leading: Icon(
+                Icons.format_quote_rounded,
+                color: ctx.appPrimaryAccent,
+              ),
+              title: Text(
+                '문장 추가',
+                style: TextStyle(color: ctx.appTextPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showAddSentenceSheet(book);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
               title: const Text('책 삭제', style: TextStyle(color: Colors.red)),
               onTap: () {
@@ -161,6 +175,22 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddSentenceSheet(Book book) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _AddSentenceSheet(
+        bookId: book.id,
+        onSaved: () {
+          if (!kIsWeb) {
+            ref.invalidate(_bookChoseoProvider(widget.bookId));
+          }
+        },
       ),
     );
   }
@@ -827,6 +857,207 @@ class _SentenceItem extends StatelessWidget {
           content,
           style: AppTheme.bodySmall.copyWith(fontStyle: FontStyle.italic),
         ),
+      ),
+    );
+  }
+}
+
+// ─── 문장 추가 바텀시트 ───────────────────────────────────────────────────────
+
+class _AddSentenceSheet extends ConsumerStatefulWidget {
+  final String bookId;
+  final VoidCallback onSaved;
+
+  const _AddSentenceSheet({required this.bookId, required this.onSaved});
+
+  @override
+  ConsumerState<_AddSentenceSheet> createState() => _AddSentenceSheetState();
+}
+
+class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
+  final _contentCtrl = TextEditingController();
+  final _thoughtCtrl = TextEditingController();
+  final _contentFocus = FocusNode();
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 100), _contentFocus.requestFocus);
+  }
+
+  @override
+  void dispose() {
+    _contentCtrl.dispose();
+    _thoughtCtrl.dispose();
+    _contentFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final content = _contentCtrl.text.trim();
+    if (content.isEmpty) return;
+
+    setState(() => _isSaving = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      await ref.read(libraryProvider.notifier).addSentence(
+        widget.bookId,
+        content,
+        thought: _thoughtCtrl.text.trim().isNotEmpty
+            ? _thoughtCtrl.text.trim()
+            : null,
+      );
+      widget.onSaved();
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).viewInsets.bottom +
+        MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPad + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 드래그 핸들
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: context.appTextTertiary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          Text(
+            '문장 추가',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: context.appTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 문장 입력
+          _SheetTextField(
+            controller: _contentCtrl,
+            focusNode: _contentFocus,
+            hintText: '기록하고 싶은 문장을 입력하세요',
+            maxLines: 4,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 10),
+
+          // 내 생각 입력 (선택)
+          _SheetTextField(
+            controller: _thoughtCtrl,
+            hintText: '내 생각 (선택)',
+            maxLines: 2,
+          ),
+          const SizedBox(height: 20),
+
+          // 저장 버튼
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: (_contentCtrl.text.trim().isNotEmpty && !_isSaving)
+                  ? _save
+                  : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: context.appPrimaryAccent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    context.appPrimaryAccent.withValues(alpha: 0.3),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: AppTheme.smoothShape(radius: 12),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      '저장',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String hintText;
+  final int maxLines;
+  final ValueChanged<String>? onChanged;
+
+  const _SheetTextField({
+    required this.controller,
+    this.focusNode,
+    required this.hintText,
+    required this.maxLines,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 12,
+        side: BorderSide.none,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        maxLines: maxLines,
+        onChanged: onChanged,
+        style: TextStyle(
+          fontSize: 14,
+          color: context.appTextPrimary,
+          height: 1.6,
+        ),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontSize: 14,
+            color: context.appTextTertiary,
+            height: 1.6,
+          ),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+        cursorColor: context.appPrimaryAccent,
+        cursorWidth: 1.5,
       ),
     );
   }
