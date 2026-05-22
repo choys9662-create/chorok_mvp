@@ -200,6 +200,23 @@ class DbService {
   // 문장 (내 것 + 팔로우 피드)
   // ────────────────────────────────────────────────────────────────────
 
+  /// 세션 없이 단독으로 문장 저장 (서재 화면에서 직접 추가 시 사용)
+  Future<void> saveSentenceStandalone({
+    required String bookId,
+    required String content,
+    String? thought,
+  }) async {
+    final ids = await _resolveBookIds(bookId);
+    await supabase.from('sentences').insert({
+      'user_id': _uid,
+      'book_id': ?ids.bookUuid,
+      'global_book_id': ?ids.globalBookId,
+      'content': content.trim(),
+      'normalized_sentences': [SentenceNormalizer.normalize(content.trim())],
+      'thought': thought?.trim().isNotEmpty == true ? thought!.trim() : null,
+    });
+  }
+
   Future<List<Map<String, dynamic>>> fetchMySentences() async {
     final res = await supabase
         .from('sentences')
