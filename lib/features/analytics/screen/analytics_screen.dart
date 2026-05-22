@@ -97,6 +97,88 @@ String _focusDesc(int score) {
   return '독서를 시작해 볼까요?';
 }
 
+({String persona, IconData icon, String desc}) _weekPersona(
+    List<TodSlot> slots) {
+  if (slots.isEmpty) {
+    return (
+      persona: '독서가',
+      icon: Icons.menu_book_rounded,
+      desc: '독서 데이터가 쌓이면 독서 성향이 분석돼요.',
+    );
+  }
+  final peak = slots.reduce((a, b) => a.minutes >= b.minutes ? a : b);
+  switch (peak.label) {
+    case '새벽':
+      return (
+        persona: '새벽형 독서가',
+        icon: Icons.nights_stay_rounded,
+        desc: '고요한 새벽, 세상이 잠든 시간에 책을 펼치는 사람이에요. 새벽 독서 비중이 가장 높아요.',
+      );
+    case '오전':
+      return (
+        persona: '오전형 독서가',
+        icon: Icons.wb_sunny_rounded,
+        desc: '맑은 오전의 에너지로 책을 읽는 사람이에요. 오전 집중 시간을 잘 활용하고 있어요.',
+      );
+    case '오후':
+      return (
+        persona: '오후형 독서가',
+        icon: Icons.light_mode_rounded,
+        desc: '오후의 여유로운 시간에 책과 함께하는 사람이에요. 안정적인 독서 루틴이 느껴져요.',
+      );
+    default:
+      return (
+        persona: '저녁형 독서가',
+        icon: Icons.nights_stay_rounded,
+        desc: '하루의 끝자락, 고요한 저녁에 책장을 펼치는 사람이에요. 이 루틴이 지속되는 한, 집중도는 자연스럽게 높아질 거예요.',
+      );
+  }
+}
+
+String _weekInsight(AnalyticsState a) {
+  if (a.weekReadDays == 0) return '이번 주는 아직 독서 기록이 없어요. 오늘부터 시작해 볼까요?';
+  final buf = StringBuffer('이번 주 ${a.weekReadDays}일 동안 책을 읽었어요.');
+  if (a.weekMaxSessionMinutes > 0) buf.write(' 가장 긴 집중은 ${a.weekMaxSessionMinutes}분이었어요.');
+  if (a.weekChoseoCount > 0) buf.write(' ${a.weekChoseoCount}개의 문장을 수집했어요.');
+  return buf.toString();
+}
+
+String _monthInsight(AnalyticsState a) {
+  if (a.monthReadDays == 0) return '이번 달은 아직 독서 기록이 없어요. 오늘부터 시작해 볼까요?';
+  final buf = StringBuffer('이번 달 ${a.monthReadDays}일 동안 책을 읽었어요.');
+  if (a.monthMaxStreak > 1) buf.write(' 최대 ${a.monthMaxStreak}일 연속 독서를 기록했어요.');
+  if (a.monthChoseoCount > 0) buf.write(' 총 ${a.monthChoseoCount}개의 문장을 기록했어요.');
+  return buf.toString();
+}
+
+String _yearInsight(AnalyticsState a) {
+  final hours = a.yearTotalSeconds ~/ 3600;
+  if (hours == 0 && a.yearReadDays == 0) return '올해는 아직 독서 기록이 없어요. 지금 시작해 볼까요?';
+  final buf = StringBuffer();
+  if (hours > 0) buf.write('올해 $hours시간 독서했어요.');
+  if (a.completedBooks.isNotEmpty) buf.write(' ${a.completedBooks.length}권을 완독했어요.');
+  if (a.yearChoseoCount > 0) buf.write(' ${a.yearChoseoCount}개의 문장을 수집했어요.');
+  return buf.toString();
+}
+
+({String identity, IconData icon, String desc}) _yearIdentity(
+    Map<String, int> genres, int totalBooks) {
+  if (genres.isEmpty || totalBooks == 0) {
+    return (
+      identity: '독서가',
+      icon: Icons.menu_book_rounded,
+      desc: '완독 데이터가 쌓이면 독서 정체성이 분석돼요.',
+    );
+  }
+  final top = genres.entries.reduce((a, b) => a.value >= b.value ? a : b);
+  final ratio = (top.value / totalBooks * 100).round();
+  return (
+    identity: '${top.key} 탐험가',
+    icon: Icons.explore_rounded,
+    desc: '올해 읽은 $totalBooks권 중 ${top.value}권($ratio%)이 ${top.key}이에요. ${top.key} 장르를 통해 세상을 깊이 탐구하고 있어요.',
+  );
+}
+
 /// 분석 스크린: 이번 주 / 이번 달 / 올해 탭 구조
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -276,6 +358,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ),
               ]
             : const <({String text, String book})>[]);
+    final weekPersonaData = !kUseMock && a != null && timeOfDay.isNotEmpty
+        ? _weekPersona(timeOfDay)
+        : null;
+    final weekInsightMsg = !kUseMock && a != null ? _weekInsight(a) : null;
+    final weekMyReactions = a?.weekMyReactions ?? const [];
+    final weekCommunityHL = a?.weekCommunityHighlights ?? const [];
 
     return [
       ChorokSectionHeader(title: '이번 주 독서', subtitle: subtitle),
@@ -363,7 +451,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         stat2Label: '평균 세션',
         stat2Value: time_fmt.formatDurationSeconds(avgSessMin * 60),
         stat3Label: '평균 속도',
-        stat3Value: '분당 14p',
+        stat3Value: (a?.weekAvgPagesPerMin ?? 0) > 0
+            ? '분당 ${a!.weekAvgPagesPerMin}p'
+            : '–',
       ),
       const SizedBox(height: AppTheme.spaceXL),
 
@@ -418,7 +508,25 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (weekMyReactions.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '내 문장에 온 반응'),
+        const SizedBox(height: AppTheme.spaceMD),
+        SentenceReactionsCard(
+          sentences: weekMyReactions.indexed
+              .map((e) => (
+                    text: e.$2.content,
+                    book: e.$2.bookTitle.isNotEmpty
+                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                        : e.$2.bookAuthor,
+                    reactions: e.$2.likeCount,
+                    isTop: e.$1 == 0,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
         const CommunityHighlightsCard(
@@ -436,7 +544,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (weekCommunityHL.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
+        const SizedBox(height: AppTheme.spaceMD),
+        CommunityHighlightsCard(
+          highlights: weekCommunityHL
+              .map((e) => (
+                    text: e.content,
+                    book: e.bookTitle.isNotEmpty
+                        ? '${e.bookTitle} — ${e.bookAuthor}'
+                        : e.bookAuthor,
+                    reactions: e.likeCount,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '이번 주 독서 성향'),
         const SizedBox(height: AppTheme.spaceMD),
         const ReadingPersonaCard(
@@ -446,17 +571,30 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (weekPersonaData != null) ...[
+        const ChorokSectionHeader(title: '이번 주 독서 성향'),
+        const SizedBox(height: AppTheme.spaceMD),
+        ReadingPersonaCard(
+          persona: weekPersonaData.persona,
+          icon: weekPersonaData.icon,
+          description: weekPersonaData.desc,
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
       ],
 
       const ChorokSectionHeader(title: '이번 주 인사이트'),
-      if (kUseMock) ...[
-        const SizedBox(height: AppTheme.spaceMD),
+      const SizedBox(height: AppTheme.spaceMD),
+      if (kUseMock)
         const QualitativeInsightCard(
           icon: Icons.auto_awesome_rounded,
           message:
               '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
+        )
+      else if (weekInsightMsg != null)
+        QualitativeInsightCard(
+          icon: Icons.auto_awesome_rounded,
+          message: weekInsightMsg,
         ),
-      ],
     ];
   }
 
@@ -498,6 +636,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
               ]
             : const <({String title, String author, String date, int pages})>[]);
+    final monthInsightMsg = !kUseMock && a != null ? _monthInsight(a) : null;
+    final monthMyReactions = a?.monthMyReactions ?? const [];
+    final monthCommunityHL = a?.monthCommunityHighlights ?? const [];
 
     return [
       ChorokSectionHeader(title: '이번 달 독서', subtitle: monthSubtitle),
@@ -564,7 +705,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         stat2Label: '평균 세션',
         stat2Value: time_fmt.formatDurationSeconds(avgSessMin * 60),
         stat3Label: '평균 속도',
-        stat3Value: '분당 15p',
+        stat3Value: (a?.monthAvgPagesPerMin ?? 0) > 0
+            ? '분당 ${a!.monthAvgPagesPerMin}p'
+            : '–',
       ),
       const SizedBox(height: AppTheme.spaceXL),
 
@@ -601,7 +744,25 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (monthMyReactions.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '이번 달 베스트 문장'),
+        const SizedBox(height: AppTheme.spaceMD),
+        SentenceReactionsCard(
+          sentences: monthMyReactions.indexed
+              .map((e) => (
+                    text: e.$2.content,
+                    book: e.$2.bookTitle.isNotEmpty
+                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                        : e.$2.bookAuthor,
+                    reactions: e.$2.likeCount,
+                    isTop: e.$1 == 0,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
         const CommunityHighlightsCard(
@@ -619,16 +780,37 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
-
-        const ChorokSectionHeader(title: '이번 달 인사이트'),
+      ] else if (monthCommunityHL.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '이번 달 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
+        CommunityHighlightsCard(
+          highlights: monthCommunityHL
+              .map((e) => (
+                    text: e.content,
+                    book: e.bookTitle.isNotEmpty
+                        ? '${e.bookTitle} — ${e.bookAuthor}'
+                        : e.bookAuthor,
+                    reactions: e.likeCount,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
+
+      const ChorokSectionHeader(title: '이번 달 인사이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      if (kUseMock)
         const QualitativeInsightCard(
           icon: Icons.auto_awesome_rounded,
           message:
               '18일, 그러니까 이틀에 한 번 이상 책을 펼쳤어요. 이번 달엔 한강과 손원평의 이야기 속으로 완전히 빠져들었고, 두 권을 완독했어요. 지난달보다 더 깊이, 더 오래 읽고 있어요.',
           subMessage: '같은 시간에 더 많은 페이지를 읽었다는 건, 집중력이 자라고 있다는 신호예요.',
+        )
+      else if (monthInsightMsg != null)
+        QualitativeInsightCard(
+          icon: Icons.auto_awesome_rounded,
+          message: monthInsightMsg,
         ),
-      ],
     ];
   }
 
@@ -664,6 +846,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 (title: '달러구트 꿈 백화점', author: '이미예', date: '1월 21일', pages: 304),
               ]
             : const <({String title, String author, String date, int pages})>[]);
+    final sortedGenres = !kUseMock && a != null && a.yearGenreDistribution.isNotEmpty
+        ? (a.yearGenreDistribution.entries.toList()
+          ..sort((x, y) => y.value.compareTo(x.value)))
+        : null;
+    final yearIdData = sortedGenres != null
+        ? _yearIdentity(a!.yearGenreDistribution, a.completedBooks.length)
+        : null;
+    final yearInsightMsg = !kUseMock && a != null ? _yearInsight(a) : null;
+    final yearMyReactions = a?.yearMyReactions ?? const [];
+    final yearCommunityHL = a?.yearCommunityHighlights ?? const [];
 
     return [
       ChorokSectionHeader(title: '올해 독서', subtitle: yearSubtitle),
@@ -746,11 +938,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ? '올해도 좋은 독서 습관을 유지하고 있어요.'
             : _focusDesc(focusScore),
         stat1Label: '최장 연속일',
-        stat1Value: '14일',
+        stat1Value: (a?.yearMaxStreak ?? 0) > 0 ? '${a!.yearMaxStreak}일' : '–',
         stat2Label: '평균 세션',
-        stat2Value: '41분',
+        stat2Value: (a?.yearAvgSessionMinutes ?? 0) > 0
+            ? '${a!.yearAvgSessionMinutes}분'
+            : '–',
         stat3Label: '평균 속도',
-        stat3Value: '분당 15p',
+        stat3Value: (a?.yearAvgPagesPerMin ?? 0) > 0
+            ? '분당 ${a!.yearAvgPagesPerMin}p'
+            : '–',
       ),
       const SizedBox(height: AppTheme.spaceXL),
 
@@ -772,7 +968,27 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (sortedGenres != null) ...[
+        const ChorokSectionHeader(title: '장르 분포'),
+        const SizedBox(height: AppTheme.spaceMD),
+        GenreChart(
+          genres: sortedGenres.take(5).toList().asMap().entries.map((e) {
+            final colors = [
+              context.appPrimaryAccent,
+              AppTheme.accent,
+              context.appTextSecondary,
+            ];
+            return (
+              name: e.value.key,
+              count: e.value.value,
+              color: e.key < colors.length ? colors[e.key] : context.appTextSecondary,
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '올해의 독서 정체성'),
         const SizedBox(height: AppTheme.spaceMD),
         const ReaderIdentityCard(
@@ -782,7 +998,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               '올해 읽은 9권 중 6권이 소설이에요. 인물의 내면을 따라가며 세상을 이해하는 당신만의 방식이 느껴져요. 한강, 손원평, 이민진의 문장들 속에서 당신은 타인의 삶을 깊이 들여다보고 있었어요.',
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (yearIdData != null) ...[
+        const ChorokSectionHeader(title: '올해의 독서 정체성'),
+        const SizedBox(height: AppTheme.spaceMD),
+        ReaderIdentityCard(
+          identity: yearIdData.identity,
+          icon: yearIdData.icon,
+          description: yearIdData.desc,
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
         const SizedBox(height: AppTheme.spaceMD),
         const SentenceReactionsCard(
@@ -808,7 +1035,25 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
+      ] else if (yearMyReactions.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '올해 가장 공감받은 문장'),
+        const SizedBox(height: AppTheme.spaceMD),
+        SentenceReactionsCard(
+          sentences: yearMyReactions.indexed
+              .map((e) => (
+                    text: e.$2.content,
+                    book: e.$2.bookTitle.isNotEmpty
+                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                        : e.$2.bookAuthor,
+                    reactions: e.$2.likeCount,
+                    isTop: e.$1 == 0,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
 
+      if (kUseMock) ...[
         const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
         const CommunityHighlightsCard(
@@ -831,16 +1076,37 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ],
         ),
         const SizedBox(height: AppTheme.spaceXL),
-
-        const ChorokSectionHeader(title: '올해 인사이트'),
+      ] else if (yearCommunityHL.isNotEmpty) ...[
+        const ChorokSectionHeader(title: '올해 커뮤니티 하이라이트'),
         const SizedBox(height: AppTheme.spaceMD),
+        CommunityHighlightsCard(
+          highlights: yearCommunityHL
+              .map((e) => (
+                    text: e.content,
+                    book: e.bookTitle.isNotEmpty
+                        ? '${e.bookTitle} — ${e.bookAuthor}'
+                        : e.bookAuthor,
+                    reactions: e.likeCount,
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: AppTheme.spaceXL),
+      ],
+
+      const ChorokSectionHeader(title: '올해 인사이트'),
+      const SizedBox(height: AppTheme.spaceMD),
+      if (kUseMock)
         const QualitativeInsightCard(
           icon: Icons.emoji_events_rounded,
           message:
               '142시간. 그 숫자보다 더 의미 있는 건, 매달 꼬박 책장을 넘겼다는 사실이에요. 어떤 달은 조금 느리게, 어떤 달은 힘차게 — 그 흐름 자체가 올해 당신의 독서 이야기예요.',
           subMessage: '연간 목표의 45%를 3개월 만에 달성했어요. 이 속도라면 연말엔 목표를 훌쩍 넘어설 거예요.',
+        )
+      else if (yearInsightMsg != null)
+        QualitativeInsightCard(
+          icon: Icons.emoji_events_rounded,
+          message: yearInsightMsg,
         ),
-      ],
     ];
   }
 

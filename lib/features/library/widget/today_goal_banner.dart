@@ -33,7 +33,9 @@ class TodayGoalBanner extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appPrimaryAccent.withValues(alpha: 0.08),
           radius: AppTheme.radiusLG,
-          side: BorderSide.none,
+          side: BorderSide(
+            color: context.appPrimaryAccent.withValues(alpha: 0.22),
+          ),
         ),
         child: Row(
           children: [
@@ -117,7 +119,7 @@ class TodayGoalBanner extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: 14,
-          side: BorderSide.none,
+            side: BorderSide(color: context.appBorderSubtle),
           ),
           child: Row(
             children: [
@@ -191,7 +193,7 @@ class TodayGoalBanner extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: 14,
-          side: BorderSide.none,
+          side: BorderSide(color: context.appBorderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +204,7 @@ class TodayGoalBanner extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: AppTheme.smoothBox(
-                    color: AppTheme.primary.withValues(alpha: 0.2),
+                    color: context.primaryBg(0.12),
                     radius: 10,
                   ),
                   child: Icon(

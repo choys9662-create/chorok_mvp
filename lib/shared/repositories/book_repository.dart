@@ -79,7 +79,7 @@ Future<Database> openAppDatabase() async {
 
   return openDatabase(
     path,
-    version: 5,
+    version: 6,
     onCreate: (db, version) async {
       await _createAllTables(db);
     },
@@ -130,6 +130,10 @@ Future<Database> openAppDatabase() async {
         // books에 완독 일시 컬럼 추가
         await db.execute('ALTER TABLE books ADD COLUMN completed_at TEXT');
       }
+      if (oldVersion < 6) {
+        // books에 장르 컬럼 추가
+        await db.execute('ALTER TABLE books ADD COLUMN genre TEXT');
+      }
     },
   );
 }
@@ -147,6 +151,7 @@ Future<void> _createAllTables(Database db) async {
       total_pages  INTEGER NOT NULL DEFAULT 0,
       status       TEXT    NOT NULL DEFAULT 'reading',
       completed_at TEXT,
+      genre        TEXT,
       created_at   TEXT    NOT NULL,
       updated_at   TEXT    NOT NULL
     )
@@ -214,6 +219,7 @@ class BookRepository {
     int currentPage = 0,
     IsarReadingStatus status = IsarReadingStatus.reading,
     DateTime? completedAt,
+    String? genre,
   }) async {
     final now = DateTime.now();
 
@@ -232,6 +238,7 @@ class BookRepository {
           'status': status.name,
           'completed_at': completedAt?.toIso8601String(),
           'updated_at': now.toIso8601String(),
+          'genre': genre,
         },
         where: 'book_id = ?',
         whereArgs: [bookId],
@@ -250,6 +257,7 @@ class BookRepository {
       status: status,
       createdAt: now,
       updatedAt: now,
+      genre: genre,
     );
 
     await _db.insert(
@@ -348,7 +356,8 @@ class BookRepository {
         updatedAt: DateTime.now(),
       );
 
-      final sid = existingSessionId ??
+      final sid =
+          existingSessionId ??
           'session_${DateTime.now().millisecondsSinceEpoch}_$bookId';
       final session = IsarReadingSession(
         sessionId: sid,
@@ -371,8 +380,8 @@ class BookRepository {
     }
 
     // 책 없이도 orphan 세션은 저장
-    final sid = existingSessionId ??
-        'session_${DateTime.now().millisecondsSinceEpoch}';
+    final sid =
+        existingSessionId ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
     final session = IsarReadingSession(
       sessionId: sid,
       bookId: bookId,
@@ -515,7 +524,8 @@ class BookRepository {
     return _db.rawQuery('''
       SELECT rs.started_at, rs.duration_seconds, rs.pages_read,
              COALESCE(b.title, '알 수 없는 책') AS book_title,
-             COALESCE(b.author, '') AS book_author
+             COALESCE(b.author, '') AS book_author,
+             b.cover_url AS cover_url
       FROM reading_sessions rs
       LEFT JOIN books b ON rs.book_id = b.book_id
       ORDER BY rs.started_at DESC
@@ -540,6 +550,7 @@ class BookRepository {
       currentPage: book.currentPage,
       status: status,
       completedAt: book.completedAt,
+      genre: book.genre,
     );
   }
 
@@ -843,10 +854,7 @@ class BookRepository {
     );
     return rows.map((r) {
       final secs = (r['total_seconds'] as int?) ?? 0;
-      return (
-        title: r['title'] as String? ?? '알 수 없는 책',
-        hours: secs / 3600.0,
-      );
+      return (title: r['title'] as String? ?? '알 수 없는 책', hours: secs / 3600.0);
     }).toList();
   }
 

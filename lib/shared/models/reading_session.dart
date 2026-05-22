@@ -62,6 +62,7 @@ class Book {
   final double totalReadingHours;
   final List<String> savedSentences;
   final DateTime? completedAt;
+  final String? genre;
 
   const Book({
     required this.id,
@@ -75,6 +76,7 @@ class Book {
     this.totalReadingHours = 0,
     this.savedSentences = const [],
     this.completedAt,
+    this.genre,
   });
 
   double get readingProgress => totalPages > 0 ? currentPage / totalPages : 0.0;
@@ -91,6 +93,7 @@ class Book {
     double? totalReadingHours,
     List<String>? savedSentences,
     DateTime? completedAt,
+    String? genre,
   }) {
     return Book(
       id: id ?? this.id,
@@ -104,6 +107,7 @@ class Book {
       totalReadingHours: totalReadingHours ?? this.totalReadingHours,
       savedSentences: savedSentences ?? this.savedSentences,
       completedAt: completedAt ?? this.completedAt,
+      genre: genre ?? this.genre,
     );
   }
 }

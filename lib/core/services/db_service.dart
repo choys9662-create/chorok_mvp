@@ -5,6 +5,10 @@ import '../../shared/utils/sentence_normalizer.dart';
 
 final dbServiceProvider = Provider<DbService>((ref) => DbService());
 
+final _uuidLike = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
 /// Supabase DB 접근 서비스
 class DbService {
   // ── 현재 로그인된 유저 ID ─────────────────────────────────────────
@@ -63,27 +67,102 @@ class DbService {
   // 독서 세션 + 문장 저장
   // ────────────────────────────────────────────────────────────────────
 
+  Future<({String? bookUuid, String? globalBookId})> _resolveBookIds(
+    String? appBookId,
+  ) async {
+    if (appBookId == null || appBookId.isEmpty) {
+      return (bookUuid: null, globalBookId: null);
+    }
+
+    final byAppId = await supabase
+        .from('books')
+        .select('id, global_book_id')
+        .eq('user_id', _uid)
+        .eq('book_id', appBookId)
+        .maybeSingle();
+
+    final row =
+        byAppId ??
+        (_uuidLike.hasMatch(appBookId)
+            ? await supabase
+                  .from('books')
+                  .select('id, global_book_id')
+                  .eq('user_id', _uid)
+                  .eq('id', appBookId)
+                  .maybeSingle()
+            : null);
+
+    return (
+      bookUuid: row?['id'] as String?,
+      globalBookId: row?['global_book_id'] as String?,
+    );
+  }
+
   /// 세션 종료 시 호출 — 세션 행 생성 후 문장들을 일괄 insert
   Future<String> saveSession({
     String? bookId,
     required int durationSeconds,
     required List<String> sentences,
-    List<String?>? thoughts,  // 추가 — nullable, 기존 호출부 변경 불필요
+    List<String?>? thoughts, // 추가 — nullable, 기존 호출부 변경 불필요
+    int? sentenceCount,
     int? score,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int pagesRead = 0,
+    int exitCount = 0,
+    int exitDurationSeconds = 0,
+    String? clientSessionId,
   }) async {
+    final ids = await _resolveBookIds(bookId);
+    final ended = endedAt ?? DateTime.now();
+    final started =
+        startedAt ?? ended.subtract(Duration(seconds: durationSeconds));
+    final sessionRow = {
+      'user_id': _uid,
+      'book_id': ?ids.bookUuid,
+      'duration_seconds': durationSeconds,
+      'sentence_count': sentenceCount ?? sentences.length,
+      'score': ?score,
+      'started_at': started.toIso8601String(),
+      'ended_at': ended.toIso8601String(),
+      'client_session_id': ?clientSessionId,
+      'pages_read': pagesRead,
+      'exit_count': exitCount,
+      'exit_duration_seconds': exitDurationSeconds,
+    };
+
     // 1) 세션 행 생성
-    final session = await supabase
-        .from('reading_sessions')
-        .insert({
-          'user_id': _uid,
-          'book_id': ?bookId,
-          'duration_seconds': durationSeconds,
-          'sentence_count': sentences.length,
-          'score': ?score,
-          'ended_at': DateTime.now().toIso8601String(),
-        })
-        .select('id')
-        .single();
+    late final Map<String, dynamic> session;
+    try {
+      if (clientSessionId != null && clientSessionId.isNotEmpty) {
+        session = await supabase
+            .from('reading_sessions')
+            .upsert(sessionRow, onConflict: 'user_id,client_session_id')
+            .select('id')
+            .single();
+      } else {
+        session = await supabase
+            .from('reading_sessions')
+            .insert(sessionRow)
+            .select('id')
+            .single();
+      }
+    } catch (_) {
+      final legacyRow = {
+        'user_id': _uid,
+        'book_id': ?ids.bookUuid,
+        'duration_seconds': durationSeconds,
+        'sentence_count': sentenceCount ?? sentences.length,
+        'score': ?score,
+        'started_at': started.toIso8601String(),
+        'ended_at': ended.toIso8601String(),
+      };
+      session = await supabase
+          .from('reading_sessions')
+          .insert(legacyRow)
+          .select('id')
+          .single();
+    }
 
     final sessionId = session['id'] as String;
 
@@ -92,11 +171,14 @@ class DbService {
       await supabase
           .from('sentences')
           .insert(
-            sentences.asMap().entries
+            sentences
+                .asMap()
+                .entries
                 .map(
                   (e) => {
                     'user_id': _uid,
-                    'book_id': ?bookId,
+                    'book_id': ?ids.bookUuid,
+                    'global_book_id': ?ids.globalBookId,
                     'session_id': sessionId,
                     'content': e.value,
                     'normalized_sentences': [
@@ -149,6 +231,87 @@ class DbService {
         .order('created_at', ascending: false)
         .limit(50);
     return List<Map<String, dynamic>>.from(res);
+  }
+
+  /// 내 문장 + 좋아요 수 (기간 필터, 좋아요 많은 순)
+  /// 반환: [{content, book_title, book_author, like_count}]
+  Future<List<Map<String, dynamic>>> fetchMySentencesWithLikes({
+    required DateTime from,
+    required DateTime to,
+    int limit = 5,
+  }) async {
+    final res = await supabase
+        .from('sentences')
+        .select('content, books(title, author), sentence_likes(count)')
+        .eq('user_id', _uid)
+        .gte('created_at', from.toIso8601String())
+        .lte('created_at', to.toIso8601String())
+        .limit(50);
+
+    final items =
+        (res as List).map((r) {
+          final book = r['books'] as Map<String, dynamic>?;
+          final likesAgg = r['sentence_likes'] as List?;
+          final likeCount = likesAgg?.isNotEmpty == true
+              ? (likesAgg!.first['count'] as int? ?? 0)
+              : 0;
+          return {
+            'content': r['content'] as String,
+            'book_title': book?['title'] as String? ?? '',
+            'book_author': book?['author'] as String? ?? '',
+            'like_count': likeCount,
+          };
+        }).toList()..sort(
+          (a, b) => (b['like_count'] as int).compareTo(a['like_count'] as int),
+        );
+
+    return items.take(limit).toList();
+  }
+
+  /// 팔로우 유저 문장 중 좋아요 많은 것 (커뮤니티 하이라이트)
+  /// 반환: [{content, book_title, book_author, like_count}]
+  Future<List<Map<String, dynamic>>> fetchCommunityHighlights({
+    required DateTime from,
+    required DateTime to,
+    int limit = 3,
+  }) async {
+    final follows = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', _uid);
+
+    final followingIds = (follows as List)
+        .map((f) => f['following_id'] as String)
+        .toList();
+
+    if (followingIds.isEmpty) return const [];
+
+    final res = await supabase
+        .from('sentences')
+        .select('content, books(title, author), sentence_likes(count)')
+        .inFilter('user_id', followingIds)
+        .gte('created_at', from.toIso8601String())
+        .lte('created_at', to.toIso8601String())
+        .limit(50);
+
+    final items =
+        (res as List).map((r) {
+          final book = r['books'] as Map<String, dynamic>?;
+          final likesAgg = r['sentence_likes'] as List?;
+          final likeCount = likesAgg?.isNotEmpty == true
+              ? (likesAgg!.first['count'] as int? ?? 0)
+              : 0;
+          return {
+            'content': r['content'] as String,
+            'book_title': book?['title'] as String? ?? '',
+            'book_author': book?['author'] as String? ?? '',
+            'like_count': likeCount,
+          };
+        }).toList()..sort(
+          (a, b) => (b['like_count'] as int).compareTo(a['like_count'] as int),
+        );
+
+    return items.take(limit).toList();
   }
 
   // ────────────────────────────────────────────────────────────────────

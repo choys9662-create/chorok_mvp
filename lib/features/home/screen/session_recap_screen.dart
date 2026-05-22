@@ -21,6 +21,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
+import '../../library/screen/library_screen.dart';
 import '../controller/weekly_minutes_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
@@ -209,6 +210,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   Future<void> _uploadToSupabase(
     String bookId,
     List<CollectedSentence> sentences,
+    int pagesRead,
   ) async {
     try {
       final dbService = ref.read(dbServiceProvider);
@@ -219,6 +221,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         thoughts: sentences
             .map((e) => e.thought.isNotEmpty ? e.thought : null)
             .toList(),
+        sentenceCount: widget.data.sentences.length,
+        score: _score,
+        startedAt: widget.data.sessionStartedAt,
+        pagesRead: pagesRead,
+        exitCount: widget.data.exitCount,
+        exitDurationSeconds: widget.data.exitDurationSeconds,
+        clientSessionId: _sessionId,
       );
     } catch (e) {
       debugPrint('Supabase session upload failed: $e');
@@ -261,7 +270,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       }
 
       if (bookId != null) {
-        unawaited(_uploadToSupabase(bookId, validSentences));
+        unawaited(_uploadToSupabase(bookId, validSentences, 0));
       }
     } catch (e) {
       debugPrint('Session auto-save failed: $e');
@@ -269,6 +278,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       ref.invalidate(analyticsProvider);
       ref.invalidate(readingStreakProvider);
       ref.invalidate(weeklyMinutesProvider);
+      ref.invalidate(readingLogsProvider);
       ref.invalidate(feedProvider);
     }
   }
@@ -294,6 +304,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         if (!mounted) return;
         // 동일하게 인메모리 상태도 갱신
         ref.read(libraryProvider.notifier).updateCurrentPage(bookId, newPage);
+        unawaited(
+          _uploadToSupabase(
+            bookId,
+            const [],
+            (newPage - widget.data.startPage).clamp(0, 999999),
+          ),
+        );
         setState(() {
           _isSavingPage = false;
           _pageRecorded = true;
@@ -316,8 +333,16 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
       // libraryProvider 인메모리 상태 즉시 반영 (홈/서재 화면 기닥 없이 업데이트)
       ref.read(libraryProvider.notifier).updateCurrentPage(bookId, newPage);
+      unawaited(
+        _uploadToSupabase(
+          bookId,
+          const [],
+          (newPage - widget.data.startPage).clamp(0, 999999),
+        ),
+      );
       ref.invalidate(analyticsProvider);
       ref.invalidate(readingStreakProvider);
+      ref.invalidate(readingLogsProvider);
 
       setState(() {
         _isSavingPage = false;
@@ -333,6 +358,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       // updateProgress가 성공했을 수 있으므로 통계 갱신 시도
       ref.invalidate(analyticsProvider);
       ref.invalidate(readingStreakProvider);
+      ref.invalidate(readingLogsProvider);
     }
   }
 
@@ -585,7 +611,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                   const SizedBox(height: 24),
+                                  const SizedBox(height: 24),
                                 ],
 
                                 Row(
@@ -921,10 +947,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
     final isSpecial = tag != _SentenceTag.normal;
 
     return Container(
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 16,
-      ),
+      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1024,10 +1047,7 @@ class _EmptySentenceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 16,
-      ),
+      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
       child: Row(
         children: [
           Icon(
@@ -1077,10 +1097,7 @@ class _StatsRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 16,
-      ),
+      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
       child: Row(
         children: [
           _StatItem(
@@ -1162,7 +1179,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-
 // ─── 하단 액션 버튼 ───────────────────────────────────────────────────
 class _RecapActions extends StatelessWidget {
   final List<CollectedSentence> sentences;
@@ -1173,9 +1189,7 @@ class _RecapActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      decoration: BoxDecoration(
-        color: context.appBg,
-      ),
+      decoration: BoxDecoration(color: context.appBg),
       child: Row(
         children: [
           // 공유하기
@@ -1665,7 +1679,6 @@ class _FocusArcPainter extends CustomPainter {
   bool shouldRepaint(_FocusArcPainter old) =>
       old.progress != progress || old.color != color;
 }
-
 
 class _ReceiptRow extends StatelessWidget {
   final String label;

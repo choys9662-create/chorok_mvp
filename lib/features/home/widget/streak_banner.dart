@@ -20,9 +20,12 @@ class StreakBanner extends ConsumerWidget {
         if (days < 2) return const SizedBox.shrink();
         final today = DateTime.now();
         final todayIndex = (today.weekday - 1).clamp(0, 6);
-        final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ??
+        final dbWeekly =
+            ref.watch(weeklyMinutesProvider).valueOrNull ??
             (kUseMock ? kWeeklyMinutes : const [0, 0, 0, 0, 0, 0, 0]);
-        final todayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
+        final todayMin = dbWeekly.length > todayIndex
+            ? dbWeekly[todayIndex]
+            : 0;
         final hasReadToday = todayMin > 0;
 
         return Padding(
@@ -38,7 +41,11 @@ class StreakBanner extends ConsumerWidget {
                   cornerRadius: AppTheme.radiusMD * 1.8,
                   cornerSmoothing: 0.6,
                 ),
-                side: BorderSide.none,
+                side: BorderSide(
+                  color: hasReadToday
+                      ? AppTheme.warningColor.withValues(alpha: 0.24)
+                      : context.appBorderSubtle,
+                ),
               ),
             ),
             child: Row(

@@ -236,7 +236,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _pulseCtrl.dispose();
     _moveCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     super.dispose();
   }
 
@@ -485,7 +491,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      '${widget.bookAuthor}${widget.bookTitle.isNotEmpty ? ' | ' : ''}2022', // 임시 데이터
+                                      widget.bookAuthor,
                                       style: TextStyle(
                                         color: _kGreen.withValues(alpha: 0.8),
                                         fontSize: 14,

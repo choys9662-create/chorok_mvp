@@ -19,6 +19,7 @@ class WeeklyStatusCard extends ConsumerWidget {
     final timer = ref.watch(timerProvider);
     final weeklyAsync = ref.watch(weeklyMinutesProvider);
     final dbWeekly = weeklyAsync.valueOrNull ?? List.filled(7, 0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // 오늘 요일 (월=0)
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
@@ -27,9 +28,10 @@ class WeeklyStatusCard extends ConsumerWidget {
     final todayMin = dbTodayMin + timer.seconds ~/ 60;
 
     const goalMin = 30;
-    final weekTotal =
-        List.generate(7, (i) => i == todayIndex ? todayMin : dbWeekly[i])
-            .fold<int>(0, (a, b) => a + b);
+    final weekTotal = List.generate(
+      7,
+      (i) => i == todayIndex ? todayMin : dbWeekly[i],
+    ).fold<int>(0, (a, b) => a + b);
     final daysAchieved = List.generate(7, (i) {
       final m = i == todayIndex ? todayMin : dbWeekly[i];
       return m >= goalMin ? 1 : 0;
@@ -127,7 +129,9 @@ class WeeklyStatusCard extends ConsumerWidget {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: isFuture ? context.appProgressTrack : null,
+                                    color: isFuture
+                                        ? context.appProgressTrack
+                                        : null,
                                     gradient: isFuture
                                         ? null
                                         : LinearGradient(
@@ -135,16 +139,24 @@ class WeeklyStatusCard extends ConsumerWidget {
                                             end: Alignment.topCenter,
                                             colors: achieved
                                                 ? [
-                                                    AppTheme.primary,
+                                                    isDark
+                                                        ? AppTheme.primary
+                                                        : context
+                                                              .appPrimaryAccent
+                                                              .withValues(
+                                                                alpha: 0.50,
+                                                              ),
                                                     context.appPrimaryAccent,
                                                   ]
                                                 : [
-                                                    AppTheme.primary.withValues(
-                                                      alpha: 0.5,
-                                                    ),
-                                                    AppTheme.primary.withValues(
-                                                      alpha: 0.3,
-                                                    ),
+                                                    context.appTextTertiary
+                                                        .withValues(
+                                                          alpha: 0.45,
+                                                        ),
+                                                    context.appTextTertiary
+                                                        .withValues(
+                                                          alpha: 0.24,
+                                                        ),
                                                   ],
                                           ),
                                   ),

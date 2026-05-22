@@ -38,7 +38,9 @@ class HomeAppBar extends ConsumerWidget {
     }
 
     final readYesterday =
-        todayIndex > 0 && dbWeekly.length > todayIndex - 1 && dbWeekly[todayIndex - 1] >= goalMin;
+        todayIndex > 0 &&
+        dbWeekly.length > todayIndex - 1 &&
+        dbWeekly[todayIndex - 1] >= goalMin;
     if (readYesterday) return '어제는 읽으셨는데, 오늘은요?';
 
     final daysSince = daysSinceLastRead(todayIndex, dbWeekly);
@@ -52,7 +54,8 @@ class HomeAppBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
-    final dbWeekly = ref.watch(weeklyMinutesProvider).valueOrNull ??
+    final dbWeekly =
+        ref.watch(weeklyMinutesProvider).valueOrNull ??
         (kUseMock ? kWeeklyMinutes : const [0, 0, 0, 0, 0, 0, 0]);
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
     final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
@@ -87,10 +90,17 @@ class HomeAppBar extends ConsumerWidget {
                   HapticFeedback.selectionClick();
                   context.push(AppConstants.routeExplore);
                 },
-                child: Icon(
-                  Icons.search_rounded,
-                  color: context.appTextSecondary,
-                  size: 24,
+                child: DecoratedBox(
+                  decoration: AppTheme.smoothBox(
+                    color: context.appCard,
+                    radius: 12,
+                    side: BorderSide(color: context.appBorderSubtle),
+                  ),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: context.appTextSecondary,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
@@ -107,10 +117,17 @@ class HomeAppBar extends ConsumerWidget {
                   HapticFeedback.selectionClick();
                   context.push(AppConstants.routeNotifications);
                 },
-                child: Icon(
-                  Icons.notifications_none_rounded,
-                  color: context.appTextSecondary,
-                  size: 24,
+                child: DecoratedBox(
+                  decoration: AppTheme.smoothBox(
+                    color: context.appCard,
+                    radius: 12,
+                    side: BorderSide(color: context.appBorderSubtle),
+                  ),
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: context.appTextSecondary,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
