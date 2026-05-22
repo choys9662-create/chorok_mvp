@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>초록 — 서재 v3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button { font: inherit; border: none; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg:        #091510;
+      --s1:        #0f1e16;
+      --s2:        #172a1e;
+      --s3:        #1f3828;
+      --green:     #42bf6a;
+      --green-mid: #26874a;
+      --green-dim: #163d25;
+      --gold:      #c8a44a;
+      --ember:     #d4623a;
+      --cream:     #ede7d3;
+      --cream-2:   #9ea898;
+      --muted:     #435a4a;
+      --font-serif:'Cormorant Garamond', 'Noto Serif KR', Georgia, serif;
+      --font-ko:   'Noto Serif KR', Georgia, serif;
+      --font-ui:   'DM Sans', sans-serif;
+    }
+
+    html { -webkit-font-smoothing: antialiased; }
+    body {
+      background: var(--bg); color: var(--cream);
+      font-family: var(--font-ui);
+      min-height: 100dvh; display: flex; justify-content: center;
+    }
+
+    .app {
+      width: 390px; min-height: 100dvh;
+      background: var(--bg);
+      position: relative; overflow-x: hidden;
+      padding-bottom: 96px;
+    }
+
+    /* grain */
+    .app::before {
+      content: ''; position: fixed; inset: 0;
+      width: 390px; left: 50%; transform: translateX(-50%);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.025; pointer-events: none; z-index: 9999;
+    }
+
+    /* botanical */
+    .botanical {
+      position: fixed; width: 390px; left: 50%; transform: translateX(-50%);
+      top: 0; height: 100%; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .botanical svg { position: absolute; opacity: 0.03; }
+    .bl-1 { top: -40px; right: -50px; width: 220px; animation: drift 26s ease-in-out infinite; }
+    .bl-2 { bottom: 150px; left: -60px; width: 190px; animation: drift 32s ease-in-out infinite reverse 3s; }
+    @keyframes drift {
+      0%,100% { transform: translate(0,0) rotate(0deg); }
+      40%      { transform: translate(10px,14px) rotate(3deg); }
+      70%      { transform: translate(-6px,7px) rotate(-2deg); }
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 26px 8px;
+      font-size: 13px; font-weight: 700; color: var(--cream);
+      position: relative; z-index: 10;
+    }
+    .status-icons { display: flex; gap: 7px; align-items: center; }
+
+    /* ─────────────────────────────────────
+       PROFILE SECTION
+       목적: "누구의 서재인가" 설정
+       원칙: 세션 히어로보다 시각적으로 가볍게
+    ───────────────────────────────────── */
+    .profile-section {
+      margin: 4px 16px 6px;
+      position: relative; z-index: 10;
+    }
+
+    /* 상단 행: 아바타 + 이름 + 액션 버튼 */
+    .profile-top-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px 12px;
+    }
+
+    .avatar-wrap { position: relative; flex-shrink: 0; }
+    .avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(145deg, var(--green-dim), var(--green-mid));
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-serif); font-size: 22px; font-weight: 600;
+      color: var(--green);
+      border: 1.5px solid rgba(66,191,106,0.3);
+    }
+    .avatar-cam {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--s3); border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center; color: var(--cream-2);
+    }
+
+    .profile-id { flex: 1; }
+    .profile-name {
+      font-family: var(--font-ko);
+      font-size: 16px; font-weight: 700;
+      color: var(--cream); letter-spacing: -0.01em;
+      margin-bottom: 3px;
+    }
+    .profile-bio {
+      font-size: 11px; color: var(--cream-2);
+      font-weight: 300; line-height: 1.4;
+    }
+
+    .profile-actions { display: flex; gap: 7px; }
+    .p-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(66,191,106,0.15);
+      background: var(--s2); color: var(--cream-2);
+      transition: all 0.2s;
+    }
+    .p-btn.hi {
+      background: rgba(66,191,106,0.12);
+      border-color: rgba(66,191,106,0.3); color: var(--green);
+    }
+    .p-btn:hover { background: var(--s3); color: var(--cream); }
+
+    /* 하단 행: 소셜 숫자 + 스트릭 */
+    .profile-bottom-row {
+      display: flex; align-items: center;
+      padding: 0 16px 14px; gap: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .social-block {
+      display: flex; align-items: baseline; gap: 4px;
+      cursor: pointer; padding: 2px 0;
+    }
+    .social-block + .social-block { margin-left: 16px; }
+    .social-num {
+      font-family: var(--font-serif);
+      font-size: 18px; font-weight: 600;
+      color: var(--green); line-height: 1;
+    }
+    .social-lbl {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .social-divider {
+      width: 1px; height: 14px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 16px;
+    }
+
+    .streak-pill {
+      margin-left: auto;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(212,98,58,0.1);
+      border: 1px solid rgba(212,98,58,0.2);
+      border-radius: 999px; padding: 5px 11px;
+      font-size: 11px; font-weight: 500; color: #e07850;
+    }
+
+    /* 소셜 피드 미리보기 — 팔로워 독서 활동 */
+    .social-feed-strip {
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-radius: 0 0 16px 16px;
+    }
+    .social-feed-strip:hover { background: rgba(255,255,255,0.02); }
+
+    .feed-avatars {
+      display: flex;
+      margin-right: 2px;
+    }
+    .feed-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-serif); font-size: 11px; font-weight: 600;
+      flex-shrink: 0;
+    }
+    .feed-avatar:not(:first-child) { margin-left: -8px; }
+    .fa-1 { background: linear-gradient(135deg, #1a3040, #0d2030); color: rgba(255,255,255,0.5); }
+    .fa-2 { background: linear-gradient(135deg, #2d1535, #1a0d28); color: rgba(255,255,255,0.5); }
+    .fa-3 { background: linear-gradient(135deg, #1a3c1a, #0e2010); color: rgba(255,255,255,0.5); }
+
+    .feed-text {
+      flex: 1; font-size: 11px; color: var(--muted); line-height: 1.45;
+    }
+    .feed-text strong { color: var(--cream-2); font-weight: 500; }
+    .feed-arrow { color: var(--muted); }
+
+    /* 구분선 역할의 여백 */
+    .section-gap { height: 20px; }
+
+    /* ─────────────────────────────────────
+       SESSION SECTION (세션 중심)
+       목적: 지금 바로 읽기 시작
+    ───────────────────────────────────── */
+
+    /* ── Today banner ── */
+    .today-banner {
+      margin: 0 16px 18px;
+      background: var(--s1);
+      border: 1px solid rgba(66,191,106,0.12);
+      border-radius: 14px; padding: 11px 15px;
+      display: flex; align-items: center; gap: 11px;
+      position: relative; z-index: 10;
+    }
+    .today-ico {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: rgba(66,191,106,0.12);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .today-copy { flex: 1; }
+    .today-title { font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 1px; font-family: var(--font-ko); }
+    .today-sub   { font-size: 10px; color: var(--muted); }
+    .today-stat  {
+      font-family: var(--font-serif);
+      font-size: 22px; font-weight: 700;
+      color: var(--green); line-height: 1;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    }
+    .today-stat small { font-family: var(--font-ui); font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
+
+    /* ── Section label ── */
+    .sec-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px;
+      padding: 0 16px;
+      position: relative; z-index: 10;
+    }
+
+    /* ── Hero card ── */
+    .hero-wrap {
+      margin: 0 16px 26px;
+      position: relative; z-index: 10;
+    }
+
+    .hero-card {
+      background: var(--s1);
+      border: 1px solid rgba(66,191,106,0.15);
+      border-radius: 22px;
+      display: flex; overflow: hidden;
+      position: relative; min-height: 210px;
+      transition: border-color 0.3s;
+    }
+    .hero-card:hover { border-color: rgba(66,191,106,0.28); }
+    .hero-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 18% 50%, rgba(13,56,64,0.55) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .hero-cover { width: 38%; flex-shrink: 0; position: relative; }
+
+    /* cover gradients */
+    .cov-a {
+      background:
+        radial-gradient(ellipse at 30% 70%, #0d3840 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 20%, #14301c 0%, transparent 55%),
+        linear-gradient(168deg, #0b1e28 0%, #091812 100%);
+    }
+    .cov-b {
+      background:
+        radial-gradient(ellipse at 60% 80%, #2d1535 0%, transparent 60%),
+        radial-gradient(ellipse at 30% 20%, #3a1020 0%, transparent 55%),
+        linear-gradient(155deg, #1a0d28 0%, #120820 100%);
+    }
+    .cov-c {
+      background:
+        radial-gradient(ellipse at 50% 60%, #1a3c1a 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 30%, #2a4010 0%, transparent 55%),
+        linear-gradient(160deg, #0e2010 0%, #091409 100%);
+    }
+    .cov-d {
+      background:
+        radial-gradient(ellipse at 40% 70%, #3d2a0a 0%, transparent 55%),
+        radial-gradient(ellipse at 70% 20%, #40200a 0%, transparent 60%),
+        linear-gradient(155deg, #201008 0%, #150a05 100%);
+    }
+
+    .cover-inner {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 18px 12px;
+    }
+    .cover-eng { font-family: var(--font-serif); font-size: 8px; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.2); margin-bottom: 10px; }
+    .cover-ko  { font-family: var(--font-ko); font-size: 16px; font-weight: 300; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.5; }
+    .cover-rule { width: 18px; height: 1px; background: rgba(255,255,255,0.12); margin: 9px 0; }
+    .cover-auth { font-size: 8px; letter-spacing: 0.12em; color: rgba(255,255,255,0.18); text-transform: uppercase; font-family: var(--font-ui); }
+
+    .hero-body {
+      flex: 1; padding: 18px 17px 16px;
+      display: flex; flex-direction: column;
+      position: relative; z-index: 1;
+    }
+    .last-session {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--muted); margin-bottom: 12px;
+    }
+    .last-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); opacity: 0.6; }
+
+    .hero-book-title { font-family: var(--font-ko); font-size: 16px; font-weight: 600; color: var(--cream); letter-spacing: -0.01em; margin-bottom: 2px; }
+    .hero-book-author { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+
+    /* The memorable element */
+    .hero-chapter {
+      font-family: var(--font-serif); font-style: italic;
+      font-size: 15px; font-weight: 300; color: var(--cream-2);
+      line-height: 1.35; margin-bottom: 4px;
+      border-left: 2px solid rgba(66,191,106,0.3); padding-left: 9px;
+    }
+    .hero-page-ctx { font-size: 10px; color: var(--muted); padding-left: 11px; margin-bottom: 14px; }
+
+    .hero-prog-track {
+      height: 2px; background: var(--s3); border-radius: 999px;
+      margin-bottom: 14px; position: relative;
+    }
+    .hero-prog-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--green-mid), var(--green));
+      position: relative; transition: width 1.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .hero-prog-fill::after {
+      content: ''; position: absolute; right: -1px; top: 50%; transform: translateY(-50%);
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+    }
+    .hero-btn {
+      background: var(--green); color: var(--bg);
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; font-weight: 700; font-family: var(--font-ko);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-top: auto; transition: opacity 0.2s, transform 0.1s;
+    }
+    .hero-btn:hover  { opacity: 0.9; }
+    .hero-btn:active { transform: scale(0.98); }
+
+    /* ── Reading shelf ── */
+    .shelf-section { margin-bottom: 26px; position: relative; z-index: 10; }
+    .shelf-hd {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 24px; margin-bottom: 12px;
+    }
+    .shelf-title { font-size: 12px; font-weight: 500; color: var(--cream-2); font-family: var(--font-ko); }
+    .shelf-more  { font-size: 11px; color: var(--muted); }
+
+    .shelf-scroll {
+      display: flex; gap: 11px; padding: 0 16px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .shelf-scroll::-webkit-scrollbar { display: none; }
+
+    .shelf-card {
+      width: 120px; flex-shrink: 0;
+      background: var(--s1); border: 1px solid rgba(66,191,106,0.08);
+      border-radius: 15px; overflow: hidden; cursor: pointer;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.2s;
+    }
+    .shelf-card:hover { transform: translateY(-4px); border-color: rgba(66,191,106,0.2); }
+    .shelf-cover { width: 100%; aspect-ratio: 2/3; position: relative; }
+    .shelf-cover-inner { width: 100%; height: 100%; display: flex; align-items: flex-end; padding: 9px; }
+    .shelf-prog-pill {
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 999px;
+      padding: 2px 7px; font-size: 10px; font-weight: 600; color: var(--green);
+    }
+    .shelf-body { padding: 9px 10px 11px; }
+    .shelf-title-ko { font-family: var(--font-ko); font-size: 11px; font-weight: 600; color: var(--cream); margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shelf-author   { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+    .shelf-btn {
+      width: 100%; background: var(--s2); border: 1px solid rgba(66,191,106,0.14);
+      border-radius: 7px; padding: 6px; font-size: 10px; font-weight: 600;
+      color: var(--green); font-family: var(--font-ko); transition: background 0.2s;
+    }
+    .shelf-btn:hover { background: var(--s3); }
+
+    /* ── Full library ── */
+    .full-lib { position: relative; z-index: 10; padding: 0 16px; }
+    .full-lib-hd {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+    .full-lib-title {
+      font-family: var(--font-ko); font-size: 15px; font-weight: 600; color: var(--cream);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .full-lib-title::before { content: ''; display: block; width: 3px; height: 15px; background: var(--green); border-radius: 2px; }
+    .lib-count { background: rgba(66,191,106,0.12); color: var(--green); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+
+    .tab-row {
+      background: var(--s1); border: 1px solid rgba(66,191,106,0.1);
+      border-radius: 999px; padding: 4px; display: flex; position: relative; margin-bottom: 16px;
+    }
+    .tab-slide {
+      position: absolute; top: 4px; left: 4px;
+      height: calc(100% - 8px); width: calc(33.33% - 2.67px);
+      background: var(--green); border-radius: 999px;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .tab-btn {
+      flex: 1; padding: 9px; text-align: center;
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      font-family: var(--font-ko); border-radius: 999px;
+      position: relative; z-index: 1; transition: color 0.25s;
+    }
+    .tab-btn.on { color: var(--bg); font-weight: 700; }
+
+    .book-rows { display: flex; flex-direction: column; }
+    .book-row {
+      display: flex; align-items: center; gap: 13px;
+      padding: 13px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer; border-radius: 8px; margin: 0 -8px;
+      transition: background 0.15s;
+    }
+    .book-row:hover { background: rgba(255,255,255,0.02); }
+    .book-row:last-child { border-bottom: none; }
+
+    .row-cover { width: 38px; aspect-ratio: 2/3; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+    .row-cover-inner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .row-cover-ko { font-family: var(--font-ko); font-size: 7px; font-weight: 300; color: rgba(255,255,255,0.4); text-align: center; line-height: 1.4; }
+
+    .row-info { flex: 1; min-width: 0; }
+    .row-title  { font-family: var(--font-ko); font-size: 13px; font-weight: 600; color: var(--cream); letter-spacing: -0.01em; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-author { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .row-session { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .row-session-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); opacity: 0.5; }
+
+    .row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .row-pct { font-family: var(--font-serif); font-size: 16px; font-weight: 600; color: var(--green); line-height: 1; }
+    .row-prog-track { width: 44px; height: 2px; background: var(--s3); border-radius: 999px; overflow: hidden; }
+    .row-prog-fill  { height: 100%; background: var(--green); border-radius: 999px; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+
+    .row-done-badge { background: rgba(66,191,106,0.1); border: 1px solid rgba(66,191,106,0.2); border-radius: 999px; padding: 3px 8px; font-size: 10px; color: var(--green); font-weight: 500; }
+    .row-done-date  { font-size: 10px; color: var(--muted); }
+    .row-wish-btn   { background: var(--s2); border: 1px solid rgba(66,191,106,0.15); border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 600; color: var(--green); font-family: var(--font-ko); white-space: nowrap; transition: background 0.2s; }
+    .row-wish-btn:hover { background: var(--s3); }
+
+    /* ── Bottom nav ── */
+    .nav-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 390px; background: rgba(9,21,16,0.9);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(66,191,106,0.1);
+      display: flex; align-items: center; padding: 10px 10px 28px; z-index: 100;
+    }
+    .nav-it { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); padding: 4px; transition: color 0.2s; }
+    .nav-it.on { color: var(--green); }
+    .nav-ico { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+    .nav-lbl { font-size: 10px; font-family: var(--font-ko); }
+    .nav-center { flex: 0 0 72px; display: flex; justify-content: center; }
+    .timer-fab {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--green); display: flex; align-items: center; justify-content: center;
+      color: var(--bg); margin-top: -20px;
+      box-shadow: 0 4px 18px rgba(66,191,106,0.38), 0 0 0 5px rgba(66,191,106,0.1);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+    }
+    .timer-fab:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(66,191,106,0.5), 0 0 0 8px rgba(66,191,106,0.08); }
+
+    /* ── Animations ── */
+    @keyframes up { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    .anim { animation: up 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+    .d0 { animation-delay: 0s; }
+    .d1 { animation-delay: 0.06s; }
+    .d2 { animation-delay: 0.12s; }
+    .d3 { animation-delay: 0.18s; }
+    .d4 { animation-delay: 0.24s; }
+    .d5 { animation-delay: 0.30s; }
+    .d6 { animation-delay: 0.36s; }
+    .d7 { animation-delay: 0.42s; }
+  </style>
+</head>
+<body>
+
+<div class="botanical" aria-hidden="true">
+  <svg class="bl-1" viewBox="0 0 220 340" fill="none">
+    <path d="M110 320C110 320 15 230 8 130C1 30 90 6 110 6C130 6 219 30 212 130C205 230 110 320 110 320Z" fill="#42bf6a"/>
+    <line x1="110" y1="320" x2="110" y2="6" stroke="#42bf6a" stroke-width="2.5"/>
+    <path d="M110 220 Q75 188 28 164" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M110 175 Q78 150 34 138" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M110 130 Q82 108 48 100" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M110 220 Q145 188 192 164" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M110 175 Q142 150 186 138" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+  </svg>
+  <svg class="bl-2" viewBox="0 0 190 290" fill="none">
+    <path d="M95 272C95 272 12 195 6 118C0 41 74 8 95 8C116 8 190 41 184 118C178 195 95 272 95 272Z" fill="#42bf6a"/>
+    <line x1="95" y1="272" x2="95" y2="8" stroke="#42bf6a" stroke-width="2"/>
+    <path d="M95 190 Q62 160 20 140" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M95 148 Q66 122 28 112" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+    <path d="M95 190 Q128 160 170 140" stroke="#42bf6a" stroke-width="1.5" fill="none"/>
+  </svg>
+</div>
+
+<div class="app">
+
+  <!-- Status bar -->
+  <div class="status-bar anim d0">
+    <span>11:36</span>
+    <div class="status-icons">
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" opacity="0.8">
+        <rect x="0" y="4" width="3" height="8" rx="1" opacity="0.35"/>
+        <rect x="4.5" y="2.5" width="3" height="9.5" rx="1" opacity="0.6"/>
+        <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+        <rect x="13.5" y="0.5" width="3" height="11.5" rx="1" opacity="0.25"/>
+      </svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.8">
+        <path d="M1 4.5C3.2 2.3 6 1 8 1s4.8 1.3 7 3.5"/>
+        <path d="M3.5 7C5 5.5 6.5 4.8 8 4.8s3 .7 4.5 2.2"/>
+        <circle cx="8" cy="10.5" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="currentColor" opacity="0.8">
+        <rect x="0.5" y="0.5" width="22" height="11" rx="2.5" stroke="currentColor" stroke-width="1" fill="none" opacity="0.5"/>
+        <rect x="2" y="2" width="18" height="8" rx="1.5"/>
+        <path d="M24 4v4a2.5 2.5 0 000-4z" opacity="0.45"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       PROFILE ZONE
+       "누구의 서재인가"
+  ══════════════════════════════════ -->
+  <div class="profile-section anim d1">
+
+    <!-- 상단: 아바타 + 이름 + 액션 -->
+    <div class="profile-top-row">
+      <div class="avatar-wrap">
+        <div class="avatar">이</div>
+        <div class="avatar-cam">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="3"/><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 00-2 2v11a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="profile-id">
+        <div class="profile-name">이지현</div>
+        <div class="profile-bio">책 속에서 길을 찾는 중 🌿</div>
+      </div>
+
+      <div class="profile-actions">
+        <button class="p-btn hi">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+          </svg>
+        </button>
+        <button class="p-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 하단: 소셜 숫자 + 스트릭 -->
+    <div class="profile-bottom-row">
+      <div class="social-block">
+        <span class="social-num">128</span>
+        <span class="social-lbl">팔로워</span>
+      </div>
+      <div class="social-divider"></div>
+      <div class="social-block">
+        <span class="social-num">64</span>
+        <span class="social-lbl">팔로잉</span>
+      </div>
+      <div class="streak-pill">🔥 5일 연속</div>
+    </div>
+
+    <!-- 소셜 피드 미리보기: 팔로워 활동 -->
+    <div class="social-feed-strip">
+      <div class="feed-avatars">
+        <div class="feed-avatar fa-1">민</div>
+        <div class="feed-avatar fa-2">수</div>
+        <div class="feed-avatar fa-3">지</div>
+      </div>
+      <div class="feed-text">
+        <strong>민지</strong>님이 파친코를 완독했어요 · <strong>수현</strong>님이 문장을 수집했어요
+      </div>
+      <svg class="feed-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </div>
+
+  </div><!-- /profile-section -->
+
+  <!-- 구분 -->
+  <div class="section-gap"></div>
+
+  <!-- ══════════════════════════════════
+       SESSION ZONE
+       "지금 뭘 읽을 것인가"
+  ══════════════════════════════════ -->
+
+  <!-- Today -->
+  <div class="today-banner anim d2">
+    <div class="today-ico">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#42bf6a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </div>
+    <div class="today-copy">
+      <div class="today-title">오늘 목표 달성!</div>
+      <div class="today-sub">목표 30분 · 1시간 7분 초과 달성</div>
+    </div>
+    <div class="today-stat">
+      1h 7m
+      <small>오늘 독서</small>
+    </div>
+  </div>
+
+  <!-- Hero label -->
+  <div class="sec-label anim d3">지금 읽는 책</div>
+
+  <!-- Hero card -->
+  <div class="hero-wrap anim d3">
+    <div class="hero-card">
+      <div class="hero-cover cov-a">
+        <div class="cover-inner">
+          <div class="cover-eng">han kang</div>
+          <div class="cover-ko">채식<br>주의자</div>
+          <div class="cover-rule"></div>
+          <div class="cover-auth">한강</div>
+        </div>
+      </div>
+      <div class="hero-body">
+        <div class="last-session">
+          <span class="last-dot"></span>
+          어제 오후 11:21 · 45분
+        </div>
+        <div class="hero-book-title">채식주의자</div>
+        <div class="hero-book-author">한강</div>
+        <div class="hero-chapter">8장 · 침묵</div>
+        <div class="hero-page-ctx">186쪽 · 14페이지면 9장</div>
+        <div class="hero-prog-track">
+          <div class="hero-prog-fill" data-w="62" style="width:0%"></div>
+        </div>
+        <button class="hero-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          이어 읽기 · 186쪽
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shelf -->
+  <div class="shelf-section anim d4">
+    <div class="shelf-hd">
+      <span class="shelf-title">다른 독서 중 책</span>
+      <span class="shelf-more">2권 더</span>
+    </div>
+    <div class="shelf-scroll">
+      <div class="shelf-card">
+        <div class="shelf-cover cov-b">
+          <div class="shelf-cover-inner" style="align-items:flex-end">
+            <div class="shelf-prog-pill">34%</div>
+          </div>
+        </div>
+        <div class="shelf-body">
+          <div class="shelf-title-ko">파친코</div>
+          <div class="shelf-author">이민진</div>
+          <button class="shelf-btn">이어 읽기</button>
+        </div>
+      </div>
+      <div class="shelf-card">
+        <div class="shelf-cover cov-c">
+          <div class="shelf-cover-inner" style="align-items:flex-end">
+            <div class="shelf-prog-pill">28%</div>
+          </div>
+        </div>
+        <div class="shelf-body">
+          <div class="shelf-title-ko">지구 끝의 온실</div>
+          <div class="shelf-author">김초엽</div>
+          <button class="shelf-btn">이어 읽기</button>
+        </div>
+      </div>
+      <div class="shelf-card" style="border-style:dashed;border-color:rgba(66,191,106,0.18);display:flex;align-items:center;justify-content:center;min-height:185px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(66,191,106,0.1);display:flex;align-items:center;justify-content:center;color:var(--green);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <span style="font-size:10px;color:var(--muted);font-family:var(--font-ko);text-align:center;line-height:1.5;">책 추가</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full library -->
+  <div class="full-lib anim d5">
+    <div class="full-lib-hd">
+      <div class="full-lib-title">전체 서재</div>
+      <span class="lib-count">8권</span>
+    </div>
+    <div class="tab-row">
+      <div class="tab-slide" id="tabSlide"></div>
+      <button class="tab-btn on" onclick="setTab(this,0)">독서 중</button>
+      <button class="tab-btn" onclick="setTab(this,1)">완독</button>
+      <button class="tab-btn" onclick="setTab(this,2)">위시</button>
+    </div>
+
+    <div class="book-rows" id="panel-0">
+      <div class="book-row">
+        <div class="row-cover cov-a"><div class="row-cover-inner"><div class="row-cover-ko">채식<br>주의자</div></div></div>
+        <div class="row-info">
+          <div class="row-title">채식주의자</div>
+          <div class="row-author">한강</div>
+          <div class="row-session"><span class="row-session-dot"></span>어제 · 45분 · 8장</div>
+        </div>
+        <div class="row-right">
+          <div class="row-pct">62%</div>
+          <div class="row-prog-track"><div class="row-prog-fill" data-w="62" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="book-row">
+        <div class="row-cover cov-b"><div class="row-cover-inner"><div class="row-cover-ko">파친코</div></div></div>
+        <div class="row-info">
+          <div class="row-title">파친코</div>
+          <div class="row-author">이민진</div>
+          <div class="row-session"><span class="row-session-dot"></span>3일 전 · 30분 · 5장</div>
+        </div>
+        <div class="row-right">
+          <div class="row-pct">34%</div>
+          <div class="row-prog-track"><div class="row-prog-fill" data-w="34" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="book-row">
+        <div class="row-cover cov-c"><div class="row-cover-inner"><div class="row-cover-ko">지구<br>온실</div></div></div>
+        <div class="row-info">
+          <div class="row-title">지구 끝의 온실</div>
+          <div class="row-author">김초엽</div>
+          <div class="row-session"><span class="row-session-dot"></span>5일 전 · 55분 · 3장</div>
+        </div>
+        <div class="row-right">
+          <div class="row-pct">28%</div>
+          <div class="row-prog-track"><div class="row-prog-fill" data-w="28" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="book-rows" id="panel-1" style="display:none">
+      <div class="book-row">
+        <div class="row-cover" style="background:linear-gradient(155deg,#1a1030,#0d0820)"><div class="row-cover-inner"><div class="row-cover-ko">82년생<br>김지영</div></div></div>
+        <div class="row-info">
+          <div class="row-title">82년생 김지영</div>
+          <div class="row-author">조남주</div>
+          <div class="row-session" style="color:rgba(66,191,106,0.6)">✓ 5월 10일 완독</div>
+        </div>
+        <div class="row-right">
+          <div class="row-done-badge">완독</div>
+          <div class="row-done-date">3h 24m</div>
+        </div>
+      </div>
+      <div class="book-row">
+        <div class="row-cover" style="background:linear-gradient(155deg,#102030,#080f1a)"><div class="row-cover-inner"><div class="row-cover-ko">아몬드</div></div></div>
+        <div class="row-info">
+          <div class="row-title">아몬드</div>
+          <div class="row-author">손원평</div>
+          <div class="row-session" style="color:rgba(66,191,106,0.6)">✓ 4월 28일 완독</div>
+        </div>
+        <div class="row-right">
+          <div class="row-done-badge">완독</div>
+          <div class="row-done-date">5h 12m</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="book-rows" id="panel-2" style="display:none">
+      <div class="book-row">
+        <div class="row-cover cov-d"><div class="row-cover-inner"><div class="row-cover-ko">불편한<br>편의점</div></div></div>
+        <div class="row-info">
+          <div class="row-title">불편한 편의점</div>
+          <div class="row-author">김호연</div>
+          <div class="row-session">🔖 위시리스트</div>
+        </div>
+        <div class="row-right"><button class="row-wish-btn">독서 시작</button></div>
+      </div>
+      <div class="book-row">
+        <div class="row-cover" style="background:linear-gradient(155deg,#0a1828,#050f18)"><div class="row-cover-inner"><div class="row-cover-ko">달러<br>구트</div></div></div>
+        <div class="row-info">
+          <div class="row-title">달러구트 꿈 백화점</div>
+          <div class="row-author">이미예</div>
+          <div class="row-session">🔖 위시리스트</div>
+        </div>
+        <div class="row-right"><button class="row-wish-btn">독서 시작</button></div>
+      </div>
+      <div class="book-row">
+        <div class="row-cover" style="background:linear-gradient(155deg,#1a1a08,#0f0f05)"><div class="row-cover-inner"><div class="row-cover-ko">작별<br>인사</div></div></div>
+        <div class="row-info">
+          <div class="row-title">작별인사</div>
+          <div class="row-author">김영하</div>
+          <div class="row-session">🔖 위시리스트</div>
+        </div>
+        <div class="row-right"><button class="row-wish-btn">독서 시작</button></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Bottom Nav -->
+<div class="nav-bar">
+  <div class="nav-it">
+    <div class="nav-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </div>
+    <span class="nav-lbl">홈</span>
+  </div>
+  <div class="nav-it">
+    <div class="nav-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    </div>
+    <span class="nav-lbl">피드</span>
+  </div>
+  <div class="nav-center">
+    <button class="timer-fab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </button>
+  </div>
+  <div class="nav-it">
+    <div class="nav-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    </div>
+    <span class="nav-lbl">분석</span>
+  </div>
+  <div class="nav-it on">
+    <div class="nav-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" fill="rgba(66,191,106,0.18)"/>
+        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" fill="rgba(66,191,106,0.18)"/>
+      </svg>
+    </div>
+    <span class="nav-lbl">서재</span>
+  </div>
+</div>
+
+<script>
+  function setTab(btn, idx) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('tabSlide').style.transform = `translateX(${idx * 100}%)`;
+    for (let i = 0; i < 3; i++)
+      document.getElementById('panel-' + i).style.display = i === idx ? 'flex' : 'none';
+    animateProgress();
+  }
+
+  function animateProgress() {
+    document.querySelectorAll('.hero-prog-fill, .row-prog-fill').forEach(bar => {
+      const w = bar.dataset.w; if (!w) return;
+      bar.style.width = '0%';
+      requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = w + '%'; }));
+    });
+  }
+
+  window.addEventListener('load', () => setTimeout(animateProgress, 300));
+</script>
+</body>
+</html>
