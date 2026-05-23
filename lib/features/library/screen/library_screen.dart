@@ -25,6 +25,36 @@ import '../widget/library_stats_view.dart';
 import '../../../shared/widgets/book_cover.dart';
 
 import '../widget/today_goal_banner.dart';
+import '../../../shared/models/user_profile.dart';
+
+final activeReadersProvider = FutureProvider<List<UserProfile>>((ref) async {
+  if (kUseMock) return const [];
+  final client = Supabase.instance.client;
+  final me = client.auth.currentUser?.id;
+  if (me == null) return const [];
+
+  final now = DateTime.now();
+  final todayStart = DateTime(now.year, now.month, now.day).toUtc();
+
+  final rows = await client
+      .from('reading_sessions')
+      .select(
+        'user_id, profiles!reading_sessions_user_id_fkey(id, display_name, username)',
+      )
+      .neq('user_id', me)
+      .gte('started_at', todayStart.toIso8601String())
+      .order('started_at', ascending: false);
+
+  final seen = <String>{};
+  final readers = <UserProfile>[];
+  for (final row in rows as List) {
+    final profile = row['profiles'] as Map<String, dynamic>?;
+    if (profile == null) continue;
+    final id = profile['id'] as String? ?? '';
+    if (seen.add(id)) readers.add(UserProfile.fromRow(profile));
+  }
+  return readers;
+});
 
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
@@ -410,9 +440,22 @@ class _LibraryTab extends StatefulWidget {
 }
 
 class _LibraryTabState extends State<_LibraryTab> {
-  ReadingStatus _selectedStatus = ReadingStatus.reading;
+  late ReadingStatus _selectedStatus;
   _LibraryViewMode _viewMode = _LibraryViewMode.grid;
   _SortOption _sortOption = _SortOption.recent;
+
+  @override
+  void initState() {
+    super.initState();
+    final hasReading = widget.books.any((b) => b.status == ReadingStatus.reading);
+    if (hasReading && widget.books.any((b) => b.status == ReadingStatus.completed)) {
+      _selectedStatus = ReadingStatus.completed;
+    } else if (hasReading) {
+      _selectedStatus = ReadingStatus.wantToRead;
+    } else {
+      _selectedStatus = ReadingStatus.reading;
+    }
+  }
 
   ReadingLog? _lastLogFor(Book book) =>
       widget.logs.where((l) => l.bookTitle == book.title).firstOrNull;
@@ -1506,13 +1549,27 @@ class _SortSheet extends StatelessWidget {
 }
 
 // ─── 소셜 피드 스트립 ────────────────────────────────────────────────────────
-class _SocialFeedStrip extends StatelessWidget {
+class _SocialFeedStrip extends ConsumerWidget {
   const _SocialFeedStrip();
 
+  static const _avatarColors = [
+    Color(0xFF4CAF50),
+    Color(0xFF2196F3),
+    Color(0xFFFF9800),
+    Color(0xFFE91E63),
+    Color(0xFF9C27B0),
+  ];
+
+  static Color _colorFor(String id) =>
+      _avatarColors[id.hashCode.abs() % _avatarColors.length];
+
   @override
-  Widget build(BuildContext context) {
-    const avatarColors = [Color(0xFF4CAF50), Color(0xFF2196F3), Color(0xFFFF9800)];
-    const avatarLabels = ['김', '박', '이'];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final readers = ref.watch(activeReadersProvider).valueOrNull;
+    if (readers == null || readers.isEmpty) return const SizedBox.shrink();
+
+    final shown = readers.take(3).toList();
+    final extra = readers.length - 1;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1533,11 +1590,11 @@ class _SocialFeedStrip extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                width: 52,
+                width: 16.0 * (shown.length - 1) + 26,
                 height: 26,
                 child: Stack(
                   children: [
-                    for (var i = 0; i < 3; i++)
+                    for (var i = 0; i < shown.length; i++)
                       Positioned(
                         left: i * 16.0,
                         child: Container(
@@ -1545,12 +1602,14 @@ class _SocialFeedStrip extends StatelessWidget {
                           height: 26,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: avatarColors[i],
+                            color: _colorFor(shown[i].id),
                             border: Border.all(color: context.appBg, width: 2),
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            avatarLabels[i],
+                            shown[i].displayName.isNotEmpty
+                                ? shown[i].displayName[0]
+                                : '?',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1571,13 +1630,17 @@ class _SocialFeedStrip extends StatelessWidget {
                     ),
                     children: [
                       TextSpan(
-                        text: '김민준',
+                        text: shown[0].displayName,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: context.appTextPrimary,
                         ),
                       ),
-                      const TextSpan(text: ' 외 2명이 지금 독서 중'),
+                      TextSpan(
+                        text: extra > 0
+                            ? ' 외 $extra명이 지금 독서 중'
+                            : '이 지금 독서 중',
+                      ),
                     ],
                   ),
                 ),
