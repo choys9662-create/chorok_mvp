@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,29 @@ const _kSurface = AppTheme.darkSurface;
 const _kSurfaceElevated = AppTheme.darkCardElevated;
 const _kTextSecondary = AppTheme.textSecondary;
 const _kFont = '조선굴림체';
+
+const List<String> _kTopics = [
+  '이 책의 제목이 품고 있는 의미는 무엇일까요?',
+  '저자가 이 책을 쓴 이유는 무엇이었을까요?',
+  '오늘 독서에서 어떤 문장을 초서하고 싶은가요?',
+  '이 책이 나의 삶에 어떤 질문을 던질까요?',
+  '읽기 전, 이 책에서 기대하는 한 가지는 무엇인가요?',
+  '이 책의 주인공은 지금 어떤 상황에 있을까요?',
+  '저자가 가장 전하고 싶은 것은 무엇일까요?',
+  '이 책에서 가장 기억될 순간은 어디일까요?',
+  '이 책을 읽고 나면 무엇이 달라져 있을까요?',
+  '지금 내가 이 책을 읽는 이유는 무엇인가요?',
+  '이 책이 다루는 세계는 나의 현실과 어떻게 다를까요?',
+  '오늘 독서에서 배울 가장 소중한 것은 무엇일까요?',
+  '마음에 가장 먼저 남을 문장은 어떤 모습일까요?',
+  '이 책이 던지는 첫 번째 질문은 무엇일까요?',
+  '책장을 넘기며 처음 느낄 감정은 무엇일까요?',
+];
+
+String _generateTopic(String bookTitle) {
+  final h = bookTitle.codeUnits.fold(0, (a, b) => a + b);
+  return _kTopics[h % _kTopics.length];
+}
 
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
@@ -91,6 +115,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     }
   }
 
+  void _dismissTopicAndStart() {
+    setState(() => _showTopic = false);
+    final timer = ref.read(timerProvider);
+    if (timer.isIdle) {
+      ref.read(timerProvider.notifier).start(goal: widget.goal);
+    }
+    _resetUiTimer();
+  }
+
   void _openReadersSheet() {
     _uiHideTimer?.cancel();
     showModalBottomSheet(
@@ -101,21 +134,44 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     ).then((_) => _resetUiTimer());
   }
 
+  void _openCollectedSentencesSheet() {
+    if (_collectedSentences.isEmpty) return;
+    _uiHideTimer?.cancel();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _CollectedSentencesSheet(
+        sentences: List.unmodifiable(_collectedSentences),
+      ),
+    ).then((_) => _resetUiTimer());
+  }
+
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
 
   bool _isRecording = false;
-  bool _isOcrLoading = false;
   bool _showSlideToStop = false;
+  bool _showTopic = true;
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
     ref.read(timerProvider.notifier).pause();
-    setState(() => _isOcrLoading = true);
-    final result = await ref.read(ocrServiceProvider).extractTextFromCamera();
+    _uiHideTimer?.cancel();
+    final result = await Navigator.of(context).push<OcrResult>(
+      PageRouteBuilder(
+        pageBuilder: (_, animation, _) => const _OcrCaptureScreen(),
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 180),
+        transitionsBuilder: (_, animation, _, child) => FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        ),
+      ),
+    );
     if (!mounted) return;
-    setState(() => _isOcrLoading = false);
-    switch (result) {
+    _resetUiTimer();
+    switch (result ?? const OcrCancelled()) {
       case OcrSuccess(text: final text):
         _openChosuSheet(initialText: text);
       case OcrNoText():
@@ -212,8 +268,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final timer = ref.read(timerProvider);
-      if (timer.isIdle) {
-        ref.read(timerProvider.notifier).start(goal: widget.goal);
+      if (!timer.isIdle) {
+        // 타이머 이미 실행 중 — 화두 오버레이 건너뜀
+        setState(() => _showTopic = false);
       }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       WakelockPlus.enable();
@@ -498,7 +555,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                         fontFamily: _kFont,
                                       ),
                                     ),
-                                    const SizedBox(height: 32),
+                                    if (_collectedSentences.isNotEmpty) ...[
+                                      const SizedBox(height: 18),
+                                      _SessionSentencePreview(
+                                        sentences: _collectedSentences,
+                                        onTap: _openCollectedSentencesSheet,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ] else
+                                      const SizedBox(height: 32),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
@@ -512,11 +577,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                                           onTap: () => _openChosuSheet(),
                                         ),
                                         _ActionButton(
-                                          icon: _isOcrLoading
-                                              ? Icons.hourglass_empty_rounded
-                                              : Icons.camera_alt_rounded,
+                                          icon: Icons.camera_alt_rounded,
                                           onTap: _openOcr,
-                                          isActive: _isOcrLoading,
                                         ),
                                         _ActionButton(
                                           icon: _isRecording
@@ -540,17 +602,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 ),
               ),
 
-              // ⑤ OCR 로딩 오버레이
-              if (_isOcrLoading) const _OcrLoadingOverlay(),
-
-              // ⑥ 녹음 오버레이
+              // ⑤ 녹음 오버레이
               if (_isRecording)
                 _RecordingOverlay(
                   recognizedText: _recognizedText,
                   onStop: _toggleRecording,
                 ),
 
-              // ⑦ 슬라이드 종료 오버레이
+              // ⑥ 슬라이드 종료 오버레이
               if (_showSlideToStop)
                 _SlideToStopOverlay(
                   onConfirm: () {
@@ -558,6 +617,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     _onStop();
                   },
                   onDismiss: _dismissSlideToUnlock,
+                ),
+
+              // ⑦ 화두 오버레이
+              if (_showTopic)
+                _TodaysTopicOverlay(
+                  bookTitle: widget.bookTitle,
+                  onStart: _dismissTopicAndStart,
                 ),
             ],
           ),
@@ -830,6 +896,286 @@ class _SingleNamedOrb extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── 이번 세션에 기록한 문장 미리보기 ─────────────────────────────────────
+class _SessionSentencePreview extends StatelessWidget {
+  final List<CollectedSentence> sentences;
+  final VoidCallback onTap;
+
+  const _SessionSentencePreview({required this.sentences, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final latest = sentences.last;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0B100B).withValues(alpha: 0.86),
+          border: Border.all(color: _kGreen.withValues(alpha: 0.18), width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.format_quote_rounded,
+                  size: 15,
+                  color: _kGreen.withValues(alpha: 0.9),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '기록한 문장',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.72),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: _kFont,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: _kGreen.withValues(alpha: 0.13),
+                  ),
+                  child: Text(
+                    '${sentences.length}',
+                    style: TextStyle(
+                      color: _kGreen.withValues(alpha: 0.95),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.42),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '"${latest.content}"',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                height: 1.45,
+                fontStyle: FontStyle.italic,
+                fontFamily: _kFont,
+              ),
+            ),
+            if (latest.thought.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.edit_note_rounded,
+                    size: 14,
+                    color: _kGreen.withValues(alpha: 0.58),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      latest.thought,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _kTextSecondary.withValues(alpha: 0.78),
+                        fontSize: 12,
+                        height: 1.35,
+                        fontFamily: _kFont,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectedSentencesSheet extends StatelessWidget {
+  final List<CollectedSentence> sentences;
+
+  const _CollectedSentencesSheet({required this.sentences});
+
+  @override
+  Widget build(BuildContext context) {
+    final ordered = sentences.reversed.toList(growable: false);
+    final maxListHeight = MediaQuery.of(context).size.height * 0.56;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Icon(
+                    Icons.format_quote_rounded,
+                    color: _kGreen.withValues(alpha: 0.9),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '이번 세션 문장',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${sentences.length}',
+                    style: TextStyle(
+                      color: _kGreen.withValues(alpha: 0.88),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxListHeight),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: ordered.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    return _CollectedSentenceTile(
+                      sentence: ordered[index],
+                      number: sentences.length - index,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectedSentenceTile extends StatelessWidget {
+  final CollectedSentence sentence;
+  final int number;
+
+  const _CollectedSentenceTile({required this.sentence, required this.number});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: _kSurfaceElevated,
+        border: Border.all(color: _kGreen.withValues(alpha: 0.12), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$number번째 문장',
+            style: TextStyle(
+              color: _kGreen.withValues(alpha: 0.82),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              fontFamily: _kFont,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '"${sentence.content}"',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              height: 1.6,
+              fontStyle: FontStyle.italic,
+              fontFamily: _kFont,
+            ),
+          ),
+          if (sentence.thought.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.edit_note_rounded,
+                  size: 16,
+                  color: _kGreen.withValues(alpha: 0.62),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    sentence.thought,
+                    style: TextStyle(
+                      color: _kTextSecondary.withValues(alpha: 0.9),
+                      fontSize: 13,
+                      height: 1.55,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1164,7 +1510,631 @@ class _GlowOrb extends StatelessWidget {
   }
 }
 
-// ─── OCR 로딩 오버레이 ─────────────────────────────────────────────────
+// ─── OCR 촬영 화면 ───────────────────────────────────────────────────────
+class _OcrCaptureScreen extends ConsumerStatefulWidget {
+  const _OcrCaptureScreen();
+
+  @override
+  ConsumerState<_OcrCaptureScreen> createState() => _OcrCaptureScreenState();
+}
+
+class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
+    with SingleTickerProviderStateMixin {
+  CameraController? _cameraCtrl;
+  late final AnimationController _pulseCtrl;
+  bool _initializing = true;
+  bool _processing = false;
+  bool _torchOn = false;
+  String? _statusMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1300),
+    )..repeat(reverse: true);
+    _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    _cameraCtrl?.dispose();
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _initializing = false;
+          _statusMessage = '사용할 수 있는 카메라가 없어요';
+        });
+        return;
+      }
+
+      final camera = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+        orElse: () => cameras.first,
+      );
+      final controller = CameraController(
+        camera,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      _cameraCtrl = controller;
+
+      await controller.initialize();
+      await controller.setFlashMode(FlashMode.off);
+      if (!mounted) return;
+      setState(() => _initializing = false);
+    } on CameraException catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _initializing = false;
+        _statusMessage = '카메라를 열 수 없어요';
+      });
+    }
+  }
+
+  Future<void> _capture() async {
+    final controller = _cameraCtrl;
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        controller.value.isTakingPicture ||
+        _processing) {
+      return;
+    }
+
+    setState(() {
+      _processing = true;
+      _statusMessage = null;
+    });
+    HapticFeedback.mediumImpact();
+
+    try {
+      final photo = await controller.takePicture();
+      final bytes = await photo.readAsBytes();
+      final result = await ref
+          .read(ocrServiceProvider)
+          .extractTextFromBytes(bytes);
+      if (!mounted) return;
+      Navigator.of(context).pop(result);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _processing = false;
+        _statusMessage = '촬영 중 문제가 생겼어요. 다시 시도해 주세요';
+      });
+    }
+  }
+
+  Future<void> _toggleTorch() async {
+    final controller = _cameraCtrl;
+    if (controller == null || !controller.value.isInitialized || _processing) {
+      return;
+    }
+
+    try {
+      final next = !_torchOn;
+      await controller.setFlashMode(next ? FlashMode.torch : FlashMode.off);
+      if (!mounted) return;
+      setState(() => _torchOn = next);
+      HapticFeedback.selectionClick();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _statusMessage = '플래시를 사용할 수 없어요');
+    }
+  }
+
+  void _close() {
+    Navigator.of(context).pop(const OcrCancelled());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _cameraCtrl;
+    final cameraReady = controller?.value.isInitialized == true;
+    final canCapture = cameraReady && !_processing && _statusMessage == null;
+
+    return Theme(
+      data: AppTheme.dark,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (cameraReady && controller != null)
+              _CameraPreviewCover(controller: controller)
+            else
+              _CameraPreparingView(
+                initializing: _initializing,
+                message: _statusMessage,
+              ),
+            Positioned.fill(child: _QuoteCameraOverlay(pulseCtrl: _pulseCtrl)),
+            _CaptureTopBar(
+              torchOn: _torchOn,
+              torchEnabled: cameraReady && !_processing,
+              onBack: _close,
+              onTorch: _toggleTorch,
+            ),
+            _CaptureBottomBar(
+              canCapture: canCapture,
+              processing: _processing,
+              message: _statusMessage,
+              onCapture: _capture,
+            ),
+            if (_processing) const _OcrLoadingOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraPreviewCover extends StatelessWidget {
+  final CameraController controller;
+
+  const _CameraPreviewCover({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final previewSize = controller.value.previewSize;
+    if (previewSize == null) {
+      return CameraPreview(controller);
+    }
+
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: previewSize.height,
+          height: previewSize.width,
+          child: CameraPreview(controller),
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraPreparingView extends StatelessWidget {
+  final bool initializing;
+  final String? message;
+
+  const _CameraPreparingView({required this.initializing, this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF050805), Colors.black],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              initializing
+                  ? Icons.camera_alt_rounded
+                  : Icons.camera_alt_outlined,
+              color: Colors.white.withValues(alpha: 0.72),
+              size: 40,
+            ),
+            const SizedBox(height: 18),
+            if (initializing)
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: _kGreen,
+                  strokeWidth: 2,
+                ),
+              )
+            else
+              Text(
+                message ?? '카메라를 준비하지 못했어요',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontFamily: _kFont,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuoteCameraOverlay extends StatelessWidget {
+  final Animation<double> pulseCtrl;
+
+  const _QuoteCameraOverlay({required this.pulseCtrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: pulseCtrl,
+      builder: (context, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final size = Size(constraints.maxWidth, constraints.maxHeight);
+            final padding = MediaQuery.paddingOf(context);
+            final frameW = math.min(size.width - 44, 360.0);
+            final maxFrameH = math.max(
+              190.0,
+              size.height - padding.top - padding.bottom - 230,
+            );
+            final frameH = math.min(math.max(frameW * 0.64, 210.0), maxFrameH);
+            final frameLeft = (size.width - frameW) / 2;
+            final frameTop = (size.height - frameH) / 2 - 22;
+            final frameRect = Rect.fromLTWH(
+              frameLeft,
+              frameTop,
+              frameW,
+              frameH,
+            );
+            final quoteAlpha = 0.54 + pulseCtrl.value * 0.28;
+
+            return SizedBox.expand(
+              child: CustomPaint(
+                painter: _QuoteGuidePainter(
+                  frameRect: frameRect,
+                  pulse: pulseCtrl.value,
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned(
+                      left: frameLeft - 2,
+                      top: frameTop - 52,
+                      child: _GuideQuote(mark: '“', opacity: quoteAlpha),
+                    ),
+                    Positioned(
+                      right: frameLeft - 2,
+                      top: frameTop + frameH - 28,
+                      child: _GuideQuote(mark: '”', opacity: quoteAlpha),
+                    ),
+                    ...List.generate(4, (index) {
+                      final top = frameTop + frameH * (0.28 + index * 0.12);
+                      return Positioned(
+                        left: frameLeft + 42,
+                        right: frameLeft + 42,
+                        top: top,
+                        child: Container(
+                          height: 1,
+                          color: Colors.white.withValues(alpha: 0.16),
+                        ),
+                      );
+                    }),
+                    Positioned(
+                      left: 28,
+                      right: 28,
+                      top: frameTop + frameH + 56,
+                      child: Text(
+                        '문장을 따옴표 안에 맞춰주세요',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: _kFont,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _GuideQuote extends StatelessWidget {
+  final String mark;
+  final double opacity;
+
+  const _GuideQuote({required this.mark, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      mark,
+      style: TextStyle(
+        color: _kGreen.withValues(alpha: opacity),
+        fontSize: 86,
+        height: 1,
+        fontWeight: FontWeight.w400,
+        fontFamily: _kFont,
+        shadows: [
+          Shadow(color: _kGreen.withValues(alpha: 0.45), blurRadius: 22),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuoteGuidePainter extends CustomPainter {
+  final Rect frameRect;
+  final double pulse;
+
+  const _QuoteGuidePainter({required this.frameRect, required this.pulse});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fullRect = Offset.zero & size;
+    final cutout = RRect.fromRectAndRadius(
+      frameRect,
+      const Radius.circular(18),
+    );
+    final overlayPath = Path()
+      ..addRect(fullRect)
+      ..addRRect(cutout)
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(
+      overlayPath,
+      Paint()..color = Colors.black.withValues(alpha: 0.38),
+    );
+
+    final borderPaint = Paint()
+      ..color = _kGreen.withValues(alpha: 0.22 + pulse * 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawRRect(cutout, borderPaint);
+
+    final cornerPaint = Paint()
+      ..color = _kGreen.withValues(alpha: 0.72 + pulse * 0.18)
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3;
+    const corner = 34.0;
+    const inset = 2.0;
+    final l = frameRect.left + inset;
+    final t = frameRect.top + inset;
+    final r = frameRect.right - inset;
+    final b = frameRect.bottom - inset;
+
+    canvas.drawLine(Offset(l, t + corner), Offset(l, t), cornerPaint);
+    canvas.drawLine(Offset(l, t), Offset(l + corner, t), cornerPaint);
+    canvas.drawLine(Offset(r - corner, t), Offset(r, t), cornerPaint);
+    canvas.drawLine(Offset(r, t), Offset(r, t + corner), cornerPaint);
+    canvas.drawLine(Offset(l, b - corner), Offset(l, b), cornerPaint);
+    canvas.drawLine(Offset(l, b), Offset(l + corner, b), cornerPaint);
+    canvas.drawLine(Offset(r - corner, b), Offset(r, b), cornerPaint);
+    canvas.drawLine(Offset(r, b - corner), Offset(r, b), cornerPaint);
+  }
+
+  @override
+  bool shouldRepaint(_QuoteGuidePainter old) =>
+      old.frameRect != frameRect || old.pulse != pulse;
+}
+
+class _CaptureTopBar extends StatelessWidget {
+  final bool torchOn;
+  final bool torchEnabled;
+  final VoidCallback onBack;
+  final VoidCallback onTorch;
+
+  const _CaptureTopBar({
+    required this.torchOn,
+    required this.torchEnabled,
+    required this.onBack,
+    required this.onTorch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: Row(
+            children: [
+              _CaptureIconButton(
+                icon: Icons.close_rounded,
+                label: '닫기',
+                onTap: onBack,
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                decoration: ShapeDecoration(
+                  color: Colors.black.withValues(alpha: 0.52),
+                  shape: StadiumBorder(
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.14),
+                    ),
+                  ),
+                ),
+                child: const Text(
+                  '문장 촬영',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: _kFont,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              _CaptureIconButton(
+                icon: torchOn
+                    ? Icons.flash_on_rounded
+                    : Icons.flash_off_rounded,
+                label: torchOn ? '플래시 끄기' : '플래시 켜기',
+                onTap: torchEnabled ? onTorch : null,
+                active: torchOn,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CaptureIconButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool active;
+
+  const _CaptureIconButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      label: label,
+      enabled: enabled,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active
+                ? _kGreen.withValues(alpha: 0.18)
+                : Colors.black.withValues(alpha: 0.48),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: active
+                  ? _kGreen.withValues(alpha: 0.34)
+                  : Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: enabled
+                ? (active ? _kGreen : Colors.white)
+                : Colors.white.withValues(alpha: 0.32),
+            size: 22,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CaptureBottomBar extends StatelessWidget {
+  final bool canCapture;
+  final bool processing;
+  final String? message;
+  final VoidCallback onCapture;
+
+  const _CaptureBottomBar({
+    required this.canCapture,
+    required this.processing,
+    required this.message,
+    required this.onCapture,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(28, 34, 28, bottom + 24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              Colors.black.withValues(alpha: 0.9),
+              Colors.black.withValues(alpha: 0.66),
+              Colors.transparent,
+            ],
+            stops: const [0, 0.58, 1],
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 22,
+              child: Text(
+                message ?? (processing ? '텍스트 인식 중...' : '흔들림 없이 한 번에'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: message == null
+                      ? Colors.white.withValues(alpha: 0.68)
+                      : _kGreen.withValues(alpha: 0.9),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: _kFont,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            GestureDetector(
+              onTap: canCapture ? onCapture : null,
+              child: AnimatedOpacity(
+                opacity: canCapture ? 1 : 0.45,
+                duration: const Duration(milliseconds: 180),
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      width: 3,
+                    ),
+                  ),
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: _kGreen.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kGreen.withValues(alpha: 0.32),
+                          blurRadius: 24,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _OcrLoadingOverlay extends StatelessWidget {
   const _OcrLoadingOverlay();
 
@@ -1499,6 +2469,157 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                 ),
 
                 // 우하단 취소(잠금) 버튼
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 오늘의 화두 오버레이 ─────────────────────────────────────────────────
+class _TodaysTopicOverlay extends StatefulWidget {
+  final String bookTitle;
+  final VoidCallback onStart;
+
+  const _TodaysTopicOverlay({required this.bookTitle, required this.onStart});
+
+  @override
+  State<_TodaysTopicOverlay> createState() => _TodaysTopicOverlayState();
+}
+
+class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _fadeCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final topic = _generateTopic(widget.bookTitle);
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.92),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '오늘의 화두',
+                  style: TextStyle(
+                    color: _kGreen.withValues(alpha: 0.75),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2,
+                    fontFamily: _kFont,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.bookTitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.40),
+                    fontSize: 14,
+                    fontFamily: _kFont,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _kGreen.withValues(alpha: 0.20),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    topic,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      height: 1.75,
+                      fontWeight: FontWeight.w300,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 56),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    widget.onStart();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _kGreen,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kGreen.withValues(alpha: 0.40),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      '독서 시작하기',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: _kFont,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    widget.onStart();
+                  },
+                  child: SizedBox(
+                    height: 44,
+                    child: Center(
+                      child: Text(
+                        '건너뛰기',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.30),
+                          fontSize: 13,
+                          fontFamily: _kFont,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

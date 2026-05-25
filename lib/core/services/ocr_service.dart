@@ -28,14 +28,14 @@ class OcrSuccess extends OcrResult {
 
 abstract class OcrService {
   Future<OcrResult> extractTextFromCamera();
+  Future<OcrResult> extractTextFromBytes(List<int> bytes);
 }
 
 class CloudVisionOcrService implements OcrService {
   final _imagePicker = ImagePicker();
   static const _endpoint = 'https://vision.googleapis.com/v1/images:annotate';
   static final _httpClient = http.Client();
-  static String get _apiKey =>
-      dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
+  static String get _apiKey => dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
 
   @override
   Future<OcrResult> extractTextFromCamera() async {
@@ -44,12 +44,17 @@ class CloudVisionOcrService implements OcrService {
       imageQuality: 85,
     );
     if (photo == null) return const OcrCancelled();
+    final bytes = await photo.readAsBytes();
+    return extractTextFromBytes(bytes);
+  }
+
+  @override
+  Future<OcrResult> extractTextFromBytes(List<int> bytes) async {
     if (_apiKey.isEmpty) {
       return const OcrError('OCR API 키가 설정되지 않았어요');
     }
 
     try {
-      final bytes = await photo.readAsBytes();
       final base64Image = base64Encode(bytes);
 
       final response = await _httpClient.post(

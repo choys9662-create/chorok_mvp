@@ -23,6 +23,7 @@ import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
 import '../../library/screen/library_screen.dart';
 import '../controller/weekly_minutes_provider.dart';
+import '../controller/recommended_books_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
@@ -674,6 +675,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             isSaving: _isSavingPage,
                             onSave: _savePage,
                           ),
+                        const SizedBox(height: 16),
+                        _ChainLightningSection(),
                         const SizedBox(height: 24),
                       ],
                     ),
@@ -1811,6 +1814,142 @@ class _HeroPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── 체인 라이트닝 ─────────────────────────────────────────────────────────
+class _ChainLightningSection extends ConsumerWidget {
+  const _ChainLightningSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final booksAsync = ref.watch(recommendedBooksProvider);
+
+    return booksAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (books) {
+        if (books.isEmpty) return const SizedBox.shrink();
+        final book = books.first;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.bolt_rounded,
+                  size: 16,
+                  color: context.appPrimaryAccent,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '체인 라이트닝',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              decoration: AppTheme.smoothBox(
+                gradient: AppTheme.greenCardGradient,
+                radius: 20,
+                side: BorderSide.none,
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BookCover(
+                    coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
+                    gradientIndex: book.gradientIndex,
+                    width: 56,
+                    height: 72,
+                    radius: 8,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '다음으로 읽을 책',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: Colors.white.withValues(alpha: 0.65),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          book.title,
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          book.author,
+                          style: AppTheme.captionLarge.copyWith(
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            context.go(
+                              AppConstants.routeSession,
+                              extra: SessionExtra(
+                                bookTitle: book.title,
+                                bookAuthor: book.author,
+                                coverUrl: book.coverUrl.isEmpty
+                                    ? null
+                                    : book.coverUrl,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 14,
+                                  color: context.appPrimaryAccent,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '바로 읽기',
+                                  style: AppTheme.captionLarge.copyWith(
+                                    color: context.appPrimaryAccent,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
