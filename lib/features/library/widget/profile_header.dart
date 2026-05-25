@@ -4,6 +4,7 @@ import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
@@ -44,14 +45,30 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     }
     final user = Supabase.instance.client.auth.currentUser;
     _name = _displayNameFromMeta(user?.userMetadata, user?.email);
+    _loadProfile();
   }
 
   static String _displayNameFromMeta(Map? meta, String? email) {
+    final displayName = (meta?['display_name'] as String?)?.trim();
+    if (displayName != null && displayName.isNotEmpty) return displayName;
     final fullName = (meta?['full_name'] as String?)?.trim();
     if (fullName != null && fullName.isNotEmpty) return fullName;
     final name = (meta?['name'] as String?)?.trim();
     if (name != null && name.isNotEmpty) return name;
     return email?.split('@').first ?? '사용자';
+  }
+
+  Future<void> _loadProfile() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    final profile = await ProfileRepository(
+      Supabase.instance.client,
+    ).getById(user.id);
+    if (!mounted || profile == null) return;
+    setState(() {
+      if (profile.displayName.isNotEmpty) _name = profile.displayName;
+      _bio = profile.bio ?? '';
+    });
   }
 
   @override
@@ -263,9 +280,6 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
   void _showEditProfileSheet(BuildContext context) {
     HapticFeedback.selectionClick();
-    final nameController = TextEditingController(text: _name);
-    final bioController = TextEditingController(text: _bio);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -275,58 +289,14 @@ class _ProfileHeaderState extends State<ProfileHeader> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ChorokSheetHandle(),
-              const SizedBox(height: 20),
-              Text(
-                '프로필 편집',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: context.appTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _SheetField(controller: nameController, label: '이름', maxLines: 1),
-              const SizedBox(height: 12),
-              _SheetField(
-                controller: bioController,
-                label: '자기소개',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    setState(() {
-                      _name = nameController.text.trim().isEmpty
-                          ? _name
-                          : nameController.text.trim();
-                      _bio = bioController.text.trim();
-                    });
-                    Navigator.pop(context);
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: SmoothRectangleBorder(
-                      borderRadius: _buttonBorderRadius,
-                    ),
-                  ),
-                  child: const Text(
-                    '저장',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        child: _EditProfileSheet(
+          initialName: _name,
+          initialBio: _bio,
+          buttonBorderRadius: _buttonBorderRadius,
+          onSaved: (name, bio) => setState(() {
+            _name = name;
+            _bio = bio;
+          }),
         ),
       ),
     );
@@ -396,6 +366,142 @@ class _StatItem extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── 프로필 편집 시트 ──────────────────────────────────────────────────
+class _EditProfileSheet extends StatefulWidget {
+  final String initialName;
+  final String initialBio;
+  final SmoothBorderRadius buttonBorderRadius;
+  final void Function(String name, String bio) onSaved;
+
+  const _EditProfileSheet({
+    required this.initialName,
+    required this.initialBio,
+    required this.buttonBorderRadius,
+    required this.onSaved,
+  });
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _bioCtrl;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.initialName);
+    _bioCtrl = TextEditingController(text: widget.initialBio);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _bioCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.length < 2 || name.length > 20) {
+      setState(() => _error = '이름은 2~20자 사이로 입력해주세요');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      if (!kUseMock) {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null) {
+          await ProfileRepository(Supabase.instance.client).updateProfile(
+            userId,
+            displayName: name,
+            bio: _bioCtrl.text.trim(),
+          );
+        }
+      }
+      if (!mounted) return;
+      widget.onSaved(name, _bioCtrl.text.trim());
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = '저장에 실패했어요. 다시 시도해주세요';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ChorokSheetHandle(),
+          const SizedBox(height: 20),
+          Text(
+            '프로필 편집',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: context.appTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SheetField(controller: _nameCtrl, label: '이름', maxLines: 1),
+          const SizedBox(height: 12),
+          _SheetField(controller: _bioCtrl, label: '자기소개', maxLines: 3),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444)),
+            ),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: SmoothRectangleBorder(
+                  borderRadius: widget.buttonBorderRadius,
+                ),
+              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      '저장',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

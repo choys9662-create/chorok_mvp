@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../main.dart';
+import '../../../shared/repositories/profile_repository.dart';
 import '../util/auth_error.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -23,6 +24,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscure = true;
   bool _obscureConfirm = true;
   bool _loading = false;
+
+  // 닉네임 중복 확인 상태
+  bool _nicknameChecking = false;
+  bool? _nicknameAvailable; // null=미확인, true=사용가능, false=중복
+  String _lastCheckedName = '';
 
   // 실시간 검증 상태
   bool _nameTouched = false;
@@ -44,7 +50,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _pwConfirmCtrl.addListener(_rebuild);
   }
 
-  void _rebuild() => setState(() {});
+  void _rebuild() => setState(() {
+    if (_nameCtrl.text.trim() != _lastCheckedName) {
+      _nicknameAvailable = null;
+    }
+  });
 
   @override
   void dispose() {
@@ -70,6 +80,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!_nameTouched || _nameCtrl.text.isEmpty) return null;
     if (_nameCtrl.text.trim().length < 2) return '2자 이상 입력해주세요';
     if (_nameCtrl.text.trim().length > 10) return '10자 이하로 입력해주세요';
+    if (_nicknameAvailable == false) return '이미 사용 중인 닉네임이에요';
     return null;
   }
 
@@ -125,6 +136,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool get _requiredAgree => _agreeTerms && _agreePrivacy;
   bool get _canSubmit =>
       _isNameValid &&
+      _nicknameAvailable == true &&
       _isEmailValid &&
       _isPwValid &&
       _isPwConfirmValid &&
@@ -136,6 +148,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _agreePrivacy = v ?? false;
       _agreeMarketing = v ?? false;
     });
+  }
+
+  // ── 닉네임 중복 확인 ──
+  Future<void> _checkNickname() async {
+    HapticFeedback.selectionClick();
+    final name = _nameCtrl.text.trim();
+    setState(() {
+      _nicknameChecking = true;
+      _nameTouched = true;
+    });
+    try {
+      final available = await ProfileRepository(supabase).isUsernameAvailable(name);
+      if (!mounted) return;
+      setState(() {
+        _nicknameAvailable = available;
+        _lastCheckedName = name;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('중복 확인에 실패했어요. 다시 시도해주세요')),
+      );
+    } finally {
+      if (mounted) setState(() => _nicknameChecking = false);
+    }
   }
 
   // ── 회원가입 API ──
@@ -208,13 +245,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // ── 닉네임 ──
               _buildLabel('닉네임'),
               const SizedBox(height: 8),
-              _ValidatedField(
-                controller: _nameCtrl,
-                hint: '2~10자',
-                error: _nameError,
-                isValid:
-                    _nameTouched && _nameCtrl.text.isNotEmpty && _isNameValid,
-                onFocusLost: () => setState(() => _nameTouched = true),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _ValidatedField(
+                      controller: _nameCtrl,
+                      hint: '2~10자',
+                      error: _nameError,
+                      isValid: _nameTouched &&
+                          _nameCtrl.text.isNotEmpty &&
+                          _isNameValid &&
+                          _nicknameAvailable == true,
+                      onFocusLost: () => setState(() => _nameTouched = true),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _NicknameCheckButton(
+                    enabled: _isNameValid &&
+                        !_nicknameChecking &&
+                        _nicknameAvailable != true,
+                    loading: _nicknameChecking,
+                    confirmed: _nicknameAvailable == true,
+                    onTap: _checkNickname,
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 
@@ -602,6 +657,66 @@ class _TermRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── 닉네임 중복 확인 버튼 ────────────────────────────────────────────────────
+class _NicknameCheckButton extends StatelessWidget {
+  final bool enabled;
+  final bool loading;
+  final bool confirmed;
+  final VoidCallback onTap;
+
+  const _NicknameCheckButton({
+    required this.enabled,
+    required this.loading,
+    required this.confirmed,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 52,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: enabled
+              ? AppTheme.primary.withValues(alpha: 0.85)
+              : AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Center(
+                child: loading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        confirmed ? '확인됨' : '중복 확인',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: enabled ? Colors.white : AppTheme.textTertiary,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
