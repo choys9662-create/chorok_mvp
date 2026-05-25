@@ -1,0 +1,24 @@
+# 빌드 산출물
+build/
+.dart_tool/
+
+# 의존성
+.pub-cache/
+
+# 플랫폼 네이티브 코드 (분석 대상 아님)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Graphify 출력물
+graphify-out/
+
+# 에셋
+assets/
+
+# 기타
+.DS_Store
+*.iml
