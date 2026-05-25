@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
@@ -18,33 +20,36 @@ import '../../../shared/widgets/sheet_handle.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
 // 책별 수집 문장 (모바일 SQLite choseo 테이블 — 웹/목업은 book.savedSentences 사용)
-final _bookChoseoProvider = FutureProvider.family<List<String>, String>(
-  (ref, bookId) async {
-    if (kIsWeb || kUseMock) return const [];
-    final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return const [];
-    final rows = await repo.getChoseoByBook(bookId);
-    return rows.map((c) => c.content).toList();
-  },
-);
+final _bookChoseoProvider = FutureProvider.family<List<IsarChoseo>, String>((
+  ref,
+  bookId,
+) async {
+  if (kIsWeb || kUseMock) return const [];
+  final repo = ref.read(bookRepositoryProvider);
+  if (repo == null) return const [];
+  return repo.getChoseoByBook(bookId);
+});
+
+typedef _Sentence = ({String content, String? thought, int? pageNumber});
 
 // 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
-final _bookSessionStatsProvider = FutureProvider.family<
-  ({int sessions, double totalHours, int avgMinutes}),
-  String
->((ref, bookId) async {
-  final repo = ref.read(bookRepositoryProvider);
-  if (repo == null) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
-  final sessions = await repo.getSessionsForBook(bookId);
-  final count = sessions.length;
-  if (count == 0) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
-  final totalSecs = sessions.fold(0, (s, r) => s + r.durationSeconds);
-  return (
-    sessions: count,
-    totalHours: totalSecs / 3600.0,
-    avgMinutes: totalSecs ~/ count ~/ 60,
-  );
-});
+final _bookSessionStatsProvider =
+    FutureProvider.family<
+      ({int sessions, double totalHours, int avgMinutes}),
+      String
+    >((ref, bookId) async {
+      final repo = ref.read(bookRepositoryProvider);
+      if (repo == null) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
+      final sessions = await repo.getSessionsForBook(bookId);
+      final count = sessions.length;
+      if (count == 0) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
+      final totalSecs = sessions.fold(0, (s, r) => s + r.durationSeconds);
+      return (
+        sessions: count,
+        totalHours: totalSecs / 3600.0,
+        avgMinutes: totalSecs ~/ count ~/ 60,
+      );
+    });
 
 /// 도서 상세 통합 화면 (바텀시트 기능 통합)
 class BookDetailScreen extends ConsumerStatefulWidget {
@@ -139,7 +144,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: EdgeInsets.fromLTRB(
-          24, 16, 24, MediaQuery.of(ctx).padding.bottom + 16,
+          24,
+          16,
+          24,
+          MediaQuery.of(ctx).padding.bottom + 16,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -158,17 +166,17 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 Icons.format_quote_rounded,
                 color: ctx.appPrimaryAccent,
               ),
-              title: Text(
-                '문장 추가',
-                style: TextStyle(color: ctx.appTextPrimary),
-              ),
+              title: Text('문장 추가', style: TextStyle(color: ctx.appTextPrimary)),
               onTap: () {
                 Navigator.pop(ctx);
                 _showAddSentenceSheet(book);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              leading: const Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.red,
+              ),
               title: const Text('책 삭제', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -193,9 +201,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ref.invalidate(_bookChoseoProvider(widget.bookId));
           }
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              chorokSnackBar(context, '문장을 저장했어요'),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(chorokSnackBar(context, '문장을 저장했어요'));
           }
         },
       ),
@@ -208,9 +216,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: ctx.appSurface,
         title: const Text('책 삭제'),
-        content: Text(
-          '${book.title}을(를) 서재에서 삭제할까요?\n독서 기록도 함께 사라져요.',
-        ),
+        content: Text('${book.title}을(를) 서재에서 삭제할까요?\n독서 기록도 함께 사라져요.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -287,10 +293,14 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final book = bookList[bookIndex];
     final isCompleted = book.status == ReadingStatus.completed;
 
-    final dbChoseo = ref
-        .watch(_bookChoseoProvider(widget.bookId))
-        .valueOrNull ?? const [];
-    final sentences = (kUseMock || kIsWeb) ? book.savedSentences : dbChoseo;
+    final choseoAsync = ref.watch(_bookChoseoProvider(widget.bookId));
+    final List<_Sentence> sentences = (kUseMock || kIsWeb)
+        ? book.savedSentences
+              .map((s) => (content: s, thought: null as String?, pageNumber: null as int?))
+              .toList()
+        : (choseoAsync.valueOrNull ?? const [])
+              .map((c) => (content: c.content, thought: c.myThought, pageNumber: c.pageNumber))
+              .toList();
 
     return Scaffold(
       backgroundColor: context.appBg,
@@ -308,17 +318,19 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
           // ── 독서 통계 ──────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: Builder(builder: (context) {
-              final stats = ref
-                  .watch(_bookSessionStatsProvider(widget.bookId))
-                  .valueOrNull;
-              return _StatsRow(
-                sessions: stats?.sessions ?? 0,
-                totalHours: stats?.totalHours ?? 0.0,
-                avgMinutes: stats?.avgMinutes ?? 0,
-                sentenceCount: sentences.length,
-              );
-            }),
+            child: Builder(
+              builder: (context) {
+                final stats = ref
+                    .watch(_bookSessionStatsProvider(widget.bookId))
+                    .valueOrNull;
+                return _StatsRow(
+                  sessions: stats?.sessions ?? 0,
+                  totalHours: stats?.totalHours ?? 0.0,
+                  avgMinutes: stats?.avgMinutes ?? 0,
+                  sentenceCount: sentences.length,
+                );
+              },
+            ),
           ),
 
           // ── 현재 페이지 업데이트 ────────────────────────────────────
@@ -343,12 +355,20 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       builder: (_) => ManualReadingLogSheet(book: book),
                     ),
                     icon: const Icon(Icons.history_edu_rounded, size: 16),
-                    label: const Text('수동 기록',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                    label: const Text(
+                      '수동 기록',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     style: TextButton.styleFrom(
                       foregroundColor: context.appPrimaryAccent,
                       minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                     ),
                   ),
                 ),
@@ -356,20 +376,26 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
 
           // ── 수집한 문장 리스트 ──────────────────────────────────────
-          if (sentences.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: '수집한 문장',
-                count: sentences.length,
-              ),
+          SliverToBoxAdapter(
+            child: _SectionHeader(
+              title: '수집한 문장',
+              count: sentences.length,
+              onAdd: () => _showAddSentenceSheet(book),
             ),
+          ),
+          if (sentences.isEmpty)
+            SliverToBoxAdapter(
+              child: _SentenceEmptyState(
+                onAdd: () => _showAddSentenceSheet(book),
+              ),
+            )
+          else
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _SentenceItem(content: sentences[index]),
+                (context, index) => _SentenceItem(sentence: sentences[index]),
                 childCount: sentences.length,
               ),
             ),
-          ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -417,9 +443,7 @@ class _BottomActionBar extends StatelessWidget {
         24,
         MediaQuery.of(context).padding.bottom + 16,
       ),
-      decoration: BoxDecoration(
-        color: context.appBg.withValues(alpha: 0.8),
-      ),
+      decoration: BoxDecoration(color: context.appBg.withValues(alpha: 0.8)),
       child: Row(
         children: [
           Expanded(
@@ -509,7 +533,10 @@ class _HeroSection extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -543,6 +570,8 @@ class _HeroSection extends StatelessWidget {
                 book.title,
                 style: AppTheme.headingMedium,
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Text(
@@ -550,6 +579,8 @@ class _HeroSection extends StatelessWidget {
                 style: AppTheme.bodyMedium.copyWith(
                   color: context.appTextSecondary,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 28),
 
@@ -670,7 +701,9 @@ class _HeroSection extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: AppTheme.smoothBox(
-                              color: context.appPrimaryAccent.withValues(alpha: 0.08),
+                              color: context.appPrimaryAccent.withValues(
+                                alpha: 0.08,
+                              ),
                               radius: 12,
                             ),
                             child: Row(
@@ -769,10 +802,7 @@ class _StatsRow extends StatelessWidget {
         children: [
           _StatCard(label: '세션', value: '$sessions'),
           const SizedBox(width: 8),
-          _StatCard(
-            label: '누적 시간',
-            value: '${totalHours.toStringAsFixed(1)}h',
-          ),
+          _StatCard(label: '누적 시간', value: '${totalHours.toStringAsFixed(1)}h'),
           const SizedBox(width: 8),
           _StatCard(label: '평균', value: '$avgMinutes분'),
           const SizedBox(width: 8),
@@ -823,7 +853,12 @@ class _StatCard extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final int count;
-  const _SectionHeader({required this.title, required this.count});
+  final VoidCallback onAdd;
+  const _SectionHeader({
+    required this.title,
+    required this.count,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -833,11 +868,42 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(title, style: AppTheme.headingSmall),
           const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: TextStyle(
-              color: context.appPrimaryAccent,
-              fontWeight: FontWeight.w700,
+          if (count > 0)
+            Text(
+              '$count',
+              style: TextStyle(
+                color: context.appPrimaryAccent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          const Spacer(),
+          GestureDetector(
+            onTap: onAdd,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: AppTheme.smoothBox(
+                color: context.appPrimaryAccent.withValues(alpha: 0.1),
+                radius: 10,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_rounded,
+                    size: 14,
+                    color: context.appPrimaryAccent,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '추가',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: context.appPrimaryAccent,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -846,23 +912,164 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _SentenceItem extends StatelessWidget {
-  final String content;
-  const _SentenceItem({required this.content});
+class _SentenceEmptyState extends StatelessWidget {
+  final VoidCallback onAdd;
+  const _SentenceEmptyState({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: AppTheme.smoothBox(
-          color: context.appCardElevated,
-          radius: 12,
+      child: GestureDetector(
+        onTap: onAdd,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          decoration: AppTheme.smoothBox(
+            color: context.appPrimaryAccent.withValues(alpha: 0.04),
+            radius: 14,
+            side: BorderSide(
+              color: context.appPrimaryAccent.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.format_quote_rounded,
+                size: 28,
+                color: context.appPrimaryAccent.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '마음에 남는 문장을 기록해보세요',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.appTextTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                decoration: AppTheme.smoothBox(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.1),
+                  radius: 10,
+                ),
+                child: Text(
+                  '첫 문장 추가하기',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: context.appPrimaryAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Text(
-          content,
-          style: AppTheme.bodySmall.copyWith(fontStyle: FontStyle.italic),
+      ),
+    );
+  }
+}
+
+class _SentenceItem extends StatelessWidget {
+  final _Sentence sentence;
+  const _SentenceItem({required this.sentence});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasThought = sentence.thought != null && sentence.thought!.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      child: Container(
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 14),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 3,
+                margin: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: context.appPrimaryAccent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(14),
+                    bottomLeft: Radius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (sentence.pageNumber != null) ...[
+                        Text(
+                          'p. ${sentence.pageNumber}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: context.appPrimaryAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+                      Text(
+                        sentence.content,
+                        style: AppTheme.bodySmall.copyWith(
+                          fontStyle: FontStyle.italic,
+                          height: 1.7,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      if (hasThought) ...[
+                        const SizedBox(height: 10),
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: context.appTextTertiary.withValues(
+                            alpha: 0.12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.edit_note_rounded,
+                              size: 12,
+                              color: context.appTextTertiary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '내 생각',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          sentence.thought!,
+                          style: AppTheme.bodySmall.copyWith(
+                            color: context.appTextSecondary,
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -884,7 +1091,10 @@ class _AddSentenceSheet extends ConsumerStatefulWidget {
 class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
   final _contentCtrl = TextEditingController();
   final _thoughtCtrl = TextEditingController();
+  final _pageCtrl = TextEditingController();
   final _contentFocus = FocusNode();
+  final _thoughtFocus = FocusNode();
+  bool _isWritingThought = false;
   bool _isSaving = false;
   bool _hasError = false;
 
@@ -893,18 +1103,34 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 100), _contentFocus.requestFocus);
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      _contentFocus.requestFocus,
+    );
   }
 
   @override
   void dispose() {
     _contentCtrl.dispose();
     _thoughtCtrl.dispose();
+    _pageCtrl.dispose();
     _contentFocus.dispose();
+    _thoughtFocus.dispose();
     super.dispose();
   }
 
+  void _openThoughtStep() {
+    if (!_hasInput) return;
+    setState(() => _isWritingThought = true);
+    _contentFocus.unfocus();
+    Future.delayed(
+      const Duration(milliseconds: 80),
+      _thoughtFocus.requestFocus,
+    );
+  }
+
   Future<void> _save() async {
+    if (!_hasInput) return;
     setState(() {
       _isSaving = true;
       _hasError = false;
@@ -912,12 +1138,16 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
     HapticFeedback.mediumImpact();
 
     final thought = _thoughtCtrl.text.trim();
+    final pageNumber = int.tryParse(_pageCtrl.text.trim());
     try {
-      await ref.read(libraryProvider.notifier).addSentence(
-        widget.bookId,
-        _contentCtrl.text,
-        thought: thought.isNotEmpty ? thought : null,
-      );
+      await ref
+          .read(libraryProvider.notifier)
+          .addSentence(
+            widget.bookId,
+            _contentCtrl.text,
+            thought: thought.isNotEmpty ? thought : null,
+            pageNumber: pageNumber,
+          );
       widget.onSaved();
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -956,8 +1186,14 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.of(context).viewInsets.bottom +
-        MediaQuery.of(context).padding.bottom;
+    final media = MediaQuery.of(context);
+    final keyboardInset = media.viewInsets.bottom;
+    final availableHeight =
+        media.size.height - keyboardInset - media.padding.top - 12;
+    final maxSheetHeight = availableHeight
+        .clamp(320.0, media.size.height * 0.92)
+        .toDouble();
+    final bottomPadding = keyboardInset > 0 ? 24.0 : media.padding.bottom + 24;
 
     return PopScope(
       canPop: !_hasInput,
@@ -967,92 +1203,554 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
         final shouldPop = await _onPop();
         if (shouldPop && mounted) nav.pop();
       },
-      child: Container(
-      decoration: BoxDecoration(
-        color: context.appSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPad + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ChorokSheetHandle(),
-          const SizedBox(height: 16),
-
-          Text(
-            '문장 추가',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: context.appTextPrimary,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        child: Container(
+          constraints: BoxConstraints(maxHeight: maxSheetHeight),
+          decoration: ShapeDecoration(
+            color: context.appSurface,
+            shape: const SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius.vertical(
+                top: SmoothRadius(cornerRadius: 28, cornerSmoothing: 0.8),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ChorokSheetHandle(),
+                  const SizedBox(height: 20),
 
-          // 문장 입력
-          _SheetTextField(
-            controller: _contentCtrl,
-            focusNode: _contentFocus,
-            hintText: '기록하고 싶은 문장을 입력하세요',
-            maxLines: 4,
-            onChanged: (_) => setState(() {}),
+                  // 헤더
+                  Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: ShapeDecoration(
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.12,
+                          ),
+                          shape: SmoothRectangleBorder(
+                            borderRadius: SmoothBorderRadius(
+                              cornerRadius: 10,
+                              cornerSmoothing: 0.8,
+                            ),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.format_quote_rounded,
+                          color: context.appPrimaryAccent,
+                          size: 17,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '문장 추가',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: context.appTextPrimary,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _SentenceStepHeader(isWritingThought: _isWritingThought),
+                  const SizedBox(height: 18),
+
+                  if (_isWritingThought)
+                    _BookThoughtStep(
+                      sentence: _contentCtrl.text.trim(),
+                      thoughtCtrl: _thoughtCtrl,
+                      thoughtFocus: _thoughtFocus,
+                      hasError: _hasError,
+                      isSaving: _isSaving,
+                      canSave: _hasInput && !_isSaving,
+                      onBack: () => setState(() => _isWritingThought = false),
+                      onSave: _save,
+                    )
+                  else
+                    _BookSentenceStep(
+                      contentCtrl: _contentCtrl,
+                      pageCtrl: _pageCtrl,
+                      contentFocus: _contentFocus,
+                      hasInput: _hasInput,
+                      isSaving: _isSaving,
+                      onChanged: (_) => setState(() {}),
+                      onContinue: _openThoughtStep,
+                      onSave: _save,
+                    ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
+        ),
+      ),
+    );
+  }
+}
 
-          // 내 생각 입력 (선택)
-          _SheetTextField(
-            controller: _thoughtCtrl,
-            hintText: '내 생각 (선택)',
-            maxLines: 2,
+class _SentenceStepHeader extends StatelessWidget {
+  final bool isWritingThought;
+
+  const _SentenceStepHeader({required this.isWritingThought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _SentenceStepBadge(number: '1', label: '문장', active: !isWritingThought),
+        Expanded(
+          child: Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            color: context.appDivider,
           ),
+        ),
+        _SentenceStepBadge(number: '2', label: '생각', active: isWritingThought),
+      ],
+    );
+  }
+}
 
-          // 에러 메시지
-          if (_hasError) ...[
-            const SizedBox(height: 10),
+class _SentenceStepBadge extends StatelessWidget {
+  final String number;
+  final String label;
+  final bool active;
+
+  const _SentenceStepBadge({
+    required this.number,
+    required this.label,
+    required this.active,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? context.appPrimaryAccent : context.appTextTertiary;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+            color: active ? context.appPrimaryAccent : context.appCard,
+            shape: const StadiumBorder(),
+          ),
+          child: Text(
+            number,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: active ? Colors.black : context.appTextTertiary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BookSentenceStep extends StatelessWidget {
+  final TextEditingController contentCtrl;
+  final TextEditingController pageCtrl;
+  final FocusNode contentFocus;
+  final bool hasInput;
+  final bool isSaving;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onContinue;
+  final VoidCallback onSave;
+
+  const _BookSentenceStep({
+    required this.contentCtrl,
+    required this.pageCtrl,
+    required this.contentFocus,
+    required this.hasInput,
+    required this.isSaving,
+    required this.onChanged,
+    required this.onContinue,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _AccentTextField(
+          controller: contentCtrl,
+          focusNode: contentFocus,
+          hintText: '기록하고 싶은 문장을 입력하세요',
+          minLines: 7,
+          maxLines: 9,
+          accentColor: context.appPrimaryAccent,
+          onChanged: onChanged,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Container(
+              width: 88,
+              height: 36,
+              decoration: AppTheme.smoothBox(
+                color: context.appCard,
+                radius: 10,
+                side: BorderSide.none,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  Text(
+                    'p.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: context.appTextTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: TextField(
+                      controller: pageCtrl,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appTextPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '페이지',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: context.appTextTertiary,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      cursorColor: context.appPrimaryAccent,
+                      cursorWidth: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
             Text(
-              '저장에 실패했어요. 다시 시도해보세요.',
-              style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+              '${contentCtrl.text.length}자',
+              style: TextStyle(
+                fontSize: 11,
+                color: context.appTextTertiary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
-          const SizedBox(height: 20),
-
-          // 저장 버튼
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: (_hasInput && !_isSaving)
-                  ? _save
-                  : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: context.appPrimaryAccent,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor:
-                    context.appPrimaryAccent.withValues(alpha: 0.3),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: AppTheme.smoothShape(radius: 12),
+        ),
+        const SizedBox(height: 18),
+        _SheetActionButton(
+          label: '생각 쓰기',
+          enabled: hasInput && !isSaving,
+          loading: false,
+          onTap: onContinue,
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: TextButton(
+            onPressed: (hasInput && !isSaving) ? onSave : null,
+            child: Text(
+              '문장만 저장',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: hasInput ? context.appTextTertiary : context.appBorder,
               ),
-              child: _isSaving
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BookThoughtStep extends StatelessWidget {
+  final String sentence;
+  final TextEditingController thoughtCtrl;
+  final FocusNode thoughtFocus;
+  final bool hasError;
+  final bool isSaving;
+  final bool canSave;
+  final VoidCallback onBack;
+  final VoidCallback onSave;
+
+  const _BookThoughtStep({
+    required this.sentence,
+    required this.thoughtCtrl,
+    required this.thoughtFocus,
+    required this.hasError,
+    required this.isSaving,
+    required this.canSave,
+    required this.onBack,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: 14,
+            side: BorderSide.none,
+          ),
+          child: Text(
+            sentence,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: context.appTextSecondary,
+              height: 1.65,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: onBack,
+            icon: const Icon(Icons.edit_rounded, size: 15),
+            label: const Text('문장 수정'),
+            style: TextButton.styleFrom(
+              foregroundColor: context.appTextTertiary,
+              textStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(
+              Icons.edit_note_rounded,
+              size: 13,
+              color: context.appTextTertiary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '내 생각',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: context.appTextTertiary,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: context.appTextTertiary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '선택',
+                style: TextStyle(fontSize: 10, color: context.appTextTertiary),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _SheetTextField(
+          controller: thoughtCtrl,
+          focusNode: thoughtFocus,
+          hintText: '이 문장에서 무엇을 느꼈나요?',
+          minLines: 6,
+          maxLines: 8,
+        ),
+        if (hasError) ...[
+          const SizedBox(height: 8),
+          Text(
+            '저장에 실패했어요. 다시 시도해보세요.',
+            style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+          ),
+        ],
+        const SizedBox(height: 20),
+        _SheetActionButton(
+          label: '저장하기',
+          enabled: canSave,
+          loading: isSaving,
+          onTap: onSave,
+        ),
+      ],
+    );
+  }
+}
+
+class _SheetActionButton extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _SheetActionButton({
+    required this.label,
+    required this.enabled,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          gradient: enabled ? AppTheme.greenGradient : null,
+          color: enabled
+              ? null
+              : context.appPrimaryAccent.withValues(alpha: 0.2),
+          shape: AppTheme.smoothShape(radius: 14),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            customBorder: AppTheme.smoothShape(radius: 14),
+            child: Center(
+              child: loading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     )
-                  : const Text(
-                      '저장',
+                  : Text(
+                      label,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
+                        color: enabled ? Colors.black : context.appTextTertiary,
                       ),
                     ),
             ),
           ),
-        ],
+        ),
       ),
-    ),
+    );
+  }
+}
+
+class _AccentTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode? focusNode;
+  final String hintText;
+  final int minLines;
+  final int maxLines;
+  final Color accentColor;
+  final ValueChanged<String>? onChanged;
+
+  const _AccentTextField({
+    required this.controller,
+    this.focusNode,
+    required this.hintText,
+    required this.minLines,
+    required this.maxLines,
+    required this.accentColor,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 14,
+        side: BorderSide.none,
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 3,
+              margin: const EdgeInsets.symmetric(vertical: 14, horizontal: 0),
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  bottomLeft: Radius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                minLines: minLines,
+                maxLines: maxLines,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                onChanged: onChanged,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: context.appTextPrimary,
+                  height: 1.7,
+                  fontStyle: FontStyle.italic,
+                ),
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    color: context.appTextTertiary,
+                    height: 1.7,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                cursorColor: accentColor,
+                cursorWidth: 1.5,
+              ),
+            ),
+            const SizedBox(width: 14),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1061,15 +1759,15 @@ class _SheetTextField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
+  final int minLines;
   final int maxLines;
-  final ValueChanged<String>? onChanged;
 
   const _SheetTextField({
     required this.controller,
     this.focusNode,
     required this.hintText,
+    required this.minLines,
     required this.maxLines,
-    this.onChanged,
   });
 
   @override
@@ -1084,8 +1782,10 @@ class _SheetTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+        minLines: minLines,
         maxLines: maxLines,
-        onChanged: onChanged,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
         style: TextStyle(
           fontSize: 14,
           color: context.appTextPrimary,

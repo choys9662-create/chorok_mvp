@@ -247,6 +247,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     String bookId,
     String content, {
     String? thought,
+    int? pageNumber,
   }) async {
     if (kUseMock) return;
 
@@ -278,6 +279,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
         bookAuthor: old.author,
         content: trimmed,
         myThought: thought,
+        pageNumber: pageNumber,
       );
     }
   }
