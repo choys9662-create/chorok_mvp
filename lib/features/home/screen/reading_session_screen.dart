@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/db_service.dart';
 import '../../../core/services/ocr_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
@@ -178,6 +179,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
+  int _preExistingCount = 0;
 
   bool _isRecording = false;
   bool _showSlideToStop = false;
@@ -343,6 +345,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       WakelockPlus.enable();
+
+      final bookId = widget.bookId;
+      if (bookId != null && !const bool.fromEnvironment('USE_MOCK')) {
+        ref
+            .read(dbServiceProvider)
+            .fetchMySentencesForBook(bookId)
+            .then((rows) {
+          if (mounted) setState(() => _preExistingCount = rows.length);
+        });
+      }
     });
   }
 
@@ -508,7 +520,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   bookAuthor: widget.bookAuthor,
                   sessionStartedAt: _sessionStartedAt,
                   streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
-                  sentenceCount: _collectedSentences.length,
+                  sentenceCount: _preExistingCount + _collectedSentences.length,
                   onLockLongPress: _showSlideToUnlock,
                   onPlusTap: _onPlusTap,
                   onSentencesTap: _openSentencesSheet,
