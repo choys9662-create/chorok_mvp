@@ -15,6 +15,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../core/services/stt_service.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
@@ -466,7 +467,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               // ① 배경
               const _SessionBackground(),
 
-              // ② 반딧불이 + 독자 오브 + 중심 오브
+              // ② 라이브 포레스트 반딧불 배경
+              const LiveForestWidget(),
+
+              // ③ 반딧불이 + 독자 오브 + 중심 오브
               AnimatedBuilder(
                 animation: Listenable.merge([_pulseAnim, _moveCtrl]),
                 builder: (_, _) => Stack(

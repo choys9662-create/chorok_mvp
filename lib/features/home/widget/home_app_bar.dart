@@ -78,6 +78,7 @@ class HomeAppBar extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           // 검색 버튼
           Semantics(
             label: '책 검색',
@@ -105,6 +106,7 @@ class HomeAppBar extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           // 알림 버튼
           Semantics(
             label: '알림',
