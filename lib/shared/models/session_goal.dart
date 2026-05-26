@@ -70,8 +70,13 @@ class SessionGoal {
 class CollectedSentence {
   final String content;
   final String thought;
+  final int? pageNumber;
 
-  const CollectedSentence({required this.content, this.thought = ''});
+  const CollectedSentence({
+    required this.content,
+    this.thought = '',
+    this.pageNumber,
+  });
 }
 
 /// 독서 세션 진입 시 라우터에 전달하는 통합 extra
