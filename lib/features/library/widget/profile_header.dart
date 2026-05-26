@@ -4,6 +4,8 @@ import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/user_profile.dart';
+import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
@@ -33,8 +35,12 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
   String _name = '';
   String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
-  final int _followers = kUseMock ? 128 : 0;
-  final int _following = kUseMock ? 64 : 0;
+  int _followers = kUseMock ? 128 : 0;
+  int _following = kUseMock ? 64 : 0;
+  List<String> _followerNames = kUseMock
+      ? ['김민준', '박서연', '이수아', '최현우', '정지원']
+      : const [];
+  List<String> _followingNames = kUseMock ? ['한수빈', '오태양', '윤나래'] : const [];
 
   @override
   void initState() {
@@ -61,14 +67,30 @@ class _ProfileHeaderState extends State<ProfileHeader> {
   Future<void> _loadProfile() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
-    final profile = await ProfileRepository(
-      Supabase.instance.client,
-    ).getById(user.id);
-    if (!mounted || profile == null) return;
-    setState(() {
-      if (profile.displayName.isNotEmpty) _name = profile.displayName;
-      _bio = profile.bio ?? '';
-    });
+    try {
+      final client = Supabase.instance.client;
+      final results = await Future.wait<Object?>([
+        ProfileRepository(client).getById(user.id),
+        FollowRepository(client).getFollowers(user.id),
+        FollowRepository(client).getFollowing(user.id),
+      ]);
+      if (!mounted) return;
+      final profile = results[0] as UserProfile?;
+      final followers = results[1] as List<UserProfile>;
+      final following = results[2] as List<UserProfile>;
+      setState(() {
+        if (profile != null) {
+          if (profile.displayName.isNotEmpty) _name = profile.displayName;
+          _bio = profile.bio ?? '';
+        }
+        _followers = followers.length;
+        _following = following.length;
+        _followerNames = followers.map((p) => p.displayName).toList();
+        _followingNames = following.map((p) => p.displayName).toList();
+      });
+    } catch (_) {
+      // 프로필 상단은 핵심 화면이므로 소셜 수치 로딩 실패 시 기본값을 유지한다.
+    }
   }
 
   @override
@@ -140,26 +162,24 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         height: 1.4,
                       ),
                     ),
-                    if (kUseMock) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _StatItem(
-                            label: '팔로워',
-                            count: _followers,
-                            onTap: () =>
-                                _showFollowList(context, isFollower: true),
-                          ),
-                          const SizedBox(width: 24),
-                          _StatItem(
-                            label: '팔로잉',
-                            count: _following,
-                            onTap: () =>
-                                _showFollowList(context, isFollower: false),
-                          ),
-                        ],
-                      ),
-                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _StatItem(
+                          label: '팔로워',
+                          count: _followers,
+                          onTap: () =>
+                              _showFollowList(context, isFollower: true),
+                        ),
+                        const SizedBox(width: 24),
+                        _StatItem(
+                          label: '팔로잉',
+                          count: _following,
+                          onTap: () =>
+                              _showFollowList(context, isFollower: false),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -304,9 +324,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
   void _showFollowList(BuildContext context, {required bool isFollower}) {
     HapticFeedback.selectionClick();
-    final list = isFollower
-        ? ['김민준', '박서연', '이수아', '최현우', '정지원']
-        : ['한수빈', '오태양', '윤나래'];
+    final list = isFollower ? _followerNames : _followingNames;
 
     showModalBottomSheet(
       context: context,
@@ -315,7 +333,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       builder: (_) => _FollowListSheet(
         title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
         names: list,
-        showFollowButton: !isFollower,
+        showFollowButton: kUseMock && !isFollower,
       ),
     );
   }

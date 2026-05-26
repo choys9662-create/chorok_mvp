@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../feed/controller/feed_provider.dart';
 
 import 'package:go_router/go_router.dart';
@@ -62,34 +63,53 @@ const kHighlightSentences = [
 class FeedHighlightSection extends ConsumerWidget {
   const FeedHighlightSection({super.key});
 
+  List<HighlightSentence> _fromFeed(List<FeedSentence> sentences) {
+    final firstByContent = <String, FeedSentence>{};
+    final counts = <String, int>{};
+    final empathy = <String, int>{};
+    for (final sentence in sentences) {
+      final key = sentence.content.trim();
+      if (key.isEmpty) continue;
+      firstByContent.putIfAbsent(key, () => sentence);
+      counts[key] = (counts[key] ?? 0) + 1;
+      empathy[key] = (empathy[key] ?? 0) + sentence.empathyCount;
+    }
+
+    final sorted = firstByContent.entries.toList()
+      ..sort((a, b) {
+        final countCompare = (counts[b.key] ?? 0).compareTo(counts[a.key] ?? 0);
+        if (countCompare != 0) return countCompare;
+        return (empathy[b.key] ?? 0).compareTo(empathy[a.key] ?? 0);
+      });
+
+    return sorted.take(3).map((entry) {
+      final sentence = entry.value;
+      final recordCount = counts[entry.key] ?? 1;
+      return HighlightSentence(
+        content: sentence.content,
+        bookTitle: sentence.bookTitle,
+        author: sentence.bookAuthor,
+        recordCount: recordCount,
+        empathyCount: empathy[entry.key] ?? sentence.empathyCount,
+        isOverlap: recordCount > 1,
+        gradientIndex: sentence.bookTitle.hashCode.abs().remainder(7),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final List<HighlightSentence> highlights;
-    final String title;
-    final String subtitle;
+    const title = '지금 많이 기록된 문장';
+    const subtitle = '독자들이 가장 많이 수집한 문장이에요';
 
     if (kUseMock) {
       highlights = kHighlightSentences;
-      title = '지금 많이 기록된 문장';
-      subtitle = '독자들이 가장 많이 수집한 문장이에요';
     } else {
       final sentences = ref.watch(feedProvider).valueOrNull ?? const [];
       if (sentences.isEmpty) return const SizedBox.shrink();
-      highlights = sentences
-          .take(3)
-          .map(
-            (s) => HighlightSentence(
-              content: s.content,
-              bookTitle: s.bookTitle,
-              author: s.bookAuthor,
-              recordCount: 1,
-              empathyCount: s.empathyCount,
-              gradientIndex: s.bookTitle.hashCode.abs() % 7,
-            ),
-          )
-          .toList();
-      title = '최근 기록한 문장';
-      subtitle = '내가 최근에 기록한 문장이에요';
+      highlights = _fromFeed(sentences);
+      if (highlights.isEmpty) return const SizedBox.shrink();
     }
 
     return Column(

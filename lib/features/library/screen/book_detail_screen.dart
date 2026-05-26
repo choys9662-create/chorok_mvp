@@ -20,35 +20,48 @@ import '../../../shared/widgets/page_slider_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
-// 책별 수집 문장 (웹은 Supabase sentences, 모바일은 SQLite choseo 테이블)
-final _bookChoseoProvider = FutureProvider.family<List<IsarChoseo>, String>((
-  ref,
-  bookId,
-) async {
-  if (kUseMock) return const [];
-  if (kIsWeb) {
-    final rows = await ref
-        .read(dbServiceProvider)
-        .fetchMySentencesForBook(bookId);
-    return rows.map((r) {
-      return IsarChoseo(
-        choseoId: r['id'] as String,
-        bookId: r['book_id'] as String? ?? bookId,
-        bookTitle: '',
-        bookAuthor: '',
-        content: r['content'] as String,
-        myThought: r['thought'] as String?,
-        pageNumber: (r['page_number'] as num?)?.toInt(),
-        createdAt:
-            DateTime.tryParse(r['created_at'] as String? ?? '') ??
-            DateTime.now(),
-      );
-    }).toList();
-  }
-  final repo = ref.read(bookRepositoryProvider);
-  if (repo == null) return const [];
-  return repo.getChoseoByBook(bookId);
+typedef _BookSentenceQuery = ({
+  String bookId,
+  String title,
+  String author,
+  String? isbn,
 });
+
+// 책별 수집 문장 (웹은 Supabase sentences, 모바일은 SQLite choseo 테이블)
+final _bookChoseoProvider =
+    FutureProvider.family<List<IsarChoseo>, _BookSentenceQuery>((
+      ref,
+      query,
+    ) async {
+      if (kUseMock) return const [];
+      if (kIsWeb) {
+        final rows = await ref
+            .read(dbServiceProvider)
+            .fetchMySentencesForBook(
+              query.bookId,
+              title: query.title,
+              author: query.author,
+              isbn: query.isbn,
+            );
+        return rows.map((r) {
+          return IsarChoseo(
+            choseoId: r['id'] as String,
+            bookId: r['book_id'] as String? ?? query.bookId,
+            bookTitle: '',
+            bookAuthor: '',
+            content: r['content'] as String,
+            myThought: r['thought'] as String?,
+            pageNumber: (r['page_number'] as num?)?.toInt(),
+            createdAt:
+                DateTime.tryParse(r['created_at'] as String? ?? '') ??
+                DateTime.now(),
+          );
+        }).toList();
+      }
+      final repo = ref.read(bookRepositoryProvider);
+      if (repo == null) return const [];
+      return repo.getChoseoByBook(query.bookId);
+    });
 
 typedef _Sentence = ({
   String id,
@@ -89,6 +102,13 @@ class BookDetailScreen extends ConsumerStatefulWidget {
 class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   int _currentPage = 0;
   final Map<String, String?> _mockThoughts = {};
+
+  _BookSentenceQuery _sentenceQuery(Book book) => (
+    bookId: book.id,
+    title: book.title,
+    author: book.author,
+    isbn: book.isbn,
+  );
 
   @override
   void initState() {
@@ -216,6 +236,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   }
 
   void _showAddSentenceSheet(Book book) {
+    final query = _sentenceQuery(book);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -224,7 +245,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         bookId: book.id,
         onSaved: () {
           if (!kUseMock) {
-            ref.invalidate(_bookChoseoProvider(widget.bookId));
+            ref.invalidate(_bookChoseoProvider(query));
           }
           if (mounted) {
             ScaffoldMessenger.of(
@@ -236,19 +257,24 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     );
   }
 
-  void _showEditThoughtSheet(_Sentence sentence) {
+  void _showEditThoughtSheet(_Sentence sentence, Book book) {
+    final query = _sentenceQuery(book);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _EditThoughtSheet(
         sentence: sentence,
-        onSave: (thought) => _saveSentenceThought(sentence, thought),
+        onSave: (thought) => _saveSentenceThought(sentence, thought, query),
       ),
     );
   }
 
-  Future<void> _saveSentenceThought(_Sentence sentence, String? thought) async {
+  Future<void> _saveSentenceThought(
+    _Sentence sentence,
+    String? thought,
+    _BookSentenceQuery query,
+  ) async {
     final trimmed = thought?.trim();
     final normalized = trimmed?.isNotEmpty == true ? trimmed : null;
 
@@ -260,7 +286,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     await ref
         .read(libraryProvider.notifier)
         .updateSentenceThought(sentenceId: sentence.id, thought: normalized);
-    ref.invalidate(_bookChoseoProvider(widget.bookId));
+    ref.invalidate(_bookChoseoProvider(query));
   }
 
   void _confirmDelete(Book book) {
@@ -346,7 +372,8 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final book = bookList[bookIndex];
     final isCompleted = book.status == ReadingStatus.completed;
 
-    final choseoAsync = ref.watch(_bookChoseoProvider(widget.bookId));
+    final sentenceQuery = _sentenceQuery(book);
+    final choseoAsync = ref.watch(_bookChoseoProvider(sentenceQuery));
     final List<_Sentence> sentences = kUseMock
         ? book.savedSentences.asMap().entries.map((entry) {
             final id = 'mock_${widget.bookId}_${entry.key}';
@@ -465,7 +492,8 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) => _SentenceItem(
                   sentence: sentences[index],
-                  onEditThought: () => _showEditThoughtSheet(sentences[index]),
+                  onEditThought: () =>
+                      _showEditThoughtSheet(sentences[index], book),
                 ),
                 childCount: sentences.length,
               ),
