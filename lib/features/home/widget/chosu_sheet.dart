@@ -19,6 +19,7 @@ class ChosuSheet extends StatefulWidget {
 class _ChosuSheetState extends State<ChosuSheet> {
   late final TextEditingController _sentenceCtrl;
   final _thoughtCtrl = TextEditingController();
+  final _pageCtrl = TextEditingController();
   final _sentenceFocus = FocusNode();
   final _thoughtFocus = FocusNode();
   bool _isWritingThought = false;
@@ -34,6 +35,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
   void dispose() {
     _sentenceCtrl.dispose();
     _thoughtCtrl.dispose();
+    _pageCtrl.dispose();
     _sentenceFocus.dispose();
     _thoughtFocus.dispose();
     super.dispose();
@@ -59,6 +61,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
           CollectedSentence(
             content: _sentenceCtrl.text.trim(),
             thought: _thoughtCtrl.text.trim(),
+            pageNumber: int.tryParse(_pageCtrl.text.trim()),
           ),
         );
       }
@@ -145,6 +148,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 else
                   _SentenceStep(
                     sentenceCtrl: _sentenceCtrl,
+                    pageCtrl: _pageCtrl,
                     sentenceFocus: _sentenceFocus,
                     saved: _saved,
                     onChanged: (_) => setState(() {}),
@@ -231,6 +235,7 @@ class _StepBadge extends StatelessWidget {
 
 class _SentenceStep extends StatelessWidget {
   final TextEditingController sentenceCtrl;
+  final TextEditingController pageCtrl;
   final FocusNode sentenceFocus;
   final bool saved;
   final ValueChanged<String> onChanged;
@@ -239,6 +244,7 @@ class _SentenceStep extends StatelessWidget {
 
   const _SentenceStep({
     required this.sentenceCtrl,
+    required this.pageCtrl,
     required this.sentenceFocus,
     required this.saved,
     required this.onChanged,
@@ -253,10 +259,59 @@ class _SentenceStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FieldLabel(
-          icon: Icons.format_quote_rounded,
-          label: '수집할 문장',
-          color: context.appPrimaryAccent,
+        Row(
+          children: [
+            Expanded(
+              child: _FieldLabel(
+                icon: Icons.format_quote_rounded,
+                label: '수집할 문장',
+                color: context.appPrimaryAccent,
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'p.',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextTertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 52,
+                  height: 28,
+                  child: TextField(
+                    controller: pageCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '쪽',
+                      hintStyle: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      filled: true,
+                      fillColor: context.appCardElevated,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         _ChosuTextField(
@@ -472,7 +527,10 @@ class _ChosuTextField extends StatelessWidget {
             fontStyle: italic ? FontStyle.italic : FontStyle.normal,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
         ),
         onChanged: onChanged,
       ),
