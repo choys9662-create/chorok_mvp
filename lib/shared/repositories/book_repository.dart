@@ -683,6 +683,16 @@ class BookRepository {
     );
   }
 
+  Future<void> updateChoseoThought(String choseoId, String? thought) async {
+    final trimmed = thought?.trim();
+    await _db.update(
+      'choseo',
+      {'my_thought': trimmed?.isNotEmpty == true ? trimmed : null},
+      where: 'choseo_id = ?',
+      whereArgs: [choseoId],
+    );
+  }
+
   // ── 책별 초서 개수 ────────────────────────────────────────────────────────
 
   Future<Map<String, int>> getChoseoCountByBook() async {

@@ -205,6 +205,7 @@ class DbService {
     required String bookId,
     required String content,
     String? thought,
+    int? pageNumber,
   }) async {
     final ids = await _resolveBookIds(bookId);
     final trimmedContent = content.trim();
@@ -214,9 +215,137 @@ class DbService {
       'book_id': ?ids.bookUuid,
       'global_book_id': ?ids.globalBookId,
       'content': trimmedContent,
+      'page_number': ?pageNumber,
       'normalized_sentences': [SentenceNormalizer.normalize(trimmedContent)],
       'thought': (trimmedThought?.isNotEmpty == true) ? trimmedThought : null,
     });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMySentencesForBook(
+    String bookId, {
+    String? title,
+    String? author,
+    String? isbn,
+  }) async {
+    final ids = await _resolveBookIds(bookId);
+    final batches = <List<dynamic>>[];
+    const selectColumns =
+        'id, user_id, book_id, global_book_id, session_id, content, thought, page_number, normalized_sentences, created_at, '
+        'books(id, book_id, title, author, isbn)';
+
+    if (ids.bookUuid != null) {
+      final rows = await supabase
+          .from('sentences')
+          .select(selectColumns)
+          .eq('user_id', _uid)
+          .eq('book_id', ids.bookUuid!)
+          .order('created_at', ascending: false);
+      batches.add(rows as List);
+    }
+
+    if (ids.globalBookId != null) {
+      final rows = await supabase
+          .from('sentences')
+          .select(selectColumns)
+          .eq('user_id', _uid)
+          .eq('global_book_id', ids.globalBookId!)
+          .order('created_at', ascending: false);
+      batches.add(rows as List);
+    }
+
+    final byId = <String, Map<String, dynamic>>{};
+    for (final batch in batches) {
+      for (final row in batch) {
+        final map = Map<String, dynamic>.from(row as Map);
+        byId[map['id'] as String] = map;
+      }
+    }
+
+    final needsFallback =
+        (title?.trim().isNotEmpty == true) || (isbn?.trim().isNotEmpty == true);
+    if (needsFallback) {
+      final rows = await supabase
+          .from('sentences')
+          .select(selectColumns)
+          .eq('user_id', _uid)
+          .order('created_at', ascending: false)
+          .limit(1000);
+      for (final row in rows as List) {
+        final map = Map<String, dynamic>.from(row as Map);
+        final book = map['books'] as Map<String, dynamic>?;
+        if (_matchesBookFallback(
+          rowTitle: book?['title'] as String?,
+          rowAuthor: book?['author'] as String?,
+          rowIsbn: book?['isbn'] as String?,
+          title: title,
+          author: author,
+          isbn: isbn,
+        )) {
+          byId[map['id'] as String] = map;
+        }
+      }
+    }
+
+    final rows = byId.values.toList()
+      ..sort((a, b) {
+        final aDate = DateTime.tryParse(a['created_at'] as String? ?? '');
+        final bDate = DateTime.tryParse(b['created_at'] as String? ?? '');
+        return (bDate ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          aDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      });
+    return rows;
+  }
+
+  bool _matchesBookFallback({
+    required String? rowTitle,
+    required String? rowAuthor,
+    required String? rowIsbn,
+    required String? title,
+    required String? author,
+    required String? isbn,
+  }) {
+    final targetIsbn = _compact(isbn);
+    final candidateIsbn = _compact(rowIsbn);
+    if (targetIsbn.isNotEmpty &&
+        candidateIsbn.isNotEmpty &&
+        targetIsbn == candidateIsbn) {
+      return true;
+    }
+
+    final targetTitle = _compact(title);
+    final candidateTitle = _compact(rowTitle);
+    if (targetTitle.length < 4 || candidateTitle.length < 4) return false;
+
+    final titleMatches =
+        targetTitle == candidateTitle ||
+        targetTitle.contains(candidateTitle) ||
+        candidateTitle.contains(targetTitle);
+    if (!titleMatches) return false;
+
+    final targetAuthor = _compact(author);
+    final candidateAuthor = _compact(rowAuthor);
+    if (targetAuthor.isEmpty || candidateAuthor.isEmpty) return true;
+    return targetAuthor == candidateAuthor ||
+        targetAuthor.contains(candidateAuthor) ||
+        candidateAuthor.contains(targetAuthor);
+  }
+
+  String _compact(String? value) {
+    if (value == null) return '';
+    return value.toLowerCase().replaceAll(
+      RegExp(r'[\s\p{P}\p{S}]+', unicode: true),
+      '',
+    );
+  }
+
+  Future<void> updateSentenceThought(String sentenceId, String? thought) async {
+    final trimmed = thought?.trim();
+    await supabase
+        .from('sentences')
+        .update({'thought': trimmed?.isNotEmpty == true ? trimmed : null})
+        .eq('id', sentenceId)
+        .eq('user_id', _uid);
   }
 
   Future<List<Map<String, dynamic>>> fetchMySentences() async {

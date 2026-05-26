@@ -284,6 +284,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     }
   }
 
+  int _todayReaderCount(List<FeedSentence> sentences) {
+    final now = DateTime.now();
+    final readers = sentences
+        .where(
+          (s) =>
+              s.savedAt.year == now.year &&
+              s.savedAt.month == now.month &&
+              s.savedAt.day == now.day,
+        )
+        .map((s) => s.username)
+        .toSet();
+    return readers.isNotEmpty
+        ? readers.length
+        : sentences.map((s) => s.username).toSet().length;
+  }
+
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
     setState(() => _isRefreshing = true);
@@ -329,6 +345,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final filtered = _filtered(sentences);
     final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
     final topPad = MediaQuery.of(context).padding.top;
+    final seed = DateTime.now().day;
+    final activityReaders = kUseMock
+        ? 300 + (seed * 7) % 200
+        : _todayReaderCount(sentences);
+    final activityOverlaps = kUseMock ? 8 + seed % 13 : groups.length;
 
     return Scaffold(
       backgroundColor: context.appBg,
@@ -391,7 +412,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               ],
             ),
           ),
-          if (kUseMock) const _ActivityBanner(),
+          if (kUseMock || sentences.isNotEmpty)
+            _ActivityBanner(
+              readers: activityReaders,
+              overlaps: activityOverlaps,
+            ),
 
           // ─── 스크롤 영역 (필터 칩부터 전부) ──────────────
           Expanded(
@@ -540,14 +565,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
 // ─── 활동 배너 ────────────────────────────────────────────────────────────────
 class _ActivityBanner extends StatelessWidget {
-  const _ActivityBanner();
+  final int readers;
+  final int overlaps;
+
+  const _ActivityBanner({required this.readers, required this.overlaps});
 
   @override
   Widget build(BuildContext context) {
-    final seed = DateTime.now().day;
-    final readers = 300 + (seed * 7) % 200;
-    final overlaps = 8 + seed % 13;
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,

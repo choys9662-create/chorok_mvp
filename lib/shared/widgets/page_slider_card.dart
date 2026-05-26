@@ -115,53 +115,82 @@ class _PageSliderCardState extends State<PageSliderCard> {
               if (widget.trailing != null) widget.trailing!,
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
-          // 페이지 숫자 — 탭하면 키보드 열림
-          GestureDetector(
-            onTap: () {
-              _focusNode.requestFocus();
-              _ctrl.selection = TextSelection(
-                baseOffset: 0,
-                extentOffset: _ctrl.text.length,
-              );
-            },
-            child: Center(
-              child: IntrinsicWidth(
-                child: TextField(
-                  controller: _ctrl,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  onSubmitted: (_) {
-                    _commitText();
-                    _focusNode.unfocus();
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _StepButton(
+                icon: Icons.remove,
+                onPressed: () => _setPage(_page - 1),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _focusNode.requestFocus();
+                    _ctrl.selection = TextSelection(
+                      baseOffset: 0,
+                      extentOffset: _ctrl.text.length,
+                    );
                   },
-                  style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w700,
-                    color: context.appPrimaryAccent,
-                    height: 1.1,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.only(bottom: 2),
-                    suffixIcon: Icon(
-                      Icons.edit_rounded,
-                      size: 14,
-                      color: context.appTextTertiary,
-                    ),
-                    suffixIconConstraints: const BoxConstraints(
-                      maxWidth: 20,
-                      maxHeight: 20,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 0,
+                        vertical: 0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.appCardElevated,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: context.appBorderSubtle),
+                      ),
+                      child: IntrinsicWidth(
+                        child: TextField(
+                          controller: _ctrl,
+                          focusNode: _focusNode,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          onSubmitted: (_) {
+                            _commitText();
+                            _focusNode.unfocus();
+                          },
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w700,
+                            color: context.appPrimaryAccent,
+                            height: 1.1,
+                          ),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.all(12),
+                            suffixIcon: Padding(
+                              padding: const EdgeInsets.only(left: 6, right: 12),
+                              child: Icon(
+                                Icons.edit_rounded,
+                                size: 15,
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                            suffixIconConstraints: const BoxConstraints(
+                              maxWidth: 36,
+                              maxHeight: 24,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+              _StepButton(
+                icon: Icons.add,
+                onPressed: () => _setPage(_page + 1),
+              ),
+            ],
           ),
-          if (total > 0)
+          if (total > 0) ...[
+            const SizedBox(height: 8),
             Center(
               child: Text(
                 '/ $total쪽',
@@ -170,20 +199,8 @@ class _PageSliderCardState extends State<PageSliderCard> {
                 ),
               ),
             ),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _StepButton(
-                icon: Icons.remove,
-                onPressed: () => _setPage(_page - 1),
-              ),
-              _StepButton(
-                icon: Icons.add,
-                onPressed: () => _setPage(_page + 1),
-              ),
-            ],
-          ),
+          ],
+          const SizedBox(height: 16),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,

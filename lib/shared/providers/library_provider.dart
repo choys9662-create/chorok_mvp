@@ -257,30 +257,55 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final old = state[idx];
     final trimmed = content.trim();
 
+    if (kUseMock) {
+      final updated = old.copyWith(
+        savedSentences: [...old.savedSentences, trimmed],
+      );
+      state = [...state]..[idx] = updated;
+      return;
+    }
+
     if (kIsWeb) {
+      await ref
+          .read(dbServiceProvider)
+          .saveSentenceStandalone(
+            bookId: bookId,
+            content: trimmed,
+            thought: thought,
+            pageNumber: pageNumber,
+          );
       final updated = old.copyWith(
         savedSentences: [...old.savedSentences, trimmed],
       );
       state = [...state]..[idx] = updated;
       await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-      try {
-        await ref.read(dbServiceProvider).saveSentenceStandalone(
-          bookId: bookId,
-          content: trimmed,
-          thought: thought,
-        );
-      } catch (e) {
-        debugPrint('saveSentenceStandalone failed: $e');
-      }
     } else {
-      await ref.read(bookRepositoryProvider)?.saveChoseo(
-        bookId: bookId,
-        bookTitle: old.title,
-        bookAuthor: old.author,
-        content: trimmed,
-        myThought: thought,
-        pageNumber: pageNumber,
-      );
+      await ref
+          .read(bookRepositoryProvider)
+          ?.saveChoseo(
+            bookId: bookId,
+            bookTitle: old.title,
+            bookAuthor: old.author,
+            content: trimmed,
+            myThought: thought,
+            pageNumber: pageNumber,
+          );
+    }
+  }
+
+  Future<void> updateSentenceThought({
+    required String sentenceId,
+    String? thought,
+  }) async {
+    if (kUseMock) return;
+    if (kIsWeb) {
+      await ref
+          .read(dbServiceProvider)
+          .updateSentenceThought(sentenceId, thought);
+    } else {
+      await ref
+          .read(bookRepositoryProvider)
+          ?.updateChoseoThought(sentenceId, thought);
     }
   }
 

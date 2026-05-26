@@ -42,6 +42,57 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
     final userId = client.auth.currentUser?.id;
     if (userId == null) return const [];
 
+    try {
+      final rows = await client
+          .from('sentences')
+          .select(
+            'id, content, thought, created_at, '
+            'profiles(username, display_name), '
+            'books(title, author, cover_url), '
+            'global_books(title, author, cover_url), '
+            'sentence_likes(count)',
+          )
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      return (rows as List).map((r) {
+        final map = r as Map<String, dynamic>;
+        final localBook = map['books'] as Map<String, dynamic>?;
+        final globalBook = map['global_books'] as Map<String, dynamic>?;
+        final book = globalBook ?? localBook;
+        final profile = map['profiles'] as Map<String, dynamic>?;
+        final likesAgg = map['sentence_likes'] as List?;
+        final likeCount = likesAgg?.isNotEmpty == true
+            ? (likesAgg!.first['count'] as int? ?? 0)
+            : 0;
+        final createdAt =
+            DateTime.tryParse(map['created_at'] as String? ?? '') ??
+            DateTime.now();
+        final username =
+            profile?['display_name'] as String? ??
+            profile?['username'] as String? ??
+            '독자';
+        return FeedSentence(
+          id: map['id'] as String? ?? '',
+          content: map['content'] as String? ?? '',
+          thought: map['thought'] as String?,
+          bookTitle: book?['title'] as String? ?? '알 수 없는 책',
+          bookAuthor: book?['author'] as String? ?? '',
+          coverUrl: book?['cover_url'] as String?,
+          username: username,
+          savedAt: createdAt,
+          empathyCount: likeCount,
+        );
+      }).toList();
+    } catch (_) {
+      return _loadOwnSentencesFromSupabase(client, userId);
+    }
+  }
+
+  Future<List<FeedSentence>> _loadOwnSentencesFromSupabase(
+    SupabaseClient client,
+    String userId,
+  ) async {
     final rows = await client
         .from('sentences')
         .select('id, content, created_at, books(title, author)')
