@@ -2199,21 +2199,20 @@ class _SentenceBadge extends StatelessWidget {
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: _kGreen.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _kGreen.withValues(alpha: 0.45), width: 1),
+          color: _kGreen,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.edit_outlined, color: _kGreen, size: 15),
+            const Icon(Icons.edit_rounded, color: Colors.black, size: 15),
             const SizedBox(width: 6),
             Text(
               '+$count',
-              style: TextStyle(
-                color: _kGreen,
+              style: const TextStyle(
+                color: Colors.black,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 fontFamily: _kFont,
