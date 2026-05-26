@@ -2253,6 +2253,21 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
       child: Stack(
         children: [
           const Positioned.fill(child: _SentenceReviewBackground()),
+          Positioned(
+            top: media.padding.top + 10,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
           Column(
             children: [
               SizedBox(height: topGap),
