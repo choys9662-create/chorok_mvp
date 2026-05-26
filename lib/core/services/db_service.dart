@@ -205,6 +205,7 @@ class DbService {
     required String bookId,
     required String content,
     String? thought,
+    int? pageNumber,
   }) async {
     final ids = await _resolveBookIds(bookId);
     final trimmedContent = content.trim();
@@ -214,9 +215,68 @@ class DbService {
       'book_id': ?ids.bookUuid,
       'global_book_id': ?ids.globalBookId,
       'content': trimmedContent,
+      'page_number': ?pageNumber,
       'normalized_sentences': [SentenceNormalizer.normalize(trimmedContent)],
       'thought': (trimmedThought?.isNotEmpty == true) ? trimmedThought : null,
     });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMySentencesForBook(
+    String bookId,
+  ) async {
+    final ids = await _resolveBookIds(bookId);
+    final batches = <List<dynamic>>[];
+
+    if (ids.bookUuid != null) {
+      final rows = await supabase
+          .from('sentences')
+          .select(
+            'id, user_id, book_id, session_id, content, thought, page_number, normalized_sentences, created_at',
+          )
+          .eq('user_id', _uid)
+          .eq('book_id', ids.bookUuid!)
+          .order('created_at', ascending: false);
+      batches.add(rows as List);
+    }
+
+    if (ids.globalBookId != null) {
+      final rows = await supabase
+          .from('sentences')
+          .select(
+            'id, user_id, book_id, session_id, content, thought, page_number, normalized_sentences, created_at',
+          )
+          .eq('user_id', _uid)
+          .eq('global_book_id', ids.globalBookId!)
+          .order('created_at', ascending: false);
+      batches.add(rows as List);
+    }
+
+    final byId = <String, Map<String, dynamic>>{};
+    for (final batch in batches) {
+      for (final row in batch) {
+        final map = Map<String, dynamic>.from(row as Map);
+        byId[map['id'] as String] = map;
+      }
+    }
+
+    final rows = byId.values.toList()
+      ..sort((a, b) {
+        final aDate = DateTime.tryParse(a['created_at'] as String? ?? '');
+        final bDate = DateTime.tryParse(b['created_at'] as String? ?? '');
+        return (bDate ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          aDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      });
+    return rows;
+  }
+
+  Future<void> updateSentenceThought(String sentenceId, String? thought) async {
+    final trimmed = thought?.trim();
+    await supabase
+        .from('sentences')
+        .update({'thought': trimmed?.isNotEmpty == true ? trimmed : null})
+        .eq('id', sentenceId)
+        .eq('user_id', _uid);
   }
 
   Future<List<Map<String, dynamic>>> fetchMySentences() async {

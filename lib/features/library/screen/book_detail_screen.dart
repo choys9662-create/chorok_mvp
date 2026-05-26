@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
+import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
@@ -19,18 +20,42 @@ import '../../../shared/widgets/page_slider_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../widget/manual_reading_log_sheet.dart';
 
-// 책별 수집 문장 (모바일 SQLite choseo 테이블 — 웹/목업은 book.savedSentences 사용)
+// 책별 수집 문장 (웹은 Supabase sentences, 모바일은 SQLite choseo 테이블)
 final _bookChoseoProvider = FutureProvider.family<List<IsarChoseo>, String>((
   ref,
   bookId,
 ) async {
-  if (kIsWeb || kUseMock) return const [];
+  if (kUseMock) return const [];
+  if (kIsWeb) {
+    final rows = await ref
+        .read(dbServiceProvider)
+        .fetchMySentencesForBook(bookId);
+    return rows.map((r) {
+      return IsarChoseo(
+        choseoId: r['id'] as String,
+        bookId: r['book_id'] as String? ?? bookId,
+        bookTitle: '',
+        bookAuthor: '',
+        content: r['content'] as String,
+        myThought: r['thought'] as String?,
+        pageNumber: (r['page_number'] as num?)?.toInt(),
+        createdAt:
+            DateTime.tryParse(r['created_at'] as String? ?? '') ??
+            DateTime.now(),
+      );
+    }).toList();
+  }
   final repo = ref.read(bookRepositoryProvider);
   if (repo == null) return const [];
   return repo.getChoseoByBook(bookId);
 });
 
-typedef _Sentence = ({String content, String? thought, int? pageNumber});
+typedef _Sentence = ({
+  String id,
+  String content,
+  String? thought,
+  int? pageNumber,
+});
 
 // 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
 final _bookSessionStatsProvider =
@@ -63,6 +88,7 @@ class BookDetailScreen extends ConsumerStatefulWidget {
 
 class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
   int _currentPage = 0;
+  final Map<String, String?> _mockThoughts = {};
 
   @override
   void initState() {
@@ -197,7 +223,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       builder: (ctx) => _AddSentenceSheet(
         bookId: book.id,
         onSaved: () {
-          if (!kIsWeb) {
+          if (!kUseMock) {
             ref.invalidate(_bookChoseoProvider(widget.bookId));
           }
           if (mounted) {
@@ -208,6 +234,33 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         },
       ),
     );
+  }
+
+  void _showEditThoughtSheet(_Sentence sentence) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _EditThoughtSheet(
+        sentence: sentence,
+        onSave: (thought) => _saveSentenceThought(sentence, thought),
+      ),
+    );
+  }
+
+  Future<void> _saveSentenceThought(_Sentence sentence, String? thought) async {
+    final trimmed = thought?.trim();
+    final normalized = trimmed?.isNotEmpty == true ? trimmed : null;
+
+    if (kUseMock) {
+      setState(() => _mockThoughts[sentence.id] = normalized);
+      return;
+    }
+
+    await ref
+        .read(libraryProvider.notifier)
+        .updateSentenceThought(sentenceId: sentence.id, thought: normalized);
+    ref.invalidate(_bookChoseoProvider(widget.bookId));
   }
 
   void _confirmDelete(Book book) {
@@ -294,13 +347,28 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final isCompleted = book.status == ReadingStatus.completed;
 
     final choseoAsync = ref.watch(_bookChoseoProvider(widget.bookId));
-    final List<_Sentence> sentences = (kUseMock || kIsWeb)
-        ? book.savedSentences
-              .map((s) => (content: s, thought: null as String?, pageNumber: null as int?))
-              .toList()
+    final List<_Sentence> sentences = kUseMock
+        ? book.savedSentences.asMap().entries.map((entry) {
+            final id = 'mock_${widget.bookId}_${entry.key}';
+            return (
+              id: id,
+              content: entry.value,
+              thought: _mockThoughts[id],
+              pageNumber: null as int?,
+            );
+          }).toList()
         : (choseoAsync.valueOrNull ?? const [])
-              .map((c) => (content: c.content, thought: c.myThought, pageNumber: c.pageNumber))
+              .map(
+                (c) => (
+                  id: c.choseoId,
+                  content: c.content,
+                  thought: c.myThought,
+                  pageNumber: c.pageNumber,
+                ),
+              )
               .toList();
+    final isLoadingSentences = !kUseMock && choseoAsync.isLoading;
+    final hasSentenceError = !kUseMock && choseoAsync.hasError;
 
     return Scaffold(
       backgroundColor: context.appBg,
@@ -385,14 +453,20 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
           ),
           if (sentences.isEmpty)
             SliverToBoxAdapter(
-              child: _SentenceEmptyState(
-                onAdd: () => _showAddSentenceSheet(book),
-              ),
+              child: isLoadingSentences
+                  ? const _SentenceLoadingState()
+                  : _SentenceEmptyState(
+                      onAdd: () => _showAddSentenceSheet(book),
+                      hasError: hasSentenceError,
+                    ),
             )
           else
             SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _SentenceItem(sentence: sentences[index]),
+                (context, index) => _SentenceItem(
+                  sentence: sentences[index],
+                  onEditThought: () => _showEditThoughtSheet(sentences[index]),
+                ),
                 childCount: sentences.length,
               ),
             ),
@@ -402,6 +476,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       ),
       bottomNavigationBar: _BottomActionBar(
         book: book,
+        onAddSentence: () => _showAddSentenceSheet(book),
         onStartSession: () {
           context.push(
             AppConstants.routeSession,
@@ -425,11 +500,13 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
 class _BottomActionBar extends StatelessWidget {
   final Book book;
+  final VoidCallback onAddSentence;
   final VoidCallback onStartSession;
   final VoidCallback onMenu;
 
   const _BottomActionBar({
     required this.book,
+    required this.onAddSentence,
     required this.onStartSession,
     required this.onMenu,
   });
@@ -464,7 +541,19 @@ class _BottomActionBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           IconButton(
+            onPressed: onAddSentence,
+            tooltip: '문장 기록',
+            icon: const Icon(Icons.format_quote_rounded),
+            style: IconButton.styleFrom(
+              backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.1),
+              foregroundColor: context.appPrimaryAccent,
+              padding: const EdgeInsets.all(16),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
             onPressed: onMenu,
+            tooltip: '더보기',
             icon: const Icon(Icons.more_vert_rounded),
             style: IconButton.styleFrom(
               backgroundColor: context.appCardElevated,
@@ -914,7 +1003,9 @@ class _SectionHeader extends StatelessWidget {
 
 class _SentenceEmptyState extends StatelessWidget {
   final VoidCallback onAdd;
-  const _SentenceEmptyState({required this.onAdd});
+  final bool hasError;
+
+  const _SentenceEmptyState({required this.onAdd, this.hasError = false});
 
   @override
   Widget build(BuildContext context) {
@@ -941,7 +1032,7 @@ class _SentenceEmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '마음에 남는 문장을 기록해보세요',
+                hasError ? '문장을 불러오지 못했어요' : '마음에 남는 문장을 기록해보세요',
                 style: TextStyle(
                   fontSize: 13,
                   color: context.appTextTertiary,
@@ -977,7 +1068,9 @@ class _SentenceEmptyState extends StatelessWidget {
 
 class _SentenceItem extends StatelessWidget {
   final _Sentence sentence;
-  const _SentenceItem({required this.sentence});
+  final VoidCallback onEditThought;
+
+  const _SentenceItem({required this.sentence, required this.onEditThought});
 
   @override
   Widget build(BuildContext context) {
@@ -1027,48 +1120,249 @@ class _SentenceItem extends StatelessWidget {
                           color: context.appTextPrimary,
                         ),
                       ),
-                      if (hasThought) ...[
-                        const SizedBox(height: 10),
-                        Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: context.appTextTertiary.withValues(
-                            alpha: 0.12,
+                      const SizedBox(height: 10),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: context.appTextTertiary.withValues(alpha: 0.12),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.edit_note_rounded,
+                            size: 12,
+                            color: context.appTextTertiary,
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.edit_note_rounded,
-                              size: 12,
+                          const SizedBox(width: 4),
+                          Text(
+                            '내 생각',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: context.appTextTertiary,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '내 생각',
-                              style: TextStyle(
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: onEditThought,
+                            icon: Icon(
+                              hasThought
+                                  ? Icons.edit_rounded
+                                  : Icons.add_rounded,
+                              size: 13,
+                            ),
+                            label: Text(hasThought ? '수정' : '추가'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: context.appPrimaryAccent,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 3,
+                              ),
+                              textStyle: const TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: context.appTextTertiary,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          sentence.thought!,
-                          style: AppTheme.bodySmall.copyWith(
-                            color: context.appTextSecondary,
-                            height: 1.6,
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hasThought ? sentence.thought! : '아직 생각을 남기지 않았어요',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: hasThought
+                              ? context.appTextSecondary
+                              : context.appTextTertiary,
+                          height: 1.6,
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SentenceLoadingState extends StatelessWidget {
+  const _SentenceLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      child: Container(
+        height: 96,
+        alignment: Alignment.center,
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: 14,
+          side: BorderSide(color: context.appBorderSubtle),
+        ),
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: context.appPrimaryAccent,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditThoughtSheet extends ConsumerStatefulWidget {
+  final _Sentence sentence;
+  final Future<void> Function(String? thought) onSave;
+
+  const _EditThoughtSheet({required this.sentence, required this.onSave});
+
+  @override
+  ConsumerState<_EditThoughtSheet> createState() => _EditThoughtSheetState();
+}
+
+class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
+  late final TextEditingController _thoughtCtrl;
+  final _focusNode = FocusNode();
+  bool _isSaving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _thoughtCtrl = TextEditingController(text: widget.sentence.thought ?? '');
+    Future.delayed(const Duration(milliseconds: 100), _focusNode.requestFocus);
+  }
+
+  @override
+  void dispose() {
+    _thoughtCtrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _isSaving = true;
+      _hasError = false;
+    });
+    HapticFeedback.mediumImpact();
+
+    try {
+      await widget.onSave(_thoughtCtrl.text);
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _hasError = true;
+      });
+      HapticFeedback.heavyImpact();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final keyboardInset = media.viewInsets.bottom;
+    final bottomPadding = keyboardInset > 0 ? 24.0 : media.padding.bottom + 24;
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: Container(
+        decoration: ShapeDecoration(
+          color: context.appSurface,
+          shape: const SmoothRectangleBorder(
+            borderRadius: SmoothBorderRadius.vertical(
+              top: SmoothRadius(cornerRadius: 28, cornerSmoothing: 0.8),
+            ),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ChorokSheetHandle(),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note_rounded,
+                      size: 19,
+                      color: context.appPrimaryAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '내 생각 수정',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: AppTheme.smoothBox(
+                    color: context.appCard,
+                    radius: 14,
+                    side: BorderSide.none,
+                  ),
+                  child: Text(
+                    widget.sentence.content,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.appTextSecondary,
+                      height: 1.65,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _SheetTextField(
+                  controller: _thoughtCtrl,
+                  focusNode: _focusNode,
+                  hintText: '이 문장에서 무엇을 느꼈나요?',
+                  minLines: 6,
+                  maxLines: 8,
+                ),
+                if (_hasError) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '저장에 실패했어요. 다시 시도해보세요.',
+                    style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                _SheetActionButton(
+                  label: '저장하기',
+                  enabled: !_isSaving,
+                  loading: _isSaving,
+                  onTap: _save,
+                ),
+              ],
+            ),
           ),
         ),
       ),

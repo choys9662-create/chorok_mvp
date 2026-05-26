@@ -117,66 +117,69 @@ class _PageSliderCardState extends State<PageSliderCard> {
           ),
           const SizedBox(height: 12),
 
-          // 페이지 숫자 — 탭하면 키보드 열림
-          GestureDetector(
-            onTap: () {
-              _focusNode.requestFocus();
-              _ctrl.selection = TextSelection(
-                baseOffset: 0,
-                extentOffset: _ctrl.text.length,
-              );
-            },
-            child: Center(
-              child: IntrinsicWidth(
-                child: TextField(
-                  controller: _ctrl,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  onSubmitted: (_) {
-                    _commitText();
-                    _focusNode.unfocus();
-                  },
-                  style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w700,
-                    color: context.appPrimaryAccent,
-                    height: 1.1,
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.only(bottom: 2),
-                    suffixIcon: Icon(
-                      Icons.edit_rounded,
-                      size: 14,
-                      color: context.appTextTertiary,
-                    ),
-                    suffixIconConstraints: const BoxConstraints(
-                      maxWidth: 20,
-                      maxHeight: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (total > 0)
-            Center(
-              child: Text(
-                '/ $total쪽',
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ),
-
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _StepButton(
                 icon: Icons.remove,
                 onPressed: () => _setPage(_page - 1),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _focusNode.requestFocus();
+                    _ctrl.selection = TextSelection(
+                      baseOffset: 0,
+                      extentOffset: _ctrl.text.length,
+                    );
+                  },
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IntrinsicWidth(
+                          child: TextField(
+                            controller: _ctrl,
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            onSubmitted: (_) {
+                              _commitText();
+                              _focusNode.unfocus();
+                            },
+                            style: TextStyle(
+                              fontSize: 38,
+                              fontWeight: FontWeight.w700,
+                              color: context.appPrimaryAccent,
+                              height: 1.1,
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.only(bottom: 2),
+                              suffixIcon: Icon(
+                                Icons.edit_rounded,
+                                size: 14,
+                                color: context.appTextTertiary,
+                              ),
+                              suffixIconConstraints: const BoxConstraints(
+                                maxWidth: 20,
+                                maxHeight: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (total > 0)
+                          Text(
+                            '/ $total쪽',
+                            style: AppTheme.captionSmall.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               _StepButton(
                 icon: Icons.add,
@@ -184,6 +187,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
               ),
             ],
           ),
+          const SizedBox(height: 10),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,

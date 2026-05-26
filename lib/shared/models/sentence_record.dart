@@ -6,6 +6,7 @@ class SentenceRecord {
   final String? sessionId;
   final String content;
   final String? thought;
+  final int? pageNumber;
   final List<String> normalizedSentences;
   final DateTime createdAt;
 
@@ -16,6 +17,7 @@ class SentenceRecord {
     this.sessionId,
     required this.content,
     this.thought,
+    this.pageNumber,
     required this.normalizedSentences,
     required this.createdAt,
   });
@@ -27,10 +29,12 @@ class SentenceRecord {
     sessionId: m['session_id'] as String?,
     content: m['content'] as String,
     thought: m['thought'] as String?,
-    normalizedSentences: (m['normalized_sentences'] as List<dynamic>?)
-        ?.map((s) => s.toString())
-        .toList() ??
-    [],
+    pageNumber: (m['page_number'] as num?)?.toInt(),
+    normalizedSentences:
+        (m['normalized_sentences'] as List<dynamic>?)
+            ?.map((s) => s.toString())
+            .toList() ??
+        [],
     createdAt: DateTime.parse(m['created_at'] as String),
   );
 }
