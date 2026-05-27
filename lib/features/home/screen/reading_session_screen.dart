@@ -458,13 +458,18 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
 
   Future<void> _openChosuSheet({String initialText = ''}) async {
+    final hasInitialText = initialText.trim().isNotEmpty;
     ref.read(timerProvider.notifier).pause();
     final result = await showModalBottomSheet<CollectedSentence>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          ChosuSheet(initialText: initialText, bookTitle: widget.bookTitle),
+      requestFocus: !hasInitialText,
+      builder: (_) => ChosuSheet(
+        initialText: initialText,
+        bookTitle: widget.bookTitle,
+        autofocusSentence: !hasInitialText,
+      ),
     );
     if (!mounted) return;
     if (result != null && result.content.isNotEmpty) {

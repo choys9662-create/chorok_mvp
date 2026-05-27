@@ -1,6 +1,5 @@
 import 'dart:async' show unawaited;
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:figma_squircle/figma_squircle.dart';
@@ -127,7 +126,7 @@ class SessionRecapScreen extends ConsumerStatefulWidget {
 }
 
 class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _enterCtrl;
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
@@ -137,6 +136,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   // 페이지 기록 상태
   bool _pageRecorded = false;
   bool _isSavingPage = false;
+
+  // 완독 시 다음 책 제안 노출 상태/애니메이션
+  bool _showNextBookSuggestion = false;
+  late final AnimationController _suggestCtrl;
+  late final Animation<double> _suggestFade;
+  late final Animation<Offset> _suggestSlide;
 
   // 공유 카드 캡처용 키
   final _shareKey = GlobalKey();
@@ -189,6 +194,18 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       begin: const Offset(0, 0.06),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic));
+
+    _suggestCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _suggestFade = CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOut);
+    _suggestSlide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOutCubic),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -276,6 +293,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   @override
   void dispose() {
     _enterCtrl.dispose();
+    _suggestCtrl.dispose();
     super.dispose();
   }
 
@@ -376,7 +394,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         },
         onLater: () {
           Navigator.of(context).pop();
-          context.go(AppConstants.routeHome);
+          // 리캡 화면에 머물며 다음 책 제안을 차분하게 노출
+          setState(() => _showNextBookSuggestion = true);
+          _suggestCtrl.forward();
         },
       ),
     );
@@ -521,8 +541,16 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           const SizedBox(height: 16),
                         ],
 
-                        _ChainLightningSection(),
-                        const SizedBox(height: 24),
+                        if (_showNextBookSuggestion) ...[
+                          FadeTransition(
+                            opacity: _suggestFade,
+                            child: SlideTransition(
+                              position: _suggestSlide,
+                              child: const _NextBookSuggestion(),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
 
                         // 공유용 영수증 — 화면 밖에서 캡처 전용
                         Offstage(
@@ -1298,197 +1326,6 @@ class _CompletionDialog extends StatelessWidget {
   }
 }
 
-// ─── 집중도 게이지 카드 ────────────────────────────────────────────────
-class _FocusGaugeCard extends StatefulWidget {
-  final double focusPercent;
-  final int exitCount;
-  final String insightText;
-
-  const _FocusGaugeCard({
-    required this.focusPercent,
-    required this.exitCount,
-    required this.insightText,
-  });
-
-  @override
-  State<_FocusGaugeCard> createState() => _FocusGaugeCardState();
-}
-
-class _FocusGaugeCardState extends State<_FocusGaugeCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _anim = Tween<double>(
-      begin: 0,
-      end: widget.focusPercent / 100,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Color get _gaugeColor {
-    if (widget.focusPercent >= 80) return context.appPrimaryAccent;
-    if (widget.focusPercent >= 50) return context.appAccentColor;
-    return const Color(0xFFFF7B7B);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 20,
-        side: BorderSide.none,
-      ),
-      child: Row(
-        children: [
-          // 원형 게이지
-          AnimatedBuilder(
-            animation: _anim,
-            builder: (_, _) => SizedBox(
-              width: 72,
-              height: 72,
-              child: CustomPaint(
-                painter: _FocusArcPainter(
-                  progress: _anim.value,
-                  color: _gaugeColor,
-                  trackColor: context.appBorder,
-                ),
-                child: Center(
-                  child: Text(
-                    '${(_anim.value * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: _gaugeColor,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // 텍스트
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '집중도',
-                      style: AppTheme.captionLarge.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                    if (widget.exitCount > 0) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: AppTheme.smoothBox(
-                          color: context.appCardElevated,
-                          radius: 8,
-                          side: BorderSide.none,
-                        ),
-                        child: Text(
-                          '이탈 ${widget.exitCount}회',
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appTextTertiary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.insightText,
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextSecondary,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FocusArcPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final Color trackColor;
-
-  const _FocusArcPainter({
-    required this.progress,
-    required this.color,
-    required this.trackColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final radius = math.min(cx, cy) - 6;
-    const startAngle = -math.pi / 2;
-
-    // 트랙
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: radius),
-      0,
-      math.pi * 2,
-      false,
-      Paint()
-        ..color = trackColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6
-        ..strokeCap = StrokeCap.round,
-    );
-
-    // 진행 호
-    if (progress > 0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, cy), radius: radius),
-        startAngle,
-        math.pi * 2 * progress,
-        false,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 6
-          ..strokeCap = StrokeCap.round,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_FocusArcPainter old) =>
-      old.progress != progress || old.color != color;
-}
-
 class _ReceiptRow extends StatelessWidget {
   final String label;
   final String value;
@@ -1552,9 +1389,9 @@ class _HeroPill extends StatelessWidget {
   }
 }
 
-// ─── 체인 라이트닝 ─────────────────────────────────────────────────────────
-class _ChainLightningSection extends ConsumerWidget {
-  const _ChainLightningSection();
+// ─── 다음 책 제안 (완독 시) ─────────────────────────────────────────────────
+class _NextBookSuggestion extends ConsumerWidget {
+  const _NextBookSuggestion();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1569,23 +1406,6 @@ class _ChainLightningSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.bolt_rounded,
-                  size: 16,
-                  color: context.appPrimaryAccent,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '체인 라이트닝',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
             Container(
               decoration: AppTheme.smoothBox(
                 gradient: AppTheme.greenCardGradient,
@@ -1609,7 +1429,7 @@ class _ChainLightningSection extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '다음으로 읽을 책',
+                          '다음엔 이 책 어때요?',
                           style: AppTheme.captionSmall.copyWith(
                             color: Colors.white.withValues(alpha: 0.65),
                           ),
@@ -1659,7 +1479,7 @@ class _ChainLightningSection extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.bolt_rounded,
+                                  Icons.menu_book_rounded,
                                   size: 14,
                                   color: context.appPrimaryAccent,
                                 ),
