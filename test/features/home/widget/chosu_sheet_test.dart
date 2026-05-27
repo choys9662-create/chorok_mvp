@@ -3,6 +3,12 @@ import 'package:chorok_app/features/home/widget/chosu_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Finder _textFieldWithHint(String hint) {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.hintText == hint,
+  );
+}
+
 void main() {
   testWidgets('ChosuSheet separates sentence and thought entry steps', (
     tester,
@@ -20,10 +26,12 @@ void main() {
     expect(find.text('수집할 문장'), findsOneWidget);
     expect(find.text('생각 쓰기'), findsOneWidget);
     expect(find.text('문장만 저장'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
+    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    expect(sentenceField, findsOneWidget);
+    expect(tester.widget<TextField>(sentenceField).autofocus, isTrue);
 
     await tester.enterText(
-      find.byType(TextField),
+      sentenceField,
       '그래서 선이지는 행복을 누릴 만한 자격에서 없어서는 안 되는 그야말로 불가결한 조건인 것 같다.',
     );
     await tester.pump();
@@ -33,6 +41,32 @@ void main() {
     expect(find.text('문장 수정'), findsOneWidget);
     expect(find.text('내 생각'), findsOneWidget);
     expect(find.text('저장하기'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
+    expect(_textFieldWithHint('이 문장에서 무엇을 느꼈나요?'), findsOneWidget);
+  });
+
+  testWidgets('ChosuSheet keeps keyboard closed for prefilled OCR text', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: const Scaffold(
+          body: ChosuSheet(
+            initialText: '스캔된 문장입니다.',
+            bookTitle: '채식주의자',
+            autofocusSentence: false,
+          ),
+        ),
+      ),
+    );
+
+    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    expect(sentenceField, findsOneWidget);
+    final textField = tester.widget<TextField>(sentenceField);
+    expect(textField.autofocus, isFalse);
+    expect(textField.controller?.text, '스캔된 문장입니다.');
   });
 }

@@ -1,4 +1,5 @@
 import 'package:figma_squircle/figma_squircle.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
@@ -9,8 +10,14 @@ class ChosuSheet extends StatefulWidget {
   /// OCR / STT로 인식된 텍스트를 미리 채울 때 사용
   final String initialText;
   final String bookTitle;
+  final bool autofocusSentence;
 
-  const ChosuSheet({super.key, this.initialText = '', this.bookTitle = ''});
+  const ChosuSheet({
+    super.key,
+    this.initialText = '',
+    this.bookTitle = '',
+    this.autofocusSentence = true,
+  });
 
   @override
   State<ChosuSheet> createState() => _ChosuSheetState();
@@ -72,17 +79,22 @@ class _ChosuSheetState extends State<ChosuSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
+    final shouldLiftSheet = !kIsWeb;
     final availableHeight =
-        media.size.height - keyboardInset - media.padding.top - 12;
+        media.size.height -
+        (shouldLiftSheet ? keyboardInset : 0) -
+        media.padding.top -
+        12;
     final maxSheetHeight = availableHeight
         .clamp(320.0, media.size.height * 0.92)
         .toDouble();
-    final bottomPadding = keyboardInset > 0 ? 20.0 : media.padding.bottom + 20;
+    final bottomPadding =
+        media.padding.bottom + 20 + (shouldLiftSheet ? 0 : keyboardInset);
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(bottom: keyboardInset),
+      padding: EdgeInsets.only(bottom: shouldLiftSheet ? keyboardInset : 0),
       child: Container(
         constraints: BoxConstraints(maxHeight: maxSheetHeight),
         decoration: ShapeDecoration(
@@ -154,6 +166,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     onChanged: (_) => setState(() {}),
                     onContinue: _openThoughtStep,
                     onSave: _save,
+                    autofocus: widget.autofocusSentence,
                   ),
               ],
             ),
@@ -241,6 +254,7 @@ class _SentenceStep extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback onContinue;
   final VoidCallback onSave;
+  final bool autofocus;
 
   const _SentenceStep({
     required this.sentenceCtrl,
@@ -250,6 +264,7 @@ class _SentenceStep extends StatelessWidget {
     required this.onChanged,
     required this.onContinue,
     required this.onSave,
+    required this.autofocus,
   });
 
   @override
@@ -321,7 +336,7 @@ class _SentenceStep extends StatelessWidget {
           minLines: 7,
           maxLines: 9,
           italic: true,
-          autofocus: true,
+          autofocus: autofocus,
           cursorColor: context.appPrimaryAccent,
           onChanged: onChanged,
         ),
