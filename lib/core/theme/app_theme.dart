@@ -20,7 +20,7 @@ extension AppThemeExt on BuildContext {
   Color get appTextTertiary =>
       _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
 
-  // 브랜드 초록 — 다크: 네온 그린(#00FF00), 라이트: 접근성 보장 딥 그린(#1B7A3A)
+  // 브랜드 초록 — 다크: 라이브 포레스트 네온, 라이트: 같은 hue를 낮춘 포레스트 라임
   Color get appPrimaryAccent =>
       _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
   // accent 계열 — 다크: #00CC6A, 라이트: lightPrimaryAccent와 동일 톤
@@ -29,7 +29,7 @@ extension AppThemeExt on BuildContext {
 
   // 진행 바 트랙 색상 (비어 있는 구간 배경)
   Color get appProgressTrack =>
-      _isDark ? const Color(0xFF2C2C2C) : const Color(0xFFE5E8EB);
+      _isDark ? const Color(0xFF2C2C2C) : const Color(0xFFD7E4D0);
 
   // 비활성 액션 버튼 fill (다크: #161616 / 라이트: #EAEEF2)
   Color get appActionBg =>
@@ -40,39 +40,39 @@ extension AppThemeExt on BuildContext {
       ? Colors.white.withValues(alpha: 0.14)
       : const Color(0xFF191F28).withValues(alpha: 0.12);
 
-  // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 딥그린 8%)
+  // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 포레스트 라임 12%)
   Color get appActiveFill => _isDark
       ? AppTheme.primaryLight.withValues(alpha: 0.15)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.08);
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.12);
 
-  // pill 활성 보더 (다크: 네온그린 45% / 라이트: 딥그린 35%)
+  // pill 활성 보더 (다크: 네온그린 45% / 라이트: 포레스트 라임 45%)
   Color get appPillBorderActive => _isDark
       ? AppTheme.primaryLight.withValues(alpha: 0.45)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.35);
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45);
 
-  // pill 뮤트 보더 — 일시정지 상태 (다크: 네온그린 25% / 라이트: 딥그린 18%)
+  // pill 뮤트 보더 — 일시정지 상태 (다크: 네온그린 25% / 라이트: 포레스트 라임 24%)
   Color get appPillBorderMuted => _isDark
       ? AppTheme.primaryLight.withValues(alpha: 0.25)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.18);
+      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.24);
 
   // 카드 내 컨트롤(칩·입력) 배경 — 다크: elevated 카드(#1E1E1E), 라이트: 배경색 recessed(#F2F4F6)
   Color get appControlBg =>
       _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
 
-  // 읽기 관련 배경 틴트 — #009B58 라이트 모드에서 1.5배 보상
+  // 읽기 관련 배경 틴트 — 라이트 모드는 흰 카드 위에서도 보이도록 1.5배 보상
   Color primaryBg(double alpha) => _isDark
       ? AppTheme.primaryLight.withValues(alpha: alpha)
       : AppTheme.lightPrimaryAccent.withValues(
           alpha: (alpha * 1.5).clamp(0, 1),
         );
 
-  // 읽기 관련 진행 그라디언트 — DESIGN.md Primary Green 기반
+  // 읽기 관련 진행 그라디언트 — 라이브 포레스트 키 컬러 기반
   Gradient get appReadingGradient => _isDark
       ? AppTheme.greenGradient
       : const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF009B58), Color(0xFF00C870)],
+          colors: [AppTheme.lightPrimaryAccent, AppTheme.accent],
         );
 }
 
@@ -143,7 +143,7 @@ class AppTheme {
   static const Color lightCard = Color(0xFFFFFFFF);
   static const Color lightCardElevated = Color(0xFFF7FAF5);
   static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
-  static const Color lightPrimaryContainer = Color(0xFFE8F5E9);
+  static const Color lightPrimaryContainer = Color(0xFFE7F4DE);
   static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
@@ -153,13 +153,13 @@ class AppTheme {
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
   static const Color lightTextPrimary = Color(0xFF1A1A1A);
-  static const Color lightTextSecondary = Color(0xFF465044);
-  static const Color lightTextTertiary = Color(0xFF707A6D);
-  static const Color lightBorderColor = Color(0xFFD1DCCF);
-  static const Color lightDivider = Color(0xFFDDE7DA);
+  static const Color lightTextSecondary = Color(0xFF3F4D38);
+  static const Color lightTextTertiary = Color(0xFF5F6D5A);
+  static const Color lightBorderColor = Color(0xFFC5D8BD);
+  static const Color lightDivider = Color(0xFFD8E7D2);
 
-  // 라이트 모드 전용 브랜드 초록 — DESIGN.md §1 Primary Green
-  static const Color lightPrimaryAccent = Color(0xFF16A34A);
+  // 라이트 모드 전용 브랜드 초록 — #8DFF54/#6DE034와 같은 라임 hue를 접근성 대비까지 낮춘 값
+  static const Color lightPrimaryAccent = Color(0xFF347A12);
 
   // 라이트 모드 카드 그림자
   static const List<BoxShadow> lightCardShadows = [
@@ -456,13 +456,13 @@ class AppTheme {
       height: 60,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return labelStyle.copyWith(color: primary);
+          return labelStyle.copyWith(color: lightPrimaryAccent);
         }
         return captionSmall.copyWith(color: lightTextTertiary);
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: primary);
+          return const IconThemeData(color: lightPrimaryAccent);
         }
         return const IconThemeData(color: lightTextTertiary);
       }),

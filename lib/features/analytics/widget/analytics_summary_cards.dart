@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_stat_cell.dart';
+import '../../../shared/widgets/forest_accent_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 
 class SummaryCard extends StatelessWidget {
@@ -18,9 +19,8 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChorokCard(
+    return ForestAccentCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
-      borderColor: AppTheme.primary.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

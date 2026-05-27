@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/forest_accent_card.dart';
 import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
@@ -48,8 +48,7 @@ class WeeklyStatusCard extends ConsumerWidget {
     // 오늘 인사이트 (목업 mockup exitCount=0 기준)
     final insight = todayInsightText(todayMin, 0, goalMin);
 
-    return ChorokCard(
-      borderColor: context.appBorder,
+    return ForestAccentCard(
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

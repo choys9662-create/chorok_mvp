@@ -12,6 +12,7 @@ import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/overlap_detector.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
@@ -648,20 +649,14 @@ class _TrendingBooksSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
             AppTheme.screenPadding,
             16,
             AppTheme.screenPadding,
-            8,
+            10,
           ),
-          child: Text(
-            '이번 주 화제의 책',
-            style: AppTheme.captionLarge.copyWith(
-              color: context.appTextTertiary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: ChorokSectionHeader(title: '이번 주 화제의 책'),
         ),
         SizedBox(
           height: 72,
@@ -890,8 +885,12 @@ class _SentenceCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: ShapeDecoration(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.1),
+                  color: context.appPrimaryAccent.withValues(alpha: 0.18),
                   shape: SmoothRectangleBorder(
+                    side: BorderSide(
+                      color: context.appPrimaryAccent.withValues(alpha: 0.45),
+                      width: 1,
+                    ),
                     borderRadius: SmoothBorderRadius.only(
                       topLeft: SmoothRadius(
                         cornerRadius: 15,
@@ -916,6 +915,7 @@ class _SentenceCard extends StatelessWidget {
                       '겹문장 감지됨',
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appPrimaryAccent,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],

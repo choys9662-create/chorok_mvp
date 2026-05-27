@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import 'package:figma_squircle/figma_squircle.dart';
 import '../../../shared/models/session_goal.dart';
 
@@ -29,24 +30,15 @@ class WishlistSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: Row(
-            children: [
-              Text(
-                '다음에 읽을 책',
-                style: AppTheme.headingSmall.copyWith(
-                  color: context.appTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+          child: ChorokSectionHeader(
+            title: '다음에 읽을 책',
+            trailing: Text(
+              '${wishlistBooks.length}권',
+              style: AppTheme.captionLarge.copyWith(
+                color: context.appPrimaryAccent,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 8),
-              Text(
-                '${wishlistBooks.length}권',
-                style: AppTheme.captionLarge.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 12),

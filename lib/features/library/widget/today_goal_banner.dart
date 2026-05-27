@@ -31,10 +31,10 @@ class TodayGoalBanner extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: AppTheme.smoothBox(
-          color: context.appPrimaryAccent.withValues(alpha: 0.08),
+          color: context.primaryBg(0.10),
           radius: AppTheme.radiusLG,
           side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.22),
+            color: context.appPrimaryAccent.withValues(alpha: 0.34),
           ),
         ),
         child: Row(
@@ -43,7 +43,7 @@ class TodayGoalBanner extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: AppTheme.smoothBox(
-                color: context.appPrimaryAccent.withValues(alpha: 0.15),
+                color: context.primaryBg(0.14),
                 radius: 10,
               ),
               child: Icon(
@@ -68,7 +68,7 @@ class TodayGoalBanner extends StatelessWidget {
                   Text(
                     '${time_fmt.formatMinutes(todayMinutes)} 독서했어요 · 목표 $goalMinutes분',
                     style: AppTheme.captionSmall.copyWith(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.75),
+                      color: context.appPrimaryAccent,
                     ),
                   ),
                 ],

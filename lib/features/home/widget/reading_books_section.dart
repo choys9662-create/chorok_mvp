@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
@@ -34,25 +35,17 @@ class ReadingBooksSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: Row(
-            children: [
-              Text(
-                '지금 읽는 책',
-                style: AppTheme.headingSmall.copyWith(
-                  color: context.appTextPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (!isLoading)
-                Text(
-                  '${readingBooks.length}권',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
+          child: ChorokSectionHeader(
+            title: '지금 읽는 책',
+            trailing: isLoading
+                ? null
+                : Text(
+                    '${readingBooks.length}권',
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-            ],
           ),
         ),
 
