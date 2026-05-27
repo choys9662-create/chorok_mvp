@@ -144,9 +144,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _SentencesReviewSheet(
-        sentences: List.from(_collectedSentences),
-        onDelete: (index) =>
-            setState(() => _collectedSentences.removeAt(index)),
+        sentences: [..._preExistingSentences, ..._collectedSentences],
+        preExistingCount: _preExistingSentences.length,
+        onDelete: (index) {
+          final offset = _preExistingSentences.length;
+          if (index >= offset) {
+            setState(() => _collectedSentences.removeAt(index - offset));
+          }
+        },
         bookTitle: widget.bookTitle,
         bookAuthor: widget.bookAuthor,
       ),
@@ -179,7 +184,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
-  int _preExistingCount = 0;
+  List<CollectedSentence> _preExistingSentences = [];
 
   bool _isRecording = false;
   bool _showSlideToStop = false;
@@ -352,7 +357,19 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             .read(dbServiceProvider)
             .fetchMySentencesForBook(bookId)
             .then((rows) {
-          if (mounted) setState(() => _preExistingCount = rows.length);
+          if (mounted) {
+            setState(() {
+              _preExistingSentences = rows
+                  .map(
+                    (r) => CollectedSentence(
+                      content: r['content'] as String? ?? '',
+                      thought: r['thought'] as String? ?? '',
+                      pageNumber: r['page_number'] as int?,
+                    ),
+                  )
+                  .toList();
+            });
+          }
         });
       }
     });
@@ -520,7 +537,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   bookAuthor: widget.bookAuthor,
                   sessionStartedAt: _sessionStartedAt,
                   streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
-                  sentenceCount: _preExistingCount + _collectedSentences.length,
+                  sentenceCount: _preExistingSentences.length + _collectedSentences.length,
                   onLockLongPress: _showSlideToUnlock,
                   onPlusTap: _onPlusTap,
                   onSentencesTap: _openSentencesSheet,
@@ -2227,6 +2244,7 @@ class _SentenceBadge extends StatelessWidget {
 
 class _SentencesReviewSheet extends ConsumerStatefulWidget {
   final List<CollectedSentence> sentences;
+  final int preExistingCount;
   final void Function(int index) onDelete;
   final String bookTitle;
   final String bookAuthor;
@@ -2236,6 +2254,7 @@ class _SentencesReviewSheet extends ConsumerStatefulWidget {
     required this.onDelete,
     required this.bookTitle,
     required this.bookAuthor,
+    this.preExistingCount = 0,
   });
 
   @override
@@ -2307,7 +2326,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '이번 독서에서 모은 문장 ${_items.length}개',
+                      '이 책에서 모은 문장 ${_items.length}개',
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 17,
@@ -2345,10 +2364,12 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                         itemBuilder: (_, i) {
                           final s = _items[i];
                           final expanded = _expandedIndex == i;
+                          final deletable = i >= widget.preExistingCount;
                           return _SwipeableSentenceReviewCard(
                             key: ValueKey('${s.content.hashCode}_$i'),
                             sentence: s,
                             expanded: expanded,
+                            deletable: deletable,
                             onTap: () => setState(
                               () => _expandedIndex = expanded ? null : i,
                             ),
@@ -2432,6 +2453,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
 class _SwipeableSentenceReviewCard extends StatefulWidget {
   final CollectedSentence sentence;
   final bool expanded;
+  final bool deletable;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
@@ -2441,6 +2463,7 @@ class _SwipeableSentenceReviewCard extends StatefulWidget {
     required this.expanded,
     required this.onTap,
     required this.onDelete,
+    this.deletable = true,
   });
 
   @override
@@ -2462,35 +2485,36 @@ class _SwipeableSentenceReviewCardState
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned(
-          top: 0,
-          right: 0,
-          bottom: 12,
-          child: AnimatedOpacity(
-            opacity: _deleting ? 1 : 0,
-            duration: const Duration(milliseconds: 120),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                widget.onDelete();
-              },
-              child: Container(
-                width: 92,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF4B4F),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: Colors.black,
-                  size: 28,
+        if (widget.deletable)
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 12,
+            child: AnimatedOpacity(
+              opacity: _deleting ? 1 : 0,
+              duration: const Duration(milliseconds: 120),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  widget.onDelete();
+                },
+                child: Container(
+                  width: 92,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4B4F),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.black,
+                    size: 28,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
         AnimatedContainer(
           duration: _dragging
               ? Duration.zero
@@ -2506,31 +2530,39 @@ class _SwipeableSentenceReviewCardState
                 widget.onTap();
               }
             },
-            onHorizontalDragStart: (_) => setState(() => _dragging = true),
-            onHorizontalDragUpdate: (details) {
-              final delta = details.primaryDelta ?? 0;
-              setState(() {
-                _dragOffset = (_dragOffset + delta).clamp(-_maxReveal, 0);
-              });
-            },
-            onHorizontalDragEnd: (details) {
-              final velocity = details.primaryVelocity ?? 0;
-              final reveal =
-                  velocity < -500 ||
-                  (velocity <= 500 && _dragOffset.abs() > _maxReveal * 0.35);
-              setState(() {
-                _dragging = false;
-                _dragOffset = reveal ? -_maxReveal : 0;
-              });
-            },
-            onHorizontalDragCancel: () {
-              setState(() {
-                _dragging = false;
-                _dragOffset = _dragOffset.abs() > _maxReveal * 0.35
-                    ? -_maxReveal
-                    : 0;
-              });
-            },
+            onHorizontalDragStart: widget.deletable
+                ? (_) => setState(() => _dragging = true)
+                : null,
+            onHorizontalDragUpdate: widget.deletable
+                ? (details) {
+                    final delta = details.primaryDelta ?? 0;
+                    setState(() {
+                      _dragOffset = (_dragOffset + delta).clamp(-_maxReveal, 0);
+                    });
+                  }
+                : null,
+            onHorizontalDragEnd: widget.deletable
+                ? (details) {
+                    final velocity = details.primaryVelocity ?? 0;
+                    final reveal =
+                        velocity < -500 ||
+                        (velocity <= 500 && _dragOffset.abs() > _maxReveal * 0.35);
+                    setState(() {
+                      _dragging = false;
+                      _dragOffset = reveal ? -_maxReveal : 0;
+                    });
+                  }
+                : null,
+            onHorizontalDragCancel: widget.deletable
+                ? () {
+                    setState(() {
+                      _dragging = false;
+                      _dragOffset = _dragOffset.abs() > _maxReveal * 0.35
+                          ? -_maxReveal
+                          : 0;
+                    });
+                  }
+                : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
