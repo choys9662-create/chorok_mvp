@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +35,8 @@ abstract class OcrService {
 class CloudVisionOcrService implements OcrService {
   final _imagePicker = ImagePicker();
   static const _endpoint = 'https://vision.googleapis.com/v1/images:annotate';
+  static const _imageReadTimeout = Duration(seconds: 12);
+  static const _requestTimeout = Duration(seconds: 24);
   static final _httpClient = http.Client();
   static String get _apiKey => dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
 
@@ -44,7 +47,7 @@ class CloudVisionOcrService implements OcrService {
       imageQuality: 85,
     );
     if (photo == null) return const OcrCancelled();
-    final bytes = await photo.readAsBytes();
+    final bytes = await photo.readAsBytes().timeout(_imageReadTimeout);
     return extractTextFromBytes(bytes);
   }
 
@@ -57,23 +60,25 @@ class CloudVisionOcrService implements OcrService {
     try {
       final base64Image = base64Encode(bytes);
 
-      final response = await _httpClient.post(
-        Uri.parse('$_endpoint?key=$_apiKey'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'requests': [
-            {
-              'image': {'content': base64Image},
-              'features': [
-                {'type': 'TEXT_DETECTION', 'maxResults': 1},
+      final response = await _httpClient
+          .post(
+            Uri.parse('$_endpoint?key=$_apiKey'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'requests': [
+                {
+                  'image': {'content': base64Image},
+                  'features': [
+                    {'type': 'TEXT_DETECTION', 'maxResults': 1},
+                  ],
+                  'imageContext': {
+                    'languageHints': ['ko'],
+                  },
+                },
               ],
-              'imageContext': {
-                'languageHints': ['ko'],
-              },
-            },
-          ],
-        }),
-      );
+            }),
+          )
+          .timeout(_requestTimeout);
 
       if (response.statusCode != 200) {
         final snippet = response.body.length > 300
@@ -88,6 +93,8 @@ class CloudVisionOcrService implements OcrService {
       final trimmed = text?.trim() ?? '';
       if (trimmed.isEmpty) return const OcrNoText();
       return OcrSuccess(trimmed);
+    } on TimeoutException {
+      return const OcrError('OCR 응답이 지연되고 있어요. 네트워크를 확인한 뒤 다시 시도해 주세요.');
     } catch (e) {
       return OcrError('OCR 처리 중 오류: $e');
     }

@@ -64,8 +64,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **Mirror design changes across environments immediately.**
 
+- The "Design App" is the mock-data environment for quickly shaping and reviewing UI/UX, layout, component structure, and interaction design.
+- The "Test App" is the real-data environment for validating the same experience against the actual database/API.
 - If you modify the UI/UX or layout in the "Design App" (mockup environment), you MUST apply the exact same visual changes to the "Test App" (real data environment).
-- Keep the look, feel, and component structure 100% identical across both environments. Only the data source (mock data vs. real database/API) should differ.
+- Keep the look, feel, copy, layout, interaction behavior, and component structure 100% identical across both environments. Only the data source (mock data vs. real database/API) should differ.
+- Do not treat either environment as disposable. A design task is incomplete if only one side reflects the requested visual or UX change.
+- Functional fixes that do not alter UI/UX, layout, or component structure do not require a design/test visual sync, but still verify the affected runtime environment.
 - Always verify both sides are synced before completing a design task.
 
 ---

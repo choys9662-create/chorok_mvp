@@ -95,6 +95,8 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
@@ -120,7 +122,9 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                   children: [
                     CircleAvatar(
                       radius: 32,
-                      backgroundColor: AppTheme.primary.withValues(alpha: 0.4),
+                      backgroundColor: isDark
+                          ? AppTheme.primary.withValues(alpha: 0.4)
+                          : context.primaryBg(0.14),
                       child: Icon(
                         Icons.person_rounded,
                         size: 32,
@@ -132,8 +136,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       bottom: 0,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: AppTheme.primary,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppTheme.primary
+                              : context.appPrimaryAccent,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -198,10 +204,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         onPressed: () => _showEditProfileSheet(context),
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         style: IconButton.styleFrom(
-                          foregroundColor: AppTheme.accent,
-                          backgroundColor: AppTheme.primary.withValues(
-                            alpha: 0.2,
-                          ),
+                          foregroundColor: context.appPrimaryAccent,
+                          backgroundColor: isDark
+                              ? AppTheme.primary.withValues(alpha: 0.2)
+                              : context.primaryBg(0.12),
                           padding: EdgeInsets.zero,
                         ),
                       ),
@@ -259,7 +265,9 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                     vertical: 5,
                   ),
                   decoration: AppTheme.smoothPill(
-                    color: AppTheme.primary.withValues(alpha: 0.3),
+                    color: isDark
+                        ? AppTheme.primary.withValues(alpha: 0.3)
+                        : context.primaryBg(0.10),
                     side: BorderSide.none,
                   ),
                   child: Row(
@@ -462,6 +470,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -495,19 +505,20 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             child: FilledButton(
               onPressed: _saving ? null : _save,
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: context.appPrimaryAccent,
+                foregroundColor: isDark ? Colors.black : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: SmoothRectangleBorder(
                   borderRadius: widget.buttonBorderRadius,
                 ),
               ),
               child: _saving
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: isDark ? Colors.black : Colors.white,
                       ),
                     )
                   : const Text(
@@ -600,6 +611,8 @@ class _FollowListSheetState extends State<_FollowListSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         const SizedBox(height: 12),
@@ -623,7 +636,9 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
+                    backgroundColor: isDark
+                        ? AppTheme.primary.withValues(alpha: 0.3)
+                        : context.primaryBg(0.12),
                     child: Text(
                       widget.names[i][0],
                       style: AppTheme.bodyMedium.copyWith(
@@ -656,8 +671,10 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                         ),
                         decoration: ShapeDecoration(
                           color: _followStates[i]
-                              ? context.appBorder
-                              : AppTheme.primary,
+                              ? context.appCardElevated
+                              : isDark
+                              ? AppTheme.primary
+                              : context.appPrimaryAccent,
                           shape: SmoothRectangleBorder(
                             borderRadius: _followButtonRadius,
                             side: BorderSide.none,
@@ -668,7 +685,9 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                           style: AppTheme.captionLarge.copyWith(
                             color: _followStates[i]
                                 ? context.appTextTertiary
-                                : context.appPrimaryAccent,
+                                : isDark
+                                ? context.appPrimaryAccent
+                                : Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

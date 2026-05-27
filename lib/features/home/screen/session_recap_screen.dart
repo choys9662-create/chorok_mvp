@@ -148,17 +148,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     return (widget.data.seconds / total * 100).clamp(0.0, 100.0);
   }
 
-  // 집중도 기반 인사이트
-  String get _focusInsightText {
-    final exits = widget.data.exitCount;
-    final focus = _focusPercent;
-    if (exits == 0) return '한 번도 이탈하지 않은 완벽한 집중이에요! 🎯';
-    if (focus >= 90) return '대단해요! 거의 완벽한 집중을 유지했어요 ✨';
-    if (focus >= 70) return '좋은 집중력이에요. 이탈이 있었지만 금방 돌아왔어요 👍';
-    if (focus >= 50) return '집중과 이탈이 반반이었어요. 다음엔 더 잘할 수 있어요 💪';
-    return '오늘은 집중이 쉽지 않았지만, 책을 펼친 것만으로도 훌륭해요 🌱';
-  }
-
   Future<void> _share() async {
     HapticFeedback.selectionClick();
     try {
@@ -493,181 +482,35 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 1. 기존 리캡 컴포넌트 뷰
-                        _SessionHeroCard(
+                        // 통합 히어로: 책 + 시간/문장 + 집중도/점수 한 카드
+                        _RecapHeroCard(
                           bookTitle: widget.data.bookTitle,
                           bookAuthor: widget.data.bookAuthor,
                           coverUrl: widget.data.coverUrl,
                           timeText: _timeText,
                           sentenceCount: widget.data.sentences.length,
-                        ),
-                        const SizedBox(height: 16),
-                        _FocusGaugeCard(
                           focusPercent: _focusPercent,
-                          exitCount: widget.data.exitCount,
-                          insightText: _focusInsightText,
-                        ),
-                        const SizedBox(height: 16),
-                        _ScoreCard(
                           score: _score,
                           evalText: _evalText(
                             _score,
                             widget.data.sentences.length,
                           ),
                         ),
-                        const SizedBox(height: 40),
-
-                        // 2. 공유용 영수증 캡처 영역 (새 버전)
-                        RepaintBoundary(
-                          key: _shareKey,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.receiptBg,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 32,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'C H O R O K',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 8,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'READING RECEIPT',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 12,
-                                    letterSpacing: 3,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                const SizedBox(height: AppTheme.spaceMD),
-                                const SizedBox(height: 24),
-
-                                Text(
-                                  widget.data.bookTitle,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.data.bookAuthor,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                const SizedBox(height: AppTheme.spaceMD),
-                                const SizedBox(height: 24),
-
-                                _ReceiptRow(
-                                  'DATE',
-                                  time_fmt.formatDate(DateTime.now()),
-                                ),
-                                const SizedBox(height: 8),
-                                _ReceiptRow('TIME', _timeText),
-                                const SizedBox(height: 8),
-                                _ReceiptRow(
-                                  'FOCUS',
-                                  '${_focusPercent.toInt()}%',
-                                ),
-                                const SizedBox(height: 8),
-                                _ReceiptRow('SCORE', '$_score PTS'),
-                                const SizedBox(height: 24),
-                                const SizedBox(height: AppTheme.spaceMD),
-                                const SizedBox(height: 24),
-
-                                if (widget.data.sentences.isNotEmpty) ...[
-                                  Text(
-                                    '"${widget.data.sentences.first.content}"',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 15,
-                                      fontStyle: FontStyle.italic,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  const SizedBox(height: 24),
-                                ],
-
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: List.generate(
-                                    40,
-                                    (index) => Container(
-                                      width: (index * 7 % 3 + 1) * 1.2,
-                                      height: 45,
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 1.5,
-                                      ),
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  'THANK YOU FOR READING',
-                                  style: TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 10,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                         const SizedBox(height: 16),
 
-                        // 수집 문장 분석
+                        // 수집 문장 분석 (있을 때만)
                         if (widget.data.sentences.isNotEmpty) ...[
-                          _SentencesSection(sentences: widget.data.sentences),
-                          const SizedBox(height: 12),
-                          // 겹문장 힌트 카드 — 목업 수치이므로 디자인 앱에서만 노출
-                          if (kUseMock)
-                            _OverlapHintCard(
-                              sentenceCount: widget.data.sentences.length,
-                            ),
-                          const SizedBox(height: 16),
-                        ] else ...[
-                          _EmptySentenceCard(),
+                          _SentencesSection(
+                            sentences: widget.data.sentences,
+                            overlapBadge: kUseMock
+                                ? '${(widget.data.sentences.length * 1.8).ceil().clamp(1, 99)}개 겹침'
+                                : null,
+                          ),
                           const SizedBox(height: 16),
                         ],
 
-                        // 독서 통계 행
-                        _StatsRow(
-                          seconds: widget.data.seconds,
-                          sentenceCount: widget.data.sentences.length,
-                        ),
-                        const SizedBox(height: 16),
-
                         // 페이지 기록 카드 (bookId 있을 때만)
-                        if (widget.data.bookId != null)
+                        if (widget.data.bookId != null) ...[
                           _PageRecordCard(
                             initialPage: widget.data.startPage,
                             totalPages: widget.data.totalPages,
@@ -675,9 +518,29 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             isSaving: _isSavingPage,
                             onSave: _savePage,
                           ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
+                        ],
+
                         _ChainLightningSection(),
                         const SizedBox(height: 24),
+
+                        // 공유용 영수증 — 화면 밖에서 캡처 전용
+                        Offstage(
+                          offstage: true,
+                          child: RepaintBoundary(
+                            key: _shareKey,
+                            child: _ReceiptCapture(
+                              bookTitle: widget.data.bookTitle,
+                              bookAuthor: widget.data.bookAuthor,
+                              timeText: _timeText,
+                              focusPercent: _focusPercent,
+                              score: _score,
+                              firstSentence: widget.data.sentences.isNotEmpty
+                                  ? widget.data.sentences.first.content
+                                  : null,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -697,62 +560,34 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 }
 
-// ─── 점수 카드 ────────────────────────────────────────────────────────
-class _ScoreCard extends StatefulWidget {
+// ─── 통합 리캡 히어로 카드 ───────────────────────────────────────────────
+class _RecapHeroCard extends StatelessWidget {
+  final String bookTitle;
+  final String bookAuthor;
+  final String? coverUrl;
+  final String timeText;
+  final int sentenceCount;
+  final double focusPercent;
   final int score;
   final String evalText;
-  const _ScoreCard({required this.score, required this.evalText});
 
-  @override
-  State<_ScoreCard> createState() => _ScoreCardState();
-}
-
-class _ScoreCardState extends State<_ScoreCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _progressAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _progressAnim = Tween<double>(
-      begin: 0,
-      end: widget.score / 100,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      _ctrl.forward();
-      _ctrl.addStatusListener((status) {
-        if (status == AnimationStatus.completed && mounted) {
-          HapticFeedback.mediumImpact();
-        }
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  String get _scoreLabel {
-    if (widget.score >= 90) return '탁월해요';
-    if (widget.score >= 75) return '훌륭해요';
-    if (widget.score >= 60) return '좋아요';
-    return '시작이에요';
-  }
+  const _RecapHeroCard({
+    required this.bookTitle,
+    required this.bookAuthor,
+    this.coverUrl,
+    required this.timeText,
+    required this.sentenceCount,
+    required this.focusPercent,
+    required this.score,
+    required this.evalText,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: AppTheme.smoothBox(
-        color: context.appCard,
+        gradient: AppTheme.greenCardGradient,
         radius: 20,
         side: BorderSide.none,
       ),
@@ -760,101 +595,263 @@ class _ScoreCardState extends State<_ScoreCard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '세션 평가',
-                style: AppTheme.captionLarge.copyWith(
-                  color: context.appTextTertiary,
-                ),
+              BookCover(
+                coverUrl: coverUrl,
+                gradientIndex:
+                    bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
+                width: 64,
+                height: 86,
+                radius: 10,
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: AppTheme.smoothBox(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                  radius: 12,
-                ),
-                child: Text(
-                  _scoreLabel,
-                  style: AppTheme.captionSmall.copyWith(
-                    color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
-                  ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bookTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.headingSmall.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      bookAuthor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionLarge.copyWith(
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _HeroPill(
+                          icon: Icons.schedule_rounded,
+                          label: timeText,
+                        ),
+                        _HeroPill(
+                          icon: Icons.format_quote_rounded,
+                          label: '$sentenceCount문장',
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          AnimatedBuilder(
-            animation: _progressAnim,
-            builder: (_, _) {
-              final progress = _progressAnim.value;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${(progress * widget.score).round()}',
-                        style: TextStyle(
-                          fontSize: 44,
-                          fontWeight: FontWeight.w800,
-                          height: 1.0,
-                          foreground:
-                              Theme.of(context).brightness == Brightness.dark
-                              ? (Paint()
-                                  ..shader =
-                                      const LinearGradient(
-                                        colors: [
-                                          AppTheme.primaryLight,
-                                          AppTheme.accent,
-                                        ],
-                                      ).createShader(
-                                        const Rect.fromLTWH(0, 0, 100, 60),
-                                      ))
-                              : null,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? null
-                              : context.appPrimaryAccent,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6, left: 2),
-                        child: Text(
-                          '점',
-                          style: AppTheme.headingSmall.copyWith(
-                            color: context.appTextSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: context.appBorder,
-                      valueColor: AlwaysStoppedAnimation(
-                        context.appPrimaryAccent,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
-                ],
-              );
-            },
+          Row(
+            children: [
+              Expanded(
+                child: _RecapStat(
+                  icon: Icons.center_focus_strong_rounded,
+                  label: '집중도',
+                  value: '${focusPercent.round()}%',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _RecapStat(
+                  icon: Icons.auto_awesome_rounded,
+                  label: '점수',
+                  value: '$score점',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            widget.evalText,
-            style: AppTheme.bodyMedium.copyWith(
-              color: context.appTextSecondary,
-              height: 1.6,
+            evalText,
+            style: AppTheme.bodySmall.copyWith(
+              color: Colors.white.withValues(alpha: 0.86),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecapStat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _RecapStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: AppTheme.smoothBox(
+        color: Colors.white.withValues(alpha: 0.14),
+        radius: 14,
+        side: BorderSide.none,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionSmall.copyWith(
+                color: Colors.white.withValues(alpha: 0.72),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: AppTheme.captionLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 공유용 영수증 캡처 ─────────────────────────────────────────────────
+class _ReceiptCapture extends StatelessWidget {
+  final String bookTitle;
+  final String bookAuthor;
+  final String timeText;
+  final double focusPercent;
+  final int score;
+  final String? firstSentence;
+
+  const _ReceiptCapture({
+    required this.bookTitle,
+    required this.bookAuthor,
+    required this.timeText,
+    required this.focusPercent,
+    required this.score,
+    this.firstSentence,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.receiptBg,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'C H O R O K',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 8,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'READING RECEIPT',
+            style: TextStyle(
+              color: Colors.black54,
+              fontSize: 12,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceMD),
+          const SizedBox(height: 24),
+          Text(
+            bookTitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            bookAuthor,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.black54, fontSize: 15),
+          ),
+          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceMD),
+          const SizedBox(height: 24),
+          _ReceiptRow('DATE', time_fmt.formatDate(DateTime.now())),
+          const SizedBox(height: 8),
+          _ReceiptRow('TIME', timeText),
+          const SizedBox(height: 8),
+          _ReceiptRow('FOCUS', '${focusPercent.toInt()}%'),
+          const SizedBox(height: 8),
+          _ReceiptRow('SCORE', '$score PTS'),
+          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceMD),
+          const SizedBox(height: 24),
+          if (firstSentence != null) ...[
+            Text(
+              '"$firstSentence"',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 15,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const SizedBox(height: 24),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              40,
+              (index) => Container(
+                width: (index * 7 % 3 + 1) * 1.2,
+                height: 45,
+                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'THANK YOU FOR READING',
+            style: TextStyle(
+              color: Colors.black54,
+              fontSize: 10,
+              letterSpacing: 2,
             ),
           ),
         ],
@@ -866,7 +863,8 @@ class _ScoreCardState extends State<_ScoreCard>
 // ─── 수집 문장 섹션 ───────────────────────────────────────────────────
 class _SentencesSection extends StatelessWidget {
   final List<CollectedSentence> sentences;
-  const _SentencesSection({required this.sentences});
+  final String? overlapBadge;
+  const _SentencesSection({required this.sentences, this.overlapBadge});
 
   @override
   Widget build(BuildContext context) {
@@ -896,6 +894,23 @@ class _SentencesSection extends StatelessWidget {
                 ),
               ),
             ),
+            if (overlapBadge != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: AppTheme.smoothBox(
+                  color: context.appCardElevated,
+                  radius: 10,
+                ),
+                child: Text(
+                  overlapBadge!,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appTextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 12),
@@ -1036,144 +1051,6 @@ class _SentenceAnalysisCard extends StatelessWidget {
                   ),
                 ],
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 문장 없을 때 ─────────────────────────────────────────────────────
-class _EmptySentenceCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
-      child: Row(
-        children: [
-          Icon(
-            Icons.format_quote_rounded,
-            color: context.appTextTertiary,
-            size: 28,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '다음엔 문장도 수집해봐요',
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '문장 기록 버튼으로 마음에 드는 문장을\n저장하면 겹문장 분석을 볼 수 있어요',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 독서 통계 행 ─────────────────────────────────────────────────────
-class _StatsRow extends StatelessWidget {
-  final int seconds;
-  final int sentenceCount;
-  const _StatsRow({required this.seconds, required this.sentenceCount});
-
-  @override
-  Widget build(BuildContext context) {
-    final overlapCount = (kUseMock && sentenceCount > 0)
-        ? (sentenceCount * 0.6).round().clamp(0, sentenceCount)
-        : 0;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
-      child: Row(
-        children: [
-          _StatItem(
-            icon: Icons.schedule_rounded,
-            value: _fmtSec(seconds),
-            label: '독서 시간',
-          ),
-          _StatItem(
-            icon: Icons.format_quote_rounded,
-            value: '$sentenceCount',
-            label: '수집 문장',
-            highlight: true,
-          ),
-          _StatItem(
-            icon: Icons.join_inner_rounded,
-            value: '$overlapCount',
-            label: '겹문장',
-            highlight: overlapCount > 0,
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _fmtSec(int s) {
-    final h = s ~/ 3600;
-    final m = (s % 3600) ~/ 60;
-    if (h > 0) return '$h시간 $m분';
-    if (m > 0) return '$m분';
-    return '$s초';
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final bool highlight;
-
-  const _StatItem({
-    required this.icon,
-    required this.value,
-    required this.label,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: highlight
-                ? context.appPrimaryAccent
-                : context.appTextTertiary,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: AppTheme.bodyLarge.copyWith(
-              color: highlight
-                  ? context.appPrimaryAccent
-                  : context.appTextPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTheme.captionSmall.copyWith(
-              color: context.appTextTertiary,
             ),
           ),
         ],
@@ -1421,77 +1298,6 @@ class _CompletionDialog extends StatelessWidget {
   }
 }
 
-// ─── 겹문장 힌트 카드 ─────────────────────────────────────────────────────────
-class _OverlapHintCard extends StatelessWidget {
-  final int sentenceCount;
-  const _OverlapHintCard({required this.sentenceCount});
-
-  @override
-  Widget build(BuildContext context) {
-    // 모의 겹침 수: 문장 수 × 랜덤 계수 (실제 연동 전 UI 확인용)
-    final overlapCount = (sentenceCount * 1.8).ceil().clamp(1, 99);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appPrimaryAccent.withValues(alpha: 0.08),
-        radius: 16,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Text('✨', style: TextStyle(fontSize: 18)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.appTextPrimary,
-                      height: 1.5,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: '이 중 $overlapCount개',
-                        style: TextStyle(
-                          color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const TextSpan(text: '의 문장을 다른 독자도 기록했어요'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '피드에서 같은 문장을 찾아보세요',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.appTextTertiary,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── 집중도 게이지 카드 ────────────────────────────────────────────────
 class _FocusGaugeCard extends StatefulWidget {
   final double focusPercent;
@@ -1710,78 +1516,6 @@ class _ReceiptRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ─── 세션 히어로 카드 (이전 버전) ───────────────────────────────────────────
-class _SessionHeroCard extends StatelessWidget {
-  final String bookTitle;
-  final String bookAuthor;
-  final String? coverUrl;
-  final String timeText;
-  final int sentenceCount;
-
-  const _SessionHeroCard({
-    required this.bookTitle,
-    required this.bookAuthor,
-    this.coverUrl,
-    required this.timeText,
-    required this.sentenceCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        gradient: AppTheme.greenCardGradient,
-        radius: 20,
-        side: BorderSide.none,
-      ),
-      child: Row(
-        children: [
-          BookCover(
-            coverUrl: coverUrl,
-            gradientIndex:
-                bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
-            width: 56,
-            height: 72,
-            radius: 8,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bookTitle,
-                  style: AppTheme.headingSmall.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  bookAuthor,
-                  style: AppTheme.captionLarge.copyWith(
-                    color: Colors.white.withValues(alpha: 0.75),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _HeroPill(icon: Icons.schedule_rounded, label: timeText),
-                    const SizedBox(width: 8),
-                    if (sentenceCount > 0)
-                      _HeroPill(
-                        icon: Icons.format_quote_rounded,
-                        label: '$sentenceCount문장',
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

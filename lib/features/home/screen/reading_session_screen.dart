@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,8 @@ import 'session_recap_screen.dart';
 // 세션 화면은 항상 다크 — AppTheme 상수를 직접 alias
 const _kGreen = AppTheme.primaryLight;
 const _kFont = '조선굴림체';
+const _captureTimeout = Duration(seconds: 8);
+const _captureReadTimeout = Duration(seconds: 12);
 
 const List<String> _kTopics = [
   '이 책의 제목이 품고 있는 의미는 무엇일까요?',
@@ -187,11 +190,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   List<CollectedSentence> _preExistingSentences = [];
 
   bool _isRecording = false;
+  bool _ocrProcessing = false;
   bool _showSlideToStop = false;
   bool _showTopic = true;
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
+    if (_shouldUseNativeCameraPickerForOcr) {
+      await _openNativeCameraOcr();
+      return;
+    }
+
     ref.read(timerProvider.notifier).pause();
     _uiHideTimer?.cancel();
     final result = await Navigator.of(context).push<OcrResult>(
@@ -207,12 +216,67 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     );
     if (!mounted) return;
     _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
-    switch (result ?? const OcrCancelled()) {
+    _handleOcrResult(
+      result ?? const OcrCancelled(),
+      noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.',
+    );
+  }
+
+  Future<void> _openNativeCameraOcr() async {
+    ref.read(timerProvider.notifier).pause();
+    _uiHideTimer?.cancel();
+
+    try {
+      final photo = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (!mounted) return;
+      if (photo == null) {
+        ref.read(timerProvider.notifier).resume();
+        _setUi(
+          UiVisibility.revealed,
+          autoHideAfter: const Duration(seconds: 6),
+        );
+        return;
+      }
+
+      setState(() => _ocrProcessing = true);
+      final bytes = await photo.readAsBytes().timeout(_captureReadTimeout);
+      if (!mounted) return;
+      final result = await ref
+          .read(ocrServiceProvider)
+          .extractTextFromBytes(bytes);
+      if (!mounted) return;
+
+      setState(() => _ocrProcessing = false);
+      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
+      _handleOcrResult(
+        result,
+        noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.',
+      );
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() => _ocrProcessing = false);
+      ref.read(timerProvider.notifier).resume();
+      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
+      _showOcrSnack('이미지 처리 시간이 길어졌어요. 다시 시도해 주세요.');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _ocrProcessing = false);
+      ref.read(timerProvider.notifier).resume();
+      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
+      _showOcrSnack('카메라 이미지를 불러올 수 없어요. 다시 시도해 주세요.');
+    }
+  }
+
+  void _handleOcrResult(OcrResult result, {required String noTextMessage}) {
+    switch (result) {
       case OcrSuccess(text: final text):
         _openChosuSheet(initialText: text);
       case OcrNoText():
         ref.read(timerProvider.notifier).resume();
-        _showOcrSnack('텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.');
+        _showOcrSnack(noTextMessage);
       case OcrError(message: final message):
         ref.read(timerProvider.notifier).resume();
         _showOcrSnack(message);
@@ -243,18 +307,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           .extractTextFromBytes(bytes);
       if (!mounted) return;
       _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
-      switch (result) {
-        case OcrSuccess(text: final text):
-          _openChosuSheet(initialText: text);
-        case OcrNoText():
-          ref.read(timerProvider.notifier).resume();
-          _showOcrSnack('텍스트를 인식하지 못했어요. 더 또렷한 이미지로 다시 시도해 보세요.');
-        case OcrError(message: final message):
-          ref.read(timerProvider.notifier).resume();
-          _showOcrSnack(message);
-        case OcrCancelled():
-          ref.read(timerProvider.notifier).resume();
-      }
+      _handleOcrResult(
+        result,
+        noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 이미지로 다시 시도해 보세요.',
+      );
     } catch (_) {
       if (!mounted) return;
       ref.read(timerProvider.notifier).resume();
@@ -576,6 +632,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   onStop: _toggleRecording,
                 ),
 
+              if (_ocrProcessing) const _OcrLoadingOverlay(),
+
               // ⑥ 슬라이드 종료 오버레이
               if (_showSlideToStop)
                 _SlideToStopOverlay(
@@ -893,7 +951,11 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
       _cameraCtrl = controller;
 
       await controller.initialize();
-      await controller.setFlashMode(FlashMode.off);
+      try {
+        await controller.setFlashMode(FlashMode.off);
+      } on CameraException {
+        // Some web browsers expose a camera but not torch/flash controls.
+      }
       if (!mounted) return;
       setState(() => _initializing = false);
     } on CameraException catch (_) {
@@ -921,8 +983,8 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     HapticFeedback.mediumImpact();
 
     try {
-      final photo = await controller.takePicture();
-      final bytes = await photo.readAsBytes();
+      final photo = await controller.takePicture().timeout(_captureTimeout);
+      final bytes = await photo.readAsBytes().timeout(_captureReadTimeout);
       final result = await ref
           .read(ocrServiceProvider)
           .extractTextFromBytes(bytes);
@@ -999,6 +1061,9 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     );
   }
 }
+
+// camera_web can hang while taking still photos in mobile browsers.
+bool get _shouldUseNativeCameraPickerForOcr => kIsWeb;
 
 class _CameraPreviewCover extends StatelessWidget {
   final CameraController controller;
