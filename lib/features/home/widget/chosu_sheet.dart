@@ -79,8 +79,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final bottomPadding =
-        media.padding.bottom + 16 + (kIsWeb ? keyboardInset : 0);
+    final bottomPadding = media.padding.bottom + 16;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
