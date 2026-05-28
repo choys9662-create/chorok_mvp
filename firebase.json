@@ -55,6 +55,35 @@
           ]
         }
       ]
+    },
+    {
+      "target": "site",
+      "public": "website",
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**",
+        "config.example.js"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            { "key": "Cache-Control", "value": "max-age=3600" }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" }
+          ]
+        }
+      ]
     }
   ]
 }

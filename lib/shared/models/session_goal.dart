@@ -68,15 +68,31 @@ class SessionGoal {
 
 /// 세션 중 수집한 문장 — 원문과 내 생각을 함께 보관
 class CollectedSentence {
+  final String? id;
   final String content;
   final String thought;
   final int? pageNumber;
 
   const CollectedSentence({
+    this.id,
     required this.content,
     this.thought = '',
     this.pageNumber,
   });
+
+  CollectedSentence copyWith({
+    String? id,
+    String? content,
+    String? thought,
+    int? pageNumber,
+  }) {
+    return CollectedSentence(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      thought: thought ?? this.thought,
+      pageNumber: pageNumber ?? this.pageNumber,
+    );
+  }
 }
 
 /// 독서 세션 진입 시 라우터에 전달하는 통합 extra

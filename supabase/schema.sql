@@ -122,6 +122,7 @@ create policy "sentences_select_following" on public.sentences for select using 
   exists (select 1 from public.follows where follower_id = auth.uid() and following_id = sentences.user_id)
 );
 create policy "sentences_insert" on public.sentences for insert with check (auth.uid() = user_id);
+create policy "sentences_update" on public.sentences for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "sentences_delete" on public.sentences for delete using (auth.uid() = user_id);
 
 -- follows: 누구나 읽기, 본인만 팔로우/언팔

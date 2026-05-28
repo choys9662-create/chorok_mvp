@@ -51,6 +51,7 @@ app.*.map.json
 .env
 .env.*
 !.env.example
+website/config.js
 
 # Firebase
 .firebase/
