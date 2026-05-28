@@ -10,8 +10,12 @@
         ],
         "prod": [
           "chorok-real"
+        ],
+        "site": [
+          "chorok-web"
         ]
       }
     }
-  }
+  },
+  "etags": {}
 }

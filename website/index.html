@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="초록 웹 - 데스크톱에서 독서 흐름, 서재, 수집 문장을 관리하는 공간"
+    />
+    <title>초록 웹</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js"></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="grain"></div>
+    <main id="app" class="app-shell">
+      <section class="auth-view" data-view="auth">
+        <div class="auth-copy">
+          <p class="eyebrow">CHOLOCK WEB</p>
+          <h1>책상 위에 펼쳐지는 독서의 결.</h1>
+          <p>
+            오늘 읽은 책과 오래 남은 문장을 조용히 정리합니다. 모바일에서
+            쌓은 기록은 그대로 이어집니다.
+          </p>
+          <div class="auth-metrics">
+            <span>서재</span>
+            <span>독서 흐름</span>
+            <span>문장 수집</span>
+          </div>
+        </div>
+
+        <form class="auth-panel" id="authForm">
+          <div>
+            <p class="panel-kicker" id="authKicker">로그인</p>
+            <h2 id="authTitle">초록 계정으로 계속하기</h2>
+          </div>
+          <div class="auth-tabs" role="tablist" aria-label="계정">
+            <button class="auth-tab active" type="button" data-auth-mode="login">
+              로그인
+            </button>
+            <button class="auth-tab" type="button" data-auth-mode="signup">
+              가입
+            </button>
+            <button class="auth-tab" type="button" data-auth-mode="reset">
+              재설정
+            </button>
+          </div>
+          <label class="signup-only hidden">
+            닉네임
+            <input id="username" type="text" autocomplete="nickname" />
+          </label>
+          <label>
+            이메일
+            <input id="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            비밀번호
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+            />
+          </label>
+          <button class="primary-action" id="authSubmit" type="submit">
+            이메일로 로그인
+          </button>
+          <button class="ghost-action oauth-only" id="googleLogin" type="button">
+            Google로 로그인
+          </button>
+          <p class="form-note" id="authMessage"></p>
+        </form>
+      </section>
+
+      <section class="dashboard-view hidden" data-view="dashboard">
+        <aside class="sidebar">
+          <div class="brand-lockup">
+            <span class="brand-mark">초</span>
+            <div>
+              <strong>초록 웹</strong>
+              <small id="profileName">독서 대시보드</small>
+            </div>
+          </div>
+          <nav class="nav-list" aria-label="주요 메뉴">
+            <button class="nav-item active" data-section="overview">개요</button>
+            <button class="nav-item" data-section="library">서재</button>
+            <button class="nav-item" data-section="sentences">문장</button>
+          </nav>
+          <button class="signout-button" id="signOut">로그아웃</button>
+        </aside>
+
+        <section class="workspace">
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">REAL DATA</p>
+              <h2 id="pageTitle">오늘의 독서 흐름</h2>
+            </div>
+            <div class="header-actions">
+              <button class="icon-button" id="refreshData" title="새로고침">
+                ↻
+              </button>
+              <button class="ghost-action compact" id="openSessionDialog">
+                기록 추가
+              </button>
+              <button class="primary-action compact" id="openBookDialog">
+                책 추가
+              </button>
+            </div>
+          </header>
+
+          <section class="content-section" id="overviewSection">
+            <div class="stat-grid">
+              <article class="stat-card">
+                <span>읽는 중</span>
+                <strong id="readingCount">0</strong>
+              </article>
+              <article class="stat-card">
+                <span>완독</span>
+                <strong id="completedCount">0</strong>
+              </article>
+              <article class="stat-card">
+                <span>이번 주</span>
+                <strong id="weeklyMinutes">0분</strong>
+              </article>
+              <article class="stat-card">
+                <span>수집 문장</span>
+                <strong id="sentenceCount">0</strong>
+              </article>
+            </div>
+
+            <div class="split-layout">
+              <article class="focus-panel">
+                <div class="section-heading">
+                  <span>현재 책</span>
+                  <button class="text-button" data-section-shortcut="library">
+                    전체 보기
+                  </button>
+                </div>
+                <div id="focusBook" class="focus-book empty-state">
+                  읽는 중인 책이 없습니다.
+                </div>
+              </article>
+
+              <article class="timeline-panel">
+                <div class="section-heading">
+                  <span>최근 문장</span>
+                  <button class="text-button" data-section-shortcut="sentences">
+                    문장 보기
+                  </button>
+                </div>
+                <div id="recentSentences" class="sentence-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="content-section hidden" id="librarySection">
+            <div id="bookGrid" class="book-grid"></div>
+          </section>
+
+          <section class="content-section hidden" id="sentencesSection">
+            <div id="sentenceList" class="sentence-list wide"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="bookDialog" class="modal-card">
+      <form method="dialog" id="bookForm">
+        <header>
+          <p class="panel-kicker">서재</p>
+          <h3>책 추가</h3>
+        </header>
+        <label>
+          제목
+          <input name="title" required />
+        </label>
+        <label>
+          저자
+          <input name="author" required />
+        </label>
+        <label>
+          전체 페이지
+          <input name="total_pages" type="number" min="0" />
+        </label>
+        <label>
+          표지 URL
+          <input name="cover_url" type="url" />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost-action" value="cancel" type="button" id="closeBookDialog">
+            닫기
+          </button>
+          <button class="primary-action" value="default" type="submit">
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="sentenceDialog" class="modal-card">
+      <form method="dialog" id="sentenceForm">
+        <header>
+          <p class="panel-kicker">문장</p>
+          <h3 id="sentenceBookTitle">문장 저장</h3>
+        </header>
+        <input type="hidden" name="book_id" />
+        <label>
+          문장
+          <textarea name="content" rows="5" required></textarea>
+        </label>
+        <label>
+          생각
+          <textarea name="thought" rows="3"></textarea>
+        </label>
+        <label>
+          페이지
+          <input name="page_number" type="number" min="0" />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost-action" value="cancel" type="button" id="closeSentenceDialog">
+            닫기
+          </button>
+          <button class="primary-action" value="default" type="submit">
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="progressDialog" class="modal-card">
+      <form method="dialog" id="progressForm">
+        <header>
+          <p class="panel-kicker">진도</p>
+          <h3 id="progressBookTitle">페이지 수정</h3>
+        </header>
+        <input type="hidden" name="book_id" />
+        <label>
+          현재 페이지
+          <input name="current_page" type="number" min="0" required />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost-action" value="cancel" type="button" id="closeProgressDialog">
+            닫기
+          </button>
+          <button class="primary-action" value="default" type="submit">
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="sessionDialog" class="modal-card">
+      <form method="dialog" id="sessionForm">
+        <header>
+          <p class="panel-kicker">독서 기록</p>
+          <h3>기록 추가</h3>
+        </header>
+        <label>
+          책
+          <select name="book_id" id="sessionBookSelect"></select>
+        </label>
+        <label>
+          읽은 시간(분)
+          <input name="minutes" type="number" min="1" required />
+        </label>
+        <label>
+          읽은 페이지
+          <input name="pages_read" type="number" min="0" />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost-action" value="cancel" type="button" id="closeSessionDialog">
+            닫기
+          </button>
+          <button class="primary-action" value="default" type="submit">
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

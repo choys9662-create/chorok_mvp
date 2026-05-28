@@ -155,6 +155,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             setState(() => _collectedSentences.removeAt(index - offset));
           }
         },
+        onUpdateThought: _updateSentenceThought,
         bookTitle: widget.bookTitle,
         bookAuthor: widget.bookAuthor,
       ),
@@ -409,16 +410,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
       final bookId = widget.bookId;
       if (bookId != null && !const bool.fromEnvironment('USE_MOCK')) {
-        ref
-            .read(dbServiceProvider)
-            .fetchMySentencesForBook(bookId)
-            .then((rows) {
+        ref.read(dbServiceProvider).fetchMySentencesForBook(bookId).then((
+          rows,
+        ) {
           if (mounted) {
             setState(() {
               _preExistingSentences = rows
                   .map(
                     (r) => CollectedSentence(
                       content: r['content'] as String? ?? '',
+                      id: r['id'] as String?,
                       thought: r['thought'] as String? ?? '',
                       pageNumber: r['page_number'] as int?,
                     ),
@@ -476,6 +477,33 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       setState(() => _collectedSentences.add(result));
     }
     ref.read(timerProvider.notifier).resume();
+  }
+
+  Future<void> _updateSentenceThought(int index, String? thought) async {
+    final normalized = thought?.trim() ?? '';
+    final offset = _preExistingSentences.length;
+
+    if (index < offset) {
+      final current = _preExistingSentences[index];
+      final sentenceId = current.id;
+      if (sentenceId != null && sentenceId.isNotEmpty) {
+        await ref
+            .read(dbServiceProvider)
+            .updateSentenceThought(sentenceId, normalized);
+      }
+      if (!mounted) return;
+      setState(() {
+        _preExistingSentences[index] = current.copyWith(thought: normalized);
+      });
+      return;
+    }
+
+    final localIndex = index - offset;
+    if (localIndex < 0 || localIndex >= _collectedSentences.length) return;
+    setState(() {
+      _collectedSentences[localIndex] = _collectedSentences[localIndex]
+          .copyWith(thought: normalized);
+    });
   }
 
   void _onStop() {
@@ -550,6 +578,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       child: PopScope(
         canPop: false,
         child: Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: Colors.black,
           body: Stack(
             fit: StackFit.expand,
@@ -598,7 +627,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   bookAuthor: widget.bookAuthor,
                   sessionStartedAt: _sessionStartedAt,
                   streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
-                  sentenceCount: _preExistingSentences.length + _collectedSentences.length,
+                  sentenceCount:
+                      _preExistingSentences.length + _collectedSentences.length,
                   onLockLongPress: _showSlideToUnlock,
                   onPlusTap: _onPlusTap,
                   onSentencesTap: _openSentencesSheet,
@@ -2316,12 +2346,14 @@ class _SentencesReviewSheet extends ConsumerStatefulWidget {
   final List<CollectedSentence> sentences;
   final int preExistingCount;
   final void Function(int index) onDelete;
+  final Future<void> Function(int index, String? thought) onUpdateThought;
   final String bookTitle;
   final String bookAuthor;
 
   const _SentencesReviewSheet({
     required this.sentences,
     required this.onDelete,
+    required this.onUpdateThought,
     required this.bookTitle,
     required this.bookAuthor,
     this.preExistingCount = 0,
@@ -2340,6 +2372,31 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
   void initState() {
     super.initState();
     _items = List.from(widget.sentences);
+  }
+
+  Future<void> _editThought(int index) async {
+    final item = _items[index];
+    final updated = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SentenceThoughtSheet(sentence: item),
+    );
+    if (updated == null) return;
+
+    try {
+      await widget.onUpdateThought(index, updated);
+      if (!mounted) return;
+      setState(() {
+        _items[index] = item.copyWith(thought: updated.trim());
+        _expandedIndex = index;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('생각을 저장하지 못했어요. 다시 시도해주세요.')),
+      );
+    }
   }
 
   @override
@@ -2443,6 +2500,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                             onTap: () => setState(
                               () => _expandedIndex = expanded ? null : i,
                             ),
+                            onEditThought: () => _editThought(i),
                             onDelete: () {
                               setState(() {
                                 _items.removeAt(i);
@@ -2525,6 +2583,7 @@ class _SwipeableSentenceReviewCard extends StatefulWidget {
   final bool expanded;
   final bool deletable;
   final VoidCallback onTap;
+  final VoidCallback onEditThought;
   final VoidCallback onDelete;
 
   const _SwipeableSentenceReviewCard({
@@ -2532,6 +2591,7 @@ class _SwipeableSentenceReviewCard extends StatefulWidget {
     required this.sentence,
     required this.expanded,
     required this.onTap,
+    required this.onEditThought,
     required this.onDelete,
     this.deletable = true,
   });
@@ -2616,7 +2676,8 @@ class _SwipeableSentenceReviewCardState
                     final velocity = details.primaryVelocity ?? 0;
                     final reveal =
                         velocity < -500 ||
-                        (velocity <= 500 && _dragOffset.abs() > _maxReveal * 0.35);
+                        (velocity <= 500 &&
+                            _dragOffset.abs() > _maxReveal * 0.35);
                     setState(() {
                       _dragging = false;
                       _dragOffset = reveal ? -_maxReveal : 0;
@@ -2661,6 +2722,7 @@ class _SwipeableSentenceReviewCardState
                 sentence: widget.sentence,
                 expanded: widget.expanded,
                 deleting: _deleting,
+                onEditThought: widget.onEditThought,
               ),
             ),
           ),
@@ -2674,11 +2736,13 @@ class _SentenceReviewRow extends StatelessWidget {
   final CollectedSentence sentence;
   final bool expanded;
   final bool deleting;
+  final VoidCallback onEditThought;
 
   const _SentenceReviewRow({
     required this.sentence,
     required this.expanded,
     required this.deleting,
+    required this.onEditThought,
   });
 
   @override
@@ -2741,7 +2805,49 @@ class _SentenceReviewRow extends StatelessWidget {
                             fontFamily: _kFont,
                           ),
                         ),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          '아직 이 문장에 대한 생각이 없어요',
+                          style: TextStyle(
+                            color: color.withValues(alpha: 0.48),
+                            fontSize: 14,
+                            height: 1.6,
+                            letterSpacing: 0,
+                            fontFamily: _kFont,
+                          ),
+                        ),
                       ],
+                      const SizedBox(height: 14),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: deleting ? null : onEditThought,
+                          icon: Icon(
+                            Icons.edit_note_rounded,
+                            size: 18,
+                            color: color,
+                          ),
+                          label: Text(
+                            sentence.thought.isEmpty ? '생각 추가' : '생각 수정',
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0,
+                              fontFamily: _kFont,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
                     ],
                   )
                 : Text(
@@ -2760,6 +2866,199 @@ class _SentenceReviewRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SentenceThoughtSheet extends StatefulWidget {
+  final CollectedSentence sentence;
+
+  const _SentenceThoughtSheet({required this.sentence});
+
+  @override
+  State<_SentenceThoughtSheet> createState() => _SentenceThoughtSheetState();
+}
+
+class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
+  late final TextEditingController _thoughtCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _thoughtCtrl = TextEditingController(text: widget.sentence.thought);
+  }
+
+  @override
+  void dispose() {
+    _thoughtCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    Navigator.pop(context, _thoughtCtrl.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final keyboardInset = media.viewInsets.bottom;
+    final shouldLiftSheet = !kIsWeb;
+    final maxHeight = (media.size.height - media.padding.top - 12)
+        .clamp(360.0, media.size.height * 0.9)
+        .toDouble();
+    final bottomPadding =
+        media.padding.bottom + 22 + (shouldLiftSheet ? 0 : keyboardInset);
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: shouldLiftSheet ? keyboardInset : 0),
+      child: Container(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(22, 14, 22, bottomPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.edit_note_rounded,
+                      color: _kGreen,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '문장에 대한 생각',
+                      style: TextStyle(
+                        color: _kGreen,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                        fontFamily: _kFont,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111211),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.14),
+                    ),
+                  ),
+                  child: Text(
+                    widget.sentence.content,
+                    style: const TextStyle(
+                      color: _kGreen,
+                      fontSize: 15,
+                      height: 1.72,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _thoughtCtrl,
+                  autofocus: true,
+                  minLines: 5,
+                  maxLines: 8,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  cursorColor: _kGreen,
+                  style: const TextStyle(
+                    color: _kGreen,
+                    fontSize: 16,
+                    height: 1.62,
+                    letterSpacing: 0,
+                    fontFamily: _kFont,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '이 문장을 보며 든 생각을 적어보세요',
+                    hintStyle: TextStyle(
+                      color: _kGreen.withValues(alpha: 0.42),
+                      fontSize: 16,
+                      letterSpacing: 0,
+                      fontFamily: _kFont,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF111211),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(13),
+                      borderSide: BorderSide(
+                        color: _kGreen.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(13),
+                      borderSide: BorderSide(
+                        color: _kGreen.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(13),
+                      borderSide: const BorderSide(color: _kGreen, width: 1.4),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 15,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.check_rounded, size: 20),
+                    label: const Text('저장'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _kGreen,
+                      foregroundColor: Colors.black,
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                        fontFamily: _kFont,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
