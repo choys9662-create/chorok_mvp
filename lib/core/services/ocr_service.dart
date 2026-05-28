@@ -38,7 +38,12 @@ class CloudVisionOcrService implements OcrService {
   static const _imageReadTimeout = Duration(seconds: 12);
   static const _requestTimeout = Duration(seconds: 24);
   static final _httpClient = http.Client();
-  static String get _apiKey => dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
+  static const _apiKeyFromDefine = String.fromEnvironment(
+    'GOOGLE_CLOUD_VISION_API_KEY',
+  );
+  static String get _apiKey => _apiKeyFromDefine.isNotEmpty
+      ? _apiKeyFromDefine
+      : dotenv.env['GOOGLE_CLOUD_VISION_API_KEY'] ?? '';
 
   @override
   Future<OcrResult> extractTextFromCamera() async {
