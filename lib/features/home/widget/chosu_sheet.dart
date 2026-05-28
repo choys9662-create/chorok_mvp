@@ -79,7 +79,9 @@ class _ChosuSheetState extends State<ChosuSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final bottomPadding = media.padding.bottom + 16;
+    final isKeyboardOpen = kIsWeb && keyboardInset > 0;
+    final bottomPadding =
+        media.padding.bottom + 16 + (isKeyboardOpen ? keyboardInset : 0);
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
@@ -150,6 +152,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                             thoughtFocus: _thoughtFocus,
                             saved: _saved,
                             canSave: _sentenceCtrl.text.trim().isNotEmpty,
+                            compactForKeyboard: isKeyboardOpen,
                             onBack: () =>
                                 setState(() => _isWritingThought = false),
                             onSave: _save,
@@ -164,6 +167,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                             onContinue: _openThoughtStep,
                             onSave: _save,
                             autofocus: widget.autofocusSentence,
+                            compactForKeyboard: isKeyboardOpen,
                           ),
                   ),
                 ),
@@ -254,6 +258,7 @@ class _SentenceStep extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onSave;
   final bool autofocus;
+  final bool compactForKeyboard;
 
   const _SentenceStep({
     super.key,
@@ -265,6 +270,7 @@ class _SentenceStep extends StatelessWidget {
     required this.onContinue,
     required this.onSave,
     required this.autofocus,
+    required this.compactForKeyboard,
   });
 
   @override
@@ -342,42 +348,44 @@ class _SentenceStep extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '${sentenceCtrl.text.length}자',
-            style: AppTheme.captionSmall.copyWith(
-              color: context.appTextTertiary,
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: hasSentence ? onContinue : null,
-            style: _primaryButtonStyle(context),
+        if (!compactForKeyboard) ...[
+          Align(
+            alignment: Alignment.centerRight,
             child: Text(
-              '생각 쓰기',
-              style: AppTheme.bodySmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: hasSentence ? Colors.black : context.appTextTertiary,
+              '${sentenceCtrl.text.length}자',
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: hasSentence ? onSave : null,
-            child: _SavedButtonChild(
-              saved: saved,
-              label: '문장만 저장',
-              enabled: hasSentence,
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: hasSentence ? onContinue : null,
+              style: _primaryButtonStyle(context),
+              child: Text(
+                '생각 쓰기',
+                style: AppTheme.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: hasSentence ? Colors.black : context.appTextTertiary,
+                ),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: hasSentence ? onSave : null,
+              child: _SavedButtonChild(
+                saved: saved,
+                label: '문장만 저장',
+                enabled: hasSentence,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -389,6 +397,7 @@ class _ThoughtStep extends StatelessWidget {
   final FocusNode thoughtFocus;
   final bool saved;
   final bool canSave;
+  final bool compactForKeyboard;
   final VoidCallback onBack;
   final VoidCallback onSave;
 
@@ -399,6 +408,7 @@ class _ThoughtStep extends StatelessWidget {
     required this.thoughtFocus,
     required this.saved,
     required this.canSave,
+    required this.compactForKeyboard,
     required this.onBack,
     required this.onSave,
   });
@@ -408,46 +418,48 @@ class _ThoughtStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: ShapeDecoration(
-            color: context.appCardElevated,
-            shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: 12,
-                cornerSmoothing: 0.6,
+        if (!compactForKeyboard) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: ShapeDecoration(
+              color: context.appCardElevated,
+              shape: SmoothRectangleBorder(
+                borderRadius: SmoothBorderRadius(
+                  cornerRadius: 12,
+                  cornerSmoothing: 0.6,
+                ),
+                side: BorderSide.none,
               ),
-              side: BorderSide.none,
             ),
-          ),
-          child: Text(
-            sentence,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.bodySmall.copyWith(
-              color: context.appTextSecondary,
-              height: 1.6,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: onBack,
-            icon: const Icon(Icons.edit_rounded, size: 15),
-            label: const Text('문장 수정'),
-            style: TextButton.styleFrom(
-              foregroundColor: context.appTextTertiary,
-              textStyle: AppTheme.captionSmall.copyWith(
-                fontWeight: FontWeight.w600,
+            child: Text(
+              sentence,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.bodySmall.copyWith(
+                color: context.appTextSecondary,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onBack,
+              icon: const Icon(Icons.edit_rounded, size: 15),
+              label: const Text('문장 수정'),
+              style: TextButton.styleFrom(
+                foregroundColor: context.appTextTertiary,
+                textStyle: AppTheme.captionSmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         _FieldLabel(
           icon: Icons.edit_note_rounded,
           label: '내 생각',
@@ -465,20 +477,22 @@ class _ThoughtStep extends StatelessWidget {
             onChanged: (_) {},
           ),
         ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: canSave ? onSave : null,
-            style: _primaryButtonStyle(context, saved: saved),
-            child: _SavedButtonChild(
-              saved: saved,
-              label: '저장하기',
-              enabled: canSave,
-              primary: true,
+        if (!compactForKeyboard) ...[
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: canSave ? onSave : null,
+              style: _primaryButtonStyle(context, saved: saved),
+              child: _SavedButtonChild(
+                saved: saved,
+                label: '저장하기',
+                enabled: canSave,
+                primary: true,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -572,10 +586,6 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
       _scheduleCaretFollow();
     }
 
-    final keyboardAwareBottomPadding = kIsWeb && keyboardInset > 0
-        ? keyboardInset + _keyboardGap
-        : 16.0;
-
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
@@ -618,12 +628,7 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
             fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.fromLTRB(
-            20,
-            16,
-            20,
-            keyboardAwareBottomPadding,
-          ),
+          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
         ),
         onChanged: widget.onChanged,
       ),
