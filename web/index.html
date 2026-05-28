@@ -35,6 +35,19 @@
 
   <title>chorok_app</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    (function () {
+      var hash = window.location.hash || '';
+      var isAuthCallback =
+        hash.indexOf('access_token=') !== -1 ||
+        hash.indexOf('refresh_token=') !== -1 ||
+        hash.indexOf('error=') !== -1;
+
+      if (isAuthCallback) {
+        window.location.replace('https://chorok-web.web.app/' + hash);
+      }
+    })();
+  </script>
   <style>
     body {
       background-color: #FBFBFB;

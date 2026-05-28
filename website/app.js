@@ -9,6 +9,12 @@ const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey, {
   },
 });
 
+const canonicalOrigin = 'https://chorok-web.web.app';
+const redirectOrigin = window.location.hostname === 'localhost'
+  || window.location.hostname === '127.0.0.1'
+  ? window.location.origin
+  : canonicalOrigin;
+
 const state = {
   user: null,
   profile: null,
@@ -315,7 +321,7 @@ async function signUp(email, password, username) {
     email,
     password,
     options: {
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: redirectOrigin,
       data: {
         username: trimmedUsername,
         display_name: trimmedUsername,
@@ -327,7 +333,7 @@ async function signUp(email, password, username) {
 
 async function resetPassword(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo: redirectOrigin,
   });
   if (error) throw error;
 }
@@ -456,7 +462,7 @@ function bindEvents() {
   $('#googleLogin').addEventListener('click', async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: redirectOrigin },
     });
     if (error) showAuthMessage(error.message);
   });
@@ -558,6 +564,9 @@ async function boot() {
   setAuthMode('login');
   const { data } = await supabase.auth.getSession();
   state.user = data.session?.user ?? null;
+  if (window.location.hash.includes('access_token=')) {
+    window.history.replaceState(null, '', window.location.pathname);
+  }
   if (state.user) {
     showView('dashboard');
     await refreshData();
