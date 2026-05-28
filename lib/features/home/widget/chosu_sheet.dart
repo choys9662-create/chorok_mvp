@@ -615,6 +615,11 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
         autofocus: widget.autofocus,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
+        autocorrect: false,
+        enableSuggestions: false,
+        autofillHints: const <String>[],
+        smartDashesType: SmartDashesType.disabled,
+        smartQuotesType: SmartQuotesType.disabled,
         cursorColor: widget.cursorColor,
         style: AppTheme.bodyMedium.copyWith(
           color: context.appTextPrimary,
