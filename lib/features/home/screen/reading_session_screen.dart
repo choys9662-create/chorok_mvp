@@ -190,6 +190,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   late final DateTime _sessionStartedAt;
   List<CollectedSentence> _preExistingSentences = [];
 
+  // 집중도 산출용 — 타이머가 running일 때만 앱을 벗어난 경우를 '이탈'로 카운트.
+  // OCR/녹음 등 앱 내 기능은 타이머를 pause하므로 자연히 제외된다.
+  int _exitCount = 0;
+  int _exitDurationSeconds = 0;
+  DateTime? _exitStartedAt;
+
   bool _isRecording = false;
   bool _ocrProcessing = false;
   bool _showSlideToStop = false;
@@ -435,8 +441,21 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (_exitStartedAt != null) {
+        _exitCount++;
+        _exitDurationSeconds += DateTime.now()
+            .difference(_exitStartedAt!)
+            .inSeconds;
+        _exitStartedAt = null;
+      }
       ref.read(timerProvider.notifier).syncFromWallClock();
       WakelockPlus.enable();
+    } else {
+      // 타이머가 실제로 돌고 있을 때 앱을 벗어난 경우만 이탈로 기록.
+      // 앱 내 기능(OCR/녹음/문장작성)은 타이머를 pause하므로 제외된다.
+      if (_exitStartedAt == null && ref.read(timerProvider).isRunning) {
+        _exitStartedAt = DateTime.now();
+      }
     }
   }
 
@@ -538,6 +557,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         startPage: widget.startPage,
         totalPages: widget.totalPages,
         sessionStartedAt: _sessionStartedAt,
+        exitCount: _exitCount,
+        exitDurationSeconds: _exitDurationSeconds,
       ),
     );
   }

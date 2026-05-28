@@ -21,6 +21,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
 import '../../library/screen/library_screen.dart';
+import 'session_score.dart';
 import '../controller/weekly_minutes_provider.dart';
 import '../controller/recommended_books_provider.dart';
 import '../../../shared/providers/library_provider.dart';
@@ -99,23 +100,6 @@ int _viralCount(String sentence) {
   return 50 + (h % 200);
 }
 
-// 세션 점수: 시간 + 문장 수 기반
-int _calcScore(int seconds, int sentenceCount) {
-  final timePts = (seconds / 90).clamp(0.0, 40.0).toInt();
-  final sentPts = (sentenceCount * 3).clamp(0, 15);
-  return (45 + timePts + sentPts).clamp(0, 100);
-}
-
-String _evalText(int score, int sentenceCount) {
-  if (score >= 90) return '오늘은 정말 깊이 있는 독서를 했어요.\n최고의 집중력을 보여줬어요!';
-  if (score >= 75) return '훌륭한 독서 세션이었어요.\n꾸준히 이 페이스를 유지해봐요.';
-  if (score >= 60) {
-    if (sentenceCount > 0) return '좋은 독서였어요. 수집한 문장들이\n피드에 올라갔어요!';
-    return '좋은 시작이에요. 다음엔 문장도\n한 번 수집해봐요!';
-  }
-  return '짧지만 의미 있는 독서였어요.\n오늘도 잘 했어요.';
-}
-
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
 class SessionRecapScreen extends ConsumerStatefulWidget {
   final RecapData data;
@@ -147,11 +131,10 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   final _shareKey = GlobalKey();
 
   // 집중도 (0~100)
-  double get _focusPercent {
-    final total = widget.data.seconds + widget.data.exitDurationSeconds;
-    if (total <= 0) return 100.0;
-    return (widget.data.seconds / total * 100).clamp(0.0, 100.0);
-  }
+  double get _focusPercent => sessionFocusPercent(
+    readSeconds: widget.data.seconds,
+    exitDurationSeconds: widget.data.exitDurationSeconds,
+  );
 
   Future<void> _share() async {
     HapticFeedback.selectionClick();
@@ -181,7 +164,11 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   @override
   void initState() {
     super.initState();
-    _score = _calcScore(widget.data.seconds, widget.data.sentences.length);
+    _score = sessionScore(
+      seconds: widget.data.seconds,
+      sentenceCount: widget.data.sentences.length,
+      focusPercent: _focusPercent,
+    );
     _sessionId =
         'session_${(widget.data.sessionStartedAt ?? DateTime.now()).millisecondsSinceEpoch}_${widget.data.bookId ?? 'free'}';
 
@@ -511,9 +498,10 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           sentenceCount: widget.data.sentences.length,
                           focusPercent: _focusPercent,
                           score: _score,
-                          evalText: _evalText(
+                          evalText: sessionEvalText(
                             _score,
                             widget.data.sentences.length,
+                            _focusPercent,
                           ),
                         ),
                         const SizedBox(height: 16),
