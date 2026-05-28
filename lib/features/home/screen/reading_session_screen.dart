@@ -480,16 +480,31 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   Future<void> _openChosuSheet({String initialText = ''}) async {
     final hasInitialText = initialText.trim().isNotEmpty;
     ref.read(timerProvider.notifier).pause();
-    final result = await showModalBottomSheet<CollectedSentence>(
+    final result = await showGeneralDialog<CollectedSentence>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      requestFocus: !hasInitialText,
-      builder: (_) => ChosuSheet(
+      barrierDismissible: true,
+      barrierLabel: '문장 수집 닫기',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (_, _, _) => ChosuSheet(
         initialText: initialText,
         bookTitle: widget.bookTitle,
         autofocusSentence: !hasInitialText,
       ),
+      transitionBuilder: (_, animation, _, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        );
+      },
     );
     if (!mounted) return;
     if (result != null && result.content.isNotEmpty) {

@@ -79,44 +79,24 @@ class _ChosuSheetState extends State<ChosuSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final shouldLiftSheet = !kIsWeb;
-    final availableHeight =
-        media.size.height -
-        (shouldLiftSheet ? keyboardInset : 0) -
-        media.padding.top -
-        12;
-    final maxSheetHeight = availableHeight
-        .clamp(320.0, media.size.height * 0.92)
-        .toDouble();
     final bottomPadding =
-        media.padding.bottom + 20 + (shouldLiftSheet ? 0 : keyboardInset);
+        media.padding.bottom + 16 + (kIsWeb ? keyboardInset : 0);
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(bottom: shouldLiftSheet ? keyboardInset : 0),
-      child: Container(
-        constraints: BoxConstraints(maxHeight: maxSheetHeight),
-        decoration: ShapeDecoration(
-          color: context.appCard,
-          shape: const SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius.vertical(
-              top: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
-            ),
-          ),
-        ),
+      padding: EdgeInsets.only(bottom: kIsWeb ? 0 : keyboardInset),
+      child: Material(
+        color: context.appCard,
         child: SafeArea(
-          top: false,
           bottom: false,
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 10, 20, bottomPadding),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ChorokSheetHandle(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
                 // 헤더
                 Row(
@@ -135,39 +115,59 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     ),
                     const Spacer(),
                     if (widget.bookTitle.isNotEmpty)
-                      Text(
-                        widget.bookTitle,
-                        style: AppTheme.captionSmall.copyWith(
-                          color: context.appTextTertiary,
+                      Flexible(
+                        child: Text(
+                          widget.bookTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appTextTertiary,
+                          ),
                         ),
                       ),
+                    IconButton(
+                      tooltip: '닫기',
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: context.appTextTertiary,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 _StepHeader(isWritingThought: _isWritingThought),
                 const SizedBox(height: 18),
 
-                if (_isWritingThought)
-                  _ThoughtStep(
-                    sentence: _sentenceCtrl.text.trim(),
-                    thoughtCtrl: _thoughtCtrl,
-                    thoughtFocus: _thoughtFocus,
-                    saved: _saved,
-                    canSave: _sentenceCtrl.text.trim().isNotEmpty,
-                    onBack: () => setState(() => _isWritingThought = false),
-                    onSave: _save,
-                  )
-                else
-                  _SentenceStep(
-                    sentenceCtrl: _sentenceCtrl,
-                    pageCtrl: _pageCtrl,
-                    sentenceFocus: _sentenceFocus,
-                    saved: _saved,
-                    onChanged: (_) => setState(() {}),
-                    onContinue: _openThoughtStep,
-                    onSave: _save,
-                    autofocus: widget.autofocusSentence,
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 160),
+                    child: _isWritingThought
+                        ? _ThoughtStep(
+                            key: const ValueKey('thought'),
+                            sentence: _sentenceCtrl.text.trim(),
+                            thoughtCtrl: _thoughtCtrl,
+                            thoughtFocus: _thoughtFocus,
+                            saved: _saved,
+                            canSave: _sentenceCtrl.text.trim().isNotEmpty,
+                            onBack: () =>
+                                setState(() => _isWritingThought = false),
+                            onSave: _save,
+                          )
+                        : _SentenceStep(
+                            key: const ValueKey('sentence'),
+                            sentenceCtrl: _sentenceCtrl,
+                            pageCtrl: _pageCtrl,
+                            sentenceFocus: _sentenceFocus,
+                            saved: _saved,
+                            onChanged: (_) => setState(() {}),
+                            onContinue: _openThoughtStep,
+                            onSave: _save,
+                            autofocus: widget.autofocusSentence,
+                          ),
                   ),
+                ),
               ],
             ),
           ),
@@ -257,6 +257,7 @@ class _SentenceStep extends StatelessWidget {
   final bool autofocus;
 
   const _SentenceStep({
+    super.key,
     required this.sentenceCtrl,
     required this.pageCtrl,
     required this.sentenceFocus,
@@ -329,16 +330,17 @@ class _SentenceStep extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _ChosuTextField(
-          controller: sentenceCtrl,
-          focusNode: sentenceFocus,
-          hintText: '마음에 남은 문장을 입력하세요...',
-          minLines: 7,
-          maxLines: 9,
-          italic: true,
-          autofocus: autofocus,
-          cursorColor: context.appPrimaryAccent,
-          onChanged: onChanged,
+        Expanded(
+          child: _ChosuTextField(
+            controller: sentenceCtrl,
+            focusNode: sentenceFocus,
+            hintText: '마음에 남은 문장을 입력하세요...',
+            expands: true,
+            italic: true,
+            autofocus: autofocus,
+            cursorColor: context.appPrimaryAccent,
+            onChanged: onChanged,
+          ),
         ),
         const SizedBox(height: 10),
         Align(
@@ -392,6 +394,7 @@ class _ThoughtStep extends StatelessWidget {
   final VoidCallback onSave;
 
   const _ThoughtStep({
+    super.key,
     required this.sentence,
     required this.thoughtCtrl,
     required this.thoughtFocus,
@@ -453,14 +456,15 @@ class _ThoughtStep extends StatelessWidget {
           optional: true,
         ),
         const SizedBox(height: 8),
-        _ChosuTextField(
-          controller: thoughtCtrl,
-          focusNode: thoughtFocus,
-          hintText: '이 문장에서 무엇을 느꼈나요?',
-          minLines: 6,
-          maxLines: 8,
-          cursorColor: context.appAccentColor,
-          onChanged: (_) {},
+        Expanded(
+          child: _ChosuTextField(
+            controller: thoughtCtrl,
+            focusNode: thoughtFocus,
+            hintText: '이 문장에서 무엇을 느꼈나요?',
+            expands: true,
+            cursorColor: context.appAccentColor,
+            onChanged: (_) {},
+          ),
         ),
         const SizedBox(height: 18),
         SizedBox(
@@ -485,8 +489,7 @@ class _ChosuTextField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
-  final int minLines;
-  final int maxLines;
+  final bool expands;
   final bool italic;
   final bool autofocus;
   final Color cursorColor;
@@ -496,8 +499,7 @@ class _ChosuTextField extends StatelessWidget {
     required this.controller,
     this.focusNode,
     required this.hintText,
-    required this.minLines,
-    required this.maxLines,
+    this.expands = false,
     this.italic = false,
     this.autofocus = false,
     required this.cursorColor,
@@ -524,8 +526,10 @@ class _ChosuTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
-        minLines: minLines,
-        maxLines: maxLines,
+        expands: expands,
+        minLines: null,
+        maxLines: expands ? null : 1,
+        textAlignVertical: TextAlignVertical.top,
         autofocus: autofocus,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
