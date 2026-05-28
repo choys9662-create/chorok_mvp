@@ -14,6 +14,7 @@ import '../../features/auth/screen/auth_screen.dart';
 import '../../features/auth/screen/sign_up_screen.dart';
 import '../../features/explore/screen/explore_screen.dart';
 import '../../features/feed/screen/feed_screen.dart';
+import '../../features/forest/widget/forest_lock_layer.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/screen/search_screen.dart';
 import '../../shared/models/session_goal.dart';
@@ -158,7 +159,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
           return CustomTransitionPage(
             key: state.pageKey,
-            child: screen,
+            child: ForestLockLayer(child: screen),
             transitionDuration: const Duration(milliseconds: 700),
             reverseTransitionDuration: const Duration(milliseconds: 400),
             transitionsBuilder:
