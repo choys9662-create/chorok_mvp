@@ -484,9 +484,9 @@ class _ThoughtStep extends StatelessWidget {
   }
 }
 
-class _ChosuTextField extends StatelessWidget {
+class _ChosuTextField extends StatefulWidget {
   final TextEditingController controller;
-  final FocusNode? focusNode;
+  final FocusNode focusNode;
   final String hintText;
   final bool expands;
   final bool italic;
@@ -496,7 +496,7 @@ class _ChosuTextField extends StatelessWidget {
 
   const _ChosuTextField({
     required this.controller,
-    this.focusNode,
+    required this.focusNode,
     required this.hintText,
     this.expands = false,
     this.italic = false,
@@ -506,7 +506,76 @@ class _ChosuTextField extends StatelessWidget {
   });
 
   @override
+  State<_ChosuTextField> createState() => _ChosuTextFieldState();
+}
+
+class _ChosuTextFieldState extends State<_ChosuTextField> {
+  static const _keyboardGap = 24.0;
+  final _scrollCtrl = ScrollController();
+  double _lastKeyboardInset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_scheduleCaretFollow);
+    widget.focusNode.addListener(_scheduleCaretFollow);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ChosuTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_scheduleCaretFollow);
+      widget.controller.addListener(_scheduleCaretFollow);
+    }
+    if (oldWidget.focusNode != widget.focusNode) {
+      oldWidget.focusNode.removeListener(_scheduleCaretFollow);
+      widget.focusNode.addListener(_scheduleCaretFollow);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_scheduleCaretFollow);
+    widget.focusNode.removeListener(_scheduleCaretFollow);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _scheduleCaretFollow() {
+    if (!widget.focusNode.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollCtrl.hasClients) return;
+
+      final position = _scrollCtrl.position;
+      final selection = widget.controller.selection;
+      final textLength = widget.controller.text.length;
+      final isEditingTail = selection.extentOffset >= textLength - 1;
+      final isAlreadyNearBottom =
+          position.maxScrollExtent - position.pixels < 80;
+
+      if (!isEditingTail && !isAlreadyNearBottom) return;
+
+      _scrollCtrl.animateTo(
+        position.maxScrollExtent,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    if (keyboardInset != _lastKeyboardInset) {
+      _lastKeyboardInset = keyboardInset;
+      _scheduleCaretFollow();
+    }
+
+    final keyboardAwareBottomPadding = kIsWeb && keyboardInset > 0
+        ? keyboardInset + _keyboardGap
+        : 16.0;
+
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
@@ -517,40 +586,46 @@ class _ChosuTextField extends StatelessWidget {
             cornerSmoothing: 0.6,
           ),
           side: BorderSide(
-            color: cursorColor.withValues(alpha: 0.65),
+            color: widget.cursorColor.withValues(alpha: 0.65),
             width: 1.2,
           ),
         ),
       ),
       child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        expands: expands,
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        scrollController: _scrollCtrl,
+        scrollPadding: EdgeInsets.only(
+          bottom: keyboardInset > 0 ? keyboardInset + _keyboardGap : 20,
+        ),
+        expands: widget.expands,
         minLines: null,
-        maxLines: expands ? null : 1,
+        maxLines: widget.expands ? null : 1,
         textAlignVertical: TextAlignVertical.top,
-        autofocus: autofocus,
+        autofocus: widget.autofocus,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
-        cursorColor: cursorColor,
+        cursorColor: widget.cursorColor,
         style: AppTheme.bodyMedium.copyWith(
           color: context.appTextPrimary,
           height: 1.75,
-          fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+          fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
         ),
         decoration: InputDecoration(
-          hintText: hintText,
+          hintText: widget.hintText,
           hintStyle: AppTheme.bodyMedium.copyWith(
             color: context.appTextTertiary,
-            fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+            fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
+          contentPadding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            keyboardAwareBottomPadding,
           ),
         ),
-        onChanged: onChanged,
+        onChanged: widget.onChanged,
       ),
     );
   }
