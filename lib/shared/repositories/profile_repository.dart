@@ -13,7 +13,7 @@ class ProfileRepository {
     final pattern = '%$q%';
     final rows = await _client
         .from('profiles')
-        .select()
+        .select('id, username, display_name, avatar_url, bio, is_private')
         .or('username.ilike.$pattern,display_name.ilike.$pattern')
         .limit(limit);
     return (rows as List)
@@ -37,6 +37,27 @@ class ProfileRepository {
     return (rows as List)
         .map((r) => UserProfile.fromRow(r as Map<String, dynamic>))
         .toList();
+  }
+
+  /// 특정 유저의 초서 목록 조회.
+  /// RLS가 가시성을 제어한다: 공개 문장(global_book_id 있음) 또는
+  /// 본인이 accepted 팔로워인 경우 노출.
+  Future<List<Map<String, dynamic>>> getUserSentences(
+    String userId, {
+    int limit = 50,
+  }) async {
+    final rows = await _client
+        .from('sentences')
+        .select(
+          'id, content, thought, created_at, '
+          'books(title, author, cover_url), '
+          'global_books(title, author, cover_url), '
+          'sentence_likes(count)',
+        )
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return (rows as List).cast<Map<String, dynamic>>();
   }
 
   /// 가입 전 anon도 호출 가능 (SECURITY DEFINER RPC 사용)
