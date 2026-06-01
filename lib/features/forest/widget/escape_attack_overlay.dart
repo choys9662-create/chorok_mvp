@@ -4,17 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/utils/passive_aggro_engine.dart';
 
 const _kFont = '조선굴림체';
 
 enum EscapeAttackTrigger { escapeAttempt, backgroundReturn }
 
-const _kEscapeMessages = [
-  '조금만 더 읽어봐요.\n지금 멈추기엔 너무 아까워요.',
-  '지금 함께 읽고 있는 사람들이 있어요.\n혼자 나갈 건가요?',
-  '오늘 기록이 완성되지 않아요.\n여기서 멈추면 안 돼요.',
-];
-
+// 이탈 시도 문구는 PassiveAggroEngine(sessionEscape)로 일원화한다.
+// 복귀 환영 문구는 공격이 아니라 환영 톤이므로 여기에 유지한다.
 const _kReturnMessages = [
   '돌아왔군요. 계속 읽어봐요.',
   '다시 돌아왔어요. 잠깐이었길 바라요.',
@@ -34,12 +31,13 @@ class EscapeAttackOverlay extends StatelessWidget {
   });
 
   String _pickMessage() {
-    final rng = Random();
     return switch (trigger) {
-      EscapeAttackTrigger.escapeAttempt =>
-        _kEscapeMessages[rng.nextInt(_kEscapeMessages.length)],
+      EscapeAttackTrigger.escapeAttempt => PassiveAggroEngine.messageFor(
+        AggroTrigger.sessionEscape,
+        const AggroContext(),
+      ),
       EscapeAttackTrigger.backgroundReturn =>
-        _kReturnMessages[rng.nextInt(_kReturnMessages.length)],
+        _kReturnMessages[Random().nextInt(_kReturnMessages.length)],
     };
   }
 

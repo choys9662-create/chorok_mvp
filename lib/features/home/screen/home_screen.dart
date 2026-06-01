@@ -10,6 +10,7 @@ import '../widget/recommended_books_section.dart';
 import '../widget/wishlist_section.dart';
 import '../widget/home_app_bar.dart';
 import '../widget/streak_banner.dart';
+import '../widget/passive_aggro_card.dart';
 import '../widget/feed_highlight_section.dart';
 import '../widget/time_capsule_section.dart';
 
@@ -51,6 +52,8 @@ class HomeScreen extends ConsumerWidget {
               slivers: [
                 // 스트릭 배너 (2일 이상일 때만 렌더링, 내부에서 days < 2 체크)
                 SliverToBoxAdapter(child: StreakBanner()),
+                // 수동공격 카드 (안 읽음·스트릭 위험·이웃 비교 시에만 내부에서 렌더링)
+                const SliverToBoxAdapter(child: PassiveAggroCard()),
                 // ① 이번 주 독서 현황
                 SliverToBoxAdapter(
                   child: Padding(
