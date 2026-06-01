@@ -348,6 +348,14 @@ class DbService {
         .eq('user_id', _uid);
   }
 
+  Future<void> deleteSentence(String sentenceId) async {
+    await supabase
+        .from('sentences')
+        .delete()
+        .eq('id', sentenceId)
+        .eq('user_id', _uid);
+  }
+
   Future<List<Map<String, dynamic>>> fetchMySentences() async {
     final res = await supabase
         .from('sentences')
