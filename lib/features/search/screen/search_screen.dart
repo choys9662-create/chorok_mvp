@@ -444,13 +444,18 @@ class _UserCardState extends ConsumerState<_UserCard> {
     final me = Supabase.instance.client.auth.currentUser?.id;
     final isMe = me == p.id;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Row(
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push(AppConstants.routeUserProfile, extra: p);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          side: BorderSide.none,
+        ),
+        child: Row(
         children: [
           CircleAvatar(
             radius: 22,
@@ -516,6 +521,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
             ),
           ],
         ],
+        ),
       ),
     );
   }
@@ -748,7 +754,7 @@ class _SearchBar extends StatelessWidget {
                         ),
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
                       ),
                       textInputAction: TextInputAction.search,
                       cursorColor: context.appPrimaryAccent,

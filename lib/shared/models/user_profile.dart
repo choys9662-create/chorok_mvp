@@ -4,6 +4,7 @@ class UserProfile {
   final String displayName;
   final String? avatarUrl;
   final String? bio;
+  final bool isPrivate;
 
   const UserProfile({
     required this.id,
@@ -11,6 +12,7 @@ class UserProfile {
     required this.displayName,
     this.avatarUrl,
     this.bio,
+    this.isPrivate = false,
   });
 
   factory UserProfile.fromRow(Map<String, dynamic> r) {
@@ -21,6 +23,7 @@ class UserProfile {
           (r['display_name'] as String?) ?? (r['username'] as String?) ?? '사용자',
       avatarUrl: r['avatar_url'] as String?,
       bio: r['bio'] as String?,
+      isPrivate: r['is_private'] as bool? ?? false,
     );
   }
 }
