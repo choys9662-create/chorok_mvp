@@ -147,3 +147,36 @@ lib/
 - 백엔드: Supabase (원격) + sqflite (로컬 캐시)
 - 환경변수: `.env` 파일, `flutter_dotenv`로 로드
 - 폰트: Pretendard (기본), 조선굴림체 (브랜드용)
+
+---
+
+## 8. 실행 환경 — 시뮬레이터·빌드
+
+**`flutter` 명령은 반드시 `chorok_app/`에서 실행한다.** `pubspec.yaml`이 이 디렉토리에 있기 때문이다.
+
+상위 폴더(`dev/`)에서 세션이 열려 있을 때:
+
+```bash
+cd /Users/joyongseong/Documents/dev/chorok_app && flutter run
+```
+
+또는 (작업 디렉토리를 유지하면서):
+
+```bash
+flutter run --suppress-analytics 2>&1   # ❌ dev/ 에서 실행하면 pubspec.yaml not found
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run )   # ✅
+```
+
+iOS 시뮬레이터 실행:
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d "iPhone" )
+```
+
+웹 실행 (목업 모드):
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --dart-define=USE_MOCK=true )
+```
+
+VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일을 사용하면 작업 디렉토리 무관하게 실행 가능.

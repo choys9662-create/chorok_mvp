@@ -19,6 +19,8 @@ import '../util/auth_error.dart';
 // ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
 const _kBg = Color(0xFF121212); // AppTheme.darkBg
 const _kBorder = Color(0xFF2C2C2C); // AppTheme.darkBorder
+const _kAuthControlFill = Color(0xFF111811);
+const _kAuthControlBorder = Color(0x3D8DFF54);
 
 // ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
 // serverClientId: Supabase/웹에서 검증에 사용하는 Web OAuth client ID
@@ -364,9 +366,9 @@ class _SocialButton extends StatelessWidget {
           curve: Curves.easeOutCubic,
           height: 52,
           decoration: AppTheme.smoothBox(
-            color: dark ? Colors.white : AppTheme.darkSurface,
+            color: dark ? Colors.white : _kAuthControlFill,
             radius: 12,
-            side: BorderSide.none,
+            side: BorderSide(color: dark ? Colors.white : _kAuthControlBorder),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -483,22 +485,22 @@ class _Field extends StatelessWidget {
         hintStyle: TextStyle(fontSize: 15, color: AppTheme.textTertiary),
         suffixIcon: suffix,
         filled: true,
-        fillColor: AppTheme.darkSurface,
+        fillColor: _kAuthControlFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: _kAuthControlBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: _kAuthControlBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppTheme.primaryLight, width: 1.4),
         ),
       ),
     );

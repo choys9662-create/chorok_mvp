@@ -27,6 +27,34 @@ class OcrSuccess extends OcrResult {
   const OcrSuccess(this.text);
 }
 
+String normalizeOcrText(String text) {
+  final lineBreak = RegExp(r'([^\s])[\t ]*\r?\n[\t ]*([^\s])');
+  final spacing = RegExp(r'[ \t]+');
+
+  return text
+      .replaceAllMapped(lineBreak, (match) {
+        final left = match.group(1)!;
+        final right = match.group(2)!;
+        if (_shouldKeepLineBreakSpace(left, right)) {
+          return '$left $right';
+        }
+        return '$left$right';
+      })
+      .replaceAll(spacing, ' ')
+      .trim();
+}
+
+bool _shouldKeepLineBreakSpace(String left, String right) {
+  if (RegExp(r'[.!?。！？…,:;，、)\]」』”’]$').hasMatch(left)) {
+    return true;
+  }
+  return !_isKoreanSyllable(left.runes.last) ||
+      !_isKoreanSyllable(right.runes.first);
+}
+
+bool _isKoreanSyllable(int codeUnit) =>
+    codeUnit >= 0xAC00 && codeUnit <= 0xD7A3;
+
 abstract class OcrService {
   Future<OcrResult> extractTextFromCamera();
   Future<OcrResult> extractTextFromBytes(List<int> bytes);
@@ -95,7 +123,7 @@ class CloudVisionOcrService implements OcrService {
       final data = jsonDecode(response.body);
       final text =
           data['responses']?[0]?['fullTextAnnotation']?['text'] as String?;
-      final trimmed = text?.trim() ?? '';
+      final trimmed = normalizeOcrText(text ?? '');
       if (trimmed.isEmpty) return const OcrNoText();
       return OcrSuccess(trimmed);
     } on TimeoutException {
