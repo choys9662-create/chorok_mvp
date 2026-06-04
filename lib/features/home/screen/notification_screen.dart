@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/app_notification.dart';
+import '../../../shared/repositories/notification_repository.dart';
+import '../../../shared/utils/time_format.dart' as time_fmt;
 
 // ─── 데이터 모델 ──────────────────────────────────────────────────────────
 
-enum NotiType { follow, like, overlap, system }
+enum NotiType { follow, like, comment, overlap, system }
 
 class NotiItem {
+  final String? id; // 실데이터 알림 id (mock이면 null)
   final NotiType type;
   final String title;
   final String body;
@@ -15,6 +20,7 @@ class NotiItem {
   final bool isRead;
 
   const NotiItem({
+    this.id,
     required this.type,
     required this.title,
     required this.body,
@@ -23,6 +29,7 @@ class NotiItem {
   });
 
   NotiItem copyWith({bool? isRead}) => NotiItem(
+    id: id,
     type: type,
     title: title,
     body: body,
@@ -78,21 +85,59 @@ const _kNotifications = [
 
 // ─── 알림 화면 ────────────────────────────────────────────────────────────
 
-class NotificationScreen extends StatefulWidget {
+class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  ConsumerState<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-  final _notifications = kUseMock
+class _NotificationScreenState extends ConsumerState<NotificationScreen> {
+  late List<NotiItem> _notifications = kUseMock
       ? List<NotiItem>.from(_kNotifications)
       : <NotiItem>[];
+  bool _loading = !kUseMock;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kUseMock) _load();
+  }
+
+  /// 실데이터: 내 알림을 불러와 NotiItem으로 매핑.
+  Future<void> _load() async {
+    try {
+      final list = await ref.read(notificationRepositoryProvider).fetch();
+      if (!mounted) return;
+      setState(() {
+        _notifications = list.map(_toItem).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  NotiItem _toItem(AppNotification n) => NotiItem(
+    id: n.id,
+    type: _notiType(n.type),
+    title: n.title,
+    body: n.body,
+    time: time_fmt.formatRelative(n.createdAt),
+    isRead: n.isRead,
+  );
+
+  NotiType _notiType(NotificationType t) => switch (t) {
+    NotificationType.follow => NotiType.follow,
+    NotificationType.like => NotiType.like,
+    NotificationType.comment => NotiType.comment,
+    NotificationType.overlap => NotiType.overlap,
+  };
 
   IconData _iconFor(NotiType type) => switch (type) {
     NotiType.follow => Icons.person_add_rounded,
     NotiType.like => Icons.favorite_rounded,
+    NotiType.comment => Icons.chat_bubble_outline_rounded,
     NotiType.overlap => Icons.format_quote_rounded,
     NotiType.system => Icons.notifications_rounded,
   };
@@ -100,6 +145,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Color _colorFor(NotiType type) => switch (type) {
     NotiType.follow => context.appAccentColor,
     NotiType.like => AppTheme.empathyColor,
+    NotiType.comment => context.appPrimaryAccent,
     NotiType.overlap => context.appPrimaryAccent,
     NotiType.system => context.appTextSecondary,
   };
@@ -112,12 +158,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
         _notifications.map((n) => n.copyWith(isRead: true)),
       );
     });
+    if (!kUseMock) {
+      ref.read(notificationRepositoryProvider).markAllRead();
+    }
   }
 
   void _markRead(int index) {
+    final n = _notifications[index];
     setState(() {
-      _notifications[index] = _notifications[index].copyWith(isRead: true);
+      _notifications[index] = n.copyWith(isRead: true);
     });
+    if (!kUseMock && n.id != null) {
+      ref.read(notificationRepositoryProvider).markRead(n.id!);
+    }
   }
 
   void _onNotiTap(BuildContext context, int index) {
@@ -143,6 +196,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
         );
       case NotiType.like:
+      case NotiType.comment:
       case NotiType.overlap:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -323,10 +377,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     if (newItems.isEmpty && oldItems.isEmpty)
                       SliverFillRemaining(
                         child: Center(
-                          child: Text(
-                            '알림이 없어요',
-                            style: TextStyle(color: context.appTextTertiary),
-                          ),
+                          child: _loading
+                              ? CircularProgressIndicator(
+                                  color: context.appPrimaryAccent,
+                                )
+                              : Text(
+                                  '알림이 없어요',
+                                  style: TextStyle(
+                                    color: context.appTextTertiary,
+                                  ),
+                                ),
                         ),
                       ),
                   ],
