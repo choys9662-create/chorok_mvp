@@ -863,6 +863,7 @@ class _SentenceCard extends StatelessWidget {
             bookAuthor: s.bookAuthor,
             collectorUsername: s.username,
             collectorThought: s.thought,
+            sentenceId: s.id.isNotEmpty ? s.id : null,
           ),
         );
       },

@@ -4,6 +4,7 @@ import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
+import '../../../shared/repositories/comment_repository.dart';
 import '../controller/overlap_provider.dart';
 import '../widget/split_highlight_widget.dart';
 
@@ -19,6 +20,7 @@ class SentenceDetailExtra {
   final int? page;
   final String? collectorUsername; // 원 수집자
   final String? collectorThought; // 원 수집자의 생각
+  final String? sentenceId; // 실데이터 댓글 연결용 (Supabase sentences.id)
 
   const SentenceDetailExtra({
     required this.sentenceContent,
@@ -27,19 +29,22 @@ class SentenceDetailExtra {
     this.page,
     this.collectorUsername,
     this.collectorThought,
+    this.sentenceId,
   });
 }
 
 // ─── 내부 모델 ────────────────────────────────────────────────────────────
 
 class _ReaderThought {
+  final String? id; // 실데이터 댓글 id (mock이면 null)
   final String username;
   final String thought;
   final DateTime createdAt;
-  final int empathyCount;
+  final int empathyCount; // 내 좋아요를 제외한 수 (표시 = empathyCount + isLiked)
   bool isLiked;
 
   _ReaderThought({
+    this.id,
     required this.username,
     required this.thought,
     required this.createdAt,
@@ -113,6 +118,9 @@ class _SentenceDetailScreenState
   void initState() {
     super.initState();
     _thoughts = kUseMock ? _buildMockThoughts() : [];
+    if (!kUseMock && widget.data.sentenceId != null) {
+      _loadComments();
+    }
   }
 
   @override
@@ -122,29 +130,113 @@ class _SentenceDetailScreenState
     super.dispose();
   }
 
+  /// 실데이터: 문장 댓글을 불러와 _thoughts에 매핑.
+  /// likeCount는 내 좋아요를 제외한 값으로 저장해 표시 공식(empathyCount + isLiked)을 맞춘다.
+  Future<void> _loadComments() async {
+    final sid = widget.data.sentenceId;
+    if (sid == null) return;
+    try {
+      final comments = await ref
+          .read(commentRepositoryProvider)
+          .fetchComments(sid);
+      if (!mounted) return;
+      setState(() {
+        _thoughts
+          ..clear()
+          ..addAll(
+            comments.map(
+              (c) => _ReaderThought(
+                id: c.id,
+                username: c.username,
+                thought: c.content,
+                createdAt: c.createdAt,
+                empathyCount: c.likeCount - (c.likedByMe ? 1 : 0),
+                isLiked: c.likedByMe,
+              ),
+            ),
+          );
+      });
+    } catch (_) {
+      // 댓글 로딩 실패 시 빈 상태 유지 (화면 핵심은 문장 자체)
+    }
+  }
+
   void _submitThought() {
     final text = _myThoughtController.text.trim();
     if (text.isEmpty) return;
 
     HapticFeedback.mediumImpact();
-    setState(() {
-      _isSubmitting = true;
-      _thoughts.insert(
-        0,
-        _ReaderThought(
-          username: '나',
-          thought: text,
-          createdAt: DateTime.now(),
-          empathyCount: 0,
-        ),
-      );
-      _myThoughtController.clear();
-    });
-    _focusNode.unfocus();
+    final sid = widget.data.sentenceId;
 
-    // 실제로는 Supabase에 저장
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _isSubmitting = false);
+    // mock 또는 sentenceId 부재: 기존 로컬 동작 유지
+    if (kUseMock || sid == null) {
+      setState(() {
+        _thoughts.insert(
+          0,
+          _ReaderThought(
+            username: '나',
+            thought: text,
+            createdAt: DateTime.now(),
+            empathyCount: 0,
+          ),
+        );
+        _myThoughtController.clear();
+      });
+      _focusNode.unfocus();
+      return;
+    }
+
+    // 실데이터: Supabase에 저장
+    setState(() => _isSubmitting = true);
+    _focusNode.unfocus();
+    ref
+        .read(commentRepositoryProvider)
+        .addComment(sid, text)
+        .then((c) {
+          if (!mounted) return;
+          setState(() {
+            _thoughts.insert(
+              0,
+              _ReaderThought(
+                id: c.id,
+                username: '나',
+                thought: c.content,
+                createdAt: c.createdAt,
+                empathyCount: 0,
+                isLiked: false,
+              ),
+            );
+            _myThoughtController.clear();
+            _isSubmitting = false;
+          });
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('생각을 남기지 못했어요. 다시 시도해주세요'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        });
+  }
+
+  /// 댓글 좋아요 토글 (실데이터는 낙관적 + 실패 시 롤백).
+  void _toggleThoughtLike(int index) {
+    HapticFeedback.selectionClick();
+    final t = _thoughts[index];
+    if (kUseMock || t.id == null) {
+      setState(() => t.isLiked = !t.isLiked);
+      return;
+    }
+    final nowLiked = !t.isLiked;
+    setState(() => t.isLiked = nowLiked);
+    final repo = ref.read(commentRepositoryProvider);
+    (nowLiked ? repo.likeComment(t.id!) : repo.unlikeComment(t.id!)).catchError((
+      _,
+    ) {
+      if (mounted) setState(() => t.isLiked = !nowLiked);
     });
   }
 
@@ -458,13 +550,7 @@ class _SentenceDetailScreenState
                       itemBuilder: (context, index) => _ThoughtCard(
                         thought: _thoughts[index],
                         formatTime: time_fmt.formatRelative,
-                        onToggleLike: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _thoughts[index].isLiked =
-                                !_thoughts[index].isLiked;
-                          });
-                        },
+                        onToggleLike: () => _toggleThoughtLike(index),
                       ),
                     ),
                   ),
