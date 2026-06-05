@@ -118,7 +118,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   late final String _sessionId;
 
   // 페이지 기록 상태
-  bool _pageRecorded = false;
   bool _isSavingPage = false;
 
   // 완독 시 다음 책 제안 노출 상태/애니메이션
@@ -308,7 +307,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         );
         setState(() {
           _isSavingPage = false;
-          _pageRecorded = true;
         });
         return;
       }
@@ -341,7 +339,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
       setState(() {
         _isSavingPage = false;
-        _pageRecorded = true;
       });
 
       if (result.justCompleted) {
@@ -522,7 +519,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           _PageRecordCard(
                             initialPage: widget.data.startPage,
                             totalPages: widget.data.totalPages,
-                            isRecorded: _pageRecorded,
                             isSaving: _isSavingPage,
                             onSave: _savePage,
                           ),
@@ -1131,49 +1127,18 @@ class _RecapActions extends StatelessWidget {
 class _PageRecordCard extends StatelessWidget {
   final int initialPage;
   final int totalPages;
-  final bool isRecorded;
   final bool isSaving;
   final Future<void> Function(int page) onSave;
 
   const _PageRecordCard({
     required this.initialPage,
     required this.totalPages,
-    required this.isRecorded,
     required this.isSaving,
     required this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isRecorded) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: AppTheme.radiusLG,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.check_circle_rounded,
-              color: context.appPrimaryAccent,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '페이지 기록이 저장됐어요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appPrimaryAccent,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return PageSliderCard(
       initialPage: initialPage,
       totalPages: totalPages,
