@@ -18,12 +18,17 @@ class FollowRepository {
     final me = _meId;
     if (me == null || me == targetUserId) return FollowState.none;
 
-    final targetRow = await _client
-        .from('profiles')
-        .select('is_private')
-        .eq('id', targetUserId)
-        .maybeSingle();
-    final isPrivate = targetRow?['is_private'] as bool? ?? false;
+    var isPrivate = false;
+    try {
+      final targetRow = await _client
+          .from('profiles')
+          .select('is_private')
+          .eq('id', targetUserId)
+          .maybeSingle();
+      isPrivate = targetRow?['is_private'] as bool? ?? false;
+    } catch (_) {
+      isPrivate = false;
+    }
     final status = isPrivate ? 'pending' : 'accepted';
 
     await _client.from('follows').insert({

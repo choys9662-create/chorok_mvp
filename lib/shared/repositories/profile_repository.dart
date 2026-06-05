@@ -11,14 +11,28 @@ class ProfileRepository {
     final q = query.trim();
     if (q.isEmpty) return const [];
     final pattern = '%$q%';
-    final rows = await _client
+
+    final usernameRows = await _client
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, is_private')
-        .or('username.ilike.$pattern,display_name.ilike.$pattern')
+        .select('id, username, display_name, avatar_url, bio')
+        .ilike('username', pattern)
         .limit(limit);
-    return (rows as List)
-        .map((r) => UserProfile.fromRow(r as Map<String, dynamic>))
-        .toList();
+    final displayNameRows = await _client
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, bio')
+        .ilike('display_name', pattern)
+        .limit(limit);
+
+    final byId = <String, Map<String, dynamic>>{};
+    for (final row in [
+      ...(usernameRows as List),
+      ...(displayNameRows as List),
+    ]) {
+      final map = row as Map<String, dynamic>;
+      byId[map['id'] as String] = map;
+    }
+
+    return byId.values.map(UserProfile.fromRow).take(limit).toList();
   }
 
   Future<UserProfile?> getById(String userId) async {
