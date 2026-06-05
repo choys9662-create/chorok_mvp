@@ -79,7 +79,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                   '$daysAchieved일 달성',
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -89,7 +89,7 @@ class WeeklyStatusCard extends ConsumerWidget {
           // ── 주간 총 시간 ──────────────────────────────────────
           GradientText(
             weekTotalText,
-            style: AppTheme.displayLarge.copyWith(fontSize: 28),
+            style: AppTheme.displayLarge.copyWith(fontSize: 30),
             gradient: context.appReadingGradient,
           ),
           const SizedBox(height: 20),
@@ -171,7 +171,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                                   ? context.appPrimaryAccent
                                   : context.appTextTertiary,
                               fontWeight: isToday
-                                  ? FontWeight.w700
+                                  ? FontWeight.w400
                                   : FontWeight.w400,
                             ),
                           ),
@@ -204,7 +204,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                     insight,
                     style: AppTheme.bodySmall.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -230,14 +230,14 @@ class WeeklyStatusCard extends ConsumerWidget {
                       '$todayMin분 읽음',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appTextTertiary,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     Text(
                       '목표 $goalMin분',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appTextTertiary,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],

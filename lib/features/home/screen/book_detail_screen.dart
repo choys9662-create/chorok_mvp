@@ -481,7 +481,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                         '${_otherReaders.length}명이 수집',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -709,7 +709,7 @@ class _HeroSection extends StatelessWidget {
                       '이어 읽기',
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appBg,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -802,7 +802,7 @@ class _ProgressSection extends StatelessWidget {
                   '${(progress * 100).round()}%',
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -843,7 +843,7 @@ class _ProgressSection extends StatelessWidget {
                               color: isCompleted
                                   ? context.appAccentColor
                                   : context.appTextSecondary,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -1003,7 +1003,7 @@ class _SectionHeader extends StatelessWidget {
               '$count',
               style: AppTheme.captionSmall.copyWith(
                 color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -1041,7 +1041,7 @@ class _AddMemoButton extends StatelessWidget {
             '+ 메모 추가',
             style: AppTheme.captionLarge.copyWith(
               color: context.appPrimaryAccent,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ),
@@ -1097,7 +1097,7 @@ class _SentenceCard extends StatelessWidget {
                         'p.${s.page}',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -1120,7 +1120,7 @@ class _SentenceCard extends StatelessWidget {
                         '겹 ${s.socialCount}',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appAccentColor,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -1297,7 +1297,7 @@ class _SocialThoughtTile extends StatelessWidget {
                   thought.username,
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appTextSecondary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1455,8 +1455,8 @@ class _MenuSheet extends ConsumerWidget {
                   content: const Text(
                     '공유 기능은 곧 지원돼요',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: Colors.white,
                     ),
                   ),
@@ -1561,7 +1561,7 @@ class _OtherReaderCard extends StatelessWidget {
                   'p.${s.page}',
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1632,7 +1632,7 @@ class _OtherReaderCard extends StatelessWidget {
                   s.username[0].toUpperCase(),
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appPrimaryAccent,
-                    fontSize: 9,
+                    fontSize: 10,
                   ),
                 ),
               ),
@@ -1703,8 +1703,8 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '완독을 축하해요! 🎉',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontSize: 24,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
@@ -1715,7 +1715,7 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.6,
@@ -1741,8 +1741,8 @@ class _CompletionDialog extends StatelessWidget {
                   child: const Text(
                     '감상 남기기',
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: AppTheme.darkBg,
                       height: 1.4,
                     ),
@@ -1765,8 +1765,8 @@ class _CompletionDialog extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
                       height: 1.4,
                     ),

@@ -48,8 +48,8 @@ class BookPickerSheet extends ConsumerWidget {
                 '어떤 책을 읽을까요?',
                 style: TextStyle(
                   color: context.appTextPrimary,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -96,7 +96,7 @@ class _BookList extends StatelessWidget {
             '다른 책 검색',
             style: TextStyle(
               color: context.appTextSecondary,
-              fontSize: 14,
+              fontSize: 16,
             ),
           ),
         ),
@@ -150,8 +150,8 @@ class _BookCard extends StatelessWidget {
                     book.title,
                     style: TextStyle(
                       color: context.appTextPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -161,7 +161,7 @@ class _BookCard extends StatelessWidget {
                     book.author,
                     style: TextStyle(
                       color: context.appTextSecondary,
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                   ),
                   if (book.totalPages > 0) ...[
@@ -180,7 +180,7 @@ class _BookCard extends StatelessWidget {
                       '${book.currentPage} / ${book.totalPages}p',
                       style: TextStyle(
                         color: context.appTextSecondary,
-                        fontSize: 11,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -233,7 +233,7 @@ class _EmptyState extends StatelessWidget {
             '읽는 중인 책이 없어요',
             style: TextStyle(
               color: context.appTextSecondary,
-              fontSize: 15,
+              fontSize: 16,
             ),
           ),
           const SizedBox(height: 16),
@@ -250,8 +250,8 @@ class _EmptyState extends StatelessWidget {
                 '라이브러리 가기',
                 style: TextStyle(
                   color: context.appPrimaryAccent,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),

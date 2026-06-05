@@ -163,7 +163,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                       _name,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
                         height: 1.4,
                       ),
@@ -245,7 +245,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
             child: Text(
               _bio.isEmpty ? '자기소개를 입력해보세요' : _bio,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: _bio.isEmpty
                     ? context.appTextTertiary
                     : context.appTextSecondary,
@@ -279,7 +279,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                         '${widget.streak}일 연속 독서 중',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                           color: context.appPrimaryAccent,
                           height: 1.4,
                         ),
@@ -376,7 +376,7 @@ class _StatItem extends StatelessWidget {
                 '$count',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   color: context.appPrimaryAccent,
                   height: 1.4,
                 ),
@@ -483,8 +483,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           Text(
             '프로필 편집',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
               color: context.appTextPrimary,
             ),
           ),
@@ -524,8 +524,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   : const Text(
                       '저장',
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
             ),
@@ -559,10 +559,10 @@ class _SheetField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(fontSize: 14, color: context.appTextPrimary),
+      style: TextStyle(fontSize: 16, color: context.appTextPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: context.appTextTertiary, fontSize: 13),
+        labelStyle: TextStyle(color: context.appTextTertiary, fontSize: 12),
         filled: true,
         fillColor: context.appCardElevated,
         border: OutlineInputBorder(
@@ -643,7 +643,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                       widget.names[i][0],
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -688,7 +688,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                                 : isDark
                                 ? context.appPrimaryAccent
                                 : Colors.white,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),

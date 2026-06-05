@@ -36,7 +36,7 @@ class WishlistSection extends ConsumerWidget {
               '${wishlistBooks.length}권',
               style: AppTheme.captionLarge.copyWith(
                 color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -171,7 +171,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -233,7 +233,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                               color: isDark
                                   ? context.appPrimaryAccent
                                   : Colors.white,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],

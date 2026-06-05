@@ -201,8 +201,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           child: Text(
                             '일단 시작해보기',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                               color: AppTheme.textSecondary,
                               height: 1.4,
                             ),
@@ -219,7 +219,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           child: Text(
                             '건너뛰기',
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: AppTheme.textTertiary,
                               height: 1.4,
                             ),
@@ -289,8 +289,8 @@ class _SlidePage extends StatelessWidget {
             data.title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
               color: AppTheme.textPrimary,
               height: 1.3,
             ),
@@ -310,8 +310,8 @@ class _SlidePage extends StatelessWidget {
             child: Text(
               data.subtitle,
               style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
                 color: context.appPrimaryAccent,
                 height: 1.4,
               ),
@@ -325,7 +325,7 @@ class _SlidePage extends StatelessWidget {
             data.body,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: FontWeight.w400,
               color: AppTheme.textSecondary,
               height: 1.7,
@@ -490,7 +490,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
               widget.label,
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
                 color: Colors.black,
                 height: 1.4,
               ),

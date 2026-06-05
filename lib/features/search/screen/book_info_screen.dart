@@ -247,8 +247,8 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       Text(
                         book.title,
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
                           color: context.appTextPrimary,
                           height: 1.35,
                         ),
@@ -262,7 +262,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       Text(
                         book.author,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           color: context.appTextSecondary,
                         ),
                         textAlign: TextAlign.center,
@@ -310,8 +310,8 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                     Text(
                       '책 소개',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
                         color: context.appTextTertiary,
                         letterSpacing: 0.4,
                       ),
@@ -322,7 +322,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       child: Text(
                         book.description!,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: context.appTextSecondary,
                           height: 1.7,
                         ),
@@ -340,7 +340,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -361,7 +361,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       '독자들의 문장',
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
                       ),
                     ),
@@ -437,8 +437,8 @@ class _AddToLibraryButtonState extends State<_AddToLibraryButton> {
                 Text(
                   isIn ? '서재에 있어요' : '서재에 추가',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     color: isIn ? context.appPrimaryAccent : AppTheme.darkBg,
                   ),
                 ),
@@ -479,7 +479,7 @@ class _SentencesSection extends ConsumerWidget {
             child: Text(
               '문장을 불러오지 못했어요',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: context.appTextTertiary,
               ),
             ),
@@ -502,16 +502,16 @@ class _SentencesSection extends ConsumerWidget {
                   Text(
                     '아직 기록된 문장이 없어요',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: context.appTextSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '첫 번째로 문장을 남겨보세요',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: context.appTextTertiary,
                     ),
                   ),
@@ -579,7 +579,7 @@ class _SentenceCard extends StatelessWidget {
                 child: Text(
                   sentence.content,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: context.appTextPrimary,
                     fontStyle: FontStyle.italic,
                     height: 1.7,
@@ -626,16 +626,16 @@ class _SentenceCard extends StatelessWidget {
               Text(
                 sentence.username,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: context.appTextTertiary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(width: 6),
               Text(
                 '·',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: context.appTextTertiary,
                 ),
               ),
@@ -643,7 +643,7 @@ class _SentenceCard extends StatelessWidget {
               Text(
                 _relativeDate(sentence.savedAt),
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: context.appTextTertiary,
                 ),
               ),
@@ -678,8 +678,8 @@ class _Avatar extends StatelessWidget {
       child: Text(
         username.isNotEmpty ? username[0].toUpperCase() : '?',
         style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
+          fontSize: 10,
+          fontWeight: FontWeight.w400,
           color: context.appPrimaryAccent,
         ),
       ),

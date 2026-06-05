@@ -147,8 +147,8 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             child: Text(
               message,
               style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 color: _kTextPrimary,
                 height: 1.4,
               ),
@@ -275,7 +275,7 @@ class _ScanOverlay extends StatelessWidget {
               '책 뒷면의 바코드를 네모 안에 맞춰주세요\nISBN-13 (978, 979로 시작하는 13자리)',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: _kTextSecondary,
                 height: 1.6,
@@ -396,8 +396,8 @@ class _TopBar extends StatelessWidget {
             child: const Text(
               'ISBN 바코드 스캔',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 color: _kTextPrimary,
                 height: 1.4,
               ),
@@ -495,8 +495,8 @@ class _BottomStatus extends StatelessWidget {
                     child: Text(
                       statusMessage ?? '잠시 기다려주세요…',
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                         color: _kTextPrimary,
                         height: 1.4,
                       ),

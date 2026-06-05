@@ -68,7 +68,7 @@ class EscapeAttackOverlay extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontFamily: _kFont,
-                    fontSize: 20,
+                    fontSize: 24,
                     color: Colors.white,
                     height: 1.6,
                   ),
@@ -80,7 +80,7 @@ class EscapeAttackOverlay extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: _kFont,
-                      fontSize: 14,
+                      fontSize: 16,
                       color: Colors.white.withValues(alpha: 0.55),
                     ),
                   ),
@@ -106,7 +106,7 @@ class EscapeAttackOverlay extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: _kFont,
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),

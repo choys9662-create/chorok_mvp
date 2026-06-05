@@ -454,7 +454,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                       '수동 기록',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     style: TextButton.styleFrom(
@@ -557,7 +557,7 @@ class _BottomActionBar extends StatelessWidget {
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text(
                 '이어 읽기',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(fontWeight: FontWeight.w400),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.primary,
@@ -710,8 +710,8 @@ class _HeroSection extends StatelessWidget {
                     Text(
                       '${(book.readingProgress * 100).toInt()}%',
                       style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
                         color: context.appPrimaryAccent,
                         height: 1.0,
                       ),
@@ -724,7 +724,7 @@ class _HeroSection extends StatelessWidget {
                           '${book.currentPage} / ${book.totalPages}쪽',
                           style: AppTheme.bodySmall.copyWith(
                             color: context.appTextSecondary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -741,7 +741,7 @@ class _HeroSection extends StatelessWidget {
                               Text(
                                 '총 쪽수 수정',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   color: context.appTextTertiary,
                                 ),
                               ),
@@ -780,8 +780,8 @@ class _HeroSection extends StatelessWidget {
                             Text(
                               '읽었어요',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
                                 color: isCompleted
                                     ? context.appPrimaryAccent
                                     : context.appTextSecondary,
@@ -836,7 +836,7 @@ class _HeroSection extends StatelessWidget {
                                   '총 쪽수 입력',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                     color: context.appPrimaryAccent,
                                   ),
                                 ),
@@ -876,8 +876,8 @@ class _HeroSection extends StatelessWidget {
                             Text(
                               '읽었어요',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
                                 color: isCompleted
                                     ? context.appPrimaryAccent
                                     : context.appTextSecondary,
@@ -990,7 +990,7 @@ class _SectionHeader extends StatelessWidget {
               '$count',
               style: TextStyle(
                 color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
           const Spacer(),
@@ -1015,7 +1015,7 @@ class _SectionHeader extends StatelessWidget {
                     '추가',
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: context.appPrimaryAccent,
                     ),
                   ),
@@ -1062,9 +1062,9 @@ class _SentenceEmptyState extends StatelessWidget {
               Text(
                 hasError ? '문장을 불러오지 못했어요' : '마음에 남는 문장을 기록해보세요',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: context.appTextTertiary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1081,7 +1081,7 @@ class _SentenceEmptyState extends StatelessWidget {
                   '첫 문장 추가하기',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: context.appPrimaryAccent,
                   ),
                 ),
@@ -1133,8 +1133,8 @@ class _SentenceItem extends StatelessWidget {
                         Text(
                           'p. ${sentence.pageNumber}',
                           style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
                             color: context.appPrimaryAccent,
                           ),
                         ),
@@ -1166,8 +1166,8 @@ class _SentenceItem extends StatelessWidget {
                           Text(
                             '내 생각',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
                               color: context.appTextTertiary,
                             ),
                           ),
@@ -1190,8 +1190,8 @@ class _SentenceItem extends StatelessWidget {
                                 vertical: 3,
                               ),
                               textStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -1339,8 +1339,8 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
                     Text(
                       '내 생각 수정',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
                       ),
                     ),
@@ -1360,7 +1360,7 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: context.appTextSecondary,
                       height: 1.65,
                       fontStyle: FontStyle.italic,
@@ -1579,8 +1579,8 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
                       Text(
                         '문장 추가',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
                           color: context.appTextPrimary,
                           letterSpacing: -0.3,
                         ),
@@ -1675,8 +1675,8 @@ class _SentenceStepBadge extends StatelessWidget {
           child: Text(
             number,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
               color: active ? Colors.black : context.appTextTertiary,
             ),
           ),
@@ -1686,7 +1686,7 @@ class _SentenceStepBadge extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w400,
             color: color,
           ),
         ),
@@ -1747,8 +1747,8 @@ class _BookSentenceStep extends StatelessWidget {
                   Text(
                     'p.',
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
                     ),
                   ),
@@ -1759,13 +1759,13 @@ class _BookSentenceStep extends StatelessWidget {
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: context.appTextPrimary,
                       ),
                       decoration: InputDecoration(
                         hintText: '페이지',
                         hintStyle: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: context.appTextTertiary,
                         ),
                         border: InputBorder.none,
@@ -1783,9 +1783,9 @@ class _BookSentenceStep extends StatelessWidget {
             Text(
               '${contentCtrl.text.length}자',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: context.appTextTertiary,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -1806,8 +1806,8 @@ class _BookSentenceStep extends StatelessWidget {
             child: Text(
               '문장만 저장',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 color: hasInput ? context.appTextTertiary : context.appBorder,
               ),
             ),
@@ -1857,7 +1857,7 @@ class _BookThoughtStep extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: context.appTextSecondary,
               height: 1.65,
               fontStyle: FontStyle.italic,
@@ -1875,7 +1875,7 @@ class _BookThoughtStep extends StatelessWidget {
               foregroundColor: context.appTextTertiary,
               textStyle: const TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -1893,7 +1893,7 @@ class _BookThoughtStep extends StatelessWidget {
               '내 생각',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: context.appTextTertiary,
               ),
             ),
@@ -1982,8 +1982,8 @@ class _SheetActionButton extends StatelessWidget {
                   : Text(
                       label,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                         color: enabled ? Colors.black : context.appTextTertiary,
                       ),
                     ),
@@ -2048,7 +2048,7 @@ class _AccentTextField extends StatelessWidget {
                 textInputAction: TextInputAction.newline,
                 onChanged: onChanged,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: context.appTextPrimary,
                   height: 1.7,
                   fontStyle: FontStyle.italic,
@@ -2056,7 +2056,7 @@ class _AccentTextField extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: hintText,
                   hintStyle: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: context.appTextTertiary,
                     height: 1.7,
                     fontStyle: FontStyle.italic,
@@ -2109,14 +2109,14 @@ class _SheetTextField extends StatelessWidget {
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           color: context.appTextPrimary,
           height: 1.6,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             color: context.appTextTertiary,
             height: 1.6,
           ),

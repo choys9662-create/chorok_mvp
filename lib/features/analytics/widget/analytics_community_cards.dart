@@ -120,8 +120,8 @@ class SentenceReactionsCard extends StatelessWidget {
                               'TOP',
                               style: AppTheme.captionSmall.copyWith(
                                 color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 9,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 10,
                               ),
                             ),
                           ),
@@ -138,7 +138,7 @@ class SentenceReactionsCard extends StatelessWidget {
                               '${s.reactions}',
                               style: AppTheme.captionSmall.copyWith(
                                 color: context.appPrimaryAccent,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],
@@ -198,7 +198,7 @@ class CommunityHighlightsCard extends StatelessWidget {
                           '${i + 1}',
                           style: AppTheme.captionLarge.copyWith(
                             color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
@@ -237,7 +237,7 @@ class CommunityHighlightsCard extends StatelessWidget {
                                 _formatReactions(h.reactions),
                                 style: AppTheme.captionSmall.copyWith(
                                   color: AppTheme.accent,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],

@@ -48,9 +48,9 @@ class TabSelector extends StatelessWidget {
                     child: Text(
                       e.value,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: isSelected
-                            ? FontWeight.w600
+                            ? FontWeight.w400
                             : FontWeight.w400,
                         color: isSelected
                             ? Colors.white

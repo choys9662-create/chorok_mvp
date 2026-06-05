@@ -6,7 +6,7 @@ import '../controller/overlap_provider.dart';
 /// 겹문장 UI — 상단에 기록자 카드, 하단에 다른 독자들 카드 목록
 ///
 /// Anchor(공유 문장): Bold + appPrimaryAccent
-/// Context(생각): FontWeight.w300 + appTextTertiary
+/// Context(생각): FontWeight.w400 + appTextTertiary
 class SplitHighlightWidget extends StatelessWidget {
   final String anchorText;
   final String collectorUsername;
@@ -104,7 +104,7 @@ class _OverlapCard extends StatelessWidget {
               text: '"$anchorText"',
               style: AppTheme.bodySmall.copyWith(
                 color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
                 height: 1.6,
               ),
             ),
@@ -124,7 +124,7 @@ class _OverlapCard extends StatelessWidget {
                     color: isCollector
                         ? context.appPrimaryAccent
                         : context.appTextTertiary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -135,7 +135,7 @@ class _OverlapCard extends StatelessWidget {
                   color: isCollector
                       ? context.appPrimaryAccent
                       : context.appTextSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -148,7 +148,7 @@ class _OverlapCard extends StatelessWidget {
                     text: thought,
                     style: AppTheme.bodySmall.copyWith(
                       color: context.appTextTertiary,
-                      fontWeight: FontWeight.w300,
+                      fontWeight: FontWeight.w400,
                       height: 1.6,
                     ),
                   ),

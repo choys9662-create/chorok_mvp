@@ -129,7 +129,7 @@ class FeedHighlightSection extends ConsumerWidget {
                       title,
                       style: AppTheme.headingSmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -245,7 +245,7 @@ class HighlightCard extends StatelessWidget {
                                     '겹문장 · ${sentence.recordCount}명 수집',
                                     style: AppTheme.captionSmall.copyWith(
                                       color: context.appPrimaryAccent,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
                                 ],

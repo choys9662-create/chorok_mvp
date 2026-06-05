@@ -170,8 +170,8 @@ class _TopBar extends StatelessWidget {
                         Text(
                           '내 문장',
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w400,
                             color: context.appTextPrimary,
                             height: 1.3,
                           ),
@@ -253,14 +253,14 @@ class _SearchField extends StatelessWidget {
         focusNode: focusNode,
         onChanged: onChanged,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           color: context.appTextPrimary,
           height: 1.4,
         ),
         decoration: InputDecoration(
           hintText: '문장 내용, 책 제목, 저자 검색',
           hintStyle: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             color: context.appTextTertiary,
             height: 1.4,
           ),
@@ -301,12 +301,12 @@ class _ChoseoTabBar extends StatelessWidget {
         ),
         dividerColor: Colors.transparent,
         labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
           height: 1.4,
         ),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           fontWeight: FontWeight.w400,
           height: 1.4,
         ),
@@ -410,8 +410,8 @@ class _BookGroupState extends State<_BookGroup> {
                         child: Text(
                           widget.title.isNotEmpty ? widget.title[0] : '?',
                           style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w400,
                             color: Colors.white,
                           ),
                         ),
@@ -426,8 +426,8 @@ class _BookGroupState extends State<_BookGroup> {
                           Text(
                             widget.title,
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                               color: context.appTextPrimary,
                               height: 1.4,
                             ),
@@ -460,8 +460,8 @@ class _BookGroupState extends State<_BookGroup> {
                       child: Text(
                         '${widget.items.length}개',
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
                           color: context.appPrimaryAccent,
                           height: 1.4,
                         ),
@@ -586,8 +586,8 @@ class _ChoseoCard extends StatelessWidget {
                       child: Text(
                         item.bookTitle.isNotEmpty ? item.bookTitle[0] : '?',
                         style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
                           color: Colors.white,
                         ),
                       ),
@@ -602,8 +602,8 @@ class _ChoseoCard extends StatelessWidget {
                         Text(
                           item.bookTitle,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
                             color: context.appTextPrimary,
                             height: 1.4,
                           ),
@@ -613,7 +613,7 @@ class _ChoseoCard extends StatelessWidget {
                         Text(
                           item.bookAuthor,
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: context.appTextTertiary,
                             height: 1.4,
                           ),
@@ -625,7 +625,7 @@ class _ChoseoCard extends StatelessWidget {
                   Text(
                     _relativeDate(item.createdAt),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: context.appTextTertiary,
                       height: 1.4,
                     ),
@@ -643,7 +643,7 @@ class _ChoseoCard extends StatelessWidget {
                     Text(
                       'p. ${item.pageNumber}',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: context.appTextTertiary,
                         height: 1.4,
                       ),
@@ -653,7 +653,7 @@ class _ChoseoCard extends StatelessWidget {
                   Text(
                     _relativeDate(item.createdAt),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: context.appTextTertiary,
                       height: 1.4,
                     ),
@@ -672,8 +672,8 @@ class _ChoseoCard extends StatelessWidget {
                   child: Text(
                     item.content,
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: context.appTextPrimary,
                       height: 1.6,
                     ),
@@ -743,8 +743,8 @@ class _EmptyView extends StatelessWidget {
           Text(
             '아직 기록한 문장이 없어요',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
               color: context.appTextSecondary,
               height: 1.5,
             ),
@@ -754,7 +754,7 @@ class _EmptyView extends StatelessWidget {
             '독서 세션 중 마음에 드는 문장을\n저장해보세요',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: context.appTextTertiary,
               height: 1.6,
             ),

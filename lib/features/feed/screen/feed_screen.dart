@@ -616,7 +616,7 @@ class _ActivityBanner extends StatelessWidget {
                       text: '오늘 $readers명',
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const TextSpan(text: '이 문장을 기록했어요 · '),
@@ -624,7 +624,7 @@ class _ActivityBanner extends StatelessWidget {
                       text: '겹문장 $overlaps건',
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -739,7 +739,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -774,7 +774,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                     '${b.sentenceCount}개',
                     style: AppTheme.captionSmall.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -824,7 +824,7 @@ class _FeedFilterChip extends StatelessWidget {
             color: isSelected
                 ? (isDark ? Colors.black : Colors.white)
                 : context.appTextTertiary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
           ),
         ),
       ),
@@ -916,7 +916,7 @@ class _SentenceCard extends StatelessWidget {
                       '겹문장 감지됨',
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -948,7 +948,7 @@ class _SentenceCard extends StatelessWidget {
                             Text(
                               s.bookTitle,
                               style: AppTheme.bodySmall.copyWith(
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                                 color: context.appPrimaryAccent,
                               ),
                             ),
@@ -1017,7 +1017,7 @@ class _SentenceCard extends StatelessWidget {
                                 '${s.username}의 생각',
                                 style: AppTheme.captionSmall.copyWith(
                                   color: context.appTextTertiary,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1049,7 +1049,7 @@ class _SentenceCard extends StatelessWidget {
                             s.username[0].toUpperCase(),
                             style: AppTheme.captionSmall.copyWith(
                               color: context.appPrimaryAccent,
-                              fontSize: 9,
+                              fontSize: 10,
                             ),
                           ),
                         ),
@@ -1121,8 +1121,8 @@ class _SentenceCard extends StatelessWidget {
                               content: const Text(
                                 '공유 기능은 곧 지원돼요',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white,
                                 ),
                               ),
@@ -1245,7 +1245,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                       child: Text(
                         base.bookTitle,
                         style: AppTheme.bodySmall.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                           color: context.appPrimaryAccent,
                         ),
                       ),
@@ -1270,7 +1270,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                         '공통 문구',
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1430,7 +1430,7 @@ class _OverlapMemberTile extends StatelessWidget {
                   member.username,
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appTextSecondary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1443,7 +1443,7 @@ class _OverlapMemberTile extends StatelessWidget {
                   '${(member.overlapRatio * 100).round()}% 일치',
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1505,7 +1505,7 @@ class _HighlightedText extends StatelessWidget {
     final highlightStyle = baseStyle.copyWith(
       backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.15),
       color: context.appPrimaryAccent,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w400,
     );
 
     for (final hl in sorted) {

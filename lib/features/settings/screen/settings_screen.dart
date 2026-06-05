@@ -256,7 +256,7 @@ class _ThemeTile extends StatelessWidget {
                 '테마',
                 style: AppTheme.bodyMedium.copyWith(
                   color: context.appTextPrimary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -345,7 +345,7 @@ class _ThemeChip extends StatelessWidget {
                 label,
                 style: AppTheme.captionLarge.copyWith(
                   color: selected ? Colors.white : context.appTextSecondary,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
                 ),
               ),
             ],
@@ -440,7 +440,7 @@ class _SliderTile extends StatelessWidget {
                   label,
                   style: AppTheme.bodyMedium.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -448,7 +448,7 @@ class _SliderTile extends StatelessWidget {
                 value,
                 style: AppTheme.bodyMedium.copyWith(
                   color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -569,7 +569,7 @@ class _ToggleTile extends StatelessWidget {
                     label,
                     style: AppTheme.bodyMedium.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   Text(
@@ -607,7 +607,7 @@ class _SectionLabel extends StatelessWidget {
         text,
         style: AppTheme.captionLarge.copyWith(
           color: context.appTextTertiary,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: 0.5,
         ),
       ),
@@ -659,7 +659,7 @@ void _showLogoutConfirm(BuildContext context) {
               '로그아웃',
               style: AppTheme.headingSmall.copyWith(
                 color: const Color(0xFFFF4F4F),
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 8),
@@ -740,7 +740,7 @@ class _InfoTile extends StatelessWidget {
                 label,
                 style: AppTheme.bodyMedium.copyWith(
                   color: labelColor ?? context.appTextPrimary,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),

@@ -232,7 +232,7 @@ class _StepBadge extends StatelessWidget {
             number,
             style: AppTheme.captionSmall.copyWith(
               color: active ? Colors.black : context.appTextTertiary,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ),
@@ -241,7 +241,7 @@ class _StepBadge extends StatelessWidget {
           label,
           style: AppTheme.captionLarge.copyWith(
             color: color,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -296,7 +296,7 @@ class _SentenceStep extends StatelessWidget {
                   'p.',
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appTextTertiary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -309,7 +309,7 @@ class _SentenceStep extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: AppTheme.captionLarge.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                     decoration: InputDecoration(
                       hintText: '쪽',
@@ -367,7 +367,7 @@ class _SentenceStep extends StatelessWidget {
               child: Text(
                 '생각 쓰기',
                 style: AppTheme.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   color: hasSentence ? Colors.black : context.appTextTertiary,
                 ),
               ),
@@ -453,7 +453,7 @@ class _ThoughtStep extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: context.appTextTertiary,
                 textStyle: AppTheme.captionSmall.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -676,7 +676,7 @@ class _SavedButtonChild extends StatelessWidget {
       return Text(
         label,
         style: AppTheme.bodySmall.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           color: color,
         ),
       );
@@ -690,7 +690,7 @@ class _SavedButtonChild extends StatelessWidget {
         Text(
           '저장됐어요!',
           style: AppTheme.bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: color,
           ),
         ),
@@ -722,7 +722,7 @@ class _FieldLabel extends StatelessWidget {
           label,
           style: AppTheme.captionLarge.copyWith(
             color: color,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         if (optional) ...[

@@ -255,7 +255,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                   Text(
                     '계정이 없으신가요?',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       color: AppTheme.textTertiary,
                     ),
                   ),
@@ -264,8 +264,8 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                     child: Text(
                       '회원가입',
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                         color: AppTheme.primaryLight,
                       ),
                     ),
@@ -307,8 +307,8 @@ class _Logo extends StatelessWidget {
             child: Text(
               '초',
               style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
+                fontSize: 30,
+                fontWeight: FontWeight.w400,
                 color: Colors.white,
               ),
             ),
@@ -319,7 +319,7 @@ class _Logo extends StatelessWidget {
           '초록',
           style: TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w400,
             color: Colors.white,
             letterSpacing: 4,
           ),
@@ -328,7 +328,7 @@ class _Logo extends StatelessWidget {
         Text(
           '독서 몰입 플랫폼',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w400,
             color: AppTheme.textSecondary,
             letterSpacing: 1.5,
@@ -378,8 +378,8 @@ class _SocialButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                   color: dark ? Colors.black : Colors.white,
                 ),
               ),
@@ -476,13 +476,13 @@ class _Field extends StatelessWidget {
       obscureText: obscure,
       keyboardType: keyboardType,
       style: const TextStyle(
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: FontWeight.w400,
         color: Colors.white,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(fontSize: 15, color: AppTheme.textTertiary),
+        hintStyle: TextStyle(fontSize: 16, color: AppTheme.textTertiary),
         suffixIcon: suffix,
         filled: true,
         fillColor: _kAuthControlFill,
@@ -559,7 +559,7 @@ class _SubmitButton extends StatelessWidget {
                       label,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                         color: isDisabled
                             ? Colors.white.withValues(alpha: 0.4)
                             : Colors.white,

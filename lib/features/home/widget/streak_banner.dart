@@ -52,7 +52,7 @@ class StreakBanner extends ConsumerWidget {
               children: [
                 Text(
                   hasReadToday ? '🔥' : '⏰',
-                  style: const TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 24),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -61,8 +61,8 @@ class StreakBanner extends ConsumerWidget {
                         ? '$days일 연속 독서 중'
                         : '오늘 아직 안 읽었어요. 스트릭이 끊길 수도 있어요.',
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
                       color: hasReadToday
                           ? AppTheme.warningColor
                           : context.appTextSecondary,

@@ -268,7 +268,7 @@ class SegmentToggle extends StatelessWidget {
                   labels[i],
                   style: AppTheme.captionLarge.copyWith(
                     color: isSelected ? Colors.white : context.appTextTertiary,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
                   ),
                 ),
               ),
@@ -406,7 +406,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                   '${_focusedMonth.year}년 ${_focusedMonth.month}월',
                   style: AppTheme.headingSmall.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 Semantics(
@@ -444,7 +444,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                           d,
                           style: AppTheme.captionSmall.copyWith(
                             color: context.appTextTertiary,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
@@ -487,7 +487,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                     '${_selectedDate!.month}월 ${_selectedDate!.day}일',
                     style: AppTheme.headingSmall.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   if (totalMin > 0) ...[
@@ -505,7 +505,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                         time_fmt.formatMinutes(totalMin),
                         style: AppTheme.captionSmall.copyWith(
                           color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -612,8 +612,8 @@ class _CalendarGrid extends StatelessWidget {
                 Text(
                   '$d',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                    fontSize: 12,
+                    fontWeight: isToday ? FontWeight.w400 : FontWeight.w400,
                     color: isFuture
                         ? context.appTextTertiary.withValues(alpha: 0.3)
                         : isSelected
@@ -641,8 +641,8 @@ class _CalendarGrid extends StatelessWidget {
                       child: Text(
                         '완독',
                         style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
                           color: isSelected
                               ? Colors.white
                               : context.appPrimaryAccent,
@@ -712,7 +712,7 @@ class _ReadingLogCard extends StatelessWidget {
                   log.bookTitle,
                   style: AppTheme.bodySmall.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -743,7 +743,7 @@ class _ReadingLogCard extends StatelessWidget {
                         : '${log.minutes}분',
                     style: AppTheme.captionLarge.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],

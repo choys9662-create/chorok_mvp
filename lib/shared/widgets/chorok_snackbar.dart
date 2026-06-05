@@ -23,7 +23,7 @@ SnackBar chorokSnackBar(
             message,
             style: AppTheme.bodySmall.copyWith(
               color: context.appTextPrimary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               height: 1.4,
             ),
           ),

@@ -61,7 +61,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           '@${p.username}',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             color: context.appTextPrimary,
           ),
         ),
@@ -134,8 +134,8 @@ class _Header extends StatelessWidget {
         Text(
           p.displayName,
           style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontSize: 24,
+            fontWeight: FontWeight.w400,
             color: context.appTextPrimary,
           ),
         ),
@@ -143,7 +143,7 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             p.bio!,
-            style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+            style: TextStyle(fontSize: 12, color: context.appTextSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -190,8 +190,8 @@ class _FollowButton extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
             color: filled ? Colors.white : context.appTextSecondary,
           ),
         ),
@@ -221,7 +221,7 @@ class _SentenceTile extends StatelessWidget {
             s.bookTitle,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               color: context.appPrimaryAccent,
             ),
           ),
@@ -229,7 +229,7 @@ class _SentenceTile extends StatelessWidget {
           Text(
             '"${s.content}"',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               fontStyle: FontStyle.italic,
               color: context.appTextPrimary,
               height: 1.6,
@@ -240,7 +240,7 @@ class _SentenceTile extends StatelessWidget {
             Text(
               s.thought!,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: context.appTextSecondary,
                 height: 1.5,
               ),
@@ -273,15 +273,15 @@ class _EmptySentences extends StatelessWidget {
           Text(
             isLocked ? '비공개 계정이에요' : '아직 공개된 초서가 없어요',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
               color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             isLocked ? '팔로우가 수락되면 초서를 볼 수 있어요' : '이 유저가 초서를 남기면 여기 표시돼요',
-            style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+            style: TextStyle(fontSize: 12, color: context.appTextSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -309,8 +309,8 @@ class _ErrorView extends StatelessWidget {
           Text(
             '프로필을 불러오지 못했어요',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
               color: context.appTextPrimary,
             ),
           ),
@@ -328,8 +328,8 @@ class _ErrorView extends StatelessWidget {
               child: const Text(
                 '다시 시도',
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.darkBg,
                 ),
               ),

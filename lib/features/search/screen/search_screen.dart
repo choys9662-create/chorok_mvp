@@ -245,8 +245,8 @@ class _TabBar extends StatelessWidget {
                 child: Text(
                   e.$2,
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
                     color: isSelected ? Colors.white : context.appTextSecondary,
                   ),
                 ),
@@ -296,7 +296,7 @@ class _UserScopeChips extends StatelessWidget {
                   e.$2,
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
                     color: isSelected
                         ? context.appPrimaryAccent
                         : context.appTextSecondary,
@@ -479,8 +479,8 @@ class _UserCardState extends ConsumerState<_UserCard> {
                 Text(
                   p.displayName,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     color: context.appTextPrimary,
                   ),
                   maxLines: 1,
@@ -567,7 +567,7 @@ class _FollowButton extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
               color: isFollowing ? context.appTextSecondary : Colors.white,
             ),
           ),
@@ -598,14 +598,14 @@ class _UserIdlePrompt extends StatelessWidget {
             '유저를 검색해보세요',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               color: context.appTextSecondary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '닉네임 · 사용자 이름으로 찾을 수 있어요',
-            style: TextStyle(fontSize: 13, color: context.appTextTertiary),
+            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
           ),
         ],
       ),
@@ -651,7 +651,7 @@ class _UserEmptyResult extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
               ),
               textAlign: TextAlign.center,
@@ -659,7 +659,7 @@ class _UserEmptyResult extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               sub,
-              style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+              style: TextStyle(fontSize: 12, color: context.appTextSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -739,7 +739,7 @@ class _SearchBar extends StatelessWidget {
                       focusNode: focusNode,
                       onChanged: onChanged,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
                         height: 1.5,
@@ -747,7 +747,7 @@ class _SearchBar extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: '제목, 저자, 키워드 검색',
                         hintStyle: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w400,
                           color: context.appTextTertiary,
                           height: 1.5,
@@ -898,8 +898,8 @@ class _BookCard extends ConsumerWidget {
                     Text(
                       book.title,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                         color: context.appTextPrimary,
                         height: 1.4,
                       ),
@@ -910,7 +910,7 @@ class _BookCard extends ConsumerWidget {
                     Text(
                       book.author,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w400,
                         color: context.appTextSecondary,
                         height: 1.5,
@@ -995,8 +995,8 @@ class _PlaceholderCover extends StatelessWidget {
       child: Text(
         title.length > 6 ? '${title.substring(0, 6)}...' : title,
         style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
           color: context.appTextPrimary,
           height: 1.4,
         ),
@@ -1225,7 +1225,7 @@ class _IdlePrompt extends StatelessWidget {
             '읽고 싶은 책을 검색해보세요',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               color: context.appTextSecondary,
               height: 1.5,
             ),
@@ -1234,7 +1234,7 @@ class _IdlePrompt extends StatelessWidget {
           Text(
             '제목, 저자, 키워드로 찾을 수 있어요',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w400,
               color: context.appTextTertiary,
               height: 1.5,
@@ -1271,7 +1271,7 @@ class _EmptyResult extends StatelessWidget {
               '"$query"',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
@@ -1281,7 +1281,7 @@ class _EmptyResult extends StatelessWidget {
             Text(
               '검색 결과가 없어요\n다른 키워드로 찾아보세요',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.6,
@@ -1321,7 +1321,7 @@ class _ErrorView extends StatelessWidget {
               '검색에 실패했어요',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
@@ -1330,7 +1330,7 @@ class _ErrorView extends StatelessWidget {
             Text(
               message,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.5,
@@ -1359,8 +1359,8 @@ class _ErrorView extends StatelessWidget {
                   child: const Text(
                     '다시 시도',
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: AppTheme.darkBg,
                       height: 1.4,
                     ),

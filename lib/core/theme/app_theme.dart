@@ -253,64 +253,80 @@ class AppTheme {
   static const double cardPaddingMD = 16.0;
 
   // ─── 타이포그래피 토큰 ───────────────────────────────────────────
+  // 타입 스케일은 5단계뿐 — 강조 30 / 제목 24 / 본문 16 / 작은본문 12 / 캡션 10.
+  // 위계는 크기로만 만든다(두께 임의 추가 금지) → 모든 토큰 단일 두께 w400.
+  // 30pt 초과는 텍스트가 아닌 디스플레이 수치(타이머·통계 숫자·페이지)에만 허용.
+  // 참고: wiki/analyses/타이포그래피-규칙.md
+  static const FontWeight _w = FontWeight.w400;
+
+  // 강조 30 / 제목 24 / 본문 16 / 작은본문 12 / 캡션 10 (semantic 별칭)
+  static const TextStyle emphasis = TextStyle(
+    fontSize: 30,
+    fontWeight: _w,
+    height: 1.2,
+  );
+  static const TextStyle title = TextStyle(fontSize: 24, fontWeight: _w, height: 1.2);
+  static const TextStyle body = TextStyle(fontSize: 16, fontWeight: _w, height: 1.5);
+
   static const TextStyle headingLarge = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.bold,
+    fontSize: 24,
+    fontWeight: _w,
     height: 1.2,
   );
   static const TextStyle headingMedium = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
+    fontSize: 24,
+    fontWeight: _w,
     height: 1.3,
   );
   static const TextStyle headingSmall = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
+    fontSize: 16,
+    fontWeight: _w,
     height: 1.3,
   );
+  // 통계 hero 숫자 등 대형 디스플레이 수치 전용 (텍스트 아님, 스케일 예외)
   static const TextStyle displayLarge = TextStyle(
     fontSize: 48,
-    fontWeight: FontWeight.bold,
+    fontWeight: _w,
     height: 1.0,
   );
   static const TextStyle displayMedium = TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
+    fontSize: 30,
+    fontWeight: _w,
     height: 1.1,
   );
   static const TextStyle displaySmall = TextStyle(
-    fontSize: 22,
-    fontWeight: FontWeight.bold,
+    fontSize: 24,
+    fontWeight: _w,
     height: 1.1,
   );
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.normal,
+    fontSize: 16,
+    fontWeight: _w,
     height: 1.5,
   );
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
+    fontSize: 16,
+    fontWeight: _w,
     height: 1.5,
   );
   static const TextStyle bodySmall = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.normal,
+    fontSize: 12,
+    fontWeight: _w,
     height: 1.4,
   );
   static const TextStyle captionLarge = TextStyle(
     fontSize: 12,
-    fontWeight: FontWeight.normal,
+    fontWeight: _w,
     height: 1.4,
   );
   static const TextStyle captionSmall = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
+    fontSize: 10,
+    fontWeight: _w,
     height: 1.3,
   );
   static const TextStyle labelStyle = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
+    fontSize: 10,
+    fontWeight: _w,
     letterSpacing: 0.5,
   );
 
@@ -369,8 +385,8 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
+        fontSize: 24,
+        fontWeight: FontWeight.w400,
         color: textPrimary,
       ),
     ),
@@ -397,14 +413,14 @@ class AppTheme {
       style: FilledButton.styleFrom(
         backgroundColor: primaryLight,
         foregroundColor: Colors.black,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
         shape: smoothShape(radius: radiusMD),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: primaryLight,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
       ),
     ),
     chipTheme: ChipThemeData(
@@ -474,8 +490,8 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
+        fontSize: 24,
+        fontWeight: FontWeight.w400,
         color: lightTextPrimary,
       ),
     ),
@@ -507,14 +523,14 @@ class AppTheme {
       style: FilledButton.styleFrom(
         backgroundColor: lightPrimaryAccent,
         foregroundColor: Colors.white,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
         shape: smoothShape(radius: radiusMD),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: lightPrimaryAccent,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w700),
+        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
       ),
     ),
     chipTheme: ChipThemeData(

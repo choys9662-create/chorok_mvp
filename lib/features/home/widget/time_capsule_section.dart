@@ -32,7 +32,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   children: [
-                    const Text('⏳', style: TextStyle(fontSize: 14)),
+                    const Text('⏳', style: TextStyle(fontSize: 16)),
                     const SizedBox(width: 8),
                     Text(
                       '1년 전 오늘, 당신이 붙잡은 문장',
@@ -62,7 +62,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                       '"${choseo.content}"',
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -97,7 +97,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                           '그때의 나는 무슨 생각을 했을까?',
                           style: AppTheme.captionLarge.copyWith(
                             color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
