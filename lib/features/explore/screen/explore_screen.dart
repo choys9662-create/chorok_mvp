@@ -4,10 +4,14 @@ import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../search/controller/book_search_controller.dart';
+import '../../search/controller/user_search_controller.dart';
 import '../../search/model/aladin_book.dart';
 import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
@@ -51,10 +55,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
       ref.read(bookSearchProvider.notifier).clear();
+      ref.read(userSearchProvider.notifier).clear();
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 400), () {
       ref.read(bookSearchProvider.notifier).search(query);
+      ref.read(userSearchProvider.notifier).search(query);
     });
   }
 
@@ -64,11 +70,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     _searchController.clear();
   }
 
+  void _onBookNavigate(AladinBook book) {
+    HapticFeedback.selectionClick();
+    _searchFocusNode.unfocus();
+    context.push(AppConstants.routeBookInfo, extra: book);
+  }
+
+  void _onUserNavigate(UserProfile profile) {
+    HapticFeedback.selectionClick();
+    _searchFocusNode.unfocus();
+    context.push(AppConstants.routeUserProfile, extra: profile);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isSearchActive = _searchController.text.isNotEmpty;
     final topPad = MediaQuery.of(context).padding.top;
     final searchState = ref.watch(bookSearchProvider);
+    final userState = ref.watch(userSearchProvider);
 
     return Scaffold(
       backgroundColor: context.appSurface,
@@ -85,7 +104,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             child: isSearchActive
                 ? _SearchResultsView(
                     state: searchState,
+                    userState: userState,
                     query: _searchController.text,
+                    onNavigate: _onBookNavigate,
+                    onUserNavigate: _onUserNavigate,
                   )
                 : const _IdleSearchView(),
           ),
@@ -267,61 +289,221 @@ class _IdleSearchView extends StatelessWidget {
 
 class _SearchResultsView extends StatelessWidget {
   final AsyncValue<List<AladinBook>> state;
+  final AsyncValue<List<UserProfile>> userState;
   final String query;
+  final void Function(AladinBook) onNavigate;
+  final void Function(UserProfile) onUserNavigate;
 
-  const _SearchResultsView({required this.state, required this.query});
+  const _SearchResultsView({
+    required this.state,
+    required this.userState,
+    required this.query,
+    required this.onNavigate,
+    required this.onUserNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return state.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
+    final books = state.value ?? const <AladinBook>[];
+    final users = userState.value ?? const <UserProfile>[];
+    final isLoading = state.isLoading || userState.isLoading;
+    final error = state.hasError
+        ? state.error
+        : userState.hasError
+        ? userState.error
+        : null;
+
+    if (isLoading && books.isEmpty && users.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (error != null && books.isEmpty && users.isEmpty) {
+      return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            error.toString().replaceFirst('Exception: ', ''),
             style: AppTheme.bodySmall.copyWith(color: context.appTextSecondary),
             textAlign: TextAlign.center,
           ),
         ),
-      ),
-      data: (books) {
-        if (books.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.search_off_rounded,
-                  size: 52,
-                  color: context.appTextTertiary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '검색 결과가 없어요',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '다른 제목이나 저자 이름으로 검색해보세요',
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ],
+      );
+    }
+
+    if (books.isEmpty && users.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 52,
+              color: context.appTextTertiary,
             ),
-          );
-        }
-        return ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(top: 8, bottom: 48),
-          itemCount: books.length,
-          itemBuilder: (context, index) =>
-              _BookResultTile(book: books[index], rank: index + 1),
-        );
-      },
+            const SizedBox(height: 16),
+            Text(
+              '검색 결과가 없어요',
+              style: AppTheme.headingSmall.copyWith(
+                color: context.appTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '다른 책, 저자, 유저 이름으로 검색해보세요',
+              style: AppTheme.bodySmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 8, bottom: 48),
+      children: [
+        if (users.isNotEmpty) ...[
+          _ResultSectionHeader(title: '유저', count: users.length),
+          for (var i = 0; i < users.length; i++)
+            _UserResultTile(profile: users[i], onNavigate: onUserNavigate),
+          const SizedBox(height: 10),
+        ],
+        if (books.isNotEmpty) ...[
+          _ResultSectionHeader(title: '책', count: books.length),
+          for (var i = 0; i < books.length; i++)
+            _BookResultTile(
+              book: books[i],
+              rank: i + 1,
+              onNavigate: onNavigate,
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ResultSectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+
+  const _ResultSectionHeader({required this.title, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        12,
+        AppTheme.screenPadding,
+        6,
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$count',
+            style: AppTheme.captionSmall.copyWith(color: AppTheme.accent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserResultTile extends StatelessWidget {
+  final UserProfile profile;
+  final void Function(UserProfile) onNavigate;
+
+  const _UserResultTile({required this.profile, required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+        vertical: 6,
+      ),
+      child: GestureDetector(
+        onTap: () => onNavigate(profile),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: 16,
+            side: BorderSide.none,
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: context.appCardElevated,
+                backgroundImage:
+                    profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                    ? NetworkImage(profile.avatarUrl!)
+                    : null,
+                child: profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+                    ? Icon(
+                        Icons.person_rounded,
+                        color: context.appTextTertiary,
+                        size: 24,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.displayName,
+                      style: AppTheme.bodySmall.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '@${profile.username}',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (profile.bio != null && profile.bio!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        profile.bio!,
+                        style: AppTheme.captionSmall.copyWith(
+                          color: context.appTextTertiary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.appTextTertiary,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -331,8 +513,13 @@ class _SearchResultsView extends StatelessWidget {
 class _BookResultTile extends ConsumerStatefulWidget {
   final AladinBook book;
   final int rank;
+  final void Function(AladinBook) onNavigate;
 
-  const _BookResultTile({required this.book, required this.rank});
+  const _BookResultTile({
+    required this.book,
+    required this.rank,
+    required this.onNavigate,
+  });
 
   @override
   ConsumerState<_BookResultTile> createState() => _BookResultTileState();
@@ -396,6 +583,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
         vertical: 6,
       ),
       child: GestureDetector(
+        onTap: () => widget.onNavigate(widget.book),
         onTapDown: (_) {
           HapticFeedback.selectionClick();
           setState(() => _isPressed = true);

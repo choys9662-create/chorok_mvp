@@ -32,26 +32,7 @@ class SupabaseBookRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
-    // global_books에 upsert (isbn13이 있을 때만)
-    String? globalBookId;
-    if (book.isbn != null && book.isbn!.isNotEmpty) {
-      try {
-        final gbRow = await _client
-            .from('global_books')
-            .upsert({
-              'isbn13': book.isbn,
-              'title': book.title,
-              'author': book.author,
-              'cover_url': book.coverUrl,
-              'total_pages': book.totalPages,
-            }, onConflict: 'isbn13')
-            .select('id')
-            .single();
-        globalBookId = gbRow['id'] as String?;
-      } catch (_) {
-        // global_books 테이블이 아직 없거나 에러 시 무시
-      }
-    }
+    final globalBookId = await _upsertGlobalBook(book);
 
     await _client.from('books').upsert({
       'user_id': userId,
@@ -75,6 +56,35 @@ class SupabaseBookRepository {
     }, onConflict: 'user_id,book_id');
   }
 
+  /// 완독 후 남긴 공개 평가를 저장한다. 테이블 미적용 환경에서는 호출부에서 무시한다.
+  Future<void> saveReview({
+    required Book book,
+    required int starRating,
+    String? memorableLine,
+    String? legacy,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || starRating <= 0) return;
+
+    final globalBookId = await _upsertGlobalBook(book);
+    if (globalBookId == null) return;
+
+    String? clean(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    }
+
+    final now = DateTime.now().toIso8601String();
+    await _client.from('book_reviews').upsert({
+      'user_id': userId,
+      'global_book_id': globalBookId,
+      'star_rating': starRating,
+      'memorable_line': clean(memorableLine),
+      'legacy': clean(legacy),
+      'updated_at': now,
+    }, onConflict: 'user_id,global_book_id');
+  }
+
   Future<void> deleteByBookId(String bookId) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
@@ -83,6 +93,27 @@ class SupabaseBookRepository {
         .delete()
         .eq('user_id', userId)
         .eq('book_id', bookId);
+  }
+
+  Future<String?> _upsertGlobalBook(Book book) async {
+    if (book.isbn == null || book.isbn!.isEmpty) return null;
+    try {
+      final gbRow = await _client
+          .from('global_books')
+          .upsert({
+            'isbn13': book.isbn,
+            'title': book.title,
+            'author': book.author,
+            'cover_url': book.coverUrl,
+            'total_pages': book.totalPages,
+          }, onConflict: 'isbn13')
+          .select('id')
+          .single();
+      return gbRow['id'] as String?;
+    } catch (_) {
+      // global_books 테이블이 아직 없거나 에러 시 무시
+      return null;
+    }
   }
 
   Book _bookFromRow(Map<String, dynamic> r) {

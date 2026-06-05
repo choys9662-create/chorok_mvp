@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -203,17 +204,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   DateTime? _exitStartedAt;
 
   bool _isRecording = false;
-  bool _ocrProcessing = false;
   bool _showSlideToStop = false;
   bool _showTopic = true;
   String _recognizedText = '';
 
   Future<void> _openOcr() async {
-    if (_shouldUseNativeCameraPickerForOcr) {
-      await _openNativeCameraOcr();
-      return;
-    }
-
     ref.read(timerProvider.notifier).pause();
     _uiHideTimer?.cancel();
     final result = await Navigator.of(context).push<OcrResult>(
@@ -233,54 +228,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       result ?? const OcrCancelled(),
       noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.',
     );
-  }
-
-  Future<void> _openNativeCameraOcr() async {
-    ref.read(timerProvider.notifier).pause();
-    _uiHideTimer?.cancel();
-
-    try {
-      final photo = await ImagePicker().pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-      );
-      if (!mounted) return;
-      if (photo == null) {
-        ref.read(timerProvider.notifier).resume();
-        _setUi(
-          UiVisibility.revealed,
-          autoHideAfter: const Duration(seconds: 6),
-        );
-        return;
-      }
-
-      setState(() => _ocrProcessing = true);
-      final bytes = await photo.readAsBytes().timeout(_captureReadTimeout);
-      if (!mounted) return;
-      final result = await ref
-          .read(ocrServiceProvider)
-          .extractTextFromBytes(bytes);
-      if (!mounted) return;
-
-      setState(() => _ocrProcessing = false);
-      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
-      _handleOcrResult(
-        result,
-        noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.',
-      );
-    } on TimeoutException {
-      if (!mounted) return;
-      setState(() => _ocrProcessing = false);
-      ref.read(timerProvider.notifier).resume();
-      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
-      _showOcrSnack('이미지 처리 시간이 길어졌어요. 다시 시도해 주세요.');
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _ocrProcessing = false);
-      ref.read(timerProvider.notifier).resume();
-      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
-      _showOcrSnack('카메라 이미지를 불러올 수 없어요. 다시 시도해 주세요.');
-    }
   }
 
   void _handleOcrResult(OcrResult result, {required String noTextMessage}) {
@@ -709,8 +656,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   onStop: _toggleRecording,
                 ),
 
-              if (_ocrProcessing) const _OcrLoadingOverlay(),
-
               // ⑥ 슬라이드 종료 오버레이
               if (_showSlideToStop)
                 _SlideToStopOverlay(
@@ -981,9 +926,11 @@ class _OcrCaptureScreen extends ConsumerStatefulWidget {
 class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     with SingleTickerProviderStateMixin {
   CameraController? _cameraCtrl;
+  CameraImage? _latestFrame;
   late final AnimationController _pulseCtrl;
   bool _initializing = true;
   bool _processing = false;
+  bool _streamReady = kIsWeb;
   bool _torchOn = false;
   String? _statusMessage;
 
@@ -1024,10 +971,19 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
         camera,
         ResolutionPreset.high,
         enableAudio: false,
+        imageFormatGroup: _ocrCaptureImageFormatGroup,
       );
       _cameraCtrl = controller;
 
       await controller.initialize();
+      if (!kIsWeb) {
+        await controller.startImageStream((frame) {
+          _latestFrame = frame;
+          if (!_streamReady && mounted) {
+            setState(() => _streamReady = true);
+          }
+        });
+      }
       try {
         await controller.setFlashMode(FlashMode.off);
       } on CameraException {
@@ -1052,6 +1008,10 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
         _processing) {
       return;
     }
+    if (!kIsWeb && _latestFrame == null) {
+      setState(() => _statusMessage = '카메라를 준비하는 중이에요');
+      return;
+    }
 
     setState(() {
       _processing = true;
@@ -1060,8 +1020,7 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     HapticFeedback.mediumImpact();
 
     try {
-      final photo = await controller.takePicture().timeout(_captureTimeout);
-      final bytes = await photo.readAsBytes().timeout(_captureReadTimeout);
+      final bytes = await _captureOcrBytes(controller);
       final result = await ref
           .read(ocrServiceProvider)
           .extractTextFromBytes(bytes);
@@ -1074,6 +1033,22 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
         _statusMessage = '촬영 중 문제가 생겼어요. 다시 시도해 주세요';
       });
     }
+  }
+
+  Future<Uint8List> _captureOcrBytes(CameraController controller) async {
+    if (kIsWeb) {
+      final photo = await controller.takePicture().timeout(_captureTimeout);
+      return photo.readAsBytes().timeout(_captureReadTimeout);
+    }
+
+    final frame = _latestFrame;
+    if (frame == null) {
+      throw StateError('Camera stream frame is not ready.');
+    }
+    return _encodeCameraFrameToJpeg(
+      frame,
+      rotationDegrees: _ocrFrameRotationDegrees(controller),
+    );
   }
 
   Future<void> _toggleTorch() async {
@@ -1102,7 +1077,8 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
   Widget build(BuildContext context) {
     final controller = _cameraCtrl;
     final cameraReady = controller?.value.isInitialized == true;
-    final canCapture = cameraReady && !_processing && _statusMessage == null;
+    final canCapture =
+        cameraReady && _streamReady && !_processing && _statusMessage == null;
 
     return Theme(
       data: AppTheme.dark,
@@ -1139,8 +1115,113 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
   }
 }
 
-// camera_web can hang while taking still photos in mobile browsers.
-bool get _shouldUseNativeCameraPickerForOcr => kIsWeb;
+ImageFormatGroup get _ocrCaptureImageFormatGroup {
+  if (kIsWeb) return ImageFormatGroup.unknown;
+  return defaultTargetPlatform == TargetPlatform.iOS
+      ? ImageFormatGroup.bgra8888
+      : ImageFormatGroup.yuv420;
+}
+
+Uint8List _encodeCameraFrameToJpeg(
+  CameraImage frame, {
+  int rotationDegrees = 0,
+}) {
+  final image = switch (frame.format.group) {
+    ImageFormatGroup.jpeg => img.decodeImage(frame.planes.first.bytes),
+    ImageFormatGroup.bgra8888 => _bgra8888ToImage(frame),
+    ImageFormatGroup.yuv420 => _yuv420ToImage(frame),
+    ImageFormatGroup.nv21 || ImageFormatGroup.unknown => null,
+  };
+  if (image == null) {
+    throw UnsupportedError('Unsupported camera image format.');
+  }
+
+  return img.encodeJpg(_rotateImageForOcr(image, rotationDegrees), quality: 85);
+}
+
+int _ocrFrameRotationDegrees(CameraController controller) {
+  final sensorDegrees = controller.description.sensorOrientation;
+  final deviceDegrees = switch (controller.value.lockedCaptureOrientation ??
+      controller.value.deviceOrientation) {
+    DeviceOrientation.portraitUp => 0,
+    DeviceOrientation.landscapeLeft => 90,
+    DeviceOrientation.portraitDown => 180,
+    DeviceOrientation.landscapeRight => 270,
+  };
+
+  if (controller.description.lensDirection == CameraLensDirection.front) {
+    return (sensorDegrees + deviceDegrees) % 360;
+  }
+  return (sensorDegrees - deviceDegrees + 360) % 360;
+}
+
+img.Image _rotateImageForOcr(img.Image image, int degrees) {
+  final normalized = degrees % 360;
+  if (normalized == 0) return image;
+  return img.copyRotate(image, angle: normalized);
+}
+
+img.Image _bgra8888ToImage(CameraImage frame) {
+  final image = img.Image(width: frame.width, height: frame.height);
+  final plane = frame.planes.first;
+  final bytes = plane.bytes;
+
+  for (var y = 0; y < frame.height; y++) {
+    final rowOffset = y * plane.bytesPerRow;
+    for (var x = 0; x < frame.width; x++) {
+      final index = rowOffset + x * 4;
+      image.setPixelRgba(
+        x,
+        y,
+        bytes[index + 2],
+        bytes[index + 1],
+        bytes[index],
+        bytes[index + 3],
+      );
+    }
+  }
+
+  return image;
+}
+
+img.Image _yuv420ToImage(CameraImage frame) {
+  if (frame.planes.length < 3) {
+    throw UnsupportedError('YUV camera image does not include 3 planes.');
+  }
+
+  final image = img.Image(width: frame.width, height: frame.height);
+  final yPlane = frame.planes[0];
+  final uPlane = frame.planes[1];
+  final vPlane = frame.planes[2];
+  final uvPixelStride = uPlane.bytesPerPixel ?? 1;
+
+  for (var y = 0; y < frame.height; y++) {
+    final yRow = y * yPlane.bytesPerRow;
+    final uvRow = (y ~/ 2) * uPlane.bytesPerRow;
+    for (var x = 0; x < frame.width; x++) {
+      final yValue = yPlane.bytes[yRow + x];
+      final uvIndex = uvRow + (x ~/ 2) * uvPixelStride;
+      final uValue = uPlane.bytes[uvIndex];
+      final vValue = vPlane.bytes[uvIndex];
+
+      final c = yValue - 16;
+      final d = uValue - 128;
+      final e = vValue - 128;
+      final r = _clipColor((298 * c + 409 * e + 128) >> 8);
+      final g = _clipColor((298 * c - 100 * d - 208 * e + 128) >> 8);
+      final b = _clipColor((298 * c + 516 * d + 128) >> 8);
+      image.setPixelRgba(x, y, r, g, b, 255);
+    }
+  }
+
+  return image;
+}
+
+int _clipColor(int value) {
+  if (value < 0) return 0;
+  if (value > 255) return 255;
+  return value;
+}
 
 class _CameraPreviewCover extends StatelessWidget {
   final CameraController controller;

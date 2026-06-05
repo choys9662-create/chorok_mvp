@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/repositories/book_repository.dart';
+import '../../shared/repositories/supabase_book_repository.dart';
 
 // ─── 색상 상수 (요청 스펙: 배경 #000000, 포인트 #00FF00) ─────────────────────
 const _kBg = Color(0xFF000000);
@@ -133,6 +134,14 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
             bookId: widget.book.id,
             bookTitle: widget.book.title,
             bookAuthor: widget.book.author,
+            starRating: _starRating,
+            memorableLine: _lineCtrl.text,
+            legacy: _legacyCtrl.text,
+          );
+      await ref
+          .read(supabaseBookRepositoryProvider)
+          .saveReview(
+            book: widget.book,
             starRating: _starRating,
             memorableLine: _lineCtrl.text,
             legacy: _legacyCtrl.text,
@@ -452,9 +461,7 @@ class _StarStep extends StatelessWidget {
                   ),
                   decoration: ShapeDecoration(
                     color: _kGreen.withValues(alpha: 0.08),
-                    shape: const StadiumBorder(
-                      side: BorderSide.none,
-                    ),
+                    shape: const StadiumBorder(side: BorderSide.none),
                   ),
                   child: Text(
                     _labels[rating],
@@ -494,7 +501,7 @@ class _StarStep extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '별점은 나만 볼 수 있어요. 솔직하게 남겨보세요.',
+                  '별점과 감상은 책 정보 화면의 사용자 평가에 함께 보여요.',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
@@ -698,9 +705,7 @@ class _BottomCtaState extends State<_BottomCta> {
                         cornerRadius: AppTheme.radiusMD,
                         cornerSmoothing: 0.6,
                       ),
-                      side: active
-                          ? BorderSide.none
-                          : BorderSide.none,
+                      side: active ? BorderSide.none : BorderSide.none,
                     ),
                   ),
                   alignment: Alignment.center,
