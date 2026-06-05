@@ -268,8 +268,8 @@ class _TopBar extends StatelessWidget {
           Text(
             '${currentStep + 1} / $_kStepCount',
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
               color: _kTextSecondary,
               height: 1.4,
             ),
@@ -290,8 +290,8 @@ class _TopBar extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: _kTextSecondary,
                       height: 1.4,
                     ),
@@ -354,8 +354,8 @@ class _StepWrapper extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
               color: _kTextPrimary,
               height: 1.3,
             ),
@@ -364,7 +364,7 @@ class _StepWrapper extends StatelessWidget {
           Text(
             subtitle,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w400,
               color: _kTextSecondary,
               height: 1.6,
@@ -459,8 +459,8 @@ class _StarStep extends StatelessWidget {
                   child: Text(
                     _labels[rating],
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: _kGreen,
                       height: 1.4,
                     ),
@@ -554,7 +554,7 @@ class _TextStep extends StatelessWidget {
                 controller: controller,
                 maxLines: maxLines,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w400,
                   color: _kTextPrimary,
                   height: 1.6,
@@ -562,7 +562,7 @@ class _TextStep extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: _kTextTertiary,
                     height: 1.6,
@@ -720,7 +720,7 @@ class _BottomCtaState extends State<_BottomCta> {
                               _label,
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w400,
                                 color: active ? _kBg : _kTextTertiary,
                                 height: 1.4,
                               ),

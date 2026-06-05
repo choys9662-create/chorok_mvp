@@ -604,7 +604,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               style: TextStyle(
                 fontFamily: _kFont,
                 color: Colors.white,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
             duration: const Duration(seconds: 3),
@@ -756,9 +756,9 @@ class _PillTimerOnly extends StatelessWidget {
       child: Text(
         timer.formattedTime,
         style: TextStyle(
-          fontSize: 15,
+          fontSize: 16,
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w400,
           letterSpacing: 2,
           fontFamily: _kFont,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -841,8 +841,8 @@ class _NamedReaderOrbs extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: _kGreen.withValues(alpha: 0.90),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
                 letterSpacing: 0.2,
                 fontFamily: _kFont,
               ),
@@ -1210,7 +1210,7 @@ class _CameraPreparingView extends StatelessWidget {
                 message ?? '카메라를 준비하지 못했어요',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontFamily: _kFont,
                 ),
               ),
@@ -1291,8 +1291,8 @@ class _QuoteCameraOverlay extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.72),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
                           fontFamily: _kFont,
                         ),
                       ),
@@ -1434,8 +1434,8 @@ class _CaptureTopBar extends StatelessWidget {
                   '문장 촬영',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
@@ -1554,8 +1554,8 @@ class _CaptureBottomBar extends StatelessWidget {
                   color: message == null
                       ? Colors.white.withValues(alpha: 0.68)
                       : _kGreen.withValues(alpha: 0.9),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
                   fontFamily: _kFont,
                 ),
               ),
@@ -1626,7 +1626,7 @@ class _OcrLoadingOverlay extends StatelessWidget {
                 '텍스트 인식 중...',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 16,
                   fontFamily: _kFont,
                 ),
               ),
@@ -1686,7 +1686,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   fontFamily: _kFont,
                 ),
               ),
@@ -1695,7 +1695,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                 '듣는 중...',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 13,
+                  fontSize: 12,
                   fontFamily: _kFont,
                 ),
               ),
@@ -1720,7 +1720,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 16,
                         height: 1.6,
                         fontFamily: _kFont,
                       ),
@@ -1857,7 +1857,7 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                             '스와이프 하여 독서를 종료',
                             style: TextStyle(
                               color: _kGreen.withValues(alpha: 0.85),
-                              fontSize: 14,
+                              fontSize: 16,
                               fontFamily: _kFont,
                               letterSpacing: 0.5,
                             ),
@@ -1995,8 +1995,8 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                   '오늘의 화두',
                   style: TextStyle(
                     color: _kGreen.withValues(alpha: 0.75),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                     letterSpacing: 2,
                     fontFamily: _kFont,
                   ),
@@ -2007,7 +2007,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.40),
-                    fontSize: 14,
+                    fontSize: 16,
                     fontFamily: _kFont,
                   ),
                 ),
@@ -2028,9 +2028,9 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 24,
                       height: 1.75,
-                      fontWeight: FontWeight.w300,
+                      fontWeight: FontWeight.w400,
                       fontFamily: _kFont,
                     ),
                   ),
@@ -2061,7 +2061,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
                       ),
                     ),
@@ -2080,7 +2080,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                         '건너뛰기',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.30),
-                          fontSize: 13,
+                          fontSize: 12,
                           fontFamily: _kFont,
                         ),
                       ),
@@ -2196,7 +2196,7 @@ class _RevealedView extends StatelessWidget {
                       ),
                       fontSize: 64,
                       height: 1.0,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: -1,
                       fontFamily: _kFont,
                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -2213,9 +2213,9 @@ class _RevealedView extends StatelessWidget {
                     streakDays > 0 ? '$_dateLabel +$streakDays일' : _dateLabel,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.55),
-                      fontSize: 13,
+                      fontSize: 12,
                       letterSpacing: 0.4,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       fontFamily: _kFont,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
@@ -2248,8 +2248,8 @@ class _RevealedView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
@@ -2261,7 +2261,7 @@ class _RevealedView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _kGreen.withValues(alpha: 0.80),
-                    fontSize: 13,
+                    fontSize: 12,
                     letterSpacing: 0.3,
                     fontFamily: _kFont,
                   ),
@@ -2372,8 +2372,8 @@ class _SentenceBadge extends StatelessWidget {
               '+$count',
               style: const TextStyle(
                 color: Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 fontFamily: _kFont,
               ),
             ),
@@ -2496,8 +2496,8 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                       '이 책에서 모은 문장 ${_items.length}개',
                       style: const TextStyle(
                         color: Colors.black,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
                       ),
                     ),
@@ -2514,7 +2514,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                           '아직 모은 문장이 없어요',
                           style: TextStyle(
                             color: _kGreen.withValues(alpha: 0.45),
-                            fontSize: 15,
+                            fontSize: 16,
                             fontFamily: _kFont,
                           ),
                         ),
@@ -2585,8 +2585,8 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _kGreen,
-                        fontSize: 25,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
                       ),
                     ),
@@ -2599,7 +2599,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: _kGreen.withValues(alpha: 0.86),
-                          fontSize: 15,
+                          fontSize: 16,
                           letterSpacing: 0,
                           fontFamily: _kFont,
                         ),
@@ -2791,7 +2791,7 @@ class _SentenceReviewRow extends StatelessWidget {
               color: color.withValues(alpha: deleting ? 1.0 : 0.95),
               fontSize: 16,
               height: 1.55,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
               letterSpacing: 0,
               fontFamily: _kFont,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -2814,7 +2814,7 @@ class _SentenceReviewRow extends StatelessWidget {
                           color: color,
                           fontSize: 16,
                           height: 1.72,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: 0,
                           fontFamily: _kFont,
                         ),
@@ -2825,7 +2825,7 @@ class _SentenceReviewRow extends StatelessWidget {
                           sentence.thought,
                           style: TextStyle(
                             color: color.withValues(alpha: 0.78),
-                            fontSize: 14,
+                            fontSize: 16,
                             height: 1.6,
                             letterSpacing: 0,
                             fontFamily: _kFont,
@@ -2837,7 +2837,7 @@ class _SentenceReviewRow extends StatelessWidget {
                           '아직 이 문장에 대한 생각이 없어요',
                           style: TextStyle(
                             color: color.withValues(alpha: 0.48),
-                            fontSize: 14,
+                            fontSize: 16,
                             height: 1.6,
                             letterSpacing: 0,
                             fontFamily: _kFont,
@@ -2858,8 +2858,8 @@ class _SentenceReviewRow extends StatelessWidget {
                             sentence.thought.isEmpty ? '생각 추가' : '생각 수정',
                             style: TextStyle(
                               color: color,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                               letterSpacing: 0,
                               fontFamily: _kFont,
                             ),
@@ -2884,7 +2884,7 @@ class _SentenceReviewRow extends StatelessWidget {
                       color: color,
                       fontSize: 16,
                       height: 1.55,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0,
                       fontFamily: _kFont,
                     ),
@@ -2978,8 +2978,8 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                       '문장에 대한 생각',
                       style: TextStyle(
                         color: _kGreen,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0,
                         fontFamily: _kFont,
                       ),
@@ -3001,9 +3001,9 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     widget.sentence.content,
                     style: const TextStyle(
                       color: _kGreen,
-                      fontSize: 15,
+                      fontSize: 16,
                       height: 1.72,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                       letterSpacing: 0,
                       fontFamily: _kFont,
                     ),
@@ -3070,7 +3070,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                       foregroundColor: Colors.black,
                       textStyle: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 0,
                         fontFamily: _kFont,
                       ),
@@ -3247,8 +3247,8 @@ class _ActionsView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
@@ -3260,7 +3260,7 @@ class _ActionsView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: _kGreen.withValues(alpha: 0.75),
-                    fontSize: 13,
+                    fontSize: 12,
                     letterSpacing: 0.3,
                     fontFamily: _kFont,
                   ),
@@ -3294,9 +3294,9 @@ class _PillTimer extends StatelessWidget {
       child: Text(
         timer.formattedTime,
         style: TextStyle(
-          fontSize: 14,
+          fontSize: 16,
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
           letterSpacing: 1.4,
           fontFamily: _kFont,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -3353,8 +3353,8 @@ class _ActionCard extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: labelColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                   letterSpacing: 0.3,
                   fontFamily: _kFont,
                 ),
@@ -3441,8 +3441,8 @@ class _SocialView extends StatelessWidget {
                               : '함께 읽는 초록 확인',
                           style: TextStyle(
                             color: _kGreen.withValues(alpha: 0.85),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
                             letterSpacing: 0.3,
                             fontFamily: _kFont,
                           ),
@@ -3571,7 +3571,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                       '아직 맞팔한 친구가 없어요',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 14,
+                        fontSize: 16,
                         fontFamily: _kFont,
                       ),
                     ),
@@ -3701,7 +3701,7 @@ class _PeopleTab extends StatelessWidget {
                     user.displayName,
                     style: TextStyle(
                       fontSize: isFirst ? 16 : 14,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: isFirst
                           ? _kGreen
                           : Colors.white.withValues(alpha: 0.90),
@@ -3723,8 +3723,8 @@ class _PeopleTab extends StatelessWidget {
                 Text(
                   time,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     color: _kGreen.withValues(alpha: isFirst ? 1.0 : 0.85),
                     letterSpacing: 0.5,
                     fontFamily: _kFont,
@@ -3787,7 +3787,7 @@ class _BooksTab extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: isFirst ? 15 : 14,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                           color: isFirst
                               ? _kGreen
                               : Colors.white.withValues(alpha: 0.92),

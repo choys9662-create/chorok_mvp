@@ -68,8 +68,8 @@ class BarChart extends StatelessWidget {
                         ? context.appPrimaryAccent
                         : context.appTextTertiary,
                     fontWeight: isHighlight
-                        ? FontWeight.w700
-                        : FontWeight.normal,
+                        ? FontWeight.w400
+                        : FontWeight.w400,
                   ),
                 ),
               ],
@@ -140,8 +140,8 @@ class LineRhythmChart extends StatelessWidget {
                           ? context.appPrimaryAccent
                           : context.appTextTertiary,
                       fontWeight: isHighlight
-                          ? FontWeight.w700
-                          : FontWeight.normal,
+                          ? FontWeight.w400
+                          : FontWeight.w400,
                     ),
                   ),
                 ],
@@ -312,8 +312,8 @@ class TimeOfDayChart extends StatelessWidget {
                           ? context.appPrimaryAccent
                           : context.appTextTertiary,
                       fontWeight: ratio >= 0.8
-                          ? FontWeight.w600
-                          : FontWeight.normal,
+                          ? FontWeight.w400
+                          : FontWeight.w400,
                     ),
                   ),
                 ),
@@ -474,8 +474,8 @@ class YearMonthDials extends StatelessWidget {
                       style: AppTheme.captionSmall.copyWith(
                         fontSize: 10,
                         fontWeight: isCurrent
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                            ? FontWeight.w400
+                            : FontWeight.w400,
                         color: isCurrent
                             ? context.appPrimaryAccent
                             : isFuture
@@ -496,7 +496,7 @@ class YearMonthDials extends StatelessWidget {
                 style: AppTheme.captionSmall.copyWith(
                   fontSize: 10,
                   color: isCurrent ? AppTheme.accent : context.appTextTertiary,
-                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isCurrent ? FontWeight.w400 : FontWeight.w400,
                 ),
               ),
             ],

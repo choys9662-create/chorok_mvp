@@ -229,8 +229,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         title: const Text(
           '회원가입',
           style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
             color: Colors.white,
           ),
         ),
@@ -376,8 +376,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
         color: Colors.white70,
       ),
     );
@@ -469,13 +469,13 @@ class _ValidatedFieldState extends State<_ValidatedField> {
             obscureText: widget.obscure,
             keyboardType: widget.keyboardType,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: 16,
               fontWeight: FontWeight.w400,
               color: Colors.white,
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: TextStyle(fontSize: 15, color: AppTheme.textTertiary),
+              hintStyle: TextStyle(fontSize: 16, color: AppTheme.textTertiary),
               suffixIcon: suffixWidget,
               suffixIconConstraints: const BoxConstraints(minHeight: 20),
               filled: true,
@@ -545,7 +545,7 @@ class _PasswordStrengthBar extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             color: color,
           ),
         ),
@@ -651,7 +651,7 @@ class _TermRow extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: bold ? 14 : 13,
-                fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: bold ? FontWeight.w400 : FontWeight.w400,
                 color: bold ? Colors.white : AppTheme.textSecondary,
               ),
             ),
@@ -708,8 +708,8 @@ class _NicknameCheckButton extends StatelessWidget {
                     : Text(
                         confirmed ? '확인됨' : '중복 확인',
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
                           color: enabled ? Colors.white : AppTheme.textTertiary,
                         ),
                       ),
@@ -771,7 +771,7 @@ class _SubmitButton extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       color: isDisabled
                           ? Colors.white.withValues(alpha: 0.4)
                           : Colors.white,

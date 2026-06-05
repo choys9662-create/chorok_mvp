@@ -76,14 +76,14 @@ class PassiveAggroCard extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Text('🦉', style: TextStyle(fontSize: 20)),
+            const Text('🦉', style: TextStyle(fontSize: 24)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
                   color: AppTheme.warningColor,
                   height: 1.45,
                 ),
@@ -103,7 +103,7 @@ class PassiveAggroCard extends ConsumerWidget {
               },
               child: const Text(
                 '읽을게요',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
               ),
             ),
           ],

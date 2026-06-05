@@ -292,7 +292,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             labelColor: context.appPrimaryAccent,
             unselectedLabelColor: context.appTextTertiary,
             labelStyle: AppTheme.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
             unselectedLabelStyle: AppTheme.bodyMedium.copyWith(),
             tabs: const [
@@ -391,7 +391,7 @@ class _BadgesTab extends StatelessWidget {
                             ? Colors.white
                             : context.appTextSecondary,
                         fontWeight: selected
-                            ? FontWeight.w600
+                            ? FontWeight.w400
                             : FontWeight.w400,
                       ),
                     ),
@@ -458,8 +458,8 @@ class _LevelHeader extends StatelessWidget {
               child: Text(
                 'Lv.$_level',
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
                   color: Colors.white,
                 ),
               ),
@@ -474,7 +474,7 @@ class _LevelHeader extends StatelessWidget {
                   '독서 레벨 $_level',
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                     color: Colors.white,
                   ),
                 ),
@@ -482,7 +482,7 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '$unlockedCount / $totalCount 뱃지 획득',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
@@ -500,7 +500,7 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '다음 레벨까지 ${3 - (unlockedCount % 3)}개',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
@@ -577,7 +577,7 @@ class _BadgeTile extends StatelessWidget {
                 color: badge.unlocked
                     ? context.appTextPrimary
                     : context.appTextTertiary,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -688,7 +688,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                     '${(badge.progress * 100).round()}%',
                     style: AppTheme.bodyMedium.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -717,7 +717,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                       '획득 완료',
                       style: AppTheme.captionLarge.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -844,7 +844,7 @@ class _ChallengeTile extends StatelessWidget {
                   challenge.title,
                   style: AppTheme.bodyMedium.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -857,7 +857,7 @@ class _ChallengeTile extends StatelessWidget {
                   challenge.deadline,
                   style: AppTheme.captionLarge.copyWith(
                     color: challenge.color,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -889,7 +889,7 @@ class _ChallengeTile extends StatelessWidget {
                 challenge.progressLabel,
                 style: AppTheme.captionLarge.copyWith(
                   color: challenge.color,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -924,7 +924,7 @@ class _UpcomingChallengeTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 28)),
+          Text(emoji, style: const TextStyle(fontSize: 30)),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -934,7 +934,7 @@ class _UpcomingChallengeTile extends StatelessWidget {
                   title,
                   style: AppTheme.bodyMedium.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 Text(

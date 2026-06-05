@@ -108,7 +108,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
               Text(
                 widget.title,
                 style: AppTheme.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                   color: context.appTextPrimary,
                 ),
               ),
@@ -156,7 +156,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
                           },
                           style: TextStyle(
                             fontSize: 40,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                             color: context.appPrimaryAccent,
                             height: 1.1,
                           ),
@@ -253,7 +253,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
                     )
                   : Text(
                       widget.saveLabel,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontWeight: FontWeight.w400),
                     ),
             ),
           ),

@@ -61,7 +61,7 @@ class TodayGoalBanner extends StatelessWidget {
                     '오늘 목표 달성!',
                     style: AppTheme.bodySmall.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -86,7 +86,7 @@ class TodayGoalBanner extends StatelessWidget {
                 '완료',
                 style: AppTheme.captionSmall.copyWith(
                   color: isDark ? AppTheme.primaryLight : Colors.white,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -145,7 +145,7 @@ class TodayGoalBanner extends StatelessWidget {
                       '오늘 독서를 시작해보세요',
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -222,7 +222,7 @@ class TodayGoalBanner extends StatelessWidget {
                         '오늘 ${time_fmt.formatMinutes(todayMinutes)} 독서했어요',
                         style: AppTheme.bodySmall.copyWith(
                           color: context.appTextPrimary,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -239,7 +239,7 @@ class TodayGoalBanner extends StatelessWidget {
                   '${(progress * 100).toInt()}%',
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],

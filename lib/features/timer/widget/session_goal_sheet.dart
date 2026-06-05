@@ -181,7 +181,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                       '독서 시작하기',
                       style: AppTheme.bodyLarge.copyWith(
                         color: canSubmit ? context.appBg : context.appTextTertiary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -283,7 +283,7 @@ class _TabButton extends StatelessWidget {
           label,
           style: AppTheme.bodySmall.copyWith(
             color: isSelected ? Colors.white : context.appTextTertiary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
           ),
         ),
       ),
@@ -411,7 +411,7 @@ class _PresetChip extends StatelessWidget {
             label,
             style: AppTheme.bodySmall.copyWith(
               color: isSelected ? context.appAccentColor : context.appTextSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
             ),
           ),
         ),

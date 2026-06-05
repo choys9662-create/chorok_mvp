@@ -36,7 +36,7 @@ class ChorokSectionHeader extends StatelessWidget {
                 title,
                 style: AppTheme.headingMedium.copyWith(
                   color: context.appTextPrimary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               if (subtitle != null) ...[

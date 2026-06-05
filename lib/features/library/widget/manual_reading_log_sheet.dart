@@ -220,7 +220,7 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                 '읽은 날짜',
                 style: AppTheme.bodySmall.copyWith(
                   color: context.appTextSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 8),
@@ -249,7 +249,7 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                           _formatDate(_selectedDate),
                           style: AppTheme.bodyMedium.copyWith(
                             color: context.appTextPrimary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const Spacer(),
@@ -270,7 +270,7 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                 '읽은 페이지',
                 style: AppTheme.bodySmall.copyWith(
                   color: context.appTextSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 8),
@@ -339,7 +339,7 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                 '독서 시간',
                 style: AppTheme.bodySmall.copyWith(
                   color: context.appTextSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 8),
@@ -442,7 +442,7 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                             color: isDark
                                 ? AppTheme.primaryLight
                                 : Colors.white,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                 ),
@@ -493,7 +493,7 @@ class _PageField extends StatelessWidget {
             onChanged: (_) => onChanged(),
             style: AppTheme.bodyMedium.copyWith(
               color: context.appTextPrimary,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
             decoration: InputDecoration(
               border: InputBorder.none,

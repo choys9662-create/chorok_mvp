@@ -43,7 +43,7 @@ class ReadingBooksSection extends ConsumerWidget {
                     '${readingBooks.length}권',
                     style: AppTheme.captionLarge.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
           ),
@@ -135,7 +135,7 @@ class EmptyBooksState extends StatelessWidget {
               '아직 등록된 책이 없어요',
               style: AppTheme.headingSmall.copyWith(
                 color: context.appTextPrimary,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 8),
@@ -180,7 +180,7 @@ class EmptyBooksState extends StatelessWidget {
                           color: isDark
                               ? context.appPrimaryAccent
                               : Colors.white,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
@@ -319,7 +319,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       '${(progress * 100).round()}%',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -335,7 +335,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -396,7 +396,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                           color: isDark
                               ? context.appPrimaryAccent
                               : Colors.white,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),

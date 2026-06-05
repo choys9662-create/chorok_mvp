@@ -54,8 +54,8 @@ class _AddToLibrarySheet extends StatelessWidget {
             Text(
               '서재에 추가',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 24,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
@@ -64,7 +64,7 @@ class _AddToLibrarySheet extends StatelessWidget {
             Text(
               book.title,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.5,
@@ -111,8 +111,8 @@ class _AddToLibrarySheet extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: context.appTextTertiary,
                   textStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 child: const Text('취소'),
@@ -195,8 +195,8 @@ class _StatusTileState extends State<_StatusTile> {
                       Text(
                         widget.label,
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
                           color: context.appTextPrimary,
                           height: 1.4,
                         ),

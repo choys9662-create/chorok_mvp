@@ -148,7 +148,7 @@ class _AppBarArea extends StatelessWidget {
                 '탐색',
                 style: AppTheme.headingLarge.copyWith(
                   color: context.appTextPrimary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -435,7 +435,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                       widget.book.title,
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -505,7 +505,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                             child: Text(
                               '서재에 추가',
                               style: AppTheme.captionSmall.copyWith(
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -523,7 +523,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                                   '추가됨',
                                   style: AppTheme.captionSmall.copyWith(
                                     color: AppTheme.accent,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ],
@@ -533,7 +533,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                               '서재에 추가',
                               style: AppTheme.captionSmall.copyWith(
                                 color: AppTheme.accent,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                         ],

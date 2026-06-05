@@ -96,7 +96,7 @@ class _MonthHeader extends StatelessWidget {
         ),
         Text(
           '${month.year}년 ${month.month}월',
-          style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+          style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w400),
         ),
         IconButton(
           onPressed: onNext,
@@ -125,7 +125,7 @@ class _DayOfWeekRow extends StatelessWidget {
                   d,
                   style: AppTheme.captionSmall.copyWith(
                     color: _kLabel,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -234,13 +234,13 @@ class _DayCell extends StatelessWidget {
         child: Text(
           '$day',
           style: AppTheme.captionSmall.copyWith(
-            fontSize: 11,
+            fontSize: 12,
             color:
                 color == const Color(0xFF2A2D2A) ||
                     color == const Color(0xFFE2EDE9)
                 ? _kLabel
                 : Colors.white,
-            fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+            fontWeight: isToday ? FontWeight.w400 : FontWeight.w400,
           ),
         ),
       ),

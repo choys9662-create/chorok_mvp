@@ -740,7 +740,7 @@ class _RecapStat extends StatelessWidget {
               textAlign: TextAlign.right,
               style: AppTheme.captionLarge.copyWith(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -790,8 +790,8 @@ class _ReceiptCapture extends StatelessWidget {
             'C H O R O K',
             style: TextStyle(
               color: Colors.black87,
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
+              fontSize: 30,
+              fontWeight: FontWeight.w400,
               letterSpacing: 8,
             ),
           ),
@@ -812,15 +812,15 @@ class _ReceiptCapture extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.black87,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
+              fontSize: 24,
+              fontWeight: FontWeight.w400,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             bookAuthor,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.black54, fontSize: 15),
+            style: const TextStyle(color: Colors.black54, fontSize: 16),
           ),
           const SizedBox(height: 24),
           const SizedBox(height: AppTheme.spaceMD),
@@ -841,7 +841,7 @@ class _ReceiptCapture extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 15,
+                fontSize: 16,
                 fontStyle: FontStyle.italic,
                 height: 1.5,
               ),
@@ -906,7 +906,7 @@ class _SentencesSection extends StatelessWidget {
                 '${sentences.length}',
                 style: AppTheme.captionSmall.copyWith(
                   color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
@@ -922,7 +922,7 @@ class _SentencesSection extends StatelessWidget {
                   overlapBadge!,
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appTextSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -1010,7 +1010,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
                     tagDesc,
                     style: AppTheme.captionSmall.copyWith(
                       color: tagColor,
-                      fontWeight: isSpecial ? FontWeight.w500 : FontWeight.w400,
+                      fontWeight: isSpecial ? FontWeight.w400 : FontWeight.w400,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1163,8 +1163,8 @@ class _PageRecordCard extends StatelessWidget {
             Text(
               '페이지 기록이 저장됐어요',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 color: context.appPrimaryAccent,
                 height: 1.4,
               ),
@@ -1236,8 +1236,8 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '완독을 축하해요! 🎉',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+                fontSize: 24,
+                fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
@@ -1248,7 +1248,7 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.6,
@@ -1274,8 +1274,8 @@ class _CompletionDialog extends StatelessWidget {
                   child: const Text(
                     '감상 남기기',
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: AppTheme.darkBg,
                       height: 1.4,
                     ),
@@ -1298,8 +1298,8 @@ class _CompletionDialog extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
                       height: 1.4,
                     ),
@@ -1327,17 +1327,17 @@ class _ReceiptRow extends StatelessWidget {
           label,
           style: const TextStyle(
             color: Colors.black54,
-            fontSize: 13,
+            fontSize: 12,
             letterSpacing: 1,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
           ),
         ),
         Text(
           value,
           style: const TextStyle(
             color: Colors.black87,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -1368,7 +1368,7 @@ class _HeroPill extends StatelessWidget {
             label,
             style: AppTheme.captionSmall.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -1427,7 +1427,7 @@ class _NextBookSuggestion extends ConsumerWidget {
                           book.title,
                           style: AppTheme.bodyLarge.copyWith(
                             color: Colors.white,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -1476,7 +1476,7 @@ class _NextBookSuggestion extends ConsumerWidget {
                                   '바로 읽기',
                                   style: AppTheme.captionLarge.copyWith(
                                     color: context.appPrimaryAccent,
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ],

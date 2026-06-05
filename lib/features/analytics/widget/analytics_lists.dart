@@ -77,7 +77,7 @@ class SessionTile extends StatelessWidget {
                 Text(
                   title,
                   style: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                     color: context.appTextPrimary,
                   ),
                 ),
@@ -98,7 +98,7 @@ class SessionTile extends StatelessWidget {
                 duration,
                 style: AppTheme.bodySmall.copyWith(
                   color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 2),
@@ -163,7 +163,7 @@ class FinishedBookList extends StatelessWidget {
                           Text(
                             b.title,
                             style: AppTheme.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                               color: context.appTextPrimary,
                             ),
                           ),
@@ -184,7 +184,7 @@ class FinishedBookList extends StatelessWidget {
                           b.date,
                           style: AppTheme.captionLarge.copyWith(
                             color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 2),

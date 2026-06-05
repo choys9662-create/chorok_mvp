@@ -245,7 +245,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             '내 문장장',
                             style: AppTheme.headingSmall.copyWith(
                               color: context.appTextPrimary,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           Semantics(
@@ -320,7 +320,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                         badge,
                                         style: AppTheme.captionSmall.copyWith(
                                           color: context.appPrimaryAccent,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w400,
                                           fontSize: 10,
                                         ),
                                       ),
@@ -602,7 +602,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                       '${widget.books.length}권',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -728,7 +728,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                     ? Colors.white
                                     : context.appTextTertiary,
                                 fontWeight: isSelected
-                                    ? FontWeight.w700
+                                    ? FontWeight.w400
                                     : FontWeight.w400,
                               ),
                             ),
@@ -890,7 +890,7 @@ class _MonthlyAchievementCard extends ConsumerWidget {
                         item.value,
                         style: AppTheme.headingSmall.copyWith(
                           color: context.appTextPrimary,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1015,7 +1015,7 @@ class _BookCard extends StatelessWidget {
                                 '${book.savedSentences.length}',
                                 style: const TextStyle(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white,
                                 ),
                               ),
@@ -1038,7 +1038,7 @@ class _BookCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.headingSmall.copyWith(
                       color: context.appTextPrimary,
-                      fontSize: 14,
+                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1068,7 +1068,7 @@ class _BookCard extends StatelessWidget {
                           '${(book.readingProgress * 100).toInt()}%',
                           style: AppTheme.captionSmall.copyWith(
                             color: context.appPrimaryAccent,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1126,7 +1126,7 @@ class _BookCard extends StatelessWidget {
                             '이어 읽기  ${(book.readingProgress * 100).toInt()}%',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                               color: isDark
                                   ? AppTheme.primaryLight
                                   : Colors.white,
@@ -1277,7 +1277,7 @@ class _BookListTile extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: AppTheme.bodySmall.copyWith(
                               color: context.appTextPrimary,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -1325,7 +1325,7 @@ class _BookListTile extends StatelessWidget {
                             '${(book.readingProgress * 100).toInt()}%',
                             style: AppTheme.captionSmall.copyWith(
                               color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -1496,7 +1496,7 @@ class _SortSheet extends StatelessWidget {
                                 ? context.appPrimaryAccent
                                 : context.appTextPrimary,
                             fontWeight: opt == current
-                                ? FontWeight.w600
+                                ? FontWeight.w400
                                 : FontWeight.w400,
                           ),
                         ),
@@ -1607,7 +1607,7 @@ class _SocialFeedStrip extends ConsumerWidget {
                                       : '?',
                                   style: const TextStyle(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w400,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -1627,7 +1627,7 @@ class _SocialFeedStrip extends ConsumerWidget {
                             TextSpan(
                               text: shown[0].displayName,
                               style: TextStyle(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w400,
                                 color: context.appTextPrimary,
                               ),
                             ),
@@ -1740,7 +1740,7 @@ class _HeroBookCard extends StatelessWidget {
                             '마지막 · ${_lastSessionLabel()}',
                             style: AppTheme.captionSmall.copyWith(
                               color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
@@ -1752,7 +1752,7 @@ class _HeroBookCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.headingSmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                         height: 1.25,
                       ),
                     ),
@@ -1814,8 +1814,8 @@ class _HeroBookCard extends StatelessWidget {
                           child: Text(
                             '이어 읽기',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                               color: isDark
                                   ? AppTheme.primaryLight
                                   : Colors.white,

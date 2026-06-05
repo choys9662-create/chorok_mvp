@@ -260,7 +260,7 @@ class _ErrorState extends StatelessWidget {
                       '다시 시도',
                       style: AppTheme.bodySmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),

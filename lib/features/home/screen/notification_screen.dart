@@ -260,7 +260,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                   '알림',
                   style: AppTheme.headingLarge.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 if (unread > 0) ...[
@@ -278,7 +278,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                       '$unread 새로운',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -326,7 +326,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                             '새로운',
                             style: AppTheme.captionLarge.copyWith(
                               color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -354,7 +354,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                             '이전',
                             style: AppTheme.captionLarge.copyWith(
                               color: context.appTextTertiary,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -450,7 +450,7 @@ class _NotiTile extends StatelessWidget {
                       color: context.appTextPrimary,
                       fontWeight: item.isRead
                           ? FontWeight.w400
-                          : FontWeight.w600,
+                          : FontWeight.w400,
                       height: 1.4,
                     ),
                   ),

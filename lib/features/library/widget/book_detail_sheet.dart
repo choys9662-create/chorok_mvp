@@ -228,7 +228,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                           color: isCompleted || isReading
                               ? context.appPrimaryAccent
                               : context.appTextTertiary,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -337,7 +337,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                 },
                 icon: const Icon(Icons.history_edu_rounded, size: 16),
                 label: const Text('수동 기록',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
                 style: TextButton.styleFrom(
                   foregroundColor: context.appPrimaryAccent,
                   minimumSize: Size.zero,
@@ -429,7 +429,7 @@ class _DetailStat extends StatelessWidget {
               value,
               style: AppTheme.bodyLarge.copyWith(
                 color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w400,
               ),
             ),
             if (onTap != null) ...[

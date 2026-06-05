@@ -67,7 +67,7 @@ class RecommendedBooksSection extends ConsumerWidget {
                       '내 문장이 이끄는 책',
                       style: AppTheme.headingSmall.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -106,7 +106,7 @@ class RecommendedBooksSection extends ConsumerWidget {
                       'AI',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -246,7 +246,7 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                       '${(b.matchScore * 100).round()}%',
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
@@ -262,7 +262,7 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                         b.title,
                         style: AppTheme.bodySmall.copyWith(
                           color: context.appTextPrimary,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -397,7 +397,7 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                                         : isDark
                                             ? context.appPrimaryAccent
                                             : Colors.white,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ],

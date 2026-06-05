@@ -88,7 +88,7 @@ class BookTreemapWidget extends StatelessWidget {
                                       color: Colors.black.withValues(
                                         alpha: 0.8,
                                       ),
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 2,

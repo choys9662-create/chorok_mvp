@@ -355,7 +355,7 @@ class _SentenceDetailScreenState
                                 d.bookTitle,
                                 style: AppTheme.bodySmall.copyWith(
                                   color: context.appPrimaryAccent,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -402,7 +402,7 @@ class _SentenceDetailScreenState
                                 'p.${d.page}',
                                 style: AppTheme.captionLarge.copyWith(
                                   color: context.appPrimaryAccent,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ),
@@ -467,7 +467,7 @@ class _SentenceDetailScreenState
                                   text: '${_thoughts.length}명',
                                   style: AppTheme.captionLarge.copyWith(
                                     color: context.appPrimaryAccent,
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                                 const TextSpan(text: '이 이 문장에 생각을 남겼어요'),
@@ -683,7 +683,7 @@ class _ThoughtCard extends StatelessWidget {
                   t.username[0].toUpperCase(),
                   style: AppTheme.captionSmall.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -693,7 +693,7 @@ class _ThoughtCard extends StatelessWidget {
                   t.username,
                   style: AppTheme.bodySmall.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),

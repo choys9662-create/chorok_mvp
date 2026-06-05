@@ -26,7 +26,7 @@ void showAuthError(BuildContext context, String rawMessage) {
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
-            fontSize: 13,
+            fontSize: 12,
             height: 1.5,
           ),
         ),
