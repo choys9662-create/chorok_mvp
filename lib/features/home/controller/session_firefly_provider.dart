@@ -31,7 +31,7 @@ final sessionFireflyProvider =
               ),
             )
             .toList();
-        return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
+        return (mutualCount: mutuals.length, nearbyCount: 15, mutuals: mutuals);
       }
 
       final mutuals = await ref

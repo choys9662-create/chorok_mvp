@@ -118,7 +118,7 @@ class TodayGoalBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 14,
+            radius: 10,
             side: BorderSide(color: context.appBorderSubtle),
           ),
           child: Row(
@@ -192,7 +192,7 @@ class TodayGoalBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: 14,
+          radius: 10,
           side: BorderSide(color: context.appBorderSubtle),
         ),
         child: Column(
@@ -246,7 +246,7 @@ class TodayGoalBanner extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: context.appCardElevated,

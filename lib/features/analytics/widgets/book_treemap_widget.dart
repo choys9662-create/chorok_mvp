@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
@@ -69,11 +69,9 @@ class BookTreemapWidget extends StatelessWidget {
                   top: rect.top + 1,
                   width: rect.width - 2,
                   height: rect.height - 2,
-                  child: ClipSmoothRect(
-                    radius: SmoothBorderRadius(
-                      cornerRadius: 12,
-                      cornerSmoothing: 0.6,
-                    ),
+                  child: SmoothClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    smoothness: 0.6,
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       color: color.withValues(alpha: 0.85),

@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -204,7 +204,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: ctx.appTextTertiary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             ListTile(
@@ -403,11 +403,23 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         slivers: [
           // ── 히어로 섹션 ────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: _HeroSection(
-              book: book,
-              isCompleted: isCompleted,
-              onToggleCompletion: () => _toggleCompletion(book),
-              onSetTotalPages: () => _showSetTotalPages(book.totalPages),
+            child: Builder(
+              builder: (context) {
+                final sessions =
+                    ref
+                        .watch(_bookSessionStatsProvider(widget.bookId))
+                        .valueOrNull
+                        ?.sessions ??
+                    0;
+                return _HeroSection(
+                  book: book,
+                  isCompleted: isCompleted,
+                  onToggleCompletion: () => _toggleCompletion(book),
+                  onSetTotalPages: () => _showSetTotalPages(book.totalPages),
+                  sessionCount: sessions,
+                  sentenceCount: sentences.length,
+                );
+              },
             ),
           ),
 
@@ -421,7 +433,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 return _StatsRow(
                   sessions: stats?.sessions ?? 0,
                   totalHours: stats?.totalHours ?? 0.0,
-                  avgMinutes: stats?.avgMinutes ?? 0,
+                  progress: book.readingProgress,
                   sentenceCount: sentences.length,
                 );
               },
@@ -563,7 +575,7 @@ class _BottomActionBar extends StatelessWidget {
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: AppTheme.smoothShape(radius: 12),
+                shape: AppTheme.smoothShape(radius: 10),
               ),
             ),
           ),
@@ -601,12 +613,16 @@ class _HeroSection extends StatelessWidget {
   final bool isCompleted;
   final VoidCallback onToggleCompletion;
   final VoidCallback onSetTotalPages;
+  final int sessionCount;
+  final int sentenceCount;
 
   const _HeroSection({
     required this.book,
     required this.isCompleted,
     required this.onToggleCompletion,
     required this.onSetTotalPages,
+    required this.sessionCount,
+    required this.sentenceCount,
   });
 
   @override
@@ -659,26 +675,48 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 28),
 
-              // ── 책 표지 (컬러 글로우 그림자) ──────────────────────
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: coverColors[1].withValues(alpha: 0.4),
-                      blurRadius: 40,
-                      offset: const Offset(0, 16),
-                      spreadRadius: -4,
+              // ── 책 표지 + 우측 뱃지 ────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: coverColors[1].withValues(alpha: 0.4),
+                          blurRadius: 40,
+                          offset: const Offset(0, 16),
+                          spreadRadius: -4,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: BookCover(
-                  coverUrl: book.coverUrl,
-                  gradientIndex: gradientIndex,
-                  width: 148,
-                  height: 210,
-                  radius: 16,
-                ),
+                    child: BookCover(
+                      coverUrl: book.coverUrl,
+                      gradientIndex: gradientIndex,
+                      width: 148,
+                      height: 210,
+                      radius: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    children: [
+                      _StatBadge(
+                        icon: Icons.circle,
+                        value: '$sessionCount',
+                        color: context.appPrimaryAccent,
+                      ),
+                      const SizedBox(height: 6),
+                      _StatBadge(
+                        icon: Icons.circle,
+                        value: '$sentenceCount',
+                        color: context.appPrimaryAccent,
+                      ),
+                    ],
+                  ),
+                ],
               ),
               const SizedBox(height: 28),
 
@@ -762,7 +800,7 @@ class _HeroSection extends StatelessWidget {
                           color: isCompleted
                               ? context.appPrimaryAccent.withValues(alpha: 0.12)
                               : context.appCardElevated,
-                          radius: 20,
+                          radius: 10,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -821,7 +859,7 @@ class _HeroSection extends StatelessWidget {
                               color: context.appPrimaryAccent.withValues(
                                 alpha: 0.08,
                               ),
-                              radius: 12,
+                              radius: 10,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -858,7 +896,7 @@ class _HeroSection extends StatelessWidget {
                           color: isCompleted
                               ? context.appPrimaryAccent.withValues(alpha: 0.12)
                               : context.appCardElevated,
-                          radius: 20,
+                          radius: 10,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -902,17 +940,18 @@ class _HeroSection extends StatelessWidget {
 class _StatsRow extends StatelessWidget {
   final int sessions, sentenceCount;
   final double totalHours;
-  final int avgMinutes;
+  final double progress;
 
   const _StatsRow({
     required this.sessions,
     required this.totalHours,
-    required this.avgMinutes,
+    required this.progress,
     required this.sentenceCount,
   });
 
   @override
   Widget build(BuildContext context) {
+    final progressPct = '${(progress * 100).toInt()}%';
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 20),
       child: Row(
@@ -921,7 +960,7 @@ class _StatsRow extends StatelessWidget {
           const SizedBox(width: 8),
           _StatCard(label: '누적 시간', value: '${totalHours.toStringAsFixed(1)}h'),
           const SizedBox(width: 8),
-          _StatCard(label: '평균', value: '$avgMinutes분'),
+          _StatCard(label: '진행도', value: progressPct),
           const SizedBox(width: 8),
           _StatCard(label: '문장', value: '$sentenceCount'),
         ],
@@ -941,7 +980,7 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: AppTheme.smoothBox(
           color: context.appCardElevated,
-          radius: 14,
+          radius: 10,
         ),
         child: Column(
           children: [
@@ -960,6 +999,44 @@ class _StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatBadge extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final Color color;
+
+  const _StatBadge({
+    required this.icon,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.appCardElevated,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 8, color: color),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1045,7 +1122,7 @@ class _SentenceEmptyState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 28),
           decoration: AppTheme.smoothBox(
             color: context.appPrimaryAccent.withValues(alpha: 0.04),
-            radius: 14,
+            radius: 10,
             side: BorderSide(
               color: context.appPrimaryAccent.withValues(alpha: 0.15),
               width: 1.5,
@@ -1106,7 +1183,7 @@ class _SentenceItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
       child: Container(
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 14),
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1231,7 +1308,7 @@ class _SentenceLoadingState extends StatelessWidget {
         alignment: Alignment.center,
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: 14,
+          radius: 10,
           side: BorderSide(color: context.appBorderSubtle),
         ),
         child: SizedBox(
@@ -1310,10 +1387,9 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
       child: Container(
         decoration: ShapeDecoration(
           color: context.appSurface,
-          shape: const SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius.vertical(
-              top: SmoothRadius(cornerRadius: 28, cornerSmoothing: 0.8),
-            ),
+          shape: SmoothRectangleBorder(
+            smoothness: 0.6,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
           ),
         ),
         child: SafeArea(
@@ -1352,7 +1428,7 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
                   padding: const EdgeInsets.all(14),
                   decoration: AppTheme.smoothBox(
                     color: context.appCard,
-                    radius: 14,
+                    radius: 10,
                     side: BorderSide.none,
                   ),
                   child: Text(
@@ -1533,10 +1609,9 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
           constraints: BoxConstraints(maxHeight: maxSheetHeight),
           decoration: ShapeDecoration(
             color: context.appSurface,
-            shape: const SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius.vertical(
-                top: SmoothRadius(cornerRadius: 28, cornerSmoothing: 0.8),
-              ),
+            shape: SmoothRectangleBorder(
+              smoothness: 0.6,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
             ),
           ),
           child: SafeArea(
@@ -1563,10 +1638,8 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
                             alpha: 0.12,
                           ),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 10,
-                              cornerSmoothing: 0.8,
-                            ),
+                            smoothness: 0.6,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Icon(
@@ -1670,7 +1743,7 @@ class _SentenceStepBadge extends StatelessWidget {
           alignment: Alignment.center,
           decoration: ShapeDecoration(
             color: active ? context.appPrimaryAccent : context.appCard,
-            shape: const StadiumBorder(),
+            shape: AppTheme.smoothShape(radius: 10),
           ),
           child: Text(
             number,
@@ -1849,7 +1922,7 @@ class _BookThoughtStep extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 14,
+            radius: 10,
             side: BorderSide.none,
           ),
           child: Text(
@@ -1902,7 +1975,7 @@ class _BookThoughtStep extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
                 color: context.appTextTertiary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '선택',
@@ -1962,13 +2035,13 @@ class _SheetActionButton extends StatelessWidget {
           color: enabled
               ? null
               : context.appPrimaryAccent.withValues(alpha: 0.2),
-          shape: AppTheme.smoothShape(radius: 14),
+          shape: AppTheme.smoothShape(radius: 10),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: enabled ? onTap : null,
-            customBorder: AppTheme.smoothShape(radius: 14),
+            customBorder: AppTheme.smoothShape(radius: 10),
             child: Center(
               child: loading
                   ? const SizedBox(
@@ -2019,7 +2092,7 @@ class _AccentTextField extends StatelessWidget {
     return Container(
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 14,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: IntrinsicHeight(
@@ -2097,7 +2170,7 @@ class _SheetTextField extends StatelessWidget {
     return Container(
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 12,
+        radius: 10,
         side: BorderSide.none,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

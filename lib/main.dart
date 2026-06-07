@@ -72,9 +72,36 @@ Future<void> main() async {
 
 void _initDeepLinks() {
   final appLinks = AppLinks();
-  appLinks.uriLinkStream.listen((uri) {
-    supabase.auth.getSessionFromUrl(uri);
+  appLinks.uriLinkStream.listen((uri) async {
+    if (!_hasSupabaseAuthPayload(uri)) return;
+    try {
+      await supabase.auth.getSessionFromUrl(uri);
+    } catch (error, stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'deep link auth',
+        ),
+      );
+    }
   });
+}
+
+bool _hasSupabaseAuthPayload(Uri uri) {
+  final query = uri.queryParameters;
+  if (query.containsKey('code') ||
+      query.containsKey('access_token') ||
+      query.containsKey('refresh_token') ||
+      query.containsKey('error')) {
+    return true;
+  }
+
+  final fragment = uri.fragment;
+  return fragment.contains('code=') ||
+      fragment.contains('access_token=') ||
+      fragment.contains('refresh_token=') ||
+      fragment.contains('error=');
 }
 
 /// 앱 전역에서 Supabase 클라이언트 접근용 편의 getter
@@ -89,7 +116,7 @@ class ChorokApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: '초록',
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: router,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
@@ -187,10 +187,8 @@ class CommunityHighlightsCard extends StatelessWidget {
                       decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 8,
-                            cornerSmoothing: 0.6,
-                          ),
+                          smoothness: 0.6,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: Center(

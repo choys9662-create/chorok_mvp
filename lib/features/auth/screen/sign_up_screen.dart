@@ -159,7 +159,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _nameTouched = true;
     });
     try {
-      final available = await ProfileRepository(supabase).isUsernameAvailable(name);
+      final available = await ProfileRepository(
+        supabase,
+      ).isUsernameAvailable(name);
       if (!mounted) return;
       setState(() {
         _nicknameAvailable = available;
@@ -167,9 +169,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('중복 확인에 실패했어요. 다시 시도해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('중복 확인에 실패했어요. 다시 시도해주세요')));
     } finally {
       if (mounted) setState(() => _nicknameChecking = false);
     }
@@ -196,7 +198,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           SnackBar(
             content: const Text(
               '가입 확인 이메일을 보냈어요. 메일함을 확인해주세요 ✉️',
-              style: TextStyle(fontFamily: 'Pretendard'),
+              style: TextStyle(fontFamily: AppTheme.fontFamily),
             ),
             backgroundColor: AppTheme.darkPrimaryContainer,
             behavior: SnackBarBehavior.floating,
@@ -253,7 +255,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       controller: _nameCtrl,
                       hint: '2~10자',
                       error: _nameError,
-                      isValid: _nameTouched &&
+                      isValid:
+                          _nameTouched &&
                           _nameCtrl.text.isNotEmpty &&
                           _isNameValid &&
                           _nicknameAvailable == true,
@@ -262,7 +265,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(width: 8),
                   _NicknameCheckButton(
-                    enabled: _isNameValid &&
+                    enabled:
+                        _isNameValid &&
                         !_nicknameChecking &&
                         _nicknameAvailable != true,
                     loading: _nicknameChecking,
@@ -485,15 +489,15 @@ class _ValidatedFieldState extends State<_ValidatedField> {
                 vertical: 16,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -529,7 +533,7 @@ class _PasswordStrengthBar extends StatelessWidget {
       children: [
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(10),
             child: SizedBox(
               height: 4,
               child: LinearProgressIndicator(
@@ -576,7 +580,7 @@ class _TermsSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
         color: AppTheme.darkSurface,
-        radius: 12,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Column(
@@ -637,9 +641,7 @@ class _TermRow extends StatelessWidget {
             height: 22,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: checked
-                  ? AppTheme.primaryLight
-                  : AppTheme.darkSurface,
+              color: checked ? AppTheme.primaryLight : AppTheme.darkSurface,
             ),
             child: checked
                 ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
@@ -686,13 +688,13 @@ class _NicknameCheckButton extends StatelessWidget {
           color: enabled
               ? AppTheme.primary.withValues(alpha: 0.85)
               : AppTheme.darkSurface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: enabled ? onTap : null,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Center(
@@ -755,7 +757,7 @@ class _SubmitButton extends StatelessWidget {
                     ],
                   )
                 : context.appReadingGradient,
-            radius: 12,
+            radius: 10,
           ),
           child: Center(
             child: loading

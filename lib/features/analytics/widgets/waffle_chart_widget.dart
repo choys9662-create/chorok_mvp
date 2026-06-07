@@ -42,7 +42,7 @@ class WaffleChartWidget extends StatelessWidget {
               itemBuilder: (_, i) => Container(
                 decoration: BoxDecoration(
                   color: cellColors[i],
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -60,7 +60,7 @@ class WaffleChartWidget extends StatelessWidget {
                 ),
                 decoration: ShapeDecoration(
                   color: g.color.withValues(alpha: 0.15),
-                  shape: const StadiumBorder(),
+                  shape: AppTheme.smoothShape(radius: 10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

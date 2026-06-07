@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -23,15 +23,13 @@ class ProfileHeader extends StatefulWidget {
 class _ProfileHeaderState extends State<ProfileHeader> {
   // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
   static final _modalShape = SmoothRectangleBorder(
-    borderRadius: SmoothBorderRadius.only(
-      topLeft: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
-      topRight: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+    smoothness: 0.6,
+    borderRadius: BorderRadius.only(
+      topLeft: Radius.circular(10),
+      topRight: Radius.circular(10),
     ),
   );
-  static final _buttonBorderRadius = SmoothBorderRadius(
-    cornerRadius: AppTheme.radiusMD,
-    cornerSmoothing: 0.6,
-  );
+  static final _buttonBorderRadius = BorderRadius.circular(AppTheme.radiusMD);
 
   String _name = '';
   String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
@@ -107,7 +105,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 24,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Column(
@@ -401,7 +399,7 @@ class _StatItem extends StatelessWidget {
 class _EditProfileSheet extends StatefulWidget {
   final String initialName;
   final String initialBio;
-  final SmoothBorderRadius buttonBorderRadius;
+  final BorderRadius buttonBorderRadius;
   final void Function(String name, String bio) onSaved;
 
   const _EditProfileSheet({
@@ -449,11 +447,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       if (!kUseMock) {
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null) {
-          await ProfileRepository(Supabase.instance.client).updateProfile(
-            userId,
-            displayName: name,
-            bio: _bioCtrl.text.trim(),
-          );
+          await ProfileRepository(
+            Supabase.instance.client,
+          ).updateProfile(userId, displayName: name, bio: _bioCtrl.text.trim());
         }
       }
       if (!mounted) return;
@@ -509,6 +505,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 foregroundColor: isDark ? Colors.black : Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: SmoothRectangleBorder(
+                  smoothness: 0.6,
                   borderRadius: widget.buttonBorderRadius,
                 ),
               ),
@@ -539,7 +536,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 // ─── 편집 필드 ─────────────────────────────────────────────────────────
 class _SheetField extends StatelessWidget {
   // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
-  // OutlineInputBorder는 SmoothBorderRadius 미지원 — 그대로 유지
+  // OutlineInputBorder는 BorderRadius 미지원 — 그대로 유지
   static const _inputRadius = BorderRadius.all(
     Radius.circular(AppTheme.radiusMD),
   );
@@ -596,10 +593,7 @@ class _FollowListSheet extends StatefulWidget {
 
 class _FollowListSheetState extends State<_FollowListSheet> {
   // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
-  static final _followButtonRadius = SmoothBorderRadius(
-    cornerRadius: 20,
-    cornerSmoothing: 0.6,
-  );
+  static final _followButtonRadius = BorderRadius.circular(10);
 
   late List<bool> _followStates;
 
@@ -676,6 +670,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                               ? AppTheme.primary
                               : context.appPrimaryAccent,
                           shape: SmoothRectangleBorder(
+                            smoothness: 0.6,
                             borderRadius: _followButtonRadius,
                             side: BorderSide.none,
                           ),

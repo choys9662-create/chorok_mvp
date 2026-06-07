@@ -13,7 +13,6 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/page_slider_card.dart';
 import 'manual_reading_log_sheet.dart';
 
-
 void showBookDetail(BuildContext context, Book book) {
   showModalBottomSheet(
     context: context,
@@ -186,7 +185,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 64,
                 height: 88,
-                radius: 8,
+                radius: 10,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -220,7 +219,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                                 alpha: isDark ? 0.12 : 0.15,
                               )
                             : context.appCardElevated,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         book.status.label,
@@ -243,7 +242,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
             padding: const EdgeInsets.all(16),
             decoration: AppTheme.smoothBox(
               color: context.appCardElevated,
-              radius: 12,
+              radius: 10,
             ),
             child: Row(
               children: [
@@ -309,7 +308,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
           if (isReading) ...[
             const SizedBox(height: 20),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: context.appBorder,
@@ -336,12 +335,17 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                   );
                 },
                 icon: const Icon(Icons.history_edu_rounded, size: 16),
-                label: const Text('수동 기록',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+                label: const Text(
+                  '수동 기록',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: context.appPrimaryAccent,
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                 ),
               ),
             ),
@@ -411,7 +415,6 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     );
   }
 }
-
 
 class _DetailStat extends StatelessWidget {
   final String label, value;

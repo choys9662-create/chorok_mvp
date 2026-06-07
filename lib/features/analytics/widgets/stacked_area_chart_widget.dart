@@ -190,7 +190,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                     color: active
                         ? sp.color.withValues(alpha: 0.15)
                         : const Color(0xFF1A1A1A),
-                    shape: const StadiumBorder(),
+                    shape: AppTheme.smoothShape(radius: 10),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

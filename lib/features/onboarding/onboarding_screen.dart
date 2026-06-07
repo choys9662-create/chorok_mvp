@@ -180,7 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             color: i == _currentPage
                                 ? context.appPrimaryAccent
                                 : AppTheme.darkBorder,
-                            borderRadius: BorderRadius.circular(3),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
@@ -303,9 +303,7 @@ class _SlidePage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: ShapeDecoration(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),
-              shape: StadiumBorder(
-                side: BorderSide.none,
-              ),
+              shape: AppTheme.smoothShape(radius: 10),
             ),
             child: Text(
               data.subtitle,
@@ -483,7 +481,7 @@ class _PrimaryButtonState extends State<_PrimaryButton>
           height: 56,
           decoration: ShapeDecoration(
             gradient: AppTheme.greenGradient,
-            shape: StadiumBorder(),
+            shape: AppTheme.smoothShape(radius: 10),
           ),
           child: Center(
             child: Text(

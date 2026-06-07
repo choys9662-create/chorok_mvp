@@ -45,7 +45,7 @@ class _AddToLibrarySheet extends StatelessWidget {
               height: 4,
               decoration: ShapeDecoration(
                 color: context.appTextTertiary,
-                shape: const StadiumBorder(),
+                shape: AppTheme.smoothShape(radius: 10),
               ),
             ),
             const SizedBox(height: 24),

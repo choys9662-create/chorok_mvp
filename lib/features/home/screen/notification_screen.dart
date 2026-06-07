@@ -188,7 +188,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
-              radius: 12,
+              radius: 10,
               side: BorderSide.none,
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -207,7 +207,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
             shape: AppTheme.smoothShape(
-              radius: 12,
+              radius: 10,
               side: BorderSide.none,
             ),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),

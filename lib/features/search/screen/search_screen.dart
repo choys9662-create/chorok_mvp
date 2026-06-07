@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -456,71 +456,71 @@ class _UserCardState extends ConsumerState<_UserCard> {
           side: BorderSide.none,
         ),
         child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: context.appCardElevated,
-            backgroundImage: (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
-                ? NetworkImage(p.avatarUrl!)
-                : null,
-            child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
-                ? Icon(
-                    Icons.person_rounded,
-                    color: context.appTextTertiary,
-                    size: 22,
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  p.displayName,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: context.appTextPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '@${p.username}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.appTextTertiary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (p.bio != null && p.bio!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: context.appCardElevated,
+              backgroundImage: (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
+                  ? NetworkImage(p.avatarUrl!)
+                  : null,
+              child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
+                  ? Icon(
+                      Icons.person_rounded,
+                      color: context.appTextTertiary,
+                      size: 22,
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    p.bio!,
+                    p.displayName,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: context.appTextPrimary,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '@${p.username}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.appTextTertiary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (p.bio != null && p.bio!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      p.bio!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.appTextSecondary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          if (!isMe) ...[
-            const SizedBox(width: 8),
-            _FollowButton(
-              isFollowing: _isFollowing ?? false,
-              loaded: _isFollowing != null,
-              busy: _busy,
-              onTap: _toggleFollow,
-            ),
+            if (!isMe) ...[
+              const SizedBox(width: 8),
+              _FollowButton(
+                isFollowing: _isFollowing ?? false,
+                loaded: _isFollowing != null,
+                busy: _busy,
+                onTap: _toggleFollow,
+              ),
+            ],
           ],
-        ],
         ),
       ),
     );
@@ -796,10 +796,8 @@ class _SearchBar extends StatelessWidget {
                   decoration: ShapeDecoration(
                     color: context.appCard,
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(
-                        cornerRadius: AppTheme.radiusMD,
-                        cornerSmoothing: 0.6,
-                      ),
+                      smoothness: 0.6,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       side: BorderSide.none,
                     ),
                   ),
@@ -838,11 +836,8 @@ class _ResultList extends StatelessWidget {
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: books.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, index) => _BookCard(
-        book: books[index],
-        onAdd: onAdd,
-        onNavigate: onNavigate,
-      ),
+      itemBuilder: (_, index) =>
+          _BookCard(book: books[index], onAdd: onAdd, onNavigate: onNavigate),
     );
   }
 }
@@ -936,10 +931,7 @@ class _BookCard extends ConsumerWidget {
               const SizedBox(width: 12),
 
               // + / ✓ 아이콘 버튼
-              _AddButton(
-                isInLibrary: isInLibrary,
-                onTap: () => onAdd(book),
-              ),
+              _AddButton(isInLibrary: isInLibrary, onTap: () => onAdd(book)),
             ],
           ),
         ),
@@ -1054,10 +1046,8 @@ class _AddButtonState extends State<_AddButton> {
             alignment: Alignment.center,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) => ScaleTransition(
-                scale: anim,
-                child: child,
-              ),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
               child: Icon(
                 isIn ? Icons.check_rounded : Icons.add_rounded,
                 key: ValueKey(isIn),
@@ -1152,17 +1142,22 @@ class _ShimmerCard extends StatelessWidget {
                   width: double.infinity,
                   height: 16,
                   opacity: opacity,
-                  radius: 4,
+                  radius: 10,
                 ),
                 const SizedBox(height: 8),
                 _ShimmerBox(
                   width: 120,
                   height: 13,
                   opacity: opacity,
-                  radius: 4,
+                  radius: 10,
                 ),
                 const SizedBox(height: 6),
-                _ShimmerBox(width: 80, height: 12, opacity: opacity, radius: 4),
+                _ShimmerBox(
+                  width: 80,
+                  height: 12,
+                  opacity: opacity,
+                  radius: 10,
+                ),
                 const Spacer(),
                 Align(
                   alignment: Alignment.centerRight,

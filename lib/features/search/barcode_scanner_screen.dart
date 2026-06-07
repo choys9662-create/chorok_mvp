@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../search/controller/book_search_controller.dart';
 import '../search/util/add_book_flow.dart';
 import '../search/widget/add_to_library_sheet.dart';
@@ -159,10 +160,8 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       backgroundColor: _kSurface,
       behavior: SnackBarBehavior.floating,
       shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(
-          cornerRadius: 32,
-          cornerSmoothing: 0.6,
-        ),
+        smoothness: 0.6,
+        borderRadius: BorderRadius.circular(10),
       ),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       duration: const Duration(seconds: 3),
@@ -391,7 +390,7 @@ class _TopBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: ShapeDecoration(
               color: _kOverlay,
-              shape: const StadiumBorder(),
+              shape: AppTheme.smoothShape(radius: 10),
             ),
             child: const Text(
               'ISBN 바코드 스캔',
@@ -465,10 +464,8 @@ class _BottomStatus extends StatelessWidget {
               decoration: ShapeDecoration(
                 color: _kSurface,
                 shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: 16,
-                    cornerSmoothing: 0.6,
-                  ),
+                  smoothness: 0.6,
+                  borderRadius: BorderRadius.circular(10),
                   side: BorderSide.none,
                 ),
               ),

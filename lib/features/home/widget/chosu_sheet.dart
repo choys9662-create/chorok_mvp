@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
@@ -226,7 +226,7 @@ class _StepBadge extends StatelessWidget {
           alignment: Alignment.center,
           decoration: ShapeDecoration(
             color: active ? context.appPrimaryAccent : context.appCardElevated,
-            shape: const StadiumBorder(),
+            shape: AppTheme.smoothShape(radius: 10),
           ),
           child: Text(
             number,
@@ -324,7 +324,7 @@ class _SentenceStep extends StatelessWidget {
                       filled: true,
                       fillColor: context.appCardElevated,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -425,10 +425,8 @@ class _ThoughtStep extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appCardElevated,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 12,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(10),
                 side: BorderSide.none,
               ),
             ),
@@ -591,10 +589,8 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
       decoration: ShapeDecoration(
         color: context.appCardElevated,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(
-            cornerRadius: 14,
-            cornerSmoothing: 0.6,
-          ),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.circular(10),
           side: BorderSide(
             color: widget.cursorColor.withValues(alpha: 0.65),
             width: 1.2,
@@ -648,7 +644,8 @@ ButtonStyle _primaryButtonStyle(BuildContext context, {bool saved = false}) {
     foregroundColor: Colors.black,
     padding: const EdgeInsets.symmetric(vertical: 14),
     shape: SmoothRectangleBorder(
-      borderRadius: SmoothBorderRadius(cornerRadius: 12, cornerSmoothing: 0.6),
+      smoothness: 0.6,
+      borderRadius: BorderRadius.circular(10),
     ),
   );
 }
@@ -760,10 +757,8 @@ class _InputTool extends StatelessWidget {
         decoration: ShapeDecoration(
           color: context.appCardElevated,
           shape: SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius(
-              cornerRadius: 8,
-              cornerSmoothing: 0.6,
-            ),
+            smoothness: 0.6,
+            borderRadius: BorderRadius.circular(10),
             side: BorderSide.none,
           ),
         ),

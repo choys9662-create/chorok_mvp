@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -98,7 +98,8 @@ String _focusDesc(int score) {
 }
 
 ({String persona, IconData icon, String desc}) _weekPersona(
-    List<TodSlot> slots) {
+  List<TodSlot> slots,
+) {
   if (slots.isEmpty) {
     return (
       persona: '독서가',
@@ -130,7 +131,8 @@ String _focusDesc(int score) {
       return (
         persona: '저녁형 독서가',
         icon: Icons.nights_stay_rounded,
-        desc: '하루의 끝자락, 고요한 저녁에 책장을 펼치는 사람이에요. 이 루틴이 지속되는 한, 집중도는 자연스럽게 높아질 거예요.',
+        desc:
+            '하루의 끝자락, 고요한 저녁에 책장을 펼치는 사람이에요. 이 루틴이 지속되는 한, 집중도는 자연스럽게 높아질 거예요.',
       );
   }
 }
@@ -138,7 +140,9 @@ String _focusDesc(int score) {
 String _weekInsight(AnalyticsState a) {
   if (a.weekReadDays == 0) return '이번 주는 아직 독서 기록이 없어요. 오늘부터 시작해 볼까요?';
   final buf = StringBuffer('이번 주 ${a.weekReadDays}일 동안 책을 읽었어요.');
-  if (a.weekMaxSessionMinutes > 0) buf.write(' 가장 긴 집중은 ${a.weekMaxSessionMinutes}분이었어요.');
+  if (a.weekMaxSessionMinutes > 0) {
+    buf.write(' 가장 긴 집중은 ${a.weekMaxSessionMinutes}분이었어요.');
+  }
   if (a.weekChoseoCount > 0) buf.write(' ${a.weekChoseoCount}개의 문장을 수집했어요.');
   return buf.toString();
 }
@@ -147,22 +151,30 @@ String _monthInsight(AnalyticsState a) {
   if (a.monthReadDays == 0) return '이번 달은 아직 독서 기록이 없어요. 오늘부터 시작해 볼까요?';
   final buf = StringBuffer('이번 달 ${a.monthReadDays}일 동안 책을 읽었어요.');
   if (a.monthMaxStreak > 1) buf.write(' 최대 ${a.monthMaxStreak}일 연속 독서를 기록했어요.');
-  if (a.monthChoseoCount > 0) buf.write(' 총 ${a.monthChoseoCount}개의 문장을 기록했어요.');
+  if (a.monthChoseoCount > 0) {
+    buf.write(' 총 ${a.monthChoseoCount}개의 문장을 기록했어요.');
+  }
   return buf.toString();
 }
 
 String _yearInsight(AnalyticsState a) {
   final hours = a.yearTotalSeconds ~/ 3600;
-  if (hours == 0 && a.yearReadDays == 0) return '올해는 아직 독서 기록이 없어요. 지금 시작해 볼까요?';
+  if (hours == 0 && a.yearReadDays == 0) {
+    return '올해는 아직 독서 기록이 없어요. 지금 시작해 볼까요?';
+  }
   final buf = StringBuffer();
   if (hours > 0) buf.write('올해 $hours시간 독서했어요.');
-  if (a.completedBooks.isNotEmpty) buf.write(' ${a.completedBooks.length}권을 완독했어요.');
+  if (a.completedBooks.isNotEmpty) {
+    buf.write(' ${a.completedBooks.length}권을 완독했어요.');
+  }
   if (a.yearChoseoCount > 0) buf.write(' ${a.yearChoseoCount}개의 문장을 수집했어요.');
   return buf.toString();
 }
 
 ({String identity, IconData icon, String desc}) _yearIdentity(
-    Map<String, int> genres, int totalBooks) {
+  Map<String, int> genres,
+  int totalBooks,
+) {
   if (genres.isEmpty || totalBooks == 0) {
     return (
       identity: '독서가',
@@ -175,7 +187,8 @@ String _yearInsight(AnalyticsState a) {
   return (
     identity: '${top.key} 탐험가',
     icon: Icons.explore_rounded,
-    desc: '올해 읽은 $totalBooks권 중 ${top.value}권($ratio%)이 ${top.key}이에요. ${top.key} 장르를 통해 세상을 깊이 탐구하고 있어요.',
+    desc:
+        '올해 읽은 $totalBooks권 중 ${top.value}권($ratio%)이 ${top.key}이에요. ${top.key} 장르를 통해 세상을 깊이 탐구하고 있어요.',
   );
 }
 
@@ -232,8 +245,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () =>
-                    ref.read(analyticsProvider.notifier).refresh(),
+                onPressed: () => ref.read(analyticsProvider.notifier).refresh(),
                 child: Text(
                   '다시 시도',
                   style: TextStyle(color: context.appPrimaryAccent),
@@ -288,15 +300,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     String subtitle,
     DateTime now,
   ) {
-    final totalSecs = a?.weekTotalSeconds ?? (kUseMock ? 9 * 3600 + 38 * 60 : 0);
+    final totalSecs =
+        a?.weekTotalSeconds ?? (kUseMock ? 9 * 3600 + 38 * 60 : 0);
     final readDays = a?.weekReadDays ?? 0;
     final choseoCount = a?.weekChoseoCount ?? 0;
     final prevSecs = a?.prevWeekTotalSeconds ?? 0;
-    final dailyMin = a?.weekDailyMinutes ??
+    final dailyMin =
+        a?.weekDailyMinutes ??
         (kUseMock
             ? const [85, 42, 120, 65, 30, 153, 83]
             : const [0, 0, 0, 0, 0, 0, 0]);
-    final timeOfDay = a?.weekTimeOfDay ??
+    final timeOfDay =
+        a?.weekTimeOfDay ??
         (kUseMock
             ? const [
                 (label: '새벽', range: '00–06', minutes: 12),
@@ -308,14 +323,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final focusScore = a?.weekFocusScore ?? 0;
     final maxSessMin = a?.weekMaxSessionMinutes ?? 0;
     final avgSessMin = a?.weekAvgSessionMinutes ?? 0;
-    final radar = a?.weekRadar ??
+    final radar =
+        a?.weekRadar ??
         (kUseMock
             ? AnalyticsMockData.currentMonthRadar
             : const <double>[0.0, 0.0, 0.0, 0.0, 0.0]);
     final prevRadar = kUseMock
         ? AnalyticsMockData.previousMonthRadar
         : const <double>[0.0, 0.0, 0.0, 0.0, 0.0];
-    final sessions = a?.weekSessions ??
+    final sessions =
+        a?.weekSessions ??
         (kUseMock
             ? const [
                 (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
@@ -323,20 +340,35 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
                 (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
               ]
-            : const <({String title, String author, String duration, String date})>[]);
-    final allSessions = a?.allRecentSessions ??
+            : const <
+                ({String title, String author, String duration, String date})
+              >[]);
+    final allSessions =
+        a?.allRecentSessions ??
         (kUseMock
             ? const [
                 (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
                 (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
                 (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
                 (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
-                (title: '파친코', author: '이민진', duration: '2시간 15분', date: '4일 전'),
+                (
+                  title: '파친코',
+                  author: '이민진',
+                  duration: '2시간 15분',
+                  date: '4일 전',
+                ),
                 (title: '채식주의자', author: '한강', duration: '35분', date: '5일 전'),
                 (title: '아몬드', author: '손원평', duration: '48분', date: '6일 전'),
-                (title: '82년생 김지영', author: '조남주', duration: '1시간 2분', date: '1주 전'),
+                (
+                  title: '82년생 김지영',
+                  author: '조남주',
+                  duration: '1시간 2분',
+                  date: '1주 전',
+                ),
               ]
-            : const <({String title, String author, String duration, String date})>[]);
+            : const <
+                ({String title, String author, String duration, String date})
+              >[]);
     final highlights = a != null
         ? a.weekChoseo
               .take(2)
@@ -350,14 +382,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               )
               .toList()
         : (kUseMock
-            ? const [
-                (text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.', book: '채식주의자 — 한강'),
-                (
-                  text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
-                  book: '아몬드 — 손원평',
-                ),
-              ]
-            : const <({String text, String book})>[]);
+              ? const [
+                  (
+                    text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
+                    book: '채식주의자 — 한강',
+                  ),
+                  (
+                    text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
+                    book: '아몬드 — 손원평',
+                  ),
+                ]
+              : const <({String text, String book})>[]);
     final weekPersonaData = !kUseMock && a != null && timeOfDay.isNotEmpty
         ? _weekPersona(timeOfDay)
         : null;
@@ -513,14 +548,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         SentenceReactionsCard(
           sentences: weekMyReactions.indexed
-              .map((e) => (
-                    text: e.$2.content,
-                    book: e.$2.bookTitle.isNotEmpty
-                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
-                        : e.$2.bookAuthor,
-                    reactions: e.$2.likeCount,
-                    isTop: e.$1 == 0,
-                  ))
+              .map(
+                (e) => (
+                  text: e.$2.content,
+                  book: e.$2.bookTitle.isNotEmpty
+                      ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                      : e.$2.bookAuthor,
+                  reactions: e.$2.likeCount,
+                  isTop: e.$1 == 0,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -549,13 +586,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         CommunityHighlightsCard(
           highlights: weekCommunityHL
-              .map((e) => (
-                    text: e.content,
-                    book: e.bookTitle.isNotEmpty
-                        ? '${e.bookTitle} — ${e.bookAuthor}'
-                        : e.bookAuthor,
-                    reactions: e.likeCount,
-                  ))
+              .map(
+                (e) => (
+                  text: e.content,
+                  book: e.bookTitle.isNotEmpty
+                      ? '${e.bookTitle} — ${e.bookAuthor}'
+                      : e.bookAuthor,
+                  reactions: e.likeCount,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -600,11 +639,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   // ─── 이번 달 콘텐츠 ─────────────────────────────────────────────────
   List<Widget> _buildMonthContent(AnalyticsState? a, DateTime now) {
-    final totalSecs = a?.monthTotalSeconds ?? (kUseMock ? 38 * 3600 + 12 * 60 : 0);
+    final totalSecs =
+        a?.monthTotalSeconds ?? (kUseMock ? 38 * 3600 + 12 * 60 : 0);
     final readDays = a?.monthReadDays ?? 0;
     final choseoCount = a?.monthChoseoCount ?? 0;
     final prevSecs = a?.prevMonthTotalSeconds ?? 0;
-    final heatmap = a?.heatmap ??
+    final heatmap =
+        a?.heatmap ??
         (kUseMock ? AnalyticsMockData.heatmap2026 : const <DateTime, int>{});
     final totalDays = a?.monthTotalDays ?? 31;
     final maxStreak = a?.monthMaxStreak ?? 0;
@@ -631,11 +672,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               )
               .toList()
         : (kUseMock
-            ? const <({String title, String author, String date, int pages})>[
-                (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
-                (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
-              ]
-            : const <({String title, String author, String date, int pages})>[]);
+              ? const <({String title, String author, String date, int pages})>[
+                  (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
+                  (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
+                ]
+              : const <
+                  ({String title, String author, String date, int pages})
+                >[]);
     final monthInsightMsg = !kUseMock && a != null ? _monthInsight(a) : null;
     final monthMyReactions = a?.monthMyReactions ?? const [];
     final monthCommunityHL = a?.monthCommunityHighlights ?? const [];
@@ -749,14 +792,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         SentenceReactionsCard(
           sentences: monthMyReactions.indexed
-              .map((e) => (
-                    text: e.$2.content,
-                    book: e.$2.bookTitle.isNotEmpty
-                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
-                        : e.$2.bookAuthor,
-                    reactions: e.$2.likeCount,
-                    isTop: e.$1 == 0,
-                  ))
+              .map(
+                (e) => (
+                  text: e.$2.content,
+                  book: e.$2.bookTitle.isNotEmpty
+                      ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                      : e.$2.bookAuthor,
+                  reactions: e.$2.likeCount,
+                  isTop: e.$1 == 0,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -785,13 +830,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         CommunityHighlightsCard(
           highlights: monthCommunityHL
-              .map((e) => (
-                    text: e.content,
-                    book: e.bookTitle.isNotEmpty
-                        ? '${e.bookTitle} — ${e.bookAuthor}'
-                        : e.bookAuthor,
-                    reactions: e.likeCount,
-                  ))
+              .map(
+                (e) => (
+                  text: e.content,
+                  book: e.bookTitle.isNotEmpty
+                      ? '${e.bookTitle} — ${e.bookAuthor}'
+                      : e.bookAuthor,
+                  reactions: e.likeCount,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -820,7 +867,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final readDays = a?.yearReadDays ?? 0;
     final choseoCount = a?.yearChoseoCount ?? 0;
     final completedCount = a?.completedBooks.length ?? 0;
-    final monthlyMin = a?.yearMonthlyMinutes ??
+    final monthlyMin =
+        a?.yearMonthlyMinutes ??
         (kUseMock
             ? const [620, 480, 560, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             : const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -839,16 +887,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               )
               .toList()
         : (kUseMock
-            ? const <({String title, String author, String date, int pages})>[
-                (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
-                (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
-                (title: '82년생 김지영', author: '조남주', date: '2월 8일', pages: 190),
-                (title: '달러구트 꿈 백화점', author: '이미예', date: '1월 21일', pages: 304),
-              ]
-            : const <({String title, String author, String date, int pages})>[]);
-    final sortedGenres = !kUseMock && a != null && a.yearGenreDistribution.isNotEmpty
+              ? const <({String title, String author, String date, int pages})>[
+                  (title: '채식주의자', author: '한강', date: '3월 12일', pages: 247),
+                  (title: '아몬드', author: '손원평', date: '3월 25일', pages: 264),
+                  (title: '82년생 김지영', author: '조남주', date: '2월 8일', pages: 190),
+                  (
+                    title: '달러구트 꿈 백화점',
+                    author: '이미예',
+                    date: '1월 21일',
+                    pages: 304,
+                  ),
+                ]
+              : const <
+                  ({String title, String author, String date, int pages})
+                >[]);
+    final sortedGenres =
+        !kUseMock && a != null && a.yearGenreDistribution.isNotEmpty
         ? (a.yearGenreDistribution.entries.toList()
-          ..sort((x, y) => y.value.compareTo(x.value)))
+            ..sort((x, y) => y.value.compareTo(x.value)))
         : null;
     final yearIdData = sortedGenres != null
         ? _yearIdentity(a!.yearGenreDistribution, a.completedBooks.length)
@@ -981,7 +1037,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             return (
               name: e.value.key,
               count: e.value.value,
-              color: e.key < colors.length ? colors[e.key] : context.appTextSecondary,
+              color: e.key < colors.length
+                  ? colors[e.key]
+                  : context.appTextSecondary,
             );
           }).toList(),
         ),
@@ -1040,14 +1098,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         SentenceReactionsCard(
           sentences: yearMyReactions.indexed
-              .map((e) => (
-                    text: e.$2.content,
-                    book: e.$2.bookTitle.isNotEmpty
-                        ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
-                        : e.$2.bookAuthor,
-                    reactions: e.$2.likeCount,
-                    isTop: e.$1 == 0,
-                  ))
+              .map(
+                (e) => (
+                  text: e.$2.content,
+                  book: e.$2.bookTitle.isNotEmpty
+                      ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
+                      : e.$2.bookAuthor,
+                  reactions: e.$2.likeCount,
+                  isTop: e.$1 == 0,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -1081,13 +1141,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         const SizedBox(height: AppTheme.spaceMD),
         CommunityHighlightsCard(
           highlights: yearCommunityHL
-              .map((e) => (
-                    text: e.content,
-                    book: e.bookTitle.isNotEmpty
-                        ? '${e.bookTitle} — ${e.bookAuthor}'
-                        : e.bookAuthor,
-                    reactions: e.likeCount,
-                  ))
+              .map(
+                (e) => (
+                  text: e.content,
+                  book: e.bookTitle.isNotEmpty
+                      ? '${e.bookTitle} — ${e.bookAuthor}'
+                      : e.bookAuthor,
+                  reactions: e.likeCount,
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: AppTheme.spaceXL),
@@ -1116,9 +1178,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       isScrollControlled: true,
       backgroundColor: context.appCard,
       shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius.only(
-          topLeft: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
-          topRight: SmoothRadius(cornerRadius: 20, cornerSmoothing: 0.6),
+        smoothness: 0.6,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(10),
         ),
       ),
       builder: (_) => DraggableScrollableSheet(
@@ -1155,7 +1218,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: sessions.length,
-                separatorBuilder: (_, i) => const SizedBox(height: AppTheme.spaceSM),
+                separatorBuilder: (_, i) =>
+                    const SizedBox(height: AppTheme.spaceSM),
                 itemBuilder: (_, i) {
                   final s = sessions[i];
                   return SessionTile(

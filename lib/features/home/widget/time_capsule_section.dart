@@ -6,7 +6,7 @@ import '../../../shared/repositories/book_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 
 final timeCapsuleProvider = FutureProvider<IsarChoseo?>((ref) async {
   return ref.read(bookRepositoryProvider)?.getTimeCapsuleChoseo();
@@ -48,9 +48,9 @@ class TimeCapsuleSection extends ConsumerWidget {
                 decoration: ShapeDecoration(
                   color: context.appCard,
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(
-                      cornerRadius: AppTheme.radiusLG * 1.8,
-                      cornerSmoothing: 0.6,
+                    smoothness: 0.6,
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.radiusLG * 1.8,
                     ),
                     side: BorderSide.none,
                   ),
@@ -89,9 +89,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                           color: context.appPrimaryAccent.withValues(
                             alpha: 0.08,
                           ),
-                          shape: StadiumBorder(
-                            side: BorderSide.none,
-                          ),
+                          shape: AppTheme.smoothShape(radius: 10),
                         ),
                         child: Text(
                           '그때의 나는 무슨 생각을 했을까?',

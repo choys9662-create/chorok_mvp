@@ -7,7 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import '../../../shared/models/session_goal.dart';
 
 class WishlistSection extends ConsumerWidget {
@@ -103,7 +103,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
           clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: context.appCardElevated,
-            radius: 20,
+            radius: 10,
             side: isDark
                 ? BorderSide(
                     color: Colors.white.withValues(alpha: 0.07),
@@ -145,10 +145,8 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                         decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.75),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 6,
-                              cornerSmoothing: 0.6,
-                            ),
+                            smoothness: 0.6,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Text(

@@ -10,16 +10,32 @@ class ForestAccentCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double radius;
 
+  /// 지정 시 outline 스타일 대신 단색으로 가득 채운다 (보더 제거).
+  /// 예: 오늘 독서 완료 → 네온 그린 단색 카드.
+  final Color? fillColor;
+
   const ForestAccentCard({
     super.key,
     required this.child,
     this.padding,
     this.radius = AppTheme.radiusLG,
+    this.fillColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // fillColor 지정 시: 단색 채움 + 보더 없음
+    if (fillColor != null) {
+      return DecoratedBox(
+        decoration: AppTheme.smoothBox(color: fillColor, radius: radius),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(AppTheme.cardPaddingLG),
+          child: child,
+        ),
+      );
+    }
 
     // 라이브 포레스트 원본 디자인: 배경과 동일한 단색 + 네온 그린 라인 보더만
     // → 카드가 fill 없이 "outline만 떠 있는" 느낌으로 라이브 포레스트 정체성 표현

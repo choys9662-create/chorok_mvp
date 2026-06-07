@@ -9,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/screen/auth_screen.dart';
-import '../../../shared/providers/theme_provider.dart';
 
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
 class _ReadingGoal {
@@ -90,8 +89,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-
     return Scaffold(
       backgroundColor: context.appBg,
       appBar: AppBar(
@@ -122,9 +119,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // ─── 테마 ───────────────────────────────────────────────────
           _SectionLabel('화면'),
-          _SettingsCard(
-            children: [_ThemeTile(themeMode: themeMode, ref: ref)],
-          ),
+          _SettingsCard(children: const [_ThemeTile()]),
           const SizedBox(height: AppTheme.space2XL),
 
           // ─── 독서 목표 ─────────────────────────────────────────────
@@ -232,10 +227,7 @@ class SettingsScreen extends ConsumerWidget {
 
 // ─── 테마 타일 ─────────────────────────────────────────────────────────────
 class _ThemeTile extends StatelessWidget {
-  final ThemeMode themeMode;
-  final WidgetRef ref;
-
-  const _ThemeTile({required this.themeMode, required this.ref});
+  const _ThemeTile();
 
   @override
   Widget build(BuildContext context) {
@@ -267,32 +259,11 @@ class _ThemeTile extends StatelessWidget {
           child: Row(
             children: [
               _ThemeChip(
-                label: '라이트',
-                icon: Icons.light_mode_rounded,
-                selected: themeMode == ThemeMode.light,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.light);
-                },
-              ),
-              const SizedBox(width: 8),
-              _ThemeChip(
-                label: '다크',
+                label: 'OLED 다크',
                 icon: Icons.dark_mode_rounded,
-                selected: themeMode == ThemeMode.dark,
+                selected: true,
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.dark);
-                },
-              ),
-              const SizedBox(width: 8),
-              _ThemeChip(
-                label: '시스템',
-                icon: Icons.settings_suggest_outlined,
-                selected: themeMode == ThemeMode.system,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  ref.read(themeModeProvider.notifier).set(ThemeMode.system);
                 },
               ),
             ],
@@ -326,25 +297,30 @@ class _ThemeChip extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: AppTheme.smoothBox(
-            gradient: selected
-                ? context.appReadingGradient
-                : LinearGradient(
-                    colors: [context.appControlBg, context.appControlBg],
-                  ),
+            color: selected ? context.appActiveFill : context.appControlBg,
             radius: AppTheme.radiusMD,
+            side: BorderSide(
+              color: selected
+                  ? context.appPillBorderActive
+                  : context.appBorderSubtle,
+            ),
           ),
           child: Column(
             children: [
               Icon(
                 icon,
                 size: 18,
-                color: selected ? Colors.white : context.appTextSecondary,
+                color: selected
+                    ? context.appPrimaryAccent
+                    : context.appTextSecondary,
               ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: AppTheme.captionLarge.copyWith(
-                  color: selected ? Colors.white : context.appTextSecondary,
+                  color: selected
+                      ? context.appPrimaryAccent
+                      : context.appTextSecondary,
                   fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
                 ),
               ),
@@ -651,7 +627,7 @@ void _showLogoutConfirm(BuildContext context) {
               height: 4,
               decoration: BoxDecoration(
                 color: context.appBorder,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             const SizedBox(height: 20),
@@ -678,7 +654,7 @@ void _showLogoutConfirm(BuildContext context) {
                     onPressed: () => Navigator.pop(ctx),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: const StadiumBorder(),
+                      shape: AppTheme.smoothShape(radius: 10),
                     ),
                     child: const Text('취소'),
                   ),
@@ -694,7 +670,7 @@ void _showLogoutConfirm(BuildContext context) {
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFFFF4F4F),
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: const StadiumBorder(),
+                      shape: AppTheme.smoothShape(radius: 10),
                     ),
                     child: const Text('로그아웃'),
                   ),
@@ -760,4 +736,3 @@ class _InfoTile extends StatelessWidget {
     );
   }
 }
-

@@ -24,7 +24,7 @@ void showAuthError(BuildContext context, String rawMessage) {
         content: Text(
           localizeAuthError(rawMessage),
           style: const TextStyle(
-            fontFamily: 'Pretendard',
+            fontFamily: 'ChosunGu',
             color: Colors.white,
             fontSize: 12,
             height: 1.5,

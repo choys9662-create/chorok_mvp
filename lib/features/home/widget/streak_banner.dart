@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/repositories/book_repository.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
@@ -37,10 +37,8 @@ class StreakBanner extends ConsumerWidget {
                   ? AppTheme.warningColor.withValues(alpha: 0.08)
                   : context.appCard,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: AppTheme.radiusMD * 1.8,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
                 side: BorderSide(
                   color: hasReadToday
                       ? AppTheme.warningColor.withValues(alpha: 0.24)

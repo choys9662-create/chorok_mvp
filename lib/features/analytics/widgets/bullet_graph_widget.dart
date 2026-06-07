@@ -45,7 +45,7 @@ class BulletGraphWidget extends StatelessWidget {
           SizedBox(
             height: 20,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(9999),
+              borderRadius: BorderRadius.circular(10),
               child: Stack(
                 clipBehavior: Clip.antiAlias,
                 fit: StackFit.expand,

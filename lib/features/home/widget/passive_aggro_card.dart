@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -32,8 +32,9 @@ class PassiveAggroCard extends ConsumerWidget {
     final weekly =
         ref.watch(weeklyMinutesProvider).valueOrNull ??
         (kUseMock ? kWeeklyMinutes : const [0, 0, 0, 0, 0, 0, 0]);
-    final readToday =
-        weekly.length > todayIndex ? weekly[todayIndex] > 0 : false;
+    final readToday = weekly.length > todayIndex
+        ? weekly[todayIndex] > 0
+        : false;
 
     // 마지막 독서일로부터의 경과 일수 — 이번 주 분 데이터에서 추정
     final idleDays = _idleDaysFrom(weekly, todayIndex);
@@ -65,10 +66,8 @@ class PassiveAggroCard extends ConsumerWidget {
         decoration: ShapeDecoration(
           color: AppTheme.warningColor.withValues(alpha: 0.08),
           shape: SmoothRectangleBorder(
-            borderRadius: SmoothBorderRadius(
-              cornerRadius: AppTheme.radiusMD * 1.8,
-              cornerSmoothing: 0.6,
-            ),
+            smoothness: 0.6,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
             side: BorderSide(
               color: AppTheme.warningColor.withValues(alpha: 0.24),
             ),

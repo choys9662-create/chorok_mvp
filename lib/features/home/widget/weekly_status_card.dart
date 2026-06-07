@@ -9,7 +9,7 @@ import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 
 class WeeklyStatusCard extends ConsumerWidget {
   const WeeklyStatusCard({super.key});
@@ -69,10 +69,8 @@ class WeeklyStatusCard extends ConsumerWidget {
                 decoration: ShapeDecoration(
                   color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(
-                      cornerRadius: 8,
-                      cornerSmoothing: 0.6,
-                    ),
+                    smoothness: 0.6,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: Text(
@@ -127,7 +125,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                                     : (ratio < 0.08 ? 0.08 : ratio),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(10),
                                     color: isFuture
                                         ? context.appProgressTrack
                                         : null,
@@ -190,10 +188,8 @@ class WeeklyStatusCard extends ConsumerWidget {
             decoration: ShapeDecoration(
               color: context.primaryBg(0.06),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: AppTheme.radiusMD,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
             ),
             child: Column(
@@ -211,7 +207,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                 ],
                 // 프로그레스 바
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: (todayMin / goalMin).clamp(0.0, 1.0),
                     minHeight: 8,

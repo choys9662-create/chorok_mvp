@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +8,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart'; // AppThemeExt on BuildContext
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/providers/cover_color_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
@@ -19,8 +20,8 @@ class BookPickerSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allBooks = ref.watch(libraryProvider);
-    final isLoading = allBooks.isEmpty &&
-        ref.read(libraryProvider.notifier).isLoading;
+    final isLoading =
+        allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
     final readingBooks = allBooks
         .where((b) => b.status == ReadingStatus.reading)
         .toList();
@@ -29,10 +30,8 @@ class BookPickerSheet extends ConsumerWidget {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(
-            cornerRadius: 24,
-            cornerSmoothing: 0.6,
-          ),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
       child: SafeArea(
@@ -45,7 +44,7 @@ class BookPickerSheet extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
-                '어떤 책을 읽을까요?',
+                '오늘은 어떤 책을 읽을까요?',
                 style: TextStyle(
                   color: context.appTextPrimary,
                   fontSize: 16,
@@ -83,7 +82,8 @@ class _BookList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: books.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) => _BookCard(book: books[index]),
+          itemBuilder: (context, index) =>
+              _BookCard(book: books[index], highlighted: index == 0),
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -92,11 +92,26 @@ class _BookList extends StatelessWidget {
             Navigator.of(context).pop();
             context.push(AppConstants.routeSearch);
           },
-          child: Text(
-            '다른 책 검색',
-            style: TextStyle(
-              color: context.appTextSecondary,
-              fontSize: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: AppTheme.smoothBox(
+              color: context.appCardElevated,
+              radius: 10,
+              side: BorderSide(color: context.appBorderSubtle),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.search, size: 18, color: context.appTextSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  '다른 책 검색',
+                  style: TextStyle(
+                    color: context.appTextSecondary,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -105,14 +120,19 @@ class _BookList extends StatelessWidget {
   }
 }
 
-class _BookCard extends StatelessWidget {
+class _BookCard extends ConsumerWidget {
   final Book book;
+  final bool highlighted;
 
-  const _BookCard({required this.book});
+  const _BookCard({required this.book, this.highlighted = false});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final progress = book.readingProgress;
+
+    // 표지에서 추출한 강조색 — 추출 전/실패 시 브랜드 초록으로 폴백
+    final coverColor = ref.watch(coverColorProvider(book.coverUrl)).valueOrNull;
+    final accent = coverColor ?? context.appPrimaryAccent;
 
     return GestureDetector(
       onTap: () {
@@ -131,15 +151,22 @@ class _BookCard extends StatelessWidget {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: AppTheme.smoothBox(color: context.appCardElevated, radius: 16),
+        padding: const EdgeInsets.all(14),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: 10,
+          side: BorderSide(
+            color: accent.withValues(alpha: highlighted ? 0.85 : 0.55),
+            width: highlighted ? 1.4 : 1.2,
+          ),
+        ),
         child: Row(
           children: [
             BookCover(
               coverUrl: book.coverUrl,
-              width: 44,
-              height: 60,
-              radius: 6,
+              width: 48,
+              height: 64,
+              radius: 10,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -165,22 +192,34 @@ class _BookCard extends StatelessWidget {
                     ),
                   ),
                   if (book.totalPages > 0) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        backgroundColor: context.appCard,
-                        color: context.appPrimaryAccent,
-                        minHeight: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${book.currentPage} / ${book.totalPages}p',
-                      style: TextStyle(
-                        color: context.appTextSecondary,
-                        fontSize: 12,
+                      borderRadius: BorderRadius.circular(10),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => Stack(
+                          children: [
+                            Container(
+                              height: 4,
+                              width: double.infinity,
+                              color: context.appProgressTrack,
+                            ),
+                            Container(
+                              height: 4,
+                              width:
+                                  constraints.maxWidth * progress.clamp(0, 1),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    accent.withValues(alpha: 0.75),
+                                    accent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -207,9 +246,9 @@ class _LoadingState extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Column(
         children: [
-          ChorokShimmer(width: double.infinity, height: 80, radius: 16),
+          ChorokShimmer(width: double.infinity, height: 80, radius: 10),
           const SizedBox(height: 8),
-          ChorokShimmer(width: double.infinity, height: 80, radius: 16),
+          ChorokShimmer(width: double.infinity, height: 80, radius: 10),
         ],
       ),
     );
@@ -231,10 +270,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             '읽는 중인 책이 없어요',
-            style: TextStyle(
-              color: context.appTextSecondary,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: context.appTextSecondary, fontSize: 16),
           ),
           const SizedBox(height: 16),
           GestureDetector(
@@ -245,7 +281,10 @@ class _EmptyState extends StatelessWidget {
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: AppTheme.smoothBox(color: context.appActiveFill, radius: 12),
+              decoration: AppTheme.smoothBox(
+                color: context.appActiveFill,
+                radius: 10,
+              ),
               child: Text(
                 '라이브러리 가기',
                 style: TextStyle(

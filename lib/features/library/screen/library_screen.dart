@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
@@ -314,7 +314,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                       decoration: BoxDecoration(
                                         color: context.appPrimaryAccent
                                             .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
                                         badge,
@@ -934,7 +934,7 @@ class _BookCard extends StatelessWidget {
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: 30,
+          radius: 10,
           side: BorderSide.none,
           shadows: isDark ? null : AppTheme.lightCardShadows,
         ),
@@ -945,15 +945,10 @@ class _BookCard extends StatelessWidget {
               child: ClipPath(
                 clipper: ShapeBorderClipper(
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius.only(
-                      topLeft: const SmoothRadius(
-                        cornerRadius: 29,
-                        cornerSmoothing: 1.0,
-                      ),
-                      topRight: const SmoothRadius(
-                        cornerRadius: 29,
-                        cornerSmoothing: 1.0,
-                      ),
+                    smoothness: 0.6,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
                     ),
                   ),
                 ),
@@ -1051,7 +1046,7 @@ class _BookCard extends StatelessWidget {
                   if (book.status == ReadingStatus.reading) ...[
                     const SizedBox(height: AppTheme.spaceSM),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
                         value: book.readingProgress,
                         backgroundColor: context.appBorder,
@@ -1245,7 +1240,7 @@ class _BookListTile extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 16,
+            radius: 10,
             side: BorderSide.none,
             shadows: isDark ? null : AppTheme.lightCardShadows,
           ),
@@ -1259,7 +1254,7 @@ class _BookListTile extends StatelessWidget {
                     book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 52,
                 height: 72,
-                radius: 8,
+                radius: 10,
               ),
               const SizedBox(width: 12),
               // 정보
@@ -1308,7 +1303,7 @@ class _BookListTile extends StatelessWidget {
                     const SizedBox(height: 8),
                     if (isReading) ...[
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
                           value: book.readingProgress,
                           backgroundColor: context.appBorder,
@@ -1483,7 +1478,7 @@ class _SortSheet extends StatelessWidget {
                     color: opt == current
                         ? AppTheme.primary.withValues(alpha: 0.15)
                         : context.appCardElevated,
-                    radius: 12,
+                    radius: 10,
                     side: BorderSide.none,
                   ),
                   child: Row(
@@ -1697,15 +1692,10 @@ class _HeroBookCard extends StatelessWidget {
             ClipPath(
               clipper: ShapeBorderClipper(
                 shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius.only(
-                    topLeft: const SmoothRadius(
-                      cornerRadius: 23,
-                      cornerSmoothing: 1.0,
-                    ),
-                    bottomLeft: const SmoothRadius(
-                      cornerRadius: 23,
-                      cornerSmoothing: 1.0,
-                    ),
+                  smoothness: 0.6,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    bottomLeft: Radius.circular(10),
                   ),
                 ),
               ),
@@ -1765,7 +1755,7 @@ class _HeroBookCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
                         value: book.readingProgress,
                         backgroundColor: context.appBorder,

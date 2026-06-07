@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 
-import '../widget/weekly_status_card.dart';
+import '../widget/home_stat_cards.dart';
 import '../widget/reading_books_section.dart';
-import '../widget/recommended_books_section.dart';
-import '../widget/wishlist_section.dart';
+import '../widget/reading_friends_section.dart';
 import '../widget/home_app_bar.dart';
 import '../widget/streak_banner.dart';
 import '../widget/passive_aggro_card.dart';
@@ -15,7 +14,6 @@ import '../widget/feed_highlight_section.dart';
 import '../widget/time_capsule_section.dart';
 
 import '../../../shared/providers/tab_scroll_controllers.dart';
-import '../controller/recommended_books_provider.dart';
 import '../controller/weekly_minutes_provider.dart';
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
@@ -42,9 +40,7 @@ class HomeScreen extends ConsumerWidget {
             child: RefreshIndicator(
               color: context.appAccentColor,
               onRefresh: () async {
-                ref.invalidate(recommendedBooksProvider);
                 ref.invalidate(weeklyMinutesProvider);
-                await ref.read(recommendedBooksProvider.future).catchError((_) => <RecommendedBook>[]);
               },
               child: CustomScrollView(
                 controller: scrollCtrl,
@@ -54,23 +50,16 @@ class HomeScreen extends ConsumerWidget {
                 SliverToBoxAdapter(child: StreakBanner()),
                 // 수동공격 카드 (안 읽음·스트릭 위험·이웃 비교 시에만 내부에서 렌더링)
                 const SliverToBoxAdapter(child: PassiveAggroCard()),
-                // ① 이번 주 독서 현황
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: const WeeklyStatusCard(),
-                  ),
-                ),
+                // ① 오늘 / 이번 주 통계 카드
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                const SliverToBoxAdapter(child: HomeStatCards()),
                 // ② 지금 읽는 책
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
                 const SliverToBoxAdapter(child: ReadingBooksSection()),
-                // ③ 문장 기반 추천
+                // ③ 읽고 있는 친구
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: RecommendedBooksSection()),
-                // ④ 다음에 읽을 책
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: WishlistSection()),
-                // ⑤ 피드 하이라이트 (커뮤니티 기능 연동 전 placeholder)
+                const SliverToBoxAdapter(child: ReadingFriendsSection()),
+                // ④ 피드 하이라이트 (커뮤니티 기능 연동 전 placeholder)
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 const SliverToBoxAdapter(child: FeedHighlightSection()),
                 // ⑥ 타임캡슐 문장 (sqflite 기반 — 웹 미지원, 내부에서 null 체크)

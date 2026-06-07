@@ -5,13 +5,11 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
-import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 
-import '../../../shared/models/session_goal.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
@@ -30,22 +28,42 @@ class ReadingBooksSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 섹션 헤더
+        // 섹션 헤더 — "읽고 있는 책" + 카운트 pill 뱃지
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: ChorokSectionHeader(
-            title: '지금 읽는 책',
-            trailing: isLoading
-                ? null
-                : Text(
+          child: Row(
+            children: [
+              Text(
+                '읽고 있는 책',
+                style: AppTheme.headingMedium.copyWith(
+                  color: context.appTextPrimary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              if (!isLoading) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: AppTheme.smoothPill(
+                    color: context.primaryBg(0.08),
+                    side: BorderSide.none,
+                  ),
+                  child: Text(
                     '${readingBooks.length}권',
-                    style: AppTheme.captionLarge.copyWith(
+                    style: AppTheme.headingSmall.copyWith(
                       color: context.appPrimaryAccent,
                       fontWeight: FontWeight.w400,
+                      height: 1.15,
                     ),
                   ),
+                ),
+              ],
+            ],
           ),
         ),
 
@@ -61,9 +79,9 @@ class ReadingBooksSection extends ConsumerWidget {
                 horizontal: AppTheme.screenPadding,
               ),
               children: const [
-                ChorokShimmer(width: 160, height: 240, radius: 16),
+                ChorokShimmer(width: 160, height: 240, radius: 10),
                 SizedBox(width: 12),
-                ChorokShimmer(width: 160, height: 240, radius: 16),
+                ChorokShimmer(width: 160, height: 240, radius: 10),
               ],
             ),
           ),
@@ -73,22 +91,23 @@ class ReadingBooksSection extends ConsumerWidget {
           const EmptyBooksState(),
         ] else ...[
           const SizedBox(height: 12),
-          // 가로 스크롤 카드
+          // 가로 스크롤 카드 (마지막에 + 추가 카드)
           SizedBox(
-            height: 240,
+            height: 248,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTheme.screenPadding,
               ),
-              itemCount: readingBooks.length,
+              itemCount: readingBooks.length + 1,
               itemBuilder: (context, index) {
+                final isLast = index == readingBooks.length;
                 return Padding(
-                  padding: EdgeInsets.only(
-                    right: index < readingBooks.length - 1 ? 12 : 0,
-                  ),
-                  child: ReadingBookCard(book: readingBooks[index]),
+                  padding: EdgeInsets.only(right: isLast ? 0 : 12),
+                  child: isLast
+                      ? const AddBookCard()
+                      : ReadingBookCard(book: readingBooks[index]),
                 );
               },
             ),
@@ -118,10 +137,8 @@ class EmptyBooksState extends StatelessWidget {
               decoration: ShapeDecoration(
                 color: context.primaryBg(0.08),
                 shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: 16,
-                    cornerSmoothing: 0.6,
-                  ),
+                  smoothness: 0.6,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Icon(
@@ -252,7 +269,6 @@ class ReadingBookCardState extends State<ReadingBookCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
     final progress = b.totalPages > 0 ? b.currentPage / b.totalPages : 0.0;
 
@@ -270,140 +286,105 @@ class ReadingBookCardState extends State<ReadingBookCard> {
         scale: _isPressed ? 0.97 : 1.0,
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOutCubic,
-        child: Container(
-          width: 160,
-          clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: AppTheme.radiusLG,
-            side: BorderSide(color: context.appBorderSubtle),
+        child: BookCover(
+          coverUrl: b.coverUrl,
+          gradientIndex:
+              b.title.hashCode.abs() % AppTheme.coverGradients.length,
+          width: 158,
+          height: 248,
+          radius: AppTheme.radiusLG,
+          fallbackIcon: Positioned(
+            right: -12,
+            bottom: 40,
+            child: Icon(
+              Icons.menu_book_rounded,
+              size: 96,
+              color: Colors.white.withValues(alpha: 0.10),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              // 표지
-              BookCover(
-                coverUrl: b.coverUrl,
-                gradientIndex:
-                    b.title.hashCode.abs() % AppTheme.coverGradients.length,
-                height: 110,
-                width: double.infinity,
-                radius: 0, // 컨테이너 클리핑에 의존
-                fallbackIcon: Positioned(
-                  right: -10,
-                  bottom: -10,
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    size: 64,
-                    color: context.primaryBg(0.08),
-                  ),
-                ),
-                child: Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: context.appSurface.withValues(alpha: 0.75),
-                      shape: SmoothRectangleBorder(
-                        borderRadius: SmoothBorderRadius(
-                          cornerRadius: 8,
-                          cornerSmoothing: 0.6,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      '${(progress * 100).round()}%',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
-                      ),
+              // 하단 제목/저자 가독성용 스크림
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  height: 120,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0xCC000000)],
                     ),
                   ),
                 ),
               ),
-              // 책 정보
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+              // 제목 · 저자 · 진행바
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       b.title,
                       style: AppTheme.bodySmall.copyWith(
-                        color: context.appTextPrimary,
+                        color: Colors.white,
                         fontWeight: FontWeight.w400,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
-                        color: context.appTextSecondary,
+                        color: Colors.white.withValues(alpha: 0.75),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     ProgressBar(value: progress),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${b.currentPage} / ${b.totalPages}쪽',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
                   ],
                 ),
               ),
-              const Spacer(),
-              // 이어 읽기 버튼
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Semantics(
-                  label: '${b.title} 이어 읽기',
-                  button: true,
-                  child: GestureDetector(
-                    onTap: () async {
-                      HapticFeedback.mediumImpact();
-                      context.push(
-                        AppConstants.routeSession,
-                        extra: SessionExtra(
-                          bookId: b.id,
-                          bookTitle: b.title,
-                          bookAuthor: b.author,
-                          coverUrl: b.coverUrl,
-                          startPage: b.currentPage,
-                          totalPages: b.totalPages,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: AppTheme.smoothPill(
-                        color: isDark
-                            ? AppTheme.primary.withValues(alpha: 0.5)
-                            : AppTheme.lightPrimaryAccent,
-                        side: BorderSide.none,
-                      ),
-                      child: Text(
-                        '이어 읽기',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: isDark
-                              ? context.appPrimaryAccent
-                              : Colors.white,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 책 추가용 플레이스홀더 카드 (목록 끝의 "+").
+class AddBookCard extends StatelessWidget {
+  const AddBookCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '책 추가하기',
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          context.push(AppConstants.routeExplore);
+        },
+        child: Container(
+          width: 158,
+          height: 248,
+          alignment: Alignment.center,
+          decoration: AppTheme.smoothBox(
+            color: context.primaryBg(0.04),
+            radius: AppTheme.radiusLG,
+            side: BorderSide(color: context.appBorderSubtle),
+          ),
+          child: Icon(
+            Icons.add_rounded,
+            size: 40,
+            color: context.appTextTertiary.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -422,14 +403,14 @@ class ProgressBar extends StatelessWidget {
         height: 5,
         decoration: BoxDecoration(
           color: context.appProgressTrack,
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Container(
             width: c.maxWidth * value.clamp(0.0, 1.0),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(10),
               gradient: context.appReadingGradient,
             ),
           ),

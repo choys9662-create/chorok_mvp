@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
@@ -82,15 +82,12 @@ class RecommendedBooksSection extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: ShapeDecoration(
                   color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
-                    borderRadius: SmoothBorderRadius(
-                      cornerRadius: 8,
-                      cornerSmoothing: 0.6,
-                    ),
+                    smoothness: 0.6,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: Row(
@@ -127,18 +124,13 @@ class RecommendedBooksSection extends ConsumerWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.screenPadding,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
         itemCount: 2,
         itemBuilder: (context, index) => Padding(
           padding: EdgeInsets.only(right: index == 0 ? 12 : 0),
           child: Container(
             width: 240,
-            decoration: AppTheme.smoothBox(
-              color: context.appCard,
-              radius: 16,
-            ),
+            decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
           ),
         ),
       ),
@@ -147,18 +139,14 @@ class RecommendedBooksSection extends ConsumerWidget {
 
   Widget _emptyCard(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.screenPadding,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
         child: Text(
           '문장을 더 기록하면 취향에 맞는 책을 추천해드려요',
-          style: AppTheme.bodySmall.copyWith(
-            color: context.appTextSecondary,
-          ),
+          style: AppTheme.bodySmall.copyWith(color: context.appTextSecondary),
         ),
       ),
     );
@@ -170,7 +158,8 @@ class RecommendedBookCard extends ConsumerStatefulWidget {
   const RecommendedBookCard({super.key, required this.book});
 
   @override
-  ConsumerState<RecommendedBookCard> createState() => RecommendedBookCardState();
+  ConsumerState<RecommendedBookCard> createState() =>
+      RecommendedBookCardState();
 }
 
 class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
@@ -208,7 +197,7 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
         child: Container(
           width: 240,
           clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+          decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
           child: Row(
             children: [
               BookCover(
@@ -236,10 +225,8 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                     decoration: ShapeDecoration(
                       color: context.appSurface.withValues(alpha: 0.8),
                       shape: SmoothRectangleBorder(
-                        borderRadius: SmoothBorderRadius(
-                          cornerRadius: 6,
-                          cornerSmoothing: 0.6,
-                        ),
+                        smoothness: 0.6,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     child: Text(
@@ -282,10 +269,8 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                             alpha: 0.06,
                           ),
                           shape: SmoothRectangleBorder(
-                            borderRadius: SmoothBorderRadius(
-                              cornerRadius: 8,
-                              cornerSmoothing: 0.6,
-                            ),
+                            smoothness: 0.6,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: Row(
@@ -325,18 +310,26 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                             HapticFeedback.mediumImpact();
                             final notifier = ref.read(libraryProvider.notifier);
                             if (isAdded) {
-                              final existing = ref.read(libraryProvider).firstWhere(
-                                (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
-                              );
+                              final existing = ref
+                                  .read(libraryProvider)
+                                  .firstWhere(
+                                    (book) =>
+                                        book.title.trim().toLowerCase() ==
+                                        b.title.trim().toLowerCase(),
+                                  );
                               notifier.deleteBook(existing.id);
                             } else {
-                              notifier.addBook(Book(
-                                id: 'rec_${b.title.hashCode.abs()}',
-                                title: b.title,
-                                author: b.author,
-                                coverUrl: b.coverUrl.isEmpty ? null : b.coverUrl,
-                                status: ReadingStatus.wantToRead,
-                              ));
+                              notifier.addBook(
+                                Book(
+                                  id: 'rec_${b.title.hashCode.abs()}',
+                                  title: b.title,
+                                  author: b.author,
+                                  coverUrl: b.coverUrl.isEmpty
+                                      ? null
+                                      : b.coverUrl,
+                                  status: ReadingStatus.wantToRead,
+                                ),
+                              );
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -351,7 +344,12 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                                 shape: AppTheme.smoothShape(
                                   radius: AppTheme.radiusMD,
                                 ),
-                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                margin: const EdgeInsets.fromLTRB(
+                                  20,
+                                  0,
+                                  20,
+                                  16,
+                                ),
                               ),
                             );
                           },
@@ -362,16 +360,15 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
                               color: isAdded
-                                  ? context.appPrimaryAccent
-                                      .withValues(alpha: 0.15)
+                                  ? context.appPrimaryAccent.withValues(
+                                      alpha: 0.15,
+                                    )
                                   : isDark
-                                      ? AppTheme.primary.withValues(alpha: 0.4)
-                                      : AppTheme.lightPrimaryAccent,
+                                  ? AppTheme.primary.withValues(alpha: 0.4)
+                                  : AppTheme.lightPrimaryAccent,
                               shape: SmoothRectangleBorder(
-                                borderRadius: SmoothBorderRadius(
-                                  cornerRadius: 8,
-                                  cornerSmoothing: 0.6,
-                                ),
+                                smoothness: 0.6,
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: Row(
@@ -385,8 +382,8 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                                   color: isAdded
                                       ? context.appPrimaryAccent
                                       : isDark
-                                          ? context.appPrimaryAccent
-                                          : Colors.white,
+                                      ? context.appPrimaryAccent
+                                      : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -395,8 +392,8 @@ class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
                                     color: isAdded
                                         ? context.appPrimaryAccent
                                         : isDark
-                                            ? context.appPrimaryAccent
-                                            : Colors.white,
+                                        ? context.appPrimaryAccent
+                                        : Colors.white,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),

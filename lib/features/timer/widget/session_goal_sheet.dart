@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -80,9 +80,10 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius.only(
-            topLeft: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
-            topRight: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
           ),
         ),
       ),
@@ -173,14 +174,19 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                       gradient: canSubmit
                           ? context.appReadingGradient
                           : LinearGradient(
-                              colors: [context.appCardElevated, context.appCardElevated],
+                              colors: [
+                                context.appCardElevated,
+                                context.appCardElevated,
+                              ],
                             ),
                       radius: AppTheme.radiusMD,
                     ),
                     child: Text(
                       '독서 시작하기',
                       style: AppTheme.bodyLarge.copyWith(
-                        color: canSubmit ? context.appBg : context.appTextTertiary,
+                        color: canSubmit
+                            ? context.appBg
+                            : context.appTextTertiary,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -410,7 +416,9 @@ class _PresetChip extends StatelessWidget {
           child: Text(
             label,
             style: AppTheme.bodySmall.copyWith(
-              color: isSelected ? context.appAccentColor : context.appTextSecondary,
+              color: isSelected
+                  ? context.appAccentColor
+                  : context.appTextSecondary,
               fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
             ),
           ),

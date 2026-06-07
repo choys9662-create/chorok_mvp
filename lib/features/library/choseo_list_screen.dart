@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -240,10 +240,8 @@ class _SearchField extends StatelessWidget {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(
-            cornerRadius: AppTheme.radiusMD,
-            cornerSmoothing: 0.6,
-          ),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           side: BorderSide.none,
         ),
       ),
@@ -288,7 +286,7 @@ class _ChoseoTabBar extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: context.appCard,
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(10),
         border: null,
       ),
       child: TabBar(
@@ -296,7 +294,7 @@ class _ChoseoTabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           color: AppTheme.primary,
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(10),
           border: null,
         ),
         dividerColor: Colors.transparent,
@@ -368,10 +366,8 @@ class _BookGroupState extends State<_BookGroup> {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(
-            cornerRadius: AppTheme.radiusXL,
-            cornerSmoothing: 0.6,
-          ),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.circular(AppTheme.radiusXL),
         ),
       ),
       child: Column(
@@ -400,10 +396,8 @@ class _BookGroupState extends State<_BookGroup> {
                           colors: colors,
                         ),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 6,
-                            cornerSmoothing: 0.6,
-                          ),
+                          smoothness: 0.6,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: Center(
@@ -555,10 +549,8 @@ class _ChoseoCard extends StatelessWidget {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius(
-            cornerRadius: AppTheme.radiusLG,
-            cornerSmoothing: 0.6,
-          ),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         ),
       ),
       child: Column(
@@ -580,7 +572,7 @@ class _ChoseoCard extends StatelessWidget {
                         end: Alignment.bottomRight,
                         colors: colors,
                       ),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
                       child: Text(

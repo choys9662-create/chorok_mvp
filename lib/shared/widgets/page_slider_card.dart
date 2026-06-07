@@ -96,7 +96,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
       padding: const EdgeInsets.all(20),
       decoration: AppTheme.smoothBox(
         color: context.appCardElevated,
-        radius: 16,
+        radius: 10,
         side: BorderSide(color: context.appBorderSubtle),
       ),
       child: Column(
@@ -141,7 +141,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
                       ),
                       decoration: BoxDecoration(
                         color: context.appCardElevated,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: context.appBorderSubtle),
                       ),
                       child: IntrinsicWidth(
@@ -165,7 +165,10 @@ class _PageSliderCardState extends State<PageSliderCard> {
                             isDense: true,
                             contentPadding: const EdgeInsets.all(12),
                             suffixIcon: Padding(
-                              padding: const EdgeInsets.only(left: 6, right: 12),
+                              padding: const EdgeInsets.only(
+                                left: 6,
+                                right: 12,
+                              ),
                               child: Icon(
                                 Icons.edit_rounded,
                                 size: 15,
@@ -239,7 +242,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
                 disabledBackgroundColor: context.appPrimaryAccent.withValues(
                   alpha: 0.05,
                 ),
-                shape: AppTheme.smoothShape(radius: 8),
+                shape: AppTheme.smoothShape(radius: 10),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: widget.isSaving

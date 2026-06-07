@@ -27,7 +27,7 @@ class ChorokCard extends StatelessWidget {
       padding: padding ?? const EdgeInsets.all(AppTheme.cardPaddingMD),
       decoration: AppTheme.smoothBox(
         color: bg,
-        radius: 16,
+        radius: 10,
         side: BorderSide(color: borderColor ?? context.appBorderSubtle),
         shadows: hasShadow
             ? [

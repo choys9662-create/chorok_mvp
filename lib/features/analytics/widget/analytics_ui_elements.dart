@@ -36,7 +36,7 @@ class TabSelector extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onChanged(e.key);
                   },
-                  customBorder: const StadiumBorder(),
+                  customBorder: AppTheme.smoothShape(radius: 10),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,

@@ -225,7 +225,7 @@ class _DayCell extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(10),
         border: isToday
             ? Border.all(color: context.appPrimaryAccent, width: 1.5)
             : null,
@@ -279,7 +279,7 @@ class _Legend extends StatelessWidget {
                   height: 10,
                   decoration: BoxDecoration(
                     color: l.color,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 const SizedBox(width: 3),

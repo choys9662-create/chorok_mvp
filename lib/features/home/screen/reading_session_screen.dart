@@ -18,6 +18,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../core/services/stt_service.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/widgets/book_cover.dart';
 import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
@@ -26,7 +27,7 @@ import 'session_recap_screen.dart';
 
 // 세션 화면은 항상 다크 — AppTheme 상수를 직접 alias
 const _kGreen = AppTheme.primaryLight;
-const _kFont = '조선굴림체';
+const _kFont = AppTheme.fontFamily;
 const _captureTimeout = Duration(seconds: 8);
 const _captureReadTimeout = Duration(seconds: 12);
 
@@ -670,6 +671,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               if (_showTopic)
                 _TodaysTopicOverlay(
                   bookTitle: widget.bookTitle,
+                  bookAuthor: widget.bookAuthor,
+                  coverUrl: widget.coverUrl,
                   onStart: _dismissTopicAndStart,
                 ),
             ],
@@ -691,7 +694,7 @@ class _PillTimerOnly extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.25 : 0.45),
           width: 1,
@@ -1505,7 +1508,8 @@ class _CaptureTopBar extends StatelessWidget {
                 ),
                 decoration: ShapeDecoration(
                   color: Colors.black.withValues(alpha: 0.52),
-                  shape: StadiumBorder(
+                  shape: AppTheme.smoothShape(
+                    radius: 10,
                     side: BorderSide(
                       color: Colors.white.withValues(alpha: 0.14),
                     ),
@@ -1791,7 +1795,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.08),
                       ),
@@ -1956,7 +1960,7 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                               return Container(
                                 height: _trackHeight,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                     color: _kGreen.withValues(alpha: 0.5),
                                     width: 1.5,
@@ -2029,9 +2033,16 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
 // ─── 오늘의 화두 오버레이 ─────────────────────────────────────────────────
 class _TodaysTopicOverlay extends StatefulWidget {
   final String bookTitle;
+  final String bookAuthor;
+  final String? coverUrl;
   final VoidCallback onStart;
 
-  const _TodaysTopicOverlay({required this.bookTitle, required this.onStart});
+  const _TodaysTopicOverlay({
+    required this.bookTitle,
+    required this.bookAuthor,
+    this.coverUrl,
+    required this.onStart,
+  });
 
   @override
   State<_TodaysTopicOverlay> createState() => _TodaysTopicOverlayState();
@@ -2087,18 +2098,44 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                   widget.bookTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.40),
-                    fontSize: 16,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 6),
+                Text(
+                  widget.bookAuthor,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.40),
+                    fontSize: 13,
+                    fontFamily: _kFont,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                BookCover(
+                  coverUrl: widget.coverUrl,
+                  gradientIndex: widget.bookTitle.hashCode.abs(),
+                  width: 150,
+                  height: 216,
+                  radius: 10,
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      blurRadius: 32,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: _kGreen.withValues(alpha: 0.20),
                       width: 1,
@@ -2128,7 +2165,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: _kGreen,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
                           color: _kGreen.withValues(alpha: 0.40),
@@ -2442,7 +2479,7 @@ class _SentenceBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: _kGreen,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2545,7 +2582,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                 height: 4,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -2562,7 +2599,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                 ),
                 decoration: BoxDecoration(
                   color: _kGreen,
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -2750,7 +2787,7 @@ class _SwipeableSentenceReviewCardState
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF4B4F),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.delete_outline_rounded,
@@ -2815,7 +2852,7 @@ class _SwipeableSentenceReviewCardState
                 color: const Color(
                   0xFF111211,
                 ).withValues(alpha: _deleting ? 0.78 : 0.94),
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: _deleting
                       ? const Color(0xFFFF4B4F)
@@ -3042,7 +3079,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
@@ -3073,7 +3110,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFF111211),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.14),
                     ),
@@ -3117,19 +3154,19 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     filled: true,
                     fillColor: const Color(0xFF111211),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
                         color: _kGreen.withValues(alpha: 0.45),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(
                         color: _kGreen.withValues(alpha: 0.45),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: _kGreen, width: 1.4),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
@@ -3156,7 +3193,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                         fontFamily: _kFont,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(13),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -3365,7 +3402,7 @@ class _PillTimer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.30 : 0.55),
           width: 1,
@@ -3421,7 +3458,7 @@ class _ActionCard extends StatelessWidget {
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: borderColor, width: 1.2),
             color: Colors.black.withValues(alpha: 0.55),
           ),
@@ -3609,7 +3646,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
             height: 4,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
           const SizedBox(height: 16),
@@ -3725,7 +3762,7 @@ class _TabBtn extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(10),
           color: selected
               ? _kGreen.withValues(alpha: 0.15)
               : Colors.transparent,
@@ -3765,7 +3802,7 @@ class _PeopleTab extends StatelessWidget {
               color: isFirst
                   ? _kGreen.withValues(alpha: 0.06)
                   : const Color(0xFF111611),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isFirst
                     ? _kGreen.withValues(alpha: 0.55)
@@ -3846,7 +3883,7 @@ class _BooksTab extends StatelessWidget {
               color: isFirst
                   ? _kGreen.withValues(alpha: 0.06)
                   : const Color(0xFF111611),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isFirst
                     ? _kGreen.withValues(alpha: 0.55)
@@ -3903,7 +3940,7 @@ class _BooksTab extends StatelessWidget {
                   width: 44,
                   height: 60,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(10),
                     color: _kGreen.withValues(alpha: 0.08),
                     border: Border.all(
                       color: _kGreen.withValues(alpha: 0.18),

@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -485,7 +485,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         itemBuilder: (_, _) => const ChorokShimmer(
                           width: double.infinity,
                           height: 120,
-                          radius: 16,
+                          radius: 10,
                         ),
                       ),
                     )
@@ -727,7 +727,7 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                   gradientIndex: b.gradientIndex,
                   width: 44,
                   height: 56,
-                  radius: 6,
+                  radius: 10,
                 ),
               ),
               Expanded(
@@ -764,10 +764,8 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
                   decoration: ShapeDecoration(
                     color: context.appPrimaryAccent.withValues(alpha: 0.08),
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(
-                        cornerRadius: 6,
-                        cornerSmoothing: 0.6,
-                      ),
+                      smoothness: 0.6,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
@@ -870,7 +868,7 @@ class _SentenceCard extends StatelessWidget {
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: 16,
+          radius: 10,
           side: BorderSide(color: context.appBorderSubtle),
           shadows: _feedCardShadow(context),
         ),
@@ -888,19 +886,14 @@ class _SentenceCard extends StatelessWidget {
                 decoration: ShapeDecoration(
                   color: context.appPrimaryAccent.withValues(alpha: 0.18),
                   shape: SmoothRectangleBorder(
+                    smoothness: 0.6,
                     side: BorderSide(
                       color: context.appPrimaryAccent.withValues(alpha: 0.45),
                       width: 1,
                     ),
-                    borderRadius: SmoothBorderRadius.only(
-                      topLeft: SmoothRadius(
-                        cornerRadius: 15,
-                        cornerSmoothing: 0.6,
-                      ),
-                      topRight: SmoothRadius(
-                        cornerRadius: 15,
-                        cornerSmoothing: 0.6,
-                      ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
                     ),
                   ),
                 ),
@@ -938,7 +931,7 @@ class _SentenceCard extends StatelessWidget {
                             AppTheme.coverGradients.length,
                         width: 28,
                         height: 36,
-                        radius: 4,
+                        radius: 10,
                       ),
                       const SizedBox(width: AppTheme.spaceSM),
                       Expanded(
@@ -1129,7 +1122,7 @@ class _SentenceCard extends StatelessWidget {
                               backgroundColor: context.appCardElevated,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                               duration: const Duration(seconds: 2),
@@ -1194,12 +1187,10 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
             decoration: ShapeDecoration(
               color: context.appPrimaryAccent.withValues(alpha: 0.1),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius.only(
-                  topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                  topRight: SmoothRadius(
-                    cornerRadius: 15,
-                    cornerSmoothing: 0.6,
-                  ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
                 ),
               ),
             ),
@@ -1238,7 +1229,7 @@ class _OverlapGroupCardState extends State<_OverlapGroupCard> {
                           AppTheme.coverGradients.length,
                       width: 28,
                       height: 36,
-                      radius: 4,
+                      radius: 10,
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Expanded(

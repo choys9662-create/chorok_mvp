@@ -622,7 +622,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       // 책 표지
                       Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
                               color: coverColors[1].withValues(alpha: 0.35),
@@ -637,7 +637,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                           gradientIndex: gradientIndex,
                           width: 128,
                           height: 184,
-                          radius: 14,
+                          radius: 10,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -1043,7 +1043,7 @@ class _MyProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: book.totalPages > 0 ? progress : 0,
               minHeight: 6,
@@ -1959,7 +1959,7 @@ class _SentenceCard extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 2, right: 10),
                 decoration: BoxDecoration(
                   color: context.appPrimaryAccent,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               Expanded(

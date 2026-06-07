@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
@@ -23,7 +23,6 @@ class SessionList extends StatelessWidget {
                 duration: s.duration,
                 date: s.date,
               ),
-
             ],
           );
         }),
@@ -57,10 +56,8 @@ class SessionTile extends StatelessWidget {
             decoration: ShapeDecoration(
               color: AppTheme.primary.withValues(alpha: 0.2),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 6,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             child: const Icon(
@@ -142,10 +139,8 @@ class FinishedBookList extends StatelessWidget {
                       decoration: ShapeDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 6,
-                            cornerSmoothing: 0.6,
-                          ),
+                          smoothness: 0.6,
+                          borderRadius: BorderRadius.circular(10),
                           side: BorderSide.none,
                         ),
                       ),
@@ -199,7 +194,6 @@ class FinishedBookList extends StatelessWidget {
                   ],
                 ),
               ),
-
             ],
           );
         }),

@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,9 +154,10 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
       decoration: ShapeDecoration(
         color: context.appCard,
         shape: SmoothRectangleBorder(
-          borderRadius: SmoothBorderRadius.only(
-            topLeft: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
-            topRight: SmoothRadius(cornerRadius: 24, cornerSmoothing: 0.6),
+          smoothness: 0.6,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
           ),
         ),
       ),

@@ -367,7 +367,7 @@ class _SocialButton extends StatelessWidget {
           height: 52,
           decoration: AppTheme.smoothBox(
             color: dark ? Colors.white : _kAuthControlFill,
-            radius: 12,
+            radius: 10,
             side: BorderSide(color: dark ? Colors.white : _kAuthControlBorder),
           ),
           child: Row(
@@ -491,15 +491,15 @@ class _Field extends StatelessWidget {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: _kAuthControlBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: _kAuthControlBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: AppTheme.primaryLight, width: 1.4),
         ),
       ),
@@ -543,7 +543,7 @@ class _SubmitButton extends StatelessWidget {
                       ],
                     )
                   : context.appReadingGradient,
-              radius: 12,
+              radius: 10,
             ),
             child: Center(
               child: loading

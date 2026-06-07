@@ -321,7 +321,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     HapticFeedback.mediumImpact();
     if (_isCompleted) {
       setState(() => _isCompleted = false);
-      await ref.read(libraryProvider.notifier).cancelCompletion(widget.book.bookId);
+      await ref
+          .read(libraryProvider.notifier)
+          .cancelCompletion(widget.book.bookId);
       return;
     }
 
@@ -330,7 +332,9 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
 
   Future<void> _showCompletionDialog() async {
     HapticFeedback.heavyImpact();
-    await ref.read(libraryProvider.notifier).markAsCompleted(widget.book.bookId);
+    await ref
+        .read(libraryProvider.notifier)
+        .markAsCompleted(widget.book.bookId);
     if (!mounted) return;
 
     await showDialog<void>(
@@ -653,7 +657,7 @@ class _HeroSection extends StatelessWidget {
                   gradientIndex: book.gradientIndex,
                   width: 120,
                   height: 168,
-                  radius: 16,
+                  radius: 10,
                   fallbackIcon: Center(
                     child: Icon(
                       Icons.menu_book_rounded,
@@ -861,14 +865,14 @@ class _ProgressSection extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Container(
                 width: c.maxWidth * progress.clamp(0.0, 1.0),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(10),
                   gradient: context.appReadingGradient,
                 ),
               ),
@@ -1134,7 +1138,7 @@ class _SentenceCard extends StatelessWidget {
                   padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
                     color: context.appCardElevated,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '"${s.content}"',
@@ -1414,7 +1418,7 @@ class _MenuSheet extends ConsumerWidget {
             height: 4,
             decoration: BoxDecoration(
               color: context.appBorder,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
           const SizedBox(height: 8),
@@ -1463,8 +1467,8 @@ class _MenuSheet extends ConsumerWidget {
                   backgroundColor: context.appCardElevated,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100),
-                      side: BorderSide.none,
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide.none,
                   ),
                   margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                   duration: const Duration(seconds: 2),
@@ -1588,7 +1592,7 @@ class _OtherReaderCard extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: context.appCardElevated,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               '"${s.content}"',

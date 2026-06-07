@@ -8,7 +8,7 @@ import '../../feed/controller/feed_provider.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 
 class HighlightSentence {
   final String content;
@@ -225,10 +225,8 @@ class HighlightCard extends StatelessWidget {
                                   alpha: 0.08,
                                 ),
                                 shape: SmoothRectangleBorder(
-                                  borderRadius: SmoothBorderRadius(
-                                    cornerRadius: 6,
-                                    cornerSmoothing: 0.6,
-                                  ),
+                                  smoothness: 0.6,
+                                  borderRadius: BorderRadius.circular(10),
                                   side: BorderSide.none,
                                 ),
                               ),

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/passive_aggro_engine.dart';
 
-const _kFont = '조선굴림체';
+const _kFont = AppTheme.fontFamily;
 
 enum EscapeAttackTrigger { escapeAttempt, backgroundReturn }
 
@@ -94,7 +94,7 @@ class EscapeAttackOverlay extends StatelessWidget {
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: () {

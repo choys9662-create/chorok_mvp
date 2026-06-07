@@ -67,9 +67,7 @@ class BarChart extends StatelessWidget {
                     color: isHighlight
                         ? context.appPrimaryAccent
                         : context.appTextTertiary,
-                    fontWeight: isHighlight
-                        ? FontWeight.w400
-                        : FontWeight.w400,
+                    fontWeight: isHighlight ? FontWeight.w400 : FontWeight.w400,
                   ),
                 ),
               ],
@@ -286,7 +284,7 @@ class TimeOfDayChart extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 8,
@@ -366,7 +364,7 @@ class GenreChart extends StatelessWidget {
                 ),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(10),
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 8,
@@ -589,7 +587,7 @@ class ReadingDensityCard extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spaceMD),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 8,
@@ -609,7 +607,7 @@ class ReadingDensityCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: AppTheme.smoothBox(
               color: AppTheme.primary.withValues(alpha: 0.2),
-            side: BorderSide.none,
+              side: BorderSide.none,
               radius: AppTheme.radiusMD,
             ),
             child: Text(
@@ -702,7 +700,7 @@ class GoalProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spaceMD),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,

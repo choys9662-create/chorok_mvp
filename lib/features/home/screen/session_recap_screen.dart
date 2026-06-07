@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -186,12 +186,10 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       duration: const Duration(milliseconds: 600),
     );
     _suggestFade = CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOut);
-    _suggestSlide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOutCubic),
-    );
+    _suggestSlide =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+          CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOutCubic),
+        );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -600,7 +598,7 @@ class _RecapHeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: AppTheme.smoothBox(
         gradient: AppTheme.greenCardGradient,
-        radius: 20,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Column(
@@ -710,7 +708,7 @@ class _RecapStat extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: AppTheme.smoothBox(
         color: Colors.white.withValues(alpha: 0.14),
-        radius: 14,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Row(
@@ -769,7 +767,7 @@ class _ReceiptCapture extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.receiptBg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -977,7 +975,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
     final isSpecial = tag != _SentenceTag.normal;
 
     return Container(
-      decoration: AppTheme.smoothBox(color: context.appCard, radius: 16),
+      decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -988,12 +986,10 @@ class _SentenceAnalysisCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: tagColor.withValues(alpha: isSpecial ? 0.09 : 0.05),
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius.only(
-                  topLeft: SmoothRadius(cornerRadius: 15, cornerSmoothing: 0.6),
-                  topRight: SmoothRadius(
-                    cornerRadius: 15,
-                    cornerSmoothing: 0.6,
-                  ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
                 ),
               ),
             ),
@@ -1094,7 +1090,7 @@ class _RecapActions extends StatelessWidget {
                 foregroundColor: context.appTextSecondary,
                 side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: AppTheme.smoothShape(radius: 14),
+                shape: AppTheme.smoothShape(radius: 10),
               ),
             ),
           ),
@@ -1113,7 +1109,7 @@ class _RecapActions extends StatelessWidget {
                 backgroundColor: context.appPrimaryAccent,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: AppTheme.smoothShape(radius: 14),
+                shape: AppTheme.smoothShape(radius: 10),
               ),
             ),
           ),
@@ -1321,7 +1317,7 @@ class _HeroPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: AppTheme.smoothBox(
         color: Colors.white.withValues(alpha: 0.15),
-        radius: 12,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Row(
@@ -1362,7 +1358,7 @@ class _NextBookSuggestion extends ConsumerWidget {
             Container(
               decoration: AppTheme.smoothBox(
                 gradient: AppTheme.greenCardGradient,
-                radius: 20,
+                radius: 10,
                 side: BorderSide.none,
               ),
               padding: const EdgeInsets.all(20),
@@ -1374,7 +1370,7 @@ class _NextBookSuggestion extends ConsumerWidget {
                     gradientIndex: book.gradientIndex,
                     width: 56,
                     height: 72,
-                    radius: 8,
+                    radius: 10,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -1426,7 +1422,7 @@ class _NextBookSuggestion extends ConsumerWidget {
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,

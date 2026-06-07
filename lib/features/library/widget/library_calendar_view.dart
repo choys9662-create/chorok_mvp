@@ -245,7 +245,7 @@ class SegmentToggle extends StatelessWidget {
       padding: const EdgeInsets.all(3),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 12,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Row(
@@ -262,7 +262,7 @@ class SegmentToggle extends StatelessWidget {
                   color: isSelected
                       ? context.appPrimaryAccent
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   labels[i],
@@ -499,7 +499,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                       ),
                       decoration: BoxDecoration(
                         color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         time_fmt.formatMinutes(totalMin),
@@ -636,7 +636,7 @@ class _CalendarGrid extends StatelessWidget {
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.2)
                             : context.appPrimaryAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '완독',
@@ -691,7 +691,7 @@ class _ReadingLogCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 14,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Row(

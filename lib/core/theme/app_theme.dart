@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 
 // ─── 테마 컨텍스트 확장 — 다크/라이트 자동 분기 ────────────────────────────
@@ -78,6 +78,8 @@ extension AppThemeExt on BuildContext {
 
 /// 초록 앱 테마 정의
 class AppTheme {
+  static const String fontFamily = 'ChosunGu';
+
   // ─── 브랜드 색상 팔레트 ───────────────────────────────────────────
   static const Color primary = Color(0xFF131313); // 어두운 배경 (CTA 버튼 fill 등)
   static const Color primaryLight = Color(0xFF8DFF54); // 다크 모드 브랜드 네온 그린
@@ -166,17 +168,15 @@ class AppTheme {
     BoxShadow(blurRadius: 18, offset: Offset(0, 8), color: Color(0x14000000)),
   ];
 
-  // ─── Smooth Corner — DESIGN.md §2 Radius Hierarchy ──────────────
-  //   radiusSM  =  8  → 태그, 작은 아이콘 배경 (Small)
-  //   radiusMD  = 12  → 표준 버튼, 검색창, ListTile (Medium)
-  //   radiusLG  = 18  → 콘텐츠 박스, 히어로 섹션 (Large)
-  //   radiusXL  = 24  → 메인 컨테이너, 바텀 시트 (XL)
-  static const double _smoothness = 1;
+  // ─── Smooth Corner — 곡률 전체 통일: radius 10 / smoothing 0.6 ──────
+  //   기존 계층(SM 8 / MD 12 / LG 18 / XL 24)은 단일 값 10으로 통일.
+  //   토큰명은 호환을 위해 유지하되 모두 10을 가리킨다.
+  static const double _smoothness = 0.6;
 
-  static const double radiusSM = 8;
-  static const double radiusMD = 12;
-  static const double radiusLG = 18;
-  static const double radiusXL = 24;
+  static const double radiusSM = 10;
+  static const double radiusMD = 10;
+  static const double radiusLG = 10;
+  static const double radiusXL = 10;
 
   /// BoxDecoration 대체용 — color, gradient, border, shadow 모두 지원
   static ShapeDecoration smoothBox({
@@ -191,16 +191,14 @@ class AppTheme {
       gradient: gradient,
       shadows: shadows,
       shape: SmoothRectangleBorder(
-        borderRadius: SmoothBorderRadius(
-          cornerRadius: radius,
-          cornerSmoothing: _smoothness,
-        ),
+        smoothness: _smoothness,
+        borderRadius: BorderRadius.circular(radius),
         side: side,
       ),
     );
   }
 
-  /// 알약형(Pill) 전용 — 높이에 관계없이 완벽한 라운드 양끝
+  /// (구) 알약형 — 곡률 통일 정책에 따라 radius 10 smooth rect 로 통일.
   static ShapeDecoration smoothPill({
     Color? color,
     Gradient? gradient,
@@ -211,7 +209,11 @@ class AppTheme {
       color: color,
       gradient: gradient,
       shadows: shadows,
-      shape: StadiumBorder(side: side),
+      shape: SmoothRectangleBorder(
+        smoothness: _smoothness,
+        borderRadius: BorderRadius.circular(radiusMD),
+        side: side,
+      ),
     );
   }
 
@@ -221,10 +223,8 @@ class AppTheme {
     BorderSide side = BorderSide.none,
   }) {
     return SmoothRectangleBorder(
-      borderRadius: SmoothBorderRadius(
-        cornerRadius: radius,
-        cornerSmoothing: _smoothness,
-      ),
+      smoothness: _smoothness,
+      borderRadius: BorderRadius.circular(radius),
       side: side,
     );
   }
@@ -232,10 +232,8 @@ class AppTheme {
   /// ClipPath 용 — Container 안에서 gradient + smooth corner 조합 시
   static ShapeBorder smoothBorder(double radius) {
     return SmoothRectangleBorder(
-      borderRadius: SmoothBorderRadius(
-        cornerRadius: radius,
-        cornerSmoothing: _smoothness,
-      ),
+      smoothness: _smoothness,
+      borderRadius: BorderRadius.circular(radius),
     );
   }
 
@@ -265,8 +263,16 @@ class AppTheme {
     fontWeight: _w,
     height: 1.2,
   );
-  static const TextStyle title = TextStyle(fontSize: 24, fontWeight: _w, height: 1.2);
-  static const TextStyle body = TextStyle(fontSize: 16, fontWeight: _w, height: 1.5);
+  static const TextStyle title = TextStyle(
+    fontSize: 24,
+    fontWeight: _w,
+    height: 1.2,
+  );
+  static const TextStyle body = TextStyle(
+    fontSize: 16,
+    fontWeight: _w,
+    height: 1.5,
+  );
 
   static const TextStyle headingLarge = TextStyle(
     fontSize: 24,
@@ -332,7 +338,7 @@ class AppTheme {
 
   // ─── 다크 테마 ───────────────────────────────────────────────────
   static ThemeData get dark => ThemeData(
-    fontFamily: '조선굴림체',
+    fontFamily: fontFamily,
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: const ColorScheme(
@@ -357,7 +363,7 @@ class AppTheme {
       color: darkCard,
       elevation: 0,
       shape: smoothShape(
-        radius: 16,
+        radius: 10,
         side: const BorderSide(color: darkBorder, width: 1),
       ),
     ),
@@ -385,6 +391,7 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
+        fontFamily: fontFamily,
         fontSize: 24,
         fontWeight: FontWeight.w400,
         color: textPrimary,
@@ -426,7 +433,10 @@ class AppTheme {
     chipTheme: ChipThemeData(
       backgroundColor: darkSurface,
       labelStyle: captionLarge.copyWith(color: textSecondary),
-      shape: StadiumBorder(side: const BorderSide(color: darkBorder, width: 1)),
+      shape: smoothShape(
+        radius: radiusMD,
+        side: const BorderSide(color: darkBorder, width: 1),
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: darkBorder,
@@ -437,7 +447,7 @@ class AppTheme {
 
   // ─── 라이트 테마 ─────────────────────────────────────────────────
   static ThemeData get light => ThemeData(
-    fontFamily: '조선굴림체',
+    fontFamily: fontFamily,
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: const ColorScheme(
@@ -462,7 +472,7 @@ class AppTheme {
       color: lightSurface,
       elevation: 0,
       shape: smoothShape(
-        radius: 16,
+        radius: 10,
         side: const BorderSide(color: lightBorderColor, width: 1),
       ),
     ),
@@ -490,6 +500,7 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
+        fontFamily: fontFamily,
         fontSize: 24,
         fontWeight: FontWeight.w400,
         color: lightTextPrimary,
@@ -536,7 +547,7 @@ class AppTheme {
     chipTheme: ChipThemeData(
       backgroundColor: lightCard,
       labelStyle: captionLarge.copyWith(color: lightTextSecondary),
-      shape: const StadiumBorder(),
+      shape: smoothShape(radius: radiusMD),
     ),
   );
 }

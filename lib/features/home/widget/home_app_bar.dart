@@ -94,7 +94,7 @@ class HomeAppBar extends ConsumerWidget {
                 child: DecoratedBox(
                   decoration: AppTheme.smoothBox(
                     color: context.appCard,
-                    radius: 12,
+                    radius: 10,
                     side: BorderSide(color: context.appBorderSubtle),
                   ),
                   child: Icon(
@@ -122,7 +122,7 @@ class HomeAppBar extends ConsumerWidget {
                 child: DecoratedBox(
                   decoration: AppTheme.smoothBox(
                     color: context.appCard,
-                    radius: 12,
+                    radius: 10,
                     side: BorderSide(color: context.appBorderSubtle),
                   ),
                   child: Icon(

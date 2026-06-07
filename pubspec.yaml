@@ -52,8 +52,8 @@ dependencies:
   share_plus: ^10.1.4
   path_provider: ^2.1.5
 
-  # Figma 60% smooth corner 정확 구현
-  figma_squircle: ^0.6.3
+  # Smooth corner — BorderRadius + smoothness 0.6
+  smooth_corner: ^1.1.1
 
   # 차트
   fl_chart: ^0.68.0
@@ -66,6 +66,7 @@ dependencies:
   cached_network_image: ^3.4.1
   camera: ^0.12.0+1
   image: ^4.8.0
+  palette_generator: ^0.3.3+7
 
 dev_dependencies:
   flutter_test:
@@ -102,6 +103,6 @@ flutter:
         - asset: assets/fonts/Pretendard-Black.otf
           weight: 900
 
-    - family: 조선굴림체
+    - family: ChosunGu
       fonts:
         - asset: assets/fonts/ChosunGu.ttf

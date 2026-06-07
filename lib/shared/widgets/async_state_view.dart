@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -103,7 +103,7 @@ class _ShimmerCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       decoration: AppTheme.smoothBox(
         color: color,
-        radius: 16,
+        radius: 10,
         side: BorderSide.none,
       ),
       child: Column(
@@ -116,10 +116,8 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 7,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
@@ -131,10 +129,8 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 6,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
@@ -146,10 +142,8 @@ class _ShimmerCard extends StatelessWidget {
             decoration: ShapeDecoration(
               color: context.appBorder,
               shape: SmoothRectangleBorder(
-                borderRadius: SmoothBorderRadius(
-                  cornerRadius: 6,
-                  cornerSmoothing: 0.6,
-                ),
+                smoothness: 0.6,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
@@ -252,7 +246,7 @@ class _ErrorState extends StatelessWidget {
                       ),
                       backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
                       shape: AppTheme.smoothShape(
-                        radius: 12,
+                        radius: 10,
                         side: BorderSide.none,
                       ),
                     ),

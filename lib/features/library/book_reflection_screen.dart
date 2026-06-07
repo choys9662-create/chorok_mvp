@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -328,7 +328,7 @@ class _ProgressBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(10),
         child: LinearProgressIndicator(
           value: (current + 1) / total,
           backgroundColor: _kBorder,
@@ -461,7 +461,7 @@ class _StarStep extends StatelessWidget {
                   ),
                   decoration: ShapeDecoration(
                     color: _kGreen.withValues(alpha: 0.08),
-                    shape: const StadiumBorder(side: BorderSide.none),
+                    shape: AppTheme.smoothShape(radius: 10),
                   ),
                   child: Text(
                     _labels[rating],
@@ -484,10 +484,8 @@ class _StarStep extends StatelessWidget {
           decoration: ShapeDecoration(
             color: _kSurface,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: AppTheme.radiusLG,
-                cornerSmoothing: 0.6,
-              ),
+              smoothness: 0.6,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
               side: BorderSide.none,
             ),
           ),
@@ -544,10 +542,8 @@ class _TextStep extends StatelessWidget {
           decoration: ShapeDecoration(
             color: _kSurface,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: AppTheme.radiusLG,
-                cornerSmoothing: 0.6,
-              ),
+              smoothness: 0.6,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
               side: BorderSide.none,
             ),
           ),
@@ -663,7 +659,7 @@ class _BottomCtaState extends State<_BottomCta> {
                 height: 6,
                 decoration: BoxDecoration(
                   color: active ? _kGreen : _kBorder,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               );
             }),
@@ -701,10 +697,8 @@ class _BottomCtaState extends State<_BottomCta> {
                         : null,
                     color: active ? null : _kSurface,
                     shape: SmoothRectangleBorder(
-                      borderRadius: SmoothBorderRadius(
-                        cornerRadius: AppTheme.radiusMD,
-                        cornerSmoothing: 0.6,
-                      ),
+                      smoothness: 0.6,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       side: active ? BorderSide.none : BorderSide.none,
                     ),
                   ),

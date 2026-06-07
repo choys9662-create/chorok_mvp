@@ -380,7 +380,10 @@ class _BadgesTab extends StatelessWidget {
                       gradient: selected
                           ? context.appReadingGradient
                           : LinearGradient(
-                              colors: [context.appControlBg, context.appControlBg],
+                              colors: [
+                                context.appControlBg,
+                                context.appControlBg,
+                              ],
                             ),
                       radius: AppTheme.radiusMD,
                     ),
@@ -488,7 +491,7 @@ class _LevelHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: _xpProgress,
                     backgroundColor: Colors.white.withValues(alpha: 0.3),
@@ -588,7 +591,7 @@ class _BadgeTile extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: badge.progress,
                     backgroundColor: context.appBorder,
@@ -672,7 +675,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
                         value: badge.progress,
                         backgroundColor: context.appCardElevated,
@@ -875,7 +878,7 @@ class _ChallengeTile extends StatelessWidget {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: challenge.progress,
                     backgroundColor: context.appBorder,

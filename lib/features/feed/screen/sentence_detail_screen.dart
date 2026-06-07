@@ -107,8 +107,7 @@ class SentenceDetailScreen extends ConsumerStatefulWidget {
       _SentenceDetailScreenState();
 }
 
-class _SentenceDetailScreenState
-    extends ConsumerState<SentenceDetailScreen> {
+class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   late final List<_ReaderThought> _thoughts;
   final _myThoughtController = TextEditingController();
   final _focusNode = FocusNode();
@@ -233,18 +232,20 @@ class _SentenceDetailScreenState
     final nowLiked = !t.isLiked;
     setState(() => t.isLiked = nowLiked);
     final repo = ref.read(commentRepositoryProvider);
-    (nowLiked ? repo.likeComment(t.id!) : repo.unlikeComment(t.id!)).catchError((
-      _,
-    ) {
-      if (mounted) setState(() => t.isLiked = !nowLiked);
-    });
+    (nowLiked ? repo.likeComment(t.id!) : repo.unlikeComment(t.id!)).catchError(
+      (_) {
+        if (mounted) setState(() => t.isLiked = !nowLiked);
+      },
+    );
   }
 
   Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
     if (kUseMock) return const SizedBox.shrink();
 
     final normalizedText = SentenceNormalizer.normalize(d.sentenceContent);
-    final overlapsAsync = ref.watch(overlappingSentencesProvider(normalizedText));
+    final overlapsAsync = ref.watch(
+      overlappingSentencesProvider(normalizedText),
+    );
 
     return overlapsAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -414,7 +415,7 @@ class _SentenceDetailScreenState
                           padding: const EdgeInsets.all(AppTheme.spaceLG),
                           decoration: BoxDecoration(
                             color: context.appCard,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '"${d.sentenceContent}"',
@@ -481,9 +482,7 @@ class _SentenceDetailScreenState
                 ),
 
                 // ── 겹문장 섹션 ─────────────────────────────
-                SliverToBoxAdapter(
-                  child: _buildOverlapSection(context, d),
-                ),
+                SliverToBoxAdapter(child: _buildOverlapSection(context, d)),
 
                 // ── 구분선 ───────────────────────────────────
                 // SliverToBoxAdapter(
@@ -578,7 +577,7 @@ class _SentenceDetailScreenState
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: AppTheme.smoothBox(
                       color: context.appCard,
-                      radius: 22,
+                      radius: 10,
                       side: BorderSide.none,
                     ),
                     child: TextField(
@@ -616,7 +615,7 @@ class _SentenceDetailScreenState
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothBox(
                         gradient: context.appReadingGradient,
-                        radius: 22,
+                        radius: 10,
                       ),
                       child: _isSubmitting
                           ? const SizedBox(

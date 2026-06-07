@@ -1,4 +1,4 @@
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -33,10 +33,8 @@ SnackBar chorokSnackBar(
     backgroundColor: context.appCardElevated,
     behavior: SnackBarBehavior.floating,
     shape: SmoothRectangleBorder(
-      borderRadius: SmoothBorderRadius(
-        cornerRadius: AppTheme.radiusMD,
-        cornerSmoothing: 0.6,
-      ),
+      smoothness: 0.6,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
       side: BorderSide.none,
     ),
     margin: const EdgeInsets.fromLTRB(

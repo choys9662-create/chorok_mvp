@@ -24,7 +24,7 @@ class ChorokSectionHeader extends StatelessWidget {
           height: subtitle == null ? 18 : 32,
           decoration: BoxDecoration(
             color: context.appPrimaryAccent,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         const SizedBox(width: 10),

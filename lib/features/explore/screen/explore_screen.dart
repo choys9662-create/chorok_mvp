@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:figma_squircle/figma_squircle.dart';
+import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -212,7 +212,7 @@ class _SearchBar extends StatelessWidget {
       height: 48,
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 12,
+        radius: 10,
         side: BorderSide.none,
         shadows: isSearchFocused
             ? [
@@ -437,7 +437,7 @@ class _UserResultTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 16,
+            radius: 10,
             side: BorderSide.none,
           ),
           child: Row(
@@ -601,7 +601,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
           ),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 16,
+            radius: 10,
             side: BorderSide.none,
           ),
           padding: const EdgeInsets.all(16),
@@ -612,7 +612,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                 gradientIndex: widget.rank - 1,
                 width: 44,
                 height: 60,
-                radius: 8,
+                radius: 10,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -678,10 +678,8 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                             ? AppTheme.accent.withValues(alpha: 0.15)
                             : context.appCardElevated,
                         shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 8,
-                            cornerSmoothing: 0.6,
-                          ),
+                          smoothness: 0.6,
+                          borderRadius: BorderRadius.circular(10),
                           side: BorderSide.none,
                         ),
                       ),
