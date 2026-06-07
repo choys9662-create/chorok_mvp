@@ -256,79 +256,94 @@ class AppTheme {
   // 30pt 초과는 텍스트가 아닌 디스플레이 수치(타이머·통계 숫자·페이지)에만 허용.
   // 참고: wiki/analyses/타이포그래피-규칙.md
   static const FontWeight _w = FontWeight.w400;
+  // 자간: fontSize × -0.04 (각 TextStyle의 letterSpacing은 이 공식으로 산출)
 
   // 강조 30 / 제목 24 / 본문 16 / 작은본문 12 / 캡션 10 (semantic 별칭)
   static const TextStyle emphasis = TextStyle(
     fontSize: 30,
     fontWeight: _w,
     height: 1.2,
+    letterSpacing: -1.2,
   );
   static const TextStyle title = TextStyle(
     fontSize: 24,
     fontWeight: _w,
     height: 1.2,
+    letterSpacing: -0.96,
   );
   static const TextStyle body = TextStyle(
     fontSize: 16,
     fontWeight: _w,
     height: 1.5,
+    letterSpacing: -0.64,
   );
 
   static const TextStyle headingLarge = TextStyle(
     fontSize: 24,
     fontWeight: _w,
     height: 1.2,
+    letterSpacing: -0.96,
   );
   static const TextStyle headingMedium = TextStyle(
     fontSize: 24,
     fontWeight: _w,
     height: 1.3,
+    letterSpacing: -0.96,
   );
   static const TextStyle headingSmall = TextStyle(
     fontSize: 16,
     fontWeight: _w,
     height: 1.3,
+    letterSpacing: -0.64,
   );
   // 통계 hero 숫자 등 대형 디스플레이 수치 전용 (텍스트 아님, 스케일 예외)
   static const TextStyle displayLarge = TextStyle(
     fontSize: 48,
     fontWeight: _w,
     height: 1.0,
+    letterSpacing: -1.92,
   );
   static const TextStyle displayMedium = TextStyle(
     fontSize: 30,
     fontWeight: _w,
     height: 1.1,
+    letterSpacing: -1.2,
   );
   static const TextStyle displaySmall = TextStyle(
     fontSize: 24,
     fontWeight: _w,
     height: 1.1,
+    letterSpacing: -0.96,
   );
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: _w,
     height: 1.5,
+    letterSpacing: -0.64,
   );
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 16,
     fontWeight: _w,
     height: 1.5,
+    letterSpacing: -0.64,
   );
   static const TextStyle bodySmall = TextStyle(
     fontSize: 12,
     fontWeight: _w,
     height: 1.4,
+    letterSpacing: -0.48,
   );
   static const TextStyle captionLarge = TextStyle(
     fontSize: 12,
     fontWeight: _w,
     height: 1.4,
+    letterSpacing: -0.48,
   );
   static const TextStyle captionSmall = TextStyle(
     fontSize: 10,
     fontWeight: _w,
     height: 1.3,
+    letterSpacing: -0.4,
   );
   static const TextStyle labelStyle = TextStyle(
     fontSize: 10,

@@ -14,12 +14,16 @@ class ForestAccentCard extends StatelessWidget {
   /// 예: 오늘 독서 완료 → 네온 그린 단색 카드.
   final Color? fillColor;
 
+  /// 다크 모드 테두리 색상 오버라이드. null이면 기본값(#8DFF54) 사용.
+  final Color? darkBorderColor;
+
   const ForestAccentCard({
     super.key,
     required this.child,
     this.padding,
     this.radius = AppTheme.radiusLG,
     this.fillColor,
+    this.darkBorderColor,
   });
 
   @override
@@ -43,7 +47,7 @@ class ForestAccentCard extends StatelessWidget {
 
     final BorderSide side = BorderSide(
       color: isDark
-          ? AppTheme.fireflyColor.withValues(alpha: 0.55)
+          ? (darkBorderColor ?? const Color(0xFF8DFF54))
           : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45),
       width: 1,
     );

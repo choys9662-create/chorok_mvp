@@ -57,23 +57,25 @@ class _Header extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppTheme.headingMedium.copyWith(
-              color: context.appTextPrimary,
+            style: AppTheme.headingSmall.copyWith(
+              color: context.appPrimaryAccent,
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: AppTheme.smoothPill(
-              color: context.primaryBg(0.08),
-              side: BorderSide.none,
+            padding: const EdgeInsets.all(4),
+            decoration: AppTheme.smoothBox(
+              color: context.appPrimaryAccent,
+              radius: 3,
             ),
+            alignment: Alignment.center,
             child: Text(
               '$count명',
               style: AppTheme.headingSmall.copyWith(
-                color: context.appPrimaryAccent,
+                color: Colors.black,
                 fontWeight: FontWeight.w400,
+                fontSize: 12,
                 height: 1.15,
               ),
             ),
@@ -140,21 +142,21 @@ class _FireflyAvatar extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: 10,
-          side: BorderSide(color: context.appBorderSubtle),
+          side: const BorderSide(color: Color(0xFF8DFF54)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   // 2겹째: 가장 바깥 헤일로 (가장 옅고 넓게)
-                  if (layers >= 2) _Halo(size: 72, color: accent, alpha: 0.20),
+                  if (layers >= 2) _Halo(size: 64, color: accent, alpha: 0.20),
                   // 1겹째: 안쪽 헤일로
-                  if (layers >= 1) _Halo(size: 44, color: accent, alpha: 0.40),
+                  if (layers >= 1) _Halo(size: 40, color: accent, alpha: 0.40),
                   // 코어 (항상)
                   Container(
                     width: core,
