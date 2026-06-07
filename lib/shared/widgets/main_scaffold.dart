@@ -67,9 +67,11 @@ class _OrbDockedLocation extends FloatingActionButtonLocation {
   @override
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final fabSize = scaffoldGeometry.floatingActionButtonSize;
+    final w = scaffoldGeometry.scaffoldSize.width;
+    final h = scaffoldGeometry.scaffoldSize.height;
     return Offset(
-      (scaffoldGeometry.scaffoldSize.width - fabSize.width) / 2.0,
-      scaffoldGeometry.contentBottom - fabSize.height / 2.0 + 12.0,
+      (w - fabSize.width) / 2.0,
+      h - 38 - fabSize.height,
     );
   }
 }
@@ -84,13 +86,18 @@ class _ChorokBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomAppBar(
+    return MediaQuery.removePadding(
+      context: context,
+      removeBottom: true,
+      child: BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
       color: context.appSurface,
       surfaceTintColor: Colors.transparent,
       shadowColor: Colors.black.withValues(alpha: 0.22),
       elevation: 10,
+      height: 84,
+      padding: const EdgeInsets.only(left: 17, right: 17),
       child: Row(
         children: [
           _NavItem(
@@ -128,6 +135,7 @@ class _ChorokBottomBar extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -157,19 +165,16 @@ class _NavItem extends StatelessWidget {
         : context.appTextSecondary;
 
     return Expanded(
-      child: Semantics(
-        label: label,
-        button: true,
-        selected: isActive,
-        child: InkWell(
-          onTap: () => onTap(index),
-          customBorder: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-          ),
-          child: SizedBox(
-            height: 48,
+      child: Center(
+        child: Semantics(
+          label: label,
+          button: true,
+          selected: isActive,
+          child: GestureDetector(
+            onTap: () => onTap(index),
+            behavior: HitTestBehavior.opaque,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -193,7 +198,7 @@ class _NavItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: color,
-                    fontWeight: isActive ? FontWeight.w400 : FontWeight.w400,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -219,7 +224,10 @@ class _ForestOrbFab extends StatelessWidget {
     return Semantics(
       label: isInSession ? '독서 이어하기' : '독서 시작',
       button: true,
-      child: FloatingActionButton(
+      child: SizedBox(
+        width: 62,
+        height: 62,
+        child: FloatingActionButton(
         onPressed: onTap,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -228,15 +236,11 @@ class _ForestOrbFab extends StatelessWidget {
         highlightElevation: 0,
         shape: const CircleBorder(),
         child: Container(
-          width: 56,
-          height: 56,
+          width: 62,
+          height: 62,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [accent, accent],
-            ),
+            color: accent,
             boxShadow: [
               BoxShadow(
                 color: accent.withValues(alpha: 0.34),
@@ -255,6 +259,7 @@ class _ForestOrbFab extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

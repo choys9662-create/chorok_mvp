@@ -6,13 +6,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/forest_accent_card.dart';
-import '../../../shared/widgets/gradient_text.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
 const _goalMin = 30;
 const _cardRadius = 10.0;
+const _weekCardColor = Color(0xFFF0F0F0);
 
 /// 홈 상단 통계 — "오늘" / "이번 주" 두 장의 pill 카드.
 ///
@@ -94,7 +94,7 @@ class _TodayCard extends StatelessWidget {
             '오늘',
             style: AppTheme.headingMedium.copyWith(
               fontSize: 20,
-              color: readToday ? onFill : context.appTextPrimary,
+              color: readToday ? onFill : AppTheme.primaryLight,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -104,24 +104,19 @@ class _TodayCard extends StatelessWidget {
               _message,
               style: AppTheme.captionLarge.copyWith(
                 fontSize: 13,
-                color: readToday ? onFillMuted : context.appTextTertiary,
+                color: readToday ? onFillMuted : AppTheme.primaryLight.withValues(alpha: 0.6),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 12),
-          if (readToday)
-            Text(
-              '$todayMin분',
-              style: AppTheme.displayMedium.copyWith(color: onFill),
-            )
-          else
-            GradientText(
-              '$todayMin분',
-              style: AppTheme.displayMedium,
-              gradient: context.appReadingGradient,
+          Text(
+            '$todayMin분',
+            style: AppTheme.displayMedium.copyWith(
+              color: readToday ? onFill : AppTheme.primaryLight,
             ),
+          ),
         ],
       ),
     );
@@ -159,6 +154,7 @@ class _WeekCard extends StatelessWidget {
       child: ForestAccentCard(
         radius: _cardRadius,
         fillColor: readToday ? fill : null,
+        darkBorderColor: _weekCardColor,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
         child: Row(
           children: [
@@ -166,7 +162,7 @@ class _WeekCard extends StatelessWidget {
               '이번 주',
               style: AppTheme.headingMedium.copyWith(
                 fontSize: 20,
-                color: readToday ? onFill : context.appTextPrimary,
+                color: readToday ? onFill : _weekCardColor,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -188,17 +184,12 @@ class _WeekCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            if (readToday)
-              Text(
-                weekTotalText,
-                style: AppTheme.displayMedium.copyWith(color: onFill),
-              )
-            else
-              GradientText(
-                weekTotalText,
-                style: AppTheme.displayMedium,
-                gradient: context.appReadingGradient,
+            Text(
+              weekTotalText,
+              style: AppTheme.displayMedium.copyWith(
+                color: readToday ? onFill : _weekCardColor,
               ),
+            ),
           ],
         ),
       ),
@@ -223,9 +214,7 @@ class _DayDot extends StatelessWidget {
         ? (achieved
             ? Colors.black.withValues(alpha: 0.85)
             : Colors.black.withValues(alpha: dim ? 0.20 : 0.35))
-        : (achieved
-            ? context.appPrimaryAccent
-            : context.appTextTertiary.withValues(alpha: dim ? 0.25 : 0.4));
+        : _weekCardColor.withValues(alpha: achieved ? 1.0 : (dim ? 0.25 : 0.4));
     return Container(
       width: 10,
       height: 10,

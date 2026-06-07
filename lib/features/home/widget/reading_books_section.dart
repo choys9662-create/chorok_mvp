@@ -37,27 +37,26 @@ class ReadingBooksSection extends ConsumerWidget {
             children: [
               Text(
                 '읽고 있는 책',
-                style: AppTheme.headingMedium.copyWith(
-                  color: context.appTextPrimary,
+                style: AppTheme.headingSmall.copyWith(
+                  color: context.appPrimaryAccent,
                   fontWeight: FontWeight.w400,
                 ),
               ),
               if (!isLoading) ...[
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                  padding: const EdgeInsets.all(4),
+                  decoration: AppTheme.smoothBox(
+                    color: context.appPrimaryAccent,
+                    radius: 4,
                   ),
-                  decoration: AppTheme.smoothPill(
-                    color: context.primaryBg(0.08),
-                    side: BorderSide.none,
-                  ),
+                  alignment: Alignment.center,
                   child: Text(
                     '${readingBooks.length}권',
                     style: AppTheme.headingSmall.copyWith(
-                      color: context.appPrimaryAccent,
+                      color: Colors.black,
                       fontWeight: FontWeight.w400,
+                      fontSize: 12,
                       height: 1.15,
                     ),
                   ),

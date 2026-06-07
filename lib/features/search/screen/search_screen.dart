@@ -754,7 +754,10 @@ class _SearchBar extends StatelessWidget {
                         ),
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
+                        ),
                       ),
                       textInputAction: TextInputAction.search,
                       cursorColor: context.appPrimaryAccent,
