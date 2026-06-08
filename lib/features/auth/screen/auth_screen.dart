@@ -133,14 +133,22 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
   Future<void> _signInWithApple() async {
     HapticFeedback.mediumImpact();
 
-    final isAvailable = await SignInWithApple.isAvailable();
-    if (!isAvailable) {
-      _showError('이 기기에서는 Apple 로그인을 사용할 수 없어요.');
-      return;
-    }
-
     _setLoading(true);
     try {
+      if (kIsWeb) {
+        await supabase.auth.signInWithOAuth(
+          OAuthProvider.apple,
+          redirectTo: Uri.base.origin,
+        );
+        return;
+      }
+
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        _showError('이 기기에서는 Apple 로그인을 사용할 수 없어요.');
+        return;
+      }
+
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
@@ -171,7 +179,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
     } catch (e) {
       _showError('Apple 로그인 중 오류가 발생했어요.');
     } finally {
-      _setLoading(false);
+      if (!kIsWeb) _setLoading(false);
     }
   }
 
