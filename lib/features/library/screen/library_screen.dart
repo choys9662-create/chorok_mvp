@@ -28,6 +28,9 @@ import '../../../shared/widgets/book_cover.dart';
 
 import '../widget/today_goal_banner.dart';
 import '../../../shared/models/user_profile.dart';
+import '../../../shared/providers/user_library_providers.dart';
+import '../../../shared/repositories/follow_repository.dart';
+import '../../profile/controller/user_profile_provider.dart';
 
 final activeReadersProvider = FutureProvider<List<UserProfile>>((ref) async {
   if (kUseMock) return const [];
@@ -165,18 +168,24 @@ String? _estimateCompletion(Book book) {
 
 // ─── 메인 스크린 ──────────────────────────────────────────────────────────
 class LibraryScreen extends ConsumerStatefulWidget {
-  const LibraryScreen({super.key});
+  /// null이면 내 서재. 값이 있으면 해당 사용자의 서재(읽기 전용 소셜 뷰).
+  final UserProfile? viewedUser;
+
+  const LibraryScreen({super.key, this.viewedUser});
 
   @override
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
-  int _viewIndex = 0; // 0: 서재, 1: 캘린더
+  int _viewIndex = 0; // 0: 서재, 1: 통계, 2: 캘린더
+
+  bool get _isOwner => widget.viewedUser == null;
+  String? get _uid => widget.viewedUser?.id;
 
   @override
   Widget build(BuildContext context) {
-    if (!kUseMock) {
+    if (!kUseMock && _isOwner) {
       ref.listen(readingLogsProvider, (_, next) {
         if (next.hasError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -192,233 +201,340 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         }
       });
     }
+
+    // 다른 사용자 보기 — 프로필/문장/팔로우 상태 로드
+    final viewerData = _isOwner
+        ? null
+        : ref.watch(userProfileProvider(_uid!)).valueOrNull;
+    final isLocked =
+        !_isOwner &&
+        widget.viewedUser!.isPrivate &&
+        viewerData?.followState != FollowState.accepted;
+
     final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: context.appBg,
+      appBar: _isOwner
+          ? null
+          : AppBar(
+              backgroundColor: context.appBg,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: context.appTextSecondary,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Text(
+                '@${widget.viewedUser!.username}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: context.appTextPrimary,
+                ),
+              ),
+            ),
       body: SingleChildScrollView(
-        controller: ref.read(tabScrollControllersProvider)[3],
+        controller: _isOwner
+            ? ref.read(tabScrollControllersProvider)[3]
+            : null,
         child: Column(
           children: [
-            SizedBox(height: topPad),
-            // ── 프로필 + 설정 ───────────────────────────────────
-            Consumer(
-              builder: (context, ref, _) {
-                final streak =
-                    ref
-                        .watch(readingStreakProvider)
-                        .whenOrNull(data: (v) => v) ??
-                    0;
-                return ProfileHeader(
-                  onSettingsTap: () {
-                    HapticFeedback.selectionClick();
-                    context.push(AppConstants.routeSettings);
-                  },
-                  streak: streak,
-                );
-              },
-            ),
-
-            // ── 소셜 피드 스트립 ─────────────────────────────────
-            const _SocialFeedStrip(),
-
-            // ── 내 문장장 (Quotes Archive) ──────────────────────
-            Consumer(
-              builder: (context, ref, _) {
-                final state = ref.watch(choseoListProvider);
-                final items = state.items;
-                if (items.isEmpty) return const SizedBox.shrink();
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppTheme.screenPadding,
-                        8,
-                        AppTheme.screenPadding,
-                        12,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '내 문장장',
-                            style: AppTheme.headingSmall.copyWith(
-                              color: context.appTextPrimary,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          Semantics(
-                            label: '수집한 문장 전체 보기',
-                            button: true,
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                context.push(AppConstants.routeChoseoList);
-                              },
-                              child: Text(
-                                '전체보기',
-                                style: AppTheme.captionLarge.copyWith(
-                                  color: context.appTextTertiary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 140,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.screenPadding,
-                        ),
-                        itemCount: items.length > 5 ? 5 : items.length,
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-
-                          // 배지/특성 부여 로직
-                          String badge = '수집한 문장';
-                          if (index == 0 || item.content.length > 60) {
-                            badge = '이 책의 핵심!';
-                          } else if (index == 1) {
-                            badge = '나만의 발견';
-                          } else if (item.content.length < 20) {
-                            badge = '짧고 강렬한';
-                          } else if (index == 2) {
-                            badge = '최근 수집';
-                          } else {
-                            badge = '긴 여운';
-                          }
-
-                          return Container(
-                            width: 240,
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: AppTheme.smoothBox(
-                              color: context.appCardElevated,
-                              radius: AppTheme.radiusLG,
-                              side: BorderSide.none,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: context.appPrimaryAccent
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        badge,
-                                        style: AppTheme.captionSmall.copyWith(
-                                          color: context.appPrimaryAccent,
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Icon(
-                                      Icons.format_quote_rounded,
-                                      size: 14,
-                                      color: context.appTextTertiary.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Expanded(
-                                  child: Text(
-                                    item.content,
-                                    style: AppTheme.bodyMedium.copyWith(
-                                      color: context.appTextPrimary,
-                                      height: 1.5,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${item.bookTitle} · ${item.bookAuthor}',
-                                  style: AppTheme.captionSmall.copyWith(
-                                    color: context.appTextTertiary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            // ── 세그먼트 토글 ────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.screenPadding,
-                0,
-                AppTheme.screenPadding,
-                4,
-              ),
-              child: SegmentToggle(
-                labels: const ['서재', '통계', '캘린더'],
-                selectedIndex: _viewIndex,
-                onChanged: (i) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _viewIndex = i);
-                },
-              ),
-            ),
-            if (_viewIndex == 0)
+            if (_isOwner) SizedBox(height: topPad),
+            // ── 프로필 헤더 ──────────────────────────────────────
+            if (_isOwner)
               Consumer(
-                builder: (ctx, r, _) {
-                  final books = r.watch(libraryProvider);
-                  final logs = kUseMock
-                      ? mockReadingLogs
-                      : r.watch(readingLogsProvider).valueOrNull ??
-                            const <ReadingLog>[];
-                  return _LibraryTab(
-                    books: books,
-                    logs: logs,
-                    onAddBook: () => ctx.push(AppConstants.routeSearch),
+                builder: (context, ref, _) {
+                  final streak =
+                      ref
+                          .watch(readingStreakProvider)
+                          .whenOrNull(data: (v) => v) ??
+                      0;
+                  return ProfileHeader(
+                    onSettingsTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push(AppConstants.routeSettings);
+                    },
+                    streak: streak,
                   );
                 },
               )
-            else if (_viewIndex == 1)
-              LibraryStatsView(scrollController: null)
             else
-              Consumer(
-                builder: (ctx2, r, child) {
-                  final logs = kUseMock
-                      ? mockReadingLogs
-                      : r.watch(readingLogsProvider).valueOrNull ??
-                            const <ReadingLog>[];
-                  final books = r.watch(libraryProvider);
-                  return LibraryCalendarView(
-                    logs: logs,
-                    books: books,
-                    scrollController: null,
-                  );
-                },
+              _ViewerProfileHeader(profile: widget.viewedUser!),
+
+            if (isLocked)
+              const _PrivateLibraryLock()
+            else ...[
+              // ── 소셜 피드 스트립 (내 서재 전용) ──────────────────
+              if (_isOwner) const _SocialFeedStrip(),
+
+              // ── 문장장 (Quotes Archive) ────────────────────────
+              _buildQuotesStrip(context, viewerData),
+
+              const SizedBox(height: 12),
+              // ── 세그먼트 토글 ────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  0,
+                  AppTheme.screenPadding,
+                  4,
+                ),
+                child: SegmentToggle(
+                  labels: const ['서재', '통계', '캘린더'],
+                  selectedIndex: _viewIndex,
+                  onChanged: (i) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _viewIndex = i);
+                  },
+                ),
               ),
+              if (_viewIndex == 0)
+                _buildShelfTab()
+              else if (_viewIndex == 1)
+                LibraryStatsView(scrollController: null, userId: _uid)
+              else
+                _buildCalendarTab(),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  // ── 서재 탭 (내/다른 사용자 데이터 분기) ──────────────────────────
+  Widget _buildShelfTab() {
+    return Consumer(
+      builder: (ctx, r, _) {
+        final List<Book> books;
+        final List<ReadingLog> logs;
+        if (_isOwner) {
+          books = r.watch(libraryProvider);
+          logs = kUseMock
+              ? mockReadingLogs
+              : r.watch(readingLogsProvider).valueOrNull ??
+                    const <ReadingLog>[];
+        } else {
+          books =
+              r.watch(userBooksProvider(_uid!)).valueOrNull ?? const <Book>[];
+          logs =
+              r.watch(userReadingLogsProvider(_uid!)).valueOrNull ??
+              const <ReadingLog>[];
+        }
+        return _LibraryTab(
+          books: books,
+          logs: logs,
+          isOwner: _isOwner,
+          viewedUserId: _uid,
+          onAddBook: () => ctx.push(AppConstants.routeSearch),
+        );
+      },
+    );
+  }
+
+  // ── 캘린더 탭 ─────────────────────────────────────────────────
+  Widget _buildCalendarTab() {
+    return Consumer(
+      builder: (ctx2, r, child) {
+        final List<Book> books;
+        final List<ReadingLog> logs;
+        if (_isOwner) {
+          logs = kUseMock
+              ? mockReadingLogs
+              : r.watch(readingLogsProvider).valueOrNull ??
+                    const <ReadingLog>[];
+          books = r.watch(libraryProvider);
+        } else {
+          logs =
+              r.watch(userReadingLogsProvider(_uid!)).valueOrNull ??
+              const <ReadingLog>[];
+          books =
+              r.watch(userBooksProvider(_uid!)).valueOrNull ?? const <Book>[];
+        }
+        return LibraryCalendarView(
+          logs: logs,
+          books: books,
+          scrollController: null,
+        );
+      },
+    );
+  }
+
+  // ── 문장장 스트립 — 내 문장(choseoList) 또는 다른 사용자 문장(sentences) ──
+  Widget _buildQuotesStrip(BuildContext context, UserProfileData? viewerData) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final List<({String content, String bookTitle, String bookAuthor})>
+        items;
+        if (_isOwner) {
+          final state = ref.watch(choseoListProvider);
+          items = state.items
+              .map(
+                (e) => (
+                  content: e.content,
+                  bookTitle: e.bookTitle,
+                  bookAuthor: e.bookAuthor,
+                ),
+              )
+              .toList();
+        } else {
+          items = (viewerData?.sentences ?? const [])
+              .map(
+                (s) => (
+                  content: s.content,
+                  bookTitle: s.bookTitle,
+                  bookAuthor: s.bookAuthor,
+                ),
+              )
+              .toList();
+        }
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        final title = _isOwner
+            ? '내 문장장'
+            : '${widget.viewedUser!.displayName}님의 문장장';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.screenPadding,
+                8,
+                AppTheme.screenPadding,
+                12,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  if (_isOwner)
+                    Semantics(
+                      label: '수집한 문장 전체 보기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.push(AppConstants.routeChoseoList);
+                        },
+                        child: Text(
+                          '전체보기',
+                          style: AppTheme.captionLarge.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                ),
+                itemCount: items.length > 5 ? 5 : items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+
+                  // 배지/특성 부여 로직
+                  String badge = '수집한 문장';
+                  if (index == 0 || item.content.length > 60) {
+                    badge = '이 책의 핵심!';
+                  } else if (index == 1) {
+                    badge = '나만의 발견';
+                  } else if (item.content.length < 20) {
+                    badge = '짧고 강렬한';
+                  } else if (index == 2) {
+                    badge = '최근 수집';
+                  } else {
+                    badge = '긴 여운';
+                  }
+
+                  return Container(
+                    width: 240,
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: AppTheme.smoothBox(
+                      color: context.appCardElevated,
+                      radius: AppTheme.radiusLG,
+                      side: BorderSide.none,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.appPrimaryAccent.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                badge,
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: context.appPrimaryAccent,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.format_quote_rounded,
+                              size: 14,
+                              color: context.appTextTertiary.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Text(
+                            item.content,
+                            style: AppTheme.bodyMedium.copyWith(
+                              color: context.appTextPrimary,
+                              height: 1.5,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${item.bookTitle} · ${item.bookAuthor}',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -431,10 +547,18 @@ class _LibraryTab extends StatefulWidget {
   final List<ReadingLog> logs;
   final VoidCallback onAddBook;
 
+  /// 내 서재 여부. false면 다른 사용자의 서재(읽기 전용 — 책 추가/이어읽기 숨김).
+  final bool isOwner;
+
+  /// 다른 사용자 보기일 때 그 사용자 id (통계 카드용).
+  final String? viewedUserId;
+
   const _LibraryTab({
     required this.books,
     required this.logs,
     required this.onAddBook,
+    this.isOwner = true,
+    this.viewedUserId,
   });
 
   @override
@@ -561,6 +685,7 @@ class _LibraryTabState extends State<_LibraryTab> {
               child: _HeroBookCard(
                 book: readingBooks.first,
                 lastLog: _lastLogFor(readingBooks.first),
+                isOwner: widget.isOwner,
               ),
             ),
           ),
@@ -573,7 +698,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.screenPadding,
             ),
-            child: const _MonthlyAchievementCard(),
+            child: _MonthlyAchievementCard(userId: widget.viewedUserId),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -739,29 +864,30 @@ class _LibraryTabState extends State<_LibraryTab> {
                   );
                 }),
                 const Spacer(),
-                Semantics(
-                  label: '책 추가',
-                  button: true,
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      widget.onAddBook();
-                    },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 20,
+                if (widget.isOwner)
+                  Semantics(
+                    label: '책 추가',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        widget.onAddBook();
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -792,7 +918,8 @@ class _LibraryTabState extends State<_LibraryTab> {
                 mainAxisSpacing: 12,
               ),
               itemCount: _filteredBooks.length,
-              itemBuilder: (_, i) => _BookCard(book: _filteredBooks[i]),
+              itemBuilder: (_, i) =>
+                  _BookCard(book: _filteredBooks[i], isOwner: widget.isOwner),
             ),
           )
         else
@@ -806,7 +933,8 @@ class _LibraryTabState extends State<_LibraryTab> {
             sliver: SliverList.separated(
               itemCount: _filteredBooks.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => _BookListTile(book: _filteredBooks[i]),
+              itemBuilder: (_, i) =>
+                  _BookListTile(book: _filteredBooks[i], isOwner: widget.isOwner),
             ),
           ),
       ],
@@ -816,12 +944,19 @@ class _LibraryTabState extends State<_LibraryTab> {
 
 // ─── 이번 달 독서 성과 뱃지 ──────────────────────────────────────────────────
 class _MonthlyAchievementCard extends ConsumerWidget {
-  const _MonthlyAchievementCard();
+  /// null이면 내 통계. 값이 있으면 해당 사용자 통계(분석 화면 이동 비활성).
+  final String? userId;
+
+  const _MonthlyAchievementCard({this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final analytics = ref.watch(analyticsProvider).valueOrNull;
-    final books = ref.watch(libraryProvider);
+    final analytics = userId != null
+        ? ref.watch(userAnalyticsProvider(userId!)).valueOrNull
+        : ref.watch(analyticsProvider).valueOrNull;
+    final books = userId != null
+        ? (ref.watch(userBooksProvider(userId!)).valueOrNull ?? const <Book>[])
+        : ref.watch(libraryProvider);
     final now = DateTime.now();
     final monthCompleted = books
         .where(
@@ -855,10 +990,12 @@ class _MonthlyAchievementCard extends ConsumerWidget {
       label: '이번 달 독서 성과 — 분석 보기',
       button: true,
       child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          context.go(AppConstants.routeAnalytics);
-        },
+        onTap: userId != null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                context.go(AppConstants.routeAnalytics);
+              },
         child: ChorokCard(
           padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
           child: Row(
@@ -920,17 +1057,23 @@ class _MonthlyAchievementCard extends ConsumerWidget {
 // ─── 도서 카드 ────────────────────────────────────────────────────────────
 class _BookCard extends StatelessWidget {
   final Book book;
-  const _BookCard({required this.book});
+
+  /// 내 서재 여부. false면 상세 화면 이동/이어읽기 비활성(읽기 전용).
+  final bool isOwner;
+
+  const _BookCard({required this.book, this.isOwner = true});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = book.status == ReadingStatus.completed;
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        context.push(AppConstants.routeBookDetail, extra: book.id);
-      },
+      onTap: isOwner
+          ? () {
+              HapticFeedback.selectionClick();
+              context.push(AppConstants.routeBookDetail, extra: book.id);
+            }
+          : null,
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
@@ -1087,6 +1230,7 @@ class _BookCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    if (isOwner) ...[
                     const SizedBox(height: 8),
                     // ── 바로 읽기 버튼 ──────────────────────────────
                     Semantics(
@@ -1130,6 +1274,7 @@ class _BookCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    ],
                   ],
                   if (book.status == ReadingStatus.completed &&
                       book.totalReadingHours > 0) ...[
@@ -1220,7 +1365,11 @@ class _EmptyShelf extends StatelessWidget {
 // ─── 도서 리스트 타일 ─────────────────────────────────────────────────────
 class _BookListTile extends StatelessWidget {
   final Book book;
-  const _BookListTile({required this.book});
+
+  /// 내 서재 여부. false면 상세 화면 이동/이어읽기 비활성(읽기 전용).
+  final bool isOwner;
+
+  const _BookListTile({required this.book, this.isOwner = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1232,10 +1381,12 @@ class _BookListTile extends StatelessWidget {
       label: '${book.title}, ${book.author}',
       button: true,
       child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          context.push(AppConstants.routeBookDetail, extra: book.id);
-        },
+        onTap: isOwner
+            ? () {
+                HapticFeedback.selectionClick();
+                context.push(AppConstants.routeBookDetail, extra: book.id);
+              }
+            : null,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: AppTheme.smoothBox(
@@ -1384,8 +1535,8 @@ class _BookListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              // 이어읽기 버튼 (읽는 중)
-              if (isReading) ...[
+              // 이어읽기 버튼 (읽는 중, 내 서재 전용)
+              if (isReading && isOwner) ...[
                 const SizedBox(width: 8),
                 Semantics(
                   label: '${book.title} 이어 읽기',
@@ -1670,7 +1821,10 @@ class _HeroBookCard extends StatelessWidget {
   final Book book;
   final ReadingLog? lastLog;
 
-  const _HeroBookCard({required this.book, this.lastLog});
+  /// 내 서재 여부. false면 상세 화면 이동/이어읽기 비활성(읽기 전용).
+  final bool isOwner;
+
+  const _HeroBookCard({required this.book, this.lastLog, this.isOwner = true});
 
   String _lastSessionLabel() {
     if (lastLog == null) return '';
@@ -1686,10 +1840,12 @@ class _HeroBookCard extends StatelessWidget {
     final gradIdx = book.title.hashCode.abs() % AppTheme.coverGradients.length;
 
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        context.push(AppConstants.routeBookDetail, extra: book.id);
-      },
+      onTap: isOwner
+          ? () {
+              HapticFeedback.selectionClick();
+              context.push(AppConstants.routeBookDetail, extra: book.id);
+            }
+          : null,
       child: Container(
         height: 200,
         decoration: AppTheme.smoothBox(
@@ -1786,54 +1942,284 @@ class _HeroBookCard extends StatelessWidget {
                         color: context.appTextTertiary,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Semantics(
-                      label: '${book.title} 이어 읽기',
-                      button: true,
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          context.push(
-                            AppConstants.routeSession,
-                            extra: SessionExtra(
-                              bookId: book.id,
-                              bookTitle: book.title,
-                              bookAuthor: book.author,
-                              coverUrl: book.coverUrl,
-                              startPage: book.currentPage,
-                              totalPages: book.totalPages,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: AppTheme.smoothBox(
-                            color: isDark
-                                ? AppTheme.primary.withValues(alpha: 0.5)
-                                : AppTheme.lightPrimaryAccent,
-                            radius: AppTheme.radiusMD,
-                            side: BorderSide.none,
-                          ),
-                          child: Text(
-                            '이어 읽기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
+                    if (isOwner) ...[
+                      const SizedBox(height: 10),
+                      Semantics(
+                        label: '${book.title} 이어 읽기',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            context.push(
+                              AppConstants.routeSession,
+                              extra: SessionExtra(
+                                bookId: book.id,
+                                bookTitle: book.title,
+                                bookAuthor: book.author,
+                                coverUrl: book.coverUrl,
+                                startPage: book.currentPage,
+                                totalPages: book.totalPages,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: AppTheme.smoothBox(
                               color: isDark
-                                  ? AppTheme.primaryLight
-                                  : Colors.white,
+                                  ? AppTheme.primary.withValues(alpha: 0.5)
+                                  : AppTheme.lightPrimaryAccent,
+                              radius: AppTheme.radiusMD,
+                              side: BorderSide.none,
+                            ),
+                            child: Text(
+                              '이어 읽기',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: isDark
+                                    ? AppTheme.primaryLight
+                                    : Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── 다른 사용자 서재 헤더 (읽기 전용 + 팔로우 버튼) ───────────────────────
+class _ViewerProfileHeader extends ConsumerStatefulWidget {
+  final UserProfile profile;
+
+  const _ViewerProfileHeader({required this.profile});
+
+  @override
+  ConsumerState<_ViewerProfileHeader> createState() =>
+      _ViewerProfileHeaderState();
+}
+
+class _ViewerProfileHeaderState extends ConsumerState<_ViewerProfileHeader> {
+  FollowState? _followOverride;
+  bool _busy = false;
+
+  Future<void> _toggleFollow(FollowState current) async {
+    if (_busy) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _busy = true);
+    try {
+      final repo = ref.read(followRepositoryProvider);
+      if (current == FollowState.none) {
+        final result = await repo.follow(widget.profile.id);
+        if (!mounted) return;
+        setState(() => _followOverride = result);
+      } else {
+        await repo.unfollow(widget.profile.id);
+        if (!mounted) return;
+        setState(() => _followOverride = FollowState.none);
+      }
+      ref.invalidate(userProfileProvider(widget.profile.id));
+      ref.read(followMutationVersionProvider.notifier).state++;
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('팔로우 상태를 변경하지 못했어요'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.profile;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final data = ref.watch(userProfileProvider(p.id)).valueOrNull;
+    final followState = _followOverride ?? data?.followState ?? FollowState.none;
+
+    final (label, filled) = switch (followState) {
+      FollowState.none => ('팔로우', true),
+      FollowState.accepted => ('팔로잉', false),
+      FollowState.pending => ('요청됨', false),
+    };
+
+    Widget buttonChild() => _busy
+        ? SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: filled ? Colors.white : context.appTextSecondary,
+            ),
+          )
+        : Text(
+            label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+          );
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        16,
+        AppTheme.screenPadding,
+        0,
+      ),
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 10,
+        side: BorderSide.none,
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: isDark
+                    ? AppTheme.primary.withValues(alpha: 0.4)
+                    : context.primaryBg(0.14),
+                backgroundImage:
+                    (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(p.avatarUrl!)
+                    : null,
+                child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: 32,
+                        color: context.appPrimaryAccent,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.displayName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: context.appTextPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '@${p.username}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.appTextSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 40,
+                child: filled
+                    ? FilledButton(
+                        onPressed: _busy
+                            ? null
+                            : () => _toggleFollow(followState),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: context.appPrimaryAccent,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: context.appPrimaryAccent
+                              .withValues(alpha: 0.45),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMD,
+                            ),
+                          ),
+                        ),
+                        child: buttonChild(),
+                      )
+                    : TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () => _toggleFollow(followState),
+                        style: TextButton.styleFrom(
+                          backgroundColor: context.appCardElevated,
+                          foregroundColor: context.appTextSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMD,
+                            ),
+                          ),
+                        ),
+                        child: buttonChild(),
+                      ),
+              ),
+            ],
+          ),
+          if (p.bio != null && p.bio!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                p.bio!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.appTextSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 비공개 서재 잠금 상태 ─────────────────────────────────────────────────
+class _PrivateLibraryLock extends StatelessWidget {
+  const _PrivateLibraryLock();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+      child: Column(
+        children: [
+          Icon(
+            Icons.lock_outline_rounded,
+            size: 48,
+            color: context.appTextTertiary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '비공개 계정이에요',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: context.appTextPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '팔로우가 수락되면 서재를 볼 수 있어요',
+            style: TextStyle(fontSize: 12, color: context.appTextSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

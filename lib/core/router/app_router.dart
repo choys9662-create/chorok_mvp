@@ -32,7 +32,6 @@ import '../../features/achievements/screen/achievements_screen.dart';
 import '../../features/feed/screen/sentence_detail_screen.dart';
 import '../../features/search/screen/book_info_screen.dart';
 import '../../features/search/model/aladin_book.dart';
-import '../../features/profile/screen/user_profile_screen.dart';
 import '../../shared/models/user_profile.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/main_scaffold.dart';
@@ -257,12 +256,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // 유저 프로필
+      // 유저 프로필 — 그 사용자의 서재(읽기 전용 소셜 뷰)
       GoRoute(
         path: AppConstants.routeUserProfile,
         builder: (context, state) {
           final profile = state.extra as UserProfile;
-          return UserProfileScreen(profile: profile);
+          return LibraryScreen(viewedUser: profile);
         },
       ),
 

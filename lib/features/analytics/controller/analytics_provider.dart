@@ -548,9 +548,25 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   // ─── Supabase (웹) ───────────────────────────────────────────────────────
 
   Future<AnalyticsState> _loadFromSupabase() async {
-    final client = Supabase.instance.client;
-    final userId = client.auth.currentUser?.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return const AnalyticsState();
+    return _analyticsFromSupabase(ref, userId, includeSocial: true);
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(_load);
+  }
+}
+
+/// Supabase에서 특정 사용자의 통계를 계산한다. 내 통계와 다른 사용자(소셜) 통계 공용.
+/// includeSocial=false면 "내가 좋아요한 문장" 등 me 전용 소셜 섹션을 비운다.
+Future<AnalyticsState> _analyticsFromSupabase(
+  Ref ref,
+  String userId, {
+  required bool includeSocial,
+}) async {
+    final client = Supabase.instance.client;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -758,8 +774,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
     // Genre distribution (Supabase 경로에서는 genre 미지원 — 빈 맵)
     final genreDistribution = <String, int>{};
 
-    // 소셜 데이터 — 좋아요 수 + 커뮤니티 하이라이트
-    final db = ref.read(dbServiceProvider);
+    // 소셜 데이터 — 좋아요 수 + 커뮤니티 하이라이트 (내 통계 전용)
     List<SocialSentenceEntry> toSocial(List<Map<String, dynamic>> rows) =>
         rows.map((r) => (
               content: r['content'] as String,
@@ -768,14 +783,17 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
               likeCount: r['like_count'] as int,
             )).toList();
 
-    final socialResults = await Future.wait([
-      db.fetchMySentencesWithLikes(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
-      db.fetchCommunityHighlights(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
-      db.fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
-      db.fetchCommunityHighlights(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
-      db.fetchMySentencesWithLikes(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
-      db.fetchCommunityHighlights(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
-    ]);
+    final db = ref.read(dbServiceProvider);
+    final socialResults = includeSocial
+        ? await Future.wait([
+            db.fetchMySentencesWithLikes(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+            db.fetchCommunityHighlights(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
+            db.fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+            db.fetchCommunityHighlights(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
+            db.fetchMySentencesWithLikes(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+            db.fetchCommunityHighlights(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
+          ])
+        : const <List<Map<String, dynamic>>>[[], [], [], [], [], []];
 
     final wRadar = _radar(
       totalSeconds: wStats.totalSeconds,
@@ -835,15 +853,18 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
       yearMyReactions: toSocial(socialResults[4]),
       yearCommunityHighlights: toSocial(socialResults[5]),
     );
-  }
-
-  Future<void> refresh() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(_load);
-  }
 }
 
 final analyticsProvider =
     AsyncNotifierProvider<AnalyticsNotifier, AnalyticsState>(
       AnalyticsNotifier.new,
     );
+
+/// 다른 사용자(팔로우한 사람)의 통계. 소셜 섹션(내가 좋아요한 문장 등)은 제외.
+/// 항상 Supabase에서 읽으며, RLS의 *_select_following 정책이 접근을 제어한다.
+final userAnalyticsProvider = FutureProvider.family<AnalyticsState, String>((
+  ref,
+  userId,
+) {
+  return _analyticsFromSupabase(ref, userId, includeSocial: false);
+});
