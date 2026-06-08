@@ -48,8 +48,10 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
       final rows = await client
           .from('sentences')
           .select(
+            // sentence_likes가 sentences↔profiles 다대다 관계를 만들어 'profiles'
+            // 임베드가 모호해지므로(PGRST201) 작성자 FK를 명시한다.
             'id, content, thought, created_at, '
-            'profiles(username, display_name), '
+            'profiles!sentences_user_id_fkey(username, display_name), '
             'books(title, author, cover_url), '
             'global_books(title, author, cover_url), '
             'sentence_likes(count)',
@@ -87,9 +89,11 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
           empathyCount: likeCount,
         );
       }).toList();
-    } catch (_) {
+    } catch (e) {
       // 팔로우 전용 피드 — 에러 시 빈 피드를 반환한다.
       // (내 문장 폴백은 "팔로우한 사람만" 의미와 맞지 않음.)
+      // 단, 침묵 실패가 버그를 가리지 않도록 디버그 로그는 남긴다.
+      debugPrint('feed load failed: $e');
       return const [];
     }
   }

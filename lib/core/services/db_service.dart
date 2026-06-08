@@ -382,7 +382,9 @@ class DbService {
 
     final res = await supabase
         .from('sentences')
-        .select('*, profiles(username, display_name, avatar_url), books(title)')
+        .select(
+          '*, profiles!sentences_user_id_fkey(username, display_name, avatar_url), books(title)',
+        )
         .inFilter('user_id', followingIds)
         .order('created_at', ascending: false)
         .limit(50);
@@ -495,7 +497,7 @@ class DbService {
         .from('sentences')
         .select(
           'id, content, thought, created_at, '
-          'profiles(username, display_name, avatar_url), '
+          'profiles!sentences_user_id_fkey(username, display_name, avatar_url), '
           'books(title)',
         )
         .filter('normalized_sentences', 'cs', '{"$normalizedText"}')
