@@ -43,6 +43,8 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
     if (userId == null) return const [];
 
     try {
+      // 팔로우한 사람의 문장만 — 내 문장은 제외(.neq).
+      // RLS가 이미 (내 것 + 팔로우한 것)으로 제한하므로 결과는 팔로우 전용이 된다.
       final rows = await client
           .from('sentences')
           .select(
@@ -52,6 +54,7 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
             'global_books(title, author, cover_url), '
             'sentence_likes(count)',
           )
+          .neq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(50);
 
@@ -85,37 +88,10 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
         );
       }).toList();
     } catch (_) {
-      return _loadOwnSentencesFromSupabase(client, userId);
+      // 팔로우 전용 피드 — 에러 시 빈 피드를 반환한다.
+      // (내 문장 폴백은 "팔로우한 사람만" 의미와 맞지 않음.)
+      return const [];
     }
-  }
-
-  Future<List<FeedSentence>> _loadOwnSentencesFromSupabase(
-    SupabaseClient client,
-    String userId,
-  ) async {
-    final rows = await client
-        .from('sentences')
-        .select('id, content, created_at, books(title, author)')
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(50);
-
-    return (rows as List).map((r) {
-      final map = r as Map<String, dynamic>;
-      final book = map['books'] as Map<String, dynamic>?;
-      final createdAt =
-          DateTime.tryParse(map['created_at'] as String? ?? '') ??
-          DateTime.now();
-      return FeedSentence(
-        id: map['id'] as String? ?? '',
-        content: map['content'] as String? ?? '',
-        bookTitle: book?['title'] as String? ?? '알 수 없는 책',
-        bookAuthor: book?['author'] as String? ?? '',
-        coverUrl: book?['cover_url'] as String?,
-        username: '나',
-        savedAt: createdAt,
-      );
-    }).toList();
   }
 
   Future<void> refresh() async {

@@ -16,6 +16,12 @@ class SupabaseBookRepository {
   Future<List<Book>> getAllBooks() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return const [];
+    return getBooksByUser(userId);
+  }
+
+  /// 특정 사용자의 서재를 읽는다. 소셜(팔로우한 사람 서재 보기)에서 사용.
+  /// RLS `books_select_following` 정책이 팔로워에게만 읽기를 허용한다.
+  Future<List<Book>> getBooksByUser(String userId) async {
     final rows = await _client
         .from('books')
         .select()

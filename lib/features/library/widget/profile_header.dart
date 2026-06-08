@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
@@ -36,10 +38,22 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
   String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
   int _followers = kUseMock ? 128 : 0;
   int _following = kUseMock ? 64 : 0;
-  List<String> _followerNames = kUseMock
-      ? ['김민준', '박서연', '이수아', '최현우', '정지원']
+  List<UserProfile> _followerProfiles = kUseMock
+      ? [
+          UserProfile(id: '', username: 'kim', displayName: '김민준'),
+          UserProfile(id: '', username: 'park', displayName: '박서연'),
+          UserProfile(id: '', username: 'lee', displayName: '이수아'),
+          UserProfile(id: '', username: 'choi', displayName: '최현우'),
+          UserProfile(id: '', username: 'jung', displayName: '정지원'),
+        ]
       : const [];
-  List<String> _followingNames = kUseMock ? ['한수빈', '오태양', '윤나래'] : const [];
+  List<UserProfile> _followingProfiles = kUseMock
+      ? [
+          UserProfile(id: '', username: 'han', displayName: '한수빈'),
+          UserProfile(id: '', username: 'oh', displayName: '오태양'),
+          UserProfile(id: '', username: 'yun', displayName: '윤나래'),
+        ]
+      : const [];
 
   @override
   void initState() {
@@ -84,8 +98,8 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
         }
         _followers = followers.length;
         _following = following.length;
-        _followerNames = followers.map((p) => p.displayName).toList();
-        _followingNames = following.map((p) => p.displayName).toList();
+        _followerProfiles = followers;
+        _followingProfiles = following;
       });
     } catch (_) {
       // 프로필 상단은 핵심 화면이므로 소셜 수치 로딩 실패 시 기본값을 유지한다.
@@ -335,7 +349,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
 
   void _showFollowList(BuildContext context, {required bool isFollower}) {
     HapticFeedback.selectionClick();
-    final list = isFollower ? _followerNames : _followingNames;
+    final list = isFollower ? _followerProfiles : _followingProfiles;
 
     showModalBottomSheet(
       context: context,
@@ -343,7 +357,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
       shape: _modalShape,
       builder: (_) => _FollowListSheet(
         title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
-        names: list,
+        profiles: list,
         showFollowButton: kUseMock && !isFollower,
       ),
     );
@@ -583,12 +597,12 @@ class _SheetField extends StatelessWidget {
 // ─── 팔로워/팔로잉 목록 (토글 가능) ──────────────────────────────────
 class _FollowListSheet extends StatefulWidget {
   final String title;
-  final List<String> names;
+  final List<UserProfile> profiles;
   final bool showFollowButton;
 
   const _FollowListSheet({
     required this.title,
-    required this.names,
+    required this.profiles,
     required this.showFollowButton,
   });
 
@@ -605,7 +619,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
   @override
   void initState() {
     super.initState();
-    _followStates = List.filled(widget.names.length, true);
+    _followStates = List.filled(widget.profiles.length, true);
   }
 
   @override
@@ -628,10 +642,29 @@ class _FollowListSheetState extends State<_FollowListSheet> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: widget.names.length,
-            itemBuilder: (_, i) => Padding(
+            itemCount: widget.profiles.length,
+            itemBuilder: (context, i) {
+              final p = widget.profiles[i];
+              final initial = p.displayName.isNotEmpty
+                  ? p.displayName[0]
+                  : '?';
+              return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                // 빈 id(목업)는 실제 프로필이 없으므로 이동하지 않는다.
+                onTap: p.id.isEmpty
+                    ? null
+                    : () {
+                        HapticFeedback.selectionClick();
+                        final router = GoRouter.of(context);
+                        Navigator.pop(context);
+                        router.push(
+                          AppConstants.routeUserProfile,
+                          extra: p,
+                        );
+                      },
+                child: Row(
                 children: [
                   CircleAvatar(
                     radius: 20,
@@ -639,7 +672,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                         ? AppTheme.primary.withValues(alpha: 0.3)
                         : context.primaryBg(0.12),
                     child: Text(
-                      widget.names[i][0],
+                      initial,
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appPrimaryAccent,
                         fontWeight: FontWeight.w400,
@@ -649,7 +682,7 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      widget.names[i],
+                      p.displayName,
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appTextPrimary,
                       ),
@@ -696,6 +729,8 @@ class _FollowListSheetState extends State<_FollowListSheet> {
                 ],
               ),
             ),
+              );
+            },
           ),
         ),
       ],

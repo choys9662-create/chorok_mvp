@@ -12,17 +12,25 @@ import '../../analytics/widgets/waffle_chart_widget.dart';
 
 final _bookReadingTimesProvider =
     FutureProvider.autoDispose<List<({String title, double hours})>>((ref) async {
-  if (kIsWeb) return _loadBookReadingTimesFromSupabase();
+  if (kIsWeb) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return const [];
+    return _loadBookReadingTimesFromSupabase(userId);
+  }
   final repo = ref.watch(bookRepositoryProvider);
   if (repo == null) return const [];
   return repo.getBookReadingTimes();
 });
 
+/// 다른 사용자(팔로우한 사람)의 책별 독서시간 — 항상 Supabase.
+final _bookReadingTimesByUserProvider = FutureProvider.autoDispose
+    .family<List<({String title, double hours})>, String>((ref, userId) async {
+  return _loadBookReadingTimesFromSupabase(userId);
+});
+
 Future<List<({String title, double hours})>>
-    _loadBookReadingTimesFromSupabase() async {
+    _loadBookReadingTimesFromSupabase(String userId) async {
   final client = Supabase.instance.client;
-  final userId = client.auth.currentUser?.id;
-  if (userId == null) return const [];
   final rows = await client
       .from('reading_sessions')
       .select('duration_seconds, books(title)')
@@ -56,11 +64,16 @@ List<({String name, Color color, int cells})> buildWaffleItems(
 class LibraryStatsView extends ConsumerWidget {
   final ScrollController? scrollController;
 
-  const LibraryStatsView({super.key, this.scrollController});
+  /// 다른 사용자의 통계를 볼 때 그 사용자 id. null이면 내 통계.
+  final String? userId;
+
+  const LibraryStatsView({super.key, this.scrollController, this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timesAsync = ref.watch(_bookReadingTimesProvider);
+    final timesAsync = userId != null
+        ? ref.watch(_bookReadingTimesByUserProvider(userId!))
+        : ref.watch(_bookReadingTimesProvider);
     final items = timesAsync.valueOrNull ?? const [];
 
     return ListView(
