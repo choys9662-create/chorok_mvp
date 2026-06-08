@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/app_notification.dart';
 import '../../../shared/repositories/notification_repository.dart';
+import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 
 // ─── 데이터 모델 ──────────────────────────────────────────────────────────
@@ -13,6 +16,7 @@ enum NotiType { follow, like, comment, overlap, system }
 
 class NotiItem {
   final String? id; // 실데이터 알림 id (mock이면 null)
+  final String? actorId; // 알림을 일으킨 유저 id (mock이면 null)
   final NotiType type;
   final String title;
   final String body;
@@ -21,6 +25,7 @@ class NotiItem {
 
   const NotiItem({
     this.id,
+    this.actorId,
     required this.type,
     required this.title,
     required this.body,
@@ -30,6 +35,7 @@ class NotiItem {
 
   NotiItem copyWith({bool? isRead}) => NotiItem(
     id: id,
+    actorId: actorId,
     type: type,
     title: title,
     body: body,
@@ -120,6 +126,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
   NotiItem _toItem(AppNotification n) => NotiItem(
     id: n.id,
+    actorId: n.actorId,
     type: _notiType(n.type),
     title: n.title,
     body: n.body,
@@ -179,22 +186,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     final n = _notifications[index];
     switch (n.type) {
       case NotiType.follow:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '프로필 페이지는 곧 지원돼요 🌿',
-              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
-            ),
-            backgroundColor: context.appCardElevated,
-            behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(
-              radius: 10,
-              side: BorderSide.none,
-            ),
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (n.actorId != null) {
+          _openProfile(n.actorId!);
+        } else {
+          _showToast('프로필 페이지는 곧 지원돼요 🌿');
+        }
       case NotiType.like:
       case NotiType.comment:
       case NotiType.overlap:
@@ -206,10 +202,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             ),
             backgroundColor: context.appCardElevated,
             behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(
-              radius: 10,
-              side: BorderSide.none,
-            ),
+            shape: AppTheme.smoothShape(radius: 10, side: BorderSide.none),
             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
             duration: const Duration(seconds: 2),
           ),
@@ -218,6 +211,43 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         // 시스템 알림은 읽음 처리만
         break;
     }
+  }
+
+  /// 팔로우 알림 → 해당 유저 프로필로 이동.
+  /// 알림은 actorId만 들고 있어, 프로필 화면이 요구하는 UserProfile을 먼저 조회한다.
+  bool _openingProfile = false;
+  Future<void> _openProfile(String userId) async {
+    if (_openingProfile) return;
+    _openingProfile = true;
+    try {
+      final profile = await ref.read(profileRepositoryProvider).getById(userId);
+      if (!mounted) return;
+      if (profile == null) {
+        _showToast('프로필을 찾을 수 없어요');
+        return;
+      }
+      context.push(AppConstants.routeUserProfile, extra: profile);
+    } catch (_) {
+      if (mounted) _showToast('프로필을 불러오지 못했어요');
+    } finally {
+      _openingProfile = false;
+    }
+  }
+
+  void _showToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
+        ),
+        backgroundColor: context.appCardElevated,
+        behavior: SnackBarBehavior.floating,
+        shape: AppTheme.smoothShape(radius: 10, side: BorderSide.none),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

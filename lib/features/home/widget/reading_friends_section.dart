@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
@@ -112,6 +115,10 @@ class _FireflyRow extends StatelessWidget {
             child: _FireflyAvatar(
               name: mutuals[i].displayName,
               layers: layersForMinutes(demoMinutes),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                context.push(AppConstants.routeUserProfile, extra: mutuals[i]);
+              },
             ),
           );
         }),
@@ -126,57 +133,67 @@ class _FireflyRow extends StatelessWidget {
 class _FireflyAvatar extends StatelessWidget {
   final String name;
   final int layers;
-  const _FireflyAvatar({required this.name, required this.layers});
+  final VoidCallback onTap;
+  const _FireflyAvatar({
+    required this.name,
+    required this.layers,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final accent = context.appPrimaryAccent;
     const core = 16.0;
 
-    return SizedBox(
-      width: 88,
-      height: 118,
-      child: Container(
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 10,
-          side: const BorderSide(color: Color(0xFF8DFF54)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 64,
-              height: 64,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 2겹째: 가장 바깥 헤일로 (가장 옅고 넓게)
-                  if (layers >= 2) _Halo(size: 64, color: accent, alpha: 0.20),
-                  // 1겹째: 안쪽 헤일로
-                  if (layers >= 1) _Halo(size: 40, color: accent, alpha: 0.40),
-                  // 코어 (항상)
-                  Container(
-                    width: core,
-                    height: core,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.fireflyColor,
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 88,
+        height: 118,
+        child: Container(
+          decoration: AppTheme.smoothBox(
+            color: context.appCard,
+            radius: 10,
+            side: const BorderSide(color: Color(0xFF8DFF54)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // 2겹째: 가장 바깥 헤일로 (가장 옅고 넓게)
+                    if (layers >= 2)
+                      _Halo(size: 64, color: accent, alpha: 0.20),
+                    // 1겹째: 안쪽 헤일로
+                    if (layers >= 1)
+                      _Halo(size: 40, color: accent, alpha: 0.40),
+                    // 코어 (항상)
+                    Container(
+                      width: core,
+                      height: core,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.fireflyColor,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              name,
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appPrimaryAccent,
+              const SizedBox(height: 10),
+              Text(
+                name,
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

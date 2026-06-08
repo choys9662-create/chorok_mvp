@@ -1549,7 +1549,10 @@ class _SocialFeedStrip extends ConsumerWidget {
         0,
       ),
       child: GestureDetector(
-        onTap: () => HapticFeedback.selectionClick(),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          context.push(AppConstants.routeFeed);
+        },
         child: ForestAccentCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           radius: AppTheme.radiusMD,
@@ -1584,26 +1587,37 @@ class _SocialFeedStrip extends ConsumerWidget {
                           for (var i = 0; i < shown.length; i++)
                             Positioned(
                               left: i * 16.0,
-                              child: Container(
-                                width: 26,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _colorFor(shown[i].id),
-                                  border: Border.all(
-                                    color: context.appBg,
-                                    width: 2,
+                              // 아바타 탭 → 해당 유저 프로필 (배너 전체 탭은 피드 유지)
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  context.push(
+                                    AppConstants.routeUserProfile,
+                                    extra: shown[i],
+                                  );
+                                },
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _colorFor(shown[i].id),
+                                    border: Border.all(
+                                      color: context.appBg,
+                                      width: 2,
+                                    ),
                                   ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  shown[i].displayName.isNotEmpty
-                                      ? shown[i].displayName[0]
-                                      : '?',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.white,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    shown[i].displayName.isNotEmpty
+                                        ? shown[i].displayName[0]
+                                        : '?',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
