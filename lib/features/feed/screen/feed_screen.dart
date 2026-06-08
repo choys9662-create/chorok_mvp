@@ -553,7 +553,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            '겹문장이 아직 없어요',
+            _filter == _FeedFilter.overlap
+                ? '겹문장이 아직 없어요'
+                : '팔로우한 사람이 기록한 문장이 여기 모여요',
             style: AppTheme.bodyMedium.copyWith(
               color: context.appTextSecondary,
             ),
