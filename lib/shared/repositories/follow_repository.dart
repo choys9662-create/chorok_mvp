@@ -31,11 +31,19 @@ class FollowRepository {
     }
     final status = isPrivate ? 'pending' : 'accepted';
 
-    await _client.from('follows').insert({
-      'follower_id': me,
-      'following_id': targetUserId,
-      'status': status,
-    });
+    final existing = await followStatus(targetUserId);
+    if (existing != FollowState.none) return existing;
+
+    try {
+      await _client.from('follows').insert({
+        'follower_id': me,
+        'following_id': targetUserId,
+        'status': status,
+      });
+    } on PostgrestException catch (error) {
+      if (error.code != '23505') rethrow;
+      return followStatus(targetUserId);
+    }
     return isPrivate ? FollowState.pending : FollowState.accepted;
   }
 
@@ -148,3 +156,5 @@ class FollowRepository {
 final followRepositoryProvider = Provider<FollowRepository>((ref) {
   return FollowRepository(Supabase.instance.client);
 });
+
+final followMutationVersionProvider = StateProvider<int>((ref) => 0);

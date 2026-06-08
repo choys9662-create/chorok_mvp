@@ -433,6 +433,7 @@ class _UserCardState extends ConsumerState<_UserCard> {
         if (!mounted) return;
         setState(() => _isFollowing = true);
       }
+      ref.read(followMutationVersionProvider.notifier).state++;
     } finally {
       if (mounted) setState(() => _busy = false);
     }

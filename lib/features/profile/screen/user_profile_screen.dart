@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/user_profile_provider.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -28,12 +29,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       final repo = ref.read(followRepositoryProvider);
       if (current == FollowState.none) {
         final result = await repo.follow(widget.profile.id);
-        if (mounted) setState(() => _followOverride = result);
+        if (!mounted) return;
+        setState(() => _followOverride = result);
+        ref.invalidate(userProfileProvider(widget.profile.id));
+        ref.read(followMutationVersionProvider.notifier).state++;
       } else {
         await repo.unfollow(widget.profile.id);
-        if (mounted) setState(() => _followOverride = FollowState.none);
+        if (!mounted) return;
+        setState(() => _followOverride = FollowState.none);
         ref.invalidate(userProfileProvider(widget.profile.id));
+        ref.read(followMutationVersionProvider.notifier).state++;
       }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, '팔로우 상태를 변경하지 못했어요', success: false),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -176,26 +187,61 @@ class _FollowButton extends StatelessWidget {
       FollowState.accepted => ('팔로잉', false),
       FollowState.pending => ('요청됨', false),
     };
-    return GestureDetector(
-      onTap: busy ? null : onTap,
-      child: Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(
-          color: filled ? context.appPrimaryAccent : context.appCardElevated,
-          radius: AppTheme.radiusMD,
-          side: BorderSide.none,
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: filled
+          ? FilledButton(
+              onPressed: busy ? null : onTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: context.appPrimaryAccent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.45,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+              ),
+              child: _FollowButtonLabel(label: label, busy: busy),
+            )
+          : TextButton(
+              onPressed: busy ? null : onTap,
+              style: TextButton.styleFrom(
+                backgroundColor: context.appCardElevated,
+                foregroundColor: context.appTextSecondary,
+                disabledForegroundColor: context.appTextTertiary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+              ),
+              child: _FollowButtonLabel(label: label, busy: busy),
+            ),
+    );
+  }
+}
+
+class _FollowButtonLabel extends StatelessWidget {
+  final String label;
+  final bool busy;
+
+  const _FollowButtonLabel({required this.label, required this.busy});
+
+  @override
+  Widget build(BuildContext context) {
+    if (busy) {
+      return SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: context.appTextSecondary,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: filled ? Colors.white : context.appTextSecondary,
-          ),
-        ),
-      ),
+      );
+    }
+    return Text(
+      label,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
     );
   }
 }

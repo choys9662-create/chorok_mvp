@@ -1,5 +1,6 @@
 import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,17 +11,17 @@ import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
 /// 서재 상단 프로필 헤더 — 프로필 사진, 자기소개, 팔로우/팔로워, 설정
-class ProfileHeader extends StatefulWidget {
+class ProfileHeader extends ConsumerStatefulWidget {
   final VoidCallback? onSettingsTap;
   final int streak;
 
   const ProfileHeader({super.key, this.onSettingsTap, this.streak = 0});
 
   @override
-  State<ProfileHeader> createState() => _ProfileHeaderState();
+  ConsumerState<ProfileHeader> createState() => _ProfileHeaderState();
 }
 
-class _ProfileHeaderState extends State<ProfileHeader> {
+class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
   // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
   static final _modalShape = SmoothRectangleBorder(
     smoothness: 0.6,
@@ -93,6 +94,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(followMutationVersionProvider, (_, _) {
+      _loadProfile();
+    });
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
