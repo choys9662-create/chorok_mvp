@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/repositories/reading_presence_repository.dart';
 
 const _kUseMock = bool.fromEnvironment('USE_MOCK');
 
@@ -37,5 +38,10 @@ final sessionFireflyProvider =
       final mutuals = await ref
           .read(followRepositoryProvider)
           .getMutualFollows();
-      return (mutualCount: mutuals.length, nearbyCount: 0, mutuals: mutuals);
+      // "읽고 있는 친구" = 지금 세션을 실행 중인 맞팔만. presence가 없으면 제외.
+      final activeIds = await ref
+          .read(readingPresenceRepositoryProvider)
+          .activeUserIds(mutuals.map((m) => m.id).toList());
+      final active = mutuals.where((m) => activeIds.contains(m.id)).toList();
+      return (mutualCount: active.length, nearbyCount: 0, mutuals: active);
     });
