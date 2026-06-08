@@ -97,7 +97,7 @@ class _ChorokBottomBar extends StatelessWidget {
       shadowColor: Colors.black.withValues(alpha: 0.22),
       elevation: 10,
       height: 84,
-      padding: const EdgeInsets.only(left: 17, right: 17),
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
           _NavItem(
@@ -165,17 +165,16 @@ class _NavItem extends StatelessWidget {
         : context.appTextSecondary;
 
     return Expanded(
-      child: Center(
-        child: Semantics(
-          label: label,
-          button: true,
-          selected: isActive,
-          child: GestureDetector(
-            onTap: () => onTap(index),
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+      child: Semantics(
+        label: label,
+        button: true,
+        selected: isActive,
+        child: GestureDetector(
+          onTap: () => onTap(index),
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOutCubic,
@@ -205,7 +204,6 @@ class _NavItem extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }

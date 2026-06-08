@@ -18,6 +18,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../core/services/stt_service.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/repositories/reading_presence_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
@@ -70,6 +71,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   UiVisibility _uiState = UiVisibility.hidden;
   Timer? _uiHideTimer;
   bool _goalReachedNotified = false;
+
+  // 실시간 '읽고 있는 친구' presence — 세션 화면이 살아있는 동안만 행 유지.
+  // dispose에서 안전하게 쓰도록 repository 참조를 캡처해 둔다.
+  ReadingPresenceRepository? _presence;
+  Timer? _presenceHeartbeat;
 
   void _setUi(UiVisibility next, {Duration? autoHideAfter}) {
     setState(() => _uiState = next);
@@ -347,6 +353,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       WakelockPlus.enable();
 
+      // 세션 시작 — 실시간 presence 등록 + 주기적 heartbeat (TTL 90s의 절반 주기).
+      if (!const bool.fromEnvironment('USE_MOCK')) {
+        final presence = ref.read(readingPresenceRepositoryProvider);
+        _presence = presence;
+        presence.start();
+        _presenceHeartbeat = Timer.periodic(
+          const Duration(seconds: 45),
+          (_) => presence.heartbeat(),
+        );
+      }
+
       final bookId = widget.bookId;
       if (bookId != null && !const bool.fromEnvironment('USE_MOCK')) {
         ref.read(dbServiceProvider).fetchMySentencesForBook(bookId).then((
@@ -395,6 +412,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void dispose() {
     _uiHideTimer?.cancel();
+    // 세션 종료 — presence 행 삭제 (fire-and-forget). 누락돼도 TTL로 stale 처리됨.
+    _presenceHeartbeat?.cancel();
+    _presence?.end();
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
     _pulseCtrl.dispose();
