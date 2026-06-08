@@ -198,7 +198,7 @@ class HighlightCard extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: BorderSide.none,
+            side: const BorderSide(color: Color(0xFF8DFF54)),
           ),
           child: IntrinsicHeight(
             child: Row(
