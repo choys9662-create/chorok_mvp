@@ -15,9 +15,7 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
-import '../../../shared/widgets/forest_accent_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
-import '../../forest/widget/live_forest_widget.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
@@ -31,35 +29,6 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/user_library_providers.dart';
 import '../../../shared/repositories/follow_repository.dart';
 import '../../profile/controller/user_profile_provider.dart';
-
-final activeReadersProvider = FutureProvider<List<UserProfile>>((ref) async {
-  if (kUseMock) return const [];
-  final client = Supabase.instance.client;
-  final me = client.auth.currentUser?.id;
-  if (me == null) return const [];
-
-  final now = DateTime.now();
-  final todayStart = DateTime(now.year, now.month, now.day).toUtc();
-
-  final rows = await client
-      .from('reading_sessions')
-      .select(
-        'user_id, profiles!reading_sessions_user_id_fkey(id, display_name, username)',
-      )
-      .neq('user_id', me)
-      .gte('started_at', todayStart.toIso8601String())
-      .order('started_at', ascending: false);
-
-  final seen = <String>{};
-  final readers = <UserProfile>[];
-  for (final row in rows as List) {
-    final profile = row['profiles'] as Map<String, dynamic>?;
-    if (profile == null) continue;
-    final id = profile['id'] as String? ?? '';
-    if (seen.add(id)) readers.add(UserProfile.fromRow(profile));
-  }
-  return readers;
-});
 
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
@@ -267,9 +236,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             if (isLocked)
               const _PrivateLibraryLock()
             else ...[
-              // ── 소셜 피드 스트립 (내 서재 전용) ──────────────────
-              if (_isOwner) const _SocialFeedStrip(),
-
               // ── 문장장 (Quotes Archive) ────────────────────────
               _buildQuotesStrip(context, viewerData),
 
@@ -1662,155 +1628,6 @@ class _SortSheet extends StatelessWidget {
             ),
           )),
         ],
-      ),
-    );
-  }
-}
-
-// ─── 소셜 피드 스트립 ────────────────────────────────────────────────────────
-class _SocialFeedStrip extends ConsumerWidget {
-  const _SocialFeedStrip();
-
-  static const _avatarColors = [
-    Color(0xFF4CAF50),
-    Color(0xFF2196F3),
-    Color(0xFFFF9800),
-    Color(0xFFE91E63),
-    Color(0xFF9C27B0),
-  ];
-
-  static Color _colorFor(String id) =>
-      _avatarColors[id.hashCode.abs() % _avatarColors.length];
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final readers = ref.watch(activeReadersProvider).valueOrNull;
-    if (readers == null || readers.isEmpty) return const SizedBox.shrink();
-
-    final shown = readers.take(3).toList();
-    final extra = readers.length - 1;
-
-    final activeCount = readers.length;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        8,
-        AppTheme.screenPadding,
-        0,
-      ),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          context.push(AppConstants.routeFeed);
-        },
-        child: ForestAccentCard(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          radius: AppTheme.radiusMD,
-          child: SizedBox(
-            height: 56,
-            child: Stack(
-              children: [
-                // 우측에 라이브 포레스트 반딧불 미니뷰 (배경 레이어)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ClipRect(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        widthFactor: 0.55,
-                        child: LiveForestWidget(
-                          activeCount: activeCount.clamp(3, 18),
-                          todayCount: (activeCount * 2).clamp(8, 32),
-                          weekCount: (activeCount * 2).clamp(8, 28),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 전경: 아바타 + 텍스트 + 화살표
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 16.0 * (shown.length - 1) + 26,
-                      height: 26,
-                      child: Stack(
-                        children: [
-                          for (var i = 0; i < shown.length; i++)
-                            Positioned(
-                              left: i * 16.0,
-                              // 아바타 탭 → 해당 유저 프로필 (배너 전체 탭은 피드 유지)
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  context.push(
-                                    AppConstants.routeUserProfile,
-                                    extra: shown[i],
-                                  );
-                                },
-                                child: Container(
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _colorFor(shown[i].id),
-                                    border: Border.all(
-                                      color: context.appBg,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    shown[i].displayName.isNotEmpty
-                                        ? shown[i].displayName[0]
-                                        : '?',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: AppTheme.captionLarge.copyWith(
-                            color: context.appTextSecondary,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: shown[0].displayName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                color: context.appTextPrimary,
-                              ),
-                            ),
-                            TextSpan(
-                              text: extra > 0
-                                  ? ' 외 $extra명이 지금 독서 중'
-                                  : '이 지금 독서 중',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: context.appTextTertiary,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
