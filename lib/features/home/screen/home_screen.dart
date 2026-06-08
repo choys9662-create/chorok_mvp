@@ -8,7 +8,6 @@ import '../widget/home_stat_cards.dart';
 import '../widget/reading_books_section.dart';
 import '../widget/reading_friends_section.dart';
 import '../widget/home_app_bar.dart';
-import '../widget/streak_banner.dart';
 import '../widget/feed_highlight_section.dart';
 import '../widget/time_capsule_section.dart';
 
@@ -44,33 +43,31 @@ class HomeScreen extends ConsumerWidget {
               child: CustomScrollView(
                 controller: scrollCtrl,
                 physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // 스트릭 배너 (2일 이상일 때만 렌더링, 내부에서 days < 2 체크)
-                SliverToBoxAdapter(child: StreakBanner()),
-                // ① 오늘 / 이번 주 통계 카드
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                const SliverToBoxAdapter(child: HomeStatCards()),
-                // ② 지금 읽는 책
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: ReadingBooksSection()),
-                // ③ 읽고 있는 친구
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: ReadingFriendsSection()),
-                // ④ 피드 하이라이트 (커뮤니티 기능 연동 전 placeholder)
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                const SliverToBoxAdapter(child: FeedHighlightSection()),
-                // ⑥ 타임캡슐 문장 (sqflite 기반 — 웹 미지원, 내부에서 null 체크)
-                if (!kIsWeb) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                  const SliverToBoxAdapter(child: TimeCapsuleSection()),
-                ],
-                SliverPadding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).padding.bottom + 24,
+                slivers: [
+                  // ① 오늘 / 이번 주 통계 카드
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  const SliverToBoxAdapter(child: HomeStatCards()),
+                  // ② 지금 읽는 책
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(child: ReadingBooksSection()),
+                  // ③ 읽고 있는 친구
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  const SliverToBoxAdapter(child: ReadingFriendsSection()),
+                  // ④ 피드 하이라이트 (커뮤니티 기능 연동 전 placeholder)
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  const SliverToBoxAdapter(child: FeedHighlightSection()),
+                  // ⑥ 타임캡슐 문장 (sqflite 기반 — 웹 미지원, 내부에서 null 체크)
+                  if (!kIsWeb) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    const SliverToBoxAdapter(child: TimeCapsuleSection()),
+                  ],
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom + 24,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             ),
           ),
         ],

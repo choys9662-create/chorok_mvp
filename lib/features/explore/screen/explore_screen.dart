@@ -17,6 +17,8 @@ import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
 import '../../../shared/widgets/book_cover.dart';
 
+enum _ExploreSearchTab { book, author, user }
+
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -29,6 +31,7 @@ class ExploreScreen extends ConsumerStatefulWidget {
 class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchFocused = false;
+  _ExploreSearchTab _selectedTab = _ExploreSearchTab.book;
   late final FocusNode _searchFocusNode;
   Timer? _debounce;
 
@@ -59,9 +62,35 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      ref.read(bookSearchProvider.notifier).search(query);
-      ref.read(userSearchProvider.notifier).search(query);
+      _runSearch(query);
     });
+  }
+
+  void _runSearch(String query) {
+    switch (_selectedTab) {
+      case _ExploreSearchTab.book:
+        ref
+            .read(bookSearchProvider.notifier)
+            .search(query, type: BookSearchType.keyword);
+      case _ExploreSearchTab.author:
+        ref
+            .read(bookSearchProvider.notifier)
+            .search(query, type: BookSearchType.author);
+      case _ExploreSearchTab.user:
+        ref.read(userSearchProvider.notifier).search(query);
+    }
+  }
+
+  void _onTabChanged(_ExploreSearchTab tab) {
+    if (tab == _selectedTab) return;
+    HapticFeedback.selectionClick();
+    setState(() => _selectedTab = tab);
+    ref.read(bookSearchProvider.notifier).clear();
+    ref.read(userSearchProvider.notifier).clear();
+    final query = _searchController.text.trim();
+    if (query.isNotEmpty) {
+      _runSearch(query);
+    }
   }
 
   void _dismissSearch() {
@@ -98,11 +127,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             searchController: _searchController,
             focusNode: _searchFocusNode,
             isSearchFocused: _isSearchFocused,
+            selectedTab: _selectedTab,
+            onTabChanged: _onTabChanged,
             onDismiss: _dismissSearch,
           ),
           Expanded(
             child: isSearchActive
                 ? _SearchResultsView(
+                    tab: _selectedTab,
                     state: searchState,
                     userState: userState,
                     query: _searchController.text,
@@ -123,12 +155,16 @@ class _AppBarArea extends StatelessWidget {
   final TextEditingController searchController;
   final FocusNode focusNode;
   final bool isSearchFocused;
+  final _ExploreSearchTab selectedTab;
+  final ValueChanged<_ExploreSearchTab> onTabChanged;
   final VoidCallback onDismiss;
 
   const _AppBarArea({
     required this.searchController,
     required this.focusNode,
     required this.isSearchFocused,
+    required this.selectedTab,
+    required this.onTabChanged,
     required this.onDismiss,
   });
 
@@ -180,10 +216,91 @@ class _AppBarArea extends StatelessWidget {
             controller: searchController,
             focusNode: focusNode,
             isSearchFocused: isSearchFocused,
+            selectedTab: selectedTab,
             onDismiss: onDismiss,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _SearchTabBar(current: selectedTab, onChanged: onTabChanged),
+          const SizedBox(height: 14),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Search Tabs ─────────────────────────────────────────────────────────────
+
+class _SearchTabBar extends StatelessWidget {
+  final _ExploreSearchTab current;
+  final ValueChanged<_ExploreSearchTab> onChanged;
+
+  const _SearchTabBar({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      (_ExploreSearchTab.book, '책'),
+      (_ExploreSearchTab.author, '작가'),
+      (_ExploreSearchTab.user, '유저'),
+    ];
+
+    return Row(
+      children: [
+        for (final item in items) ...[
+          _SearchTabChip(
+            label: item.$2,
+            isSelected: item.$1 == current,
+            onTap: () => onChanged(item.$1),
+          ),
+          if (item != items.last) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+}
+
+class _SearchTabChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _SearchTabChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$label 검색',
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          height: 34,
+          constraints: const BoxConstraints(minWidth: 58),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.center,
+          decoration: AppTheme.smoothPill(
+            color: isSelected ? AppTheme.accent : context.appCard,
+            side: BorderSide(
+              color: isSelected
+                  ? AppTheme.accent
+                  : context.appTextTertiary.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppTheme.captionSmall.copyWith(
+              color: isSelected ? Colors.black : context.appTextSecondary,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -195,17 +312,25 @@ class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isSearchFocused;
+  final _ExploreSearchTab selectedTab;
   final VoidCallback onDismiss;
 
   const _SearchBar({
     required this.controller,
     required this.focusNode,
     required this.isSearchFocused,
+    required this.selectedTab,
     required this.onDismiss,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hintText = switch (selectedTab) {
+      _ExploreSearchTab.book => '책 제목, 키워드 검색',
+      _ExploreSearchTab.author => '작가 이름 검색',
+      _ExploreSearchTab.user => '유저 이름 검색',
+    };
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
@@ -243,7 +368,7 @@ class _SearchBar extends StatelessWidget {
                 color: context.appTextPrimary,
               ),
               decoration: InputDecoration(
-                hintText: '책, 작가, 유저 검색',
+                hintText: hintText,
                 hintStyle: AppTheme.bodyMedium.copyWith(
                   color: context.appTextTertiary,
                 ),
@@ -291,6 +416,7 @@ class _IdleSearchView extends StatelessWidget {
 // ─── Search Results View ──────────────────────────────────────────────────────
 
 class _SearchResultsView extends StatelessWidget {
+  final _ExploreSearchTab tab;
   final AsyncValue<List<AladinBook>> state;
   final AsyncValue<List<UserProfile>> userState;
   final String query;
@@ -298,6 +424,7 @@ class _SearchResultsView extends StatelessWidget {
   final void Function(UserProfile) onUserNavigate;
 
   const _SearchResultsView({
+    required this.tab,
     required this.state,
     required this.userState,
     required this.query,
@@ -309,23 +436,29 @@ class _SearchResultsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final books = state.value ?? const <AladinBook>[];
     final users = userState.value ?? const <UserProfile>[];
-    final isLoading = state.isLoading || userState.isLoading;
-    final error = state.hasError
-        ? state.error
-        : userState.hasError
-        ? userState.error
-        : null;
+    final activeState = tab == _ExploreSearchTab.user ? userState : state;
+    final activeResults = tab == _ExploreSearchTab.user ? users : books;
+    final title = switch (tab) {
+      _ExploreSearchTab.book => '책',
+      _ExploreSearchTab.author => '작가',
+      _ExploreSearchTab.user => '유저',
+    };
+    final emptyHint = switch (tab) {
+      _ExploreSearchTab.book => '다른 책 제목이나 키워드로 검색해보세요',
+      _ExploreSearchTab.author => '다른 작가 이름으로 검색해보세요',
+      _ExploreSearchTab.user => '다른 닉네임이나 사용자 이름으로 검색해보세요',
+    };
 
-    if (isLoading && books.isEmpty && users.isEmpty) {
+    if (activeState.isLoading && activeResults.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (error != null && books.isEmpty && users.isEmpty) {
+    if (activeState.hasError && activeResults.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Text(
-            error.toString().replaceFirst('Exception: ', ''),
+            activeState.error.toString().replaceFirst('Exception: ', ''),
             style: AppTheme.bodySmall.copyWith(color: context.appTextSecondary),
             textAlign: TextAlign.center,
           ),
@@ -333,7 +466,7 @@ class _SearchResultsView extends StatelessWidget {
       );
     }
 
-    if (books.isEmpty && users.isEmpty) {
+    if (activeResults.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -352,10 +485,11 @@ class _SearchResultsView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '다른 책, 저자, 유저 이름으로 검색해보세요',
+              emptyHint,
               style: AppTheme.bodySmall.copyWith(
                 color: context.appTextTertiary,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -366,14 +500,12 @@ class _SearchResultsView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 8, bottom: 48),
       children: [
-        if (users.isNotEmpty) ...[
-          _ResultSectionHeader(title: '유저', count: users.length),
+        if (tab == _ExploreSearchTab.user) ...[
+          _ResultSectionHeader(title: title, count: users.length),
           for (var i = 0; i < users.length; i++)
             _UserResultTile(profile: users[i], onNavigate: onUserNavigate),
-          const SizedBox(height: 10),
-        ],
-        if (books.isNotEmpty) ...[
-          _ResultSectionHeader(title: '책', count: books.length),
+        ] else ...[
+          _ResultSectionHeader(title: title, count: books.length),
           for (var i = 0; i < books.length; i++)
             _BookResultTile(
               book: books[i],

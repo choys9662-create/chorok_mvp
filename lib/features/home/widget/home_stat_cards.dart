@@ -4,14 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/forest_accent_card.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
 const _goalMin = 30;
-const _cardRadius = 10.0;
+const _cardRadius = 8.0;
 const _weekCardColor = Color(0xFFF0F0F0);
 
 /// 홈 상단 통계 — "오늘" / "이번 주" 두 장의 pill 카드.
@@ -25,34 +27,39 @@ class HomeStatCards extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timer = ref.watch(timerProvider);
     final weeklyAsync = ref.watch(weeklyMinutesProvider);
-    final dbWeekly = weeklyAsync.valueOrNull ?? List.filled(7, 0);
+    final dbWeekly =
+        weeklyAsync.valueOrNull ??
+        (kUseMock ? kWeeklyMinutes : List.filled(7, 0));
+    final streakAsync = ref.watch(readingStreakProvider);
 
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
     final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
     final todayMin = dbTodayMin + timer.seconds ~/ 60;
+    final todaySeconds = dbTodayMin * 60 + timer.seconds;
 
     final perDay = List.generate(
       7,
-      (i) => i == todayIndex ? todayMin : (i < dbWeekly.length ? dbWeekly[i] : 0),
+      (i) =>
+          i == todayIndex ? todayMin : (i < dbWeekly.length ? dbWeekly[i] : 0),
     );
     final weekTotal = perDay.fold<int>(0, (a, b) => a + b);
-    final streak = calcReadStreak(todayIndex, perDay);
+    final fallbackStreak = calcReadStreak(todayIndex, perDay);
+    final dbStreak = streakAsync.valueOrNull;
+    final streak = dbStreak != null && dbStreak > 0
+        ? dbStreak
+        : (kUseMock ? 50 : fallbackStreak);
+    final weekSeconds = (weekTotal - todayMin) * 60 + todaySeconds;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          _TodayCard(
-            streak: streak,
-            todayMin: todayMin,
-            readToday: todayMin > 0,
-          ),
-          const SizedBox(height: 12),
+          _TodayCard(streak: streak, todaySeconds: todaySeconds),
+          const SizedBox(height: 10),
           _WeekCard(
             perDay: perDay,
             todayIndex: todayIndex,
-            weekTotal: weekTotal,
-            readToday: todayMin > 0,
+            weekSeconds: weekSeconds,
           ),
         ],
       ),
@@ -63,48 +70,41 @@ class HomeStatCards extends ConsumerWidget {
 /// "오늘" 카드 — 연독 메시지 + 오늘 읽은 분.
 class _TodayCard extends StatelessWidget {
   final int streak;
-  final int todayMin;
-  final bool readToday;
-  const _TodayCard({
-    required this.streak,
-    required this.todayMin,
-    required this.readToday,
-  });
+  final int todaySeconds;
+  const _TodayCard({required this.streak, required this.todaySeconds});
 
   String get _message {
     if (streak >= 2) return '연독 $streak일 째, 쭉 이어가자고';
-    if (todayMin >= _goalMin) return '오늘 목표 달성, 멋져요';
-    if (todayMin > 0) return '잘 시작했어요, 계속 가볼까요';
+    if (todaySeconds >= _goalMin * 60) return '오늘 목표 달성, 멋져요';
+    if (todaySeconds > 0) return '잘 시작했어요, 계속 가볼까요';
     return '오늘 첫 독서를 시작해볼까요';
   }
 
   @override
   Widget build(BuildContext context) {
-    // 단색 채움 시(읽은 날) 텍스트는 검정 계열로 대비 확보
-    final onFill = Colors.black.withValues(alpha: 0.88);
-    final onFillMuted = Colors.black.withValues(alpha: 0.55);
-
     return ForestAccentCard(
       radius: _cardRadius,
-      fillColor: readToday ? AppTheme.primaryLight : null,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             '오늘',
             style: AppTheme.headingMedium.copyWith(
-              fontSize: 20,
-              color: readToday ? onFill : AppTheme.primaryLight,
+              fontSize: 16,
+              color: AppTheme.primaryLight,
               fontWeight: FontWeight.w400,
+              letterSpacing: 0,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 28),
           Expanded(
             child: Text(
               _message,
               style: AppTheme.captionLarge.copyWith(
                 fontSize: 13,
-                color: readToday ? onFillMuted : AppTheme.primaryLight.withValues(alpha: 0.6),
+                color: AppTheme.primaryLight.withValues(alpha: 0.78),
+                letterSpacing: 0,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -112,9 +112,11 @@ class _TodayCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            '$todayMin분',
+            _formatSeconds(todaySeconds),
             style: AppTheme.displayMedium.copyWith(
-              color: readToday ? onFill : AppTheme.primaryLight,
+              color: AppTheme.primaryLight,
+              fontSize: 30,
+              letterSpacing: 0,
             ),
           ),
         ],
@@ -127,25 +129,15 @@ class _TodayCard extends StatelessWidget {
 class _WeekCard extends StatelessWidget {
   final List<int> perDay;
   final int todayIndex;
-  final int weekTotal;
-  final bool readToday;
+  final int weekSeconds;
   const _WeekCard({
     required this.perDay,
     required this.todayIndex,
-    required this.weekTotal,
-    required this.readToday,
+    required this.weekSeconds,
   });
 
   @override
   Widget build(BuildContext context) {
-    final weekTotalText = weekTotal >= 60
-        ? '${weekTotal ~/ 60}시간 ${weekTotal % 60}분'
-        : '$weekTotal분';
-
-    // 단색 채움 시(읽은 날) 회색 카드 — 텍스트·도트는 검정 계열로 대비 확보
-    const fill = Color(0xFFE8EBE6);
-    final onFill = Colors.black.withValues(alpha: 0.88);
-
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -153,41 +145,40 @@ class _WeekCard extends StatelessWidget {
       },
       child: ForestAccentCard(
         radius: _cardRadius,
-        fillColor: readToday ? fill : null,
         darkBorderColor: _weekCardColor,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               '이번 주',
               style: AppTheme.headingMedium.copyWith(
-                fontSize: 20,
-                color: readToday ? onFill : _weekCardColor,
+                fontSize: 16,
+                color: _weekCardColor.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w400,
+                letterSpacing: 0,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 24),
             Expanded(
               child: Row(
                 children: List.generate(7, (i) {
-                  final achieved = perDay[i] >= _goalMin;
+                  final achieved = perDay[i] > 0;
                   final isFuture = i > todayIndex;
                   return Padding(
-                    padding: EdgeInsets.only(right: i < 6 ? 8 : 0),
-                    child: _DayDot(
-                      achieved: achieved,
-                      dim: isFuture,
-                      onFill: readToday,
-                    ),
+                    padding: EdgeInsets.only(right: i < 6 ? 5 : 0),
+                    child: _DayDot(achieved: achieved, dim: isFuture),
                   );
                 }),
               ),
             ),
             const SizedBox(width: 12),
             Text(
-              weekTotalText,
+              _formatSeconds(weekSeconds),
               style: AppTheme.displayMedium.copyWith(
-                color: readToday ? onFill : _weekCardColor,
+                color: _weekCardColor,
+                fontSize: 30,
+                letterSpacing: 0,
               ),
             ),
           ],
@@ -200,21 +191,13 @@ class _WeekCard extends StatelessWidget {
 class _DayDot extends StatelessWidget {
   final bool achieved;
   final bool dim;
-  final bool onFill;
-  const _DayDot({
-    required this.achieved,
-    required this.dim,
-    this.onFill = false,
-  });
+  const _DayDot({required this.achieved, required this.dim});
 
   @override
   Widget build(BuildContext context) {
-    // 회색 단색 카드 위에서는 검정 계열 도트로 대비 확보
-    final Color color = onFill
-        ? (achieved
-            ? Colors.black.withValues(alpha: 0.85)
-            : Colors.black.withValues(alpha: dim ? 0.20 : 0.35))
-        : _weekCardColor.withValues(alpha: achieved ? 1.0 : (dim ? 0.25 : 0.4));
+    final color = _weekCardColor.withValues(
+      alpha: achieved ? 1.0 : (dim ? 0.5 : 0.75),
+    );
     return Container(
       width: 10,
       height: 10,
@@ -225,4 +208,13 @@ class _DayDot extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatSeconds(int totalSeconds) {
+  final h = totalSeconds ~/ 3600;
+  final m = (totalSeconds % 3600) ~/ 60;
+  final s = totalSeconds % 60;
+  return '${h.toString().padLeft(2, '0')}:'
+      '${m.toString().padLeft(2, '0')}:'
+      '${s.toString().padLeft(2, '0')}';
 }

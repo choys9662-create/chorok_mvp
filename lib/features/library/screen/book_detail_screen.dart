@@ -5,11 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
@@ -71,12 +73,63 @@ typedef _Sentence = ({
   int? pageNumber,
 });
 
+List<_Sentence> _mockDetailSentences(Book book) {
+  if (!book.title.contains('채식주의자')) {
+    return book.savedSentences.asMap().entries.map((entry) {
+      return (
+        id: 'mock_${book.id}_${entry.key}',
+        content: entry.value,
+        thought: null as String?,
+        pageNumber: null as int?,
+      );
+    }).toList();
+  }
+
+  return const [
+    (
+      id: 'vegetarian_9',
+      content: '아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.',
+      thought: '영혜가 타인의 시선 안에서 얼마나 평면적으로 존재했는지 보여준다.',
+      pageNumber: 9,
+    ),
+    (
+      id: 'vegetarian_12',
+      content:
+          '크지도 작지도 않은 키, 길지도 짧지도 않은 단발머리, 각질이 일어난 노르스름한 피부, 외꺼풀 눈에 약간 튀어나온 광대뼈, 개성있어 보이는 것을 두려워하는 듯한 무채색의 옷차림.',
+      thought: null,
+      pageNumber: 12,
+    ),
+    (
+      id: 'vegetarian_52',
+      content: '빠르지도, 느리지도, 힘있지도, 가냘프지도 않은 걸음걸이로.',
+      thought: null,
+      pageNumber: 52,
+    ),
+    (
+      id: 'vegetarian_122',
+      content:
+          '며칠내내 언제가 통했던 그런 필사적인 노력에 오히려 그녀에게 죄책감을 일으켜, 그녀의 웃음이 결국 흐려져버린다는 것을 지우가 알 리 없다.',
+      thought: '끝까지 설명되지 않는 감정의 결을 붙잡게 만드는 문장.',
+      pageNumber: 122,
+    ),
+    (
+      id: 'vegetarian_202',
+      content: '산다는 것은 이상한 일이라고, 그 웃음의 끝에 그녀는 생각한다.',
+      thought: null,
+      pageNumber: 202,
+    ),
+  ];
+}
+
 // 책별 세션 통계 (세션 수, 누적 시간, 평균 분)
 final _bookSessionStatsProvider =
     FutureProvider.family<
       ({int sessions, double totalHours, int avgMinutes}),
       String
     >((ref, bookId) async {
+      if (kUseMock && bookId == '1') {
+        return (sessions: 5, totalHours: 2.5, avgMinutes: 30);
+      }
       final repo = ref.read(bookRepositoryProvider);
       if (repo == null) return (sessions: 0, totalHours: 0.0, avgMinutes: 0);
       final sessions = await repo.getSessionsForBook(bookId);
@@ -225,6 +278,21 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     ref.invalidate(_bookChoseoProvider(query));
   }
 
+  void _startSession(Book book) {
+    HapticFeedback.mediumImpact();
+    context.push(
+      AppConstants.routeSession,
+      extra: SessionExtra(
+        bookId: book.id,
+        bookTitle: book.title,
+        bookAuthor: book.author,
+        coverUrl: book.coverUrl,
+        startPage: _currentPage,
+        totalPages: book.totalPages,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<List<Book>>(libraryProvider, (prev, next) {
@@ -256,13 +324,12 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     final sentenceQuery = _sentenceQuery(book);
     final choseoAsync = ref.watch(_bookChoseoProvider(sentenceQuery));
     final List<_Sentence> sentences = kUseMock
-        ? book.savedSentences.asMap().entries.map((entry) {
-            final id = 'mock_${widget.bookId}_${entry.key}';
+        ? _mockDetailSentences(book).map((sentence) {
             return (
-              id: id,
-              content: entry.value,
-              thought: _mockThoughts[id],
-              pageNumber: null as int?,
+              id: sentence.id,
+              content: sentence.content,
+              thought: _mockThoughts[sentence.id] ?? sentence.thought,
+              pageNumber: sentence.pageNumber,
             );
           }).toList()
         : (choseoAsync.valueOrNull ?? const [])
@@ -277,9 +344,19 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               .toList();
     final isLoadingSentences = !kUseMock && choseoAsync.isLoading;
     final hasSentenceError = !kUseMock && choseoAsync.hasError;
+    final detailSentenceCount = kUseMock && book.id == '1'
+        ? 10
+        : sentences.length;
+    final heroSentenceCount = kUseMock && book.id == '1'
+        ? 15
+        : sentences.length;
 
     return Scaffold(
       backgroundColor: Colors.black,
+      bottomNavigationBar: _ContinueReadingBar(
+        onContinue: () => _startSession(book),
+        onAddSentence: () => _showAddSentenceSheet(book),
+      ),
       body: CustomScrollView(
         slivers: [
           // ── 히어로 섹션 ────────────────────────────────────────────
@@ -295,7 +372,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 return _HeroSection(
                   book: book,
                   sessionCount: sessions,
-                  sentenceCount: sentences.length,
+                  sentenceCount: heroSentenceCount,
                 );
               },
             ),
@@ -323,8 +400,10 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 return _StatsRow(
                   sessions: stats?.sessions ?? 0,
                   totalHours: stats?.totalHours ?? 0.0,
-                  progress: book.readingProgress,
-                  sentenceCount: sentences.length,
+                  progress: kUseMock && book.id == '1'
+                      ? 0.70
+                      : book.readingProgress,
+                  sentenceCount: detailSentenceCount,
                 );
               },
             ),
@@ -353,7 +432,94 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               ),
             ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.of(context).padding.bottom + 110,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContinueReadingBar extends StatelessWidget {
+  final VoidCallback onContinue;
+  final VoidCallback onAddSentence;
+
+  const _ContinueReadingBar({
+    required this.onContinue,
+    required this.onAddSentence,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return Container(
+      height: 84 + bottom,
+      padding: EdgeInsets.fromLTRB(16, 20, 16, 12 + bottom),
+      color: const Color(0xFF080808),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Semantics(
+            button: true,
+            label: '이어 읽기',
+            child: GestureDetector(
+              onTap: onContinue,
+              child: Container(
+                width: 170,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 16,
+                      color: Colors.black,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '이어 읽기',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w400,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Semantics(
+            button: true,
+            label: '문장 추가',
+            child: GestureDetector(
+              onTap: onAddSentence,
+              child: Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.primaryLight, width: 1),
+                ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  size: 22,
+                  color: AppTheme.primaryLight,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -379,6 +545,9 @@ class _HeroSection extends StatelessWidget {
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
     final coverColors = AppTheme.coverGradients[gradientIndex];
     final topPad = MediaQuery.of(context).padding.top;
+    final meta = book.title.contains('채식주의자')
+        ? '${book.author} | 창비 | 2022'
+        : book.author;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(24, topPad + 18, 24, 26),
@@ -451,6 +620,7 @@ class _HeroSection extends StatelessWidget {
             book.title,
             style: AppTheme.headingMedium.copyWith(
               color: _detailAccent,
+              fontSize: 24,
               height: 1.25,
             ),
             textAlign: TextAlign.center,
@@ -459,9 +629,10 @@ class _HeroSection extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            book.author,
+            meta,
             style: AppTheme.bodySmall.copyWith(
               color: _detailAccent.withValues(alpha: 0.92),
+              fontSize: 16,
               height: 1.4,
             ),
             maxLines: 1,
@@ -572,75 +743,100 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
         children: [
           Text(
             '현재 페이지',
-            style: AppTheme.captionSmall.copyWith(color: _detailMuted),
+            style: AppTheme.captionSmall.copyWith(
+              color: _detailMuted,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               _PageStepButton(
                 icon: Icons.remove_rounded,
                 onTap: () => _setPage(_page - 1),
               ),
-              Expanded(
-                child: Center(
-                  child: Container(
-                    height: 60,
-                    constraints: const BoxConstraints(minWidth: 106),
-                    decoration: AppTheme.smoothBox(
-                      color: Colors.black,
-                      radius: 10,
-                      side: const BorderSide(color: _detailAccent, width: 1),
+              const SizedBox(width: 32),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 112,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF172017),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: _detailAccent, width: 1),
+                  ),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      inputDecorationTheme: const InputDecorationTheme(
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                      ),
                     ),
-                    child: IntrinsicWidth(
-                      child: TextField(
-                        controller: _ctrl,
-                        focusNode: _focusNode,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onSubmitted: (_) {
-                          _commitText();
-                          _focusNode.unfocus();
-                        },
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w400,
-                          color: _detailAccent,
-                          height: 1.05,
-                        ),
-                        cursorColor: _detailAccent,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.fromLTRB(
-                            12,
-                            10,
-                            4,
-                            10,
-                          ),
-                          suffixIcon: GestureDetector(
-                            onTap: () {
-                              _focusNode.requestFocus();
-                              _ctrl.selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: _ctrl.text.length,
-                              );
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _ctrl,
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.right,
+                            onSubmitted: (_) {
+                              _commitText();
+                              _focusNode.unfocus();
                             },
-                            child: const Icon(
-                              Icons.edit_rounded,
-                              size: 16,
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w400,
                               color: _detailAccent,
+                              height: 1.05,
+                            ),
+                            cursorColor: _detailAccent,
+                            decoration: const InputDecoration(
+                              filled: false,
+                              fillColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.fromLTRB(8, 10, 0, 10),
                             ),
                           ),
-                          suffixIconConstraints: const BoxConstraints(
-                            maxWidth: 32,
-                            maxHeight: 28,
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            _focusNode.requestFocus();
+                            _ctrl.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: _ctrl.text.length,
+                            );
+                          },
+                          child: const Icon(
+                            Icons.edit_rounded,
+                            size: 16,
+                            color: _detailAccent,
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 14),
+                      ],
                     ),
                   ),
                 ),
               ),
+              const SizedBox(width: 32),
               _PageStepButton(
                 icon: Icons.add_rounded,
                 onTap: () => _setPage(_page + 1),
@@ -933,31 +1129,34 @@ class _SentenceItem extends StatelessWidget {
                   ? const BorderSide(color: _detailAccent, width: 1)
                   : BorderSide.none,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 40,
-                  child: Text(
-                    sentence.pageNumber != null
-                        ? '${sentence.pageNumber}p'
-                        : '',
-                    style: AppTheme.captionSmall.copyWith(
-                      color: _detailMuted,
-                      height: 1.55,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 40,
+                    child: Text(
+                      sentence.pageNumber != null
+                          ? '${sentence.pageNumber}p'
+                          : '',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: _detailMuted,
+                        height: 1.55,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Text(
-                    sentence.content,
-                    style: AppTheme.captionLarge.copyWith(
-                      height: 1.55,
-                      color: _detailText.withValues(alpha: 0.72),
+                  Expanded(
+                    child: Text(
+                      sentence.content,
+                      style: AppTheme.captionLarge.copyWith(
+                        height: 1.55,
+                        color: _detailText.withValues(alpha: 0.72),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

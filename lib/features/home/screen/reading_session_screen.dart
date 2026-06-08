@@ -31,29 +31,6 @@ const _kFont = AppTheme.fontFamily;
 const _captureTimeout = Duration(seconds: 8);
 const _captureReadTimeout = Duration(seconds: 12);
 
-const List<String> _kTopics = [
-  '이 책의 제목이 품고 있는 의미는 무엇일까요?',
-  '저자가 이 책을 쓴 이유는 무엇이었을까요?',
-  '오늘 독서에서 어떤 문장을 초서하고 싶은가요?',
-  '이 책이 나의 삶에 어떤 질문을 던질까요?',
-  '읽기 전, 이 책에서 기대하는 한 가지는 무엇인가요?',
-  '이 책의 주인공은 지금 어떤 상황에 있을까요?',
-  '저자가 가장 전하고 싶은 것은 무엇일까요?',
-  '이 책에서 가장 기억될 순간은 어디일까요?',
-  '이 책을 읽고 나면 무엇이 달라져 있을까요?',
-  '지금 내가 이 책을 읽는 이유는 무엇인가요?',
-  '이 책이 다루는 세계는 나의 현실과 어떻게 다를까요?',
-  '오늘 독서에서 배울 가장 소중한 것은 무엇일까요?',
-  '마음에 가장 먼저 남을 문장은 어떤 모습일까요?',
-  '이 책이 던지는 첫 번째 질문은 무엇일까요?',
-  '책장을 넘기며 처음 느낄 감정은 무엇일까요?',
-];
-
-String _generateTopic(String bookTitle) {
-  final h = bookTitle.codeUnits.fold(0, (a, b) => a + b);
-  return _kTopics[h % _kTopics.length];
-}
-
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
   final SessionGoal? goal;
@@ -2054,7 +2031,7 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
   }
 }
 
-// ─── 오늘의 화두 오버레이 ─────────────────────────────────────────────────
+// ─── 세션 진입 오버레이 ─────────────────────────────────────────────────
 class _TodaysTopicOverlay extends StatefulWidget {
   final String bookTitle;
   final String bookAuthor;
@@ -2096,144 +2073,237 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final topic = _generateTopic(widget.bookTitle);
     return FadeTransition(
       opacity: _fadeAnim,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.92),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '오늘의 화두',
-                  style: TextStyle(
-                    color: _kGreen.withValues(alpha: 0.75),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 2,
-                    fontFamily: _kFont,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.bookTitle,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w400,
-                    fontFamily: _kFont,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.bookAuthor,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.40),
-                    fontSize: 13,
-                    fontFamily: _kFont,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                BookCover(
-                  coverUrl: widget.coverUrl,
-                  gradientIndex: widget.bookTitle.hashCode.abs(),
-                  width: 150,
-                  height: 216,
-                  radius: 10,
-                  shadows: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      blurRadius: 32,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _kGreen.withValues(alpha: 0.20),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    topic,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      height: 1.75,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: _kFont,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 56),
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    widget.onStart();
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 56,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: _kGreen,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _kGreen.withValues(alpha: 0.40),
-                          blurRadius: 24,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Text(
-                      '독서 시작하기',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        fontFamily: _kFont,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onStart();
-                  },
-                  child: SizedBox(
-                    height: 44,
-                    child: Center(
-                      child: Text(
-                        '건너뛰기',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.30),
-                          fontSize: 12,
-                          fontFamily: _kFont,
+      child: ColoredBox(
+        color: Colors.black.withValues(alpha: 0.94),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const _SessionEntryFireflies(),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = math.min(constraints.maxWidth, 430.0);
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(40, 75, 40, 54),
+                        child: Column(
+                          children: [
+                            const _SessionEntryBadge(label: '6번째 세션'),
+                            const SizedBox(height: 17),
+                            Text(
+                              widget.bookTitle,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Color(0xFF8DBBFF),
+                                fontSize: 20,
+                                height: 1.18,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: _kFont,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _sessionEntryBookMeta(widget.bookAuthor),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(
+                                  0xFF8DBBFF,
+                                ).withValues(alpha: 0.78),
+                                fontSize: 13,
+                                height: 1.2,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: _kFont,
+                              ),
+                            ),
+                            const SizedBox(height: 23),
+                            BookCover(
+                              coverUrl: widget.coverUrl,
+                              gradientIndex: widget.bookTitle.hashCode.abs(),
+                              width: 200,
+                              height: 305,
+                              radius: 8,
+                              shadows: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF65A7FF,
+                                  ).withValues(alpha: 0.12),
+                                  blurRadius: 18,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 34),
+                            _SessionEntryQuestionButton(
+                              label: _sessionEntryQuestion(widget.bookTitle),
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                widget.onStart();
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _sessionEntryBookMeta(String author) {
+  final trimmed = author.trim();
+  if (trimmed.isEmpty) return '2022';
+  return '$trimmed | 2022';
+}
+
+String _sessionEntryQuestion(String bookTitle) {
+  if (bookTitle.contains('채식주의자')) {
+    return '영혜는 왜 채식을 결심했을까요?';
+  }
+  return '이 책은 어떤 질문을 남길까요?';
+}
+
+class _SessionEntryBadge extends StatelessWidget {
+  final String label;
+
+  const _SessionEntryBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: const Color(0xFF8DBBFF).withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF07101C),
+          fontSize: 11,
+          height: 1,
+          fontWeight: FontWeight.w500,
+          fontFamily: _kFont,
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionEntryQuestionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SessionEntryQuestionButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.66),
+          borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: const Color(0xFF8DBBFF), width: 1.1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8DBBFF).withValues(alpha: 0.14),
+              blurRadius: 14,
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFF8DBBFF),
+            fontSize: 16,
+            height: 1.15,
+            fontWeight: FontWeight.w400,
+            fontFamily: _kFont,
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SessionEntryFireflies extends StatelessWidget {
+  const _SessionEntryFireflies();
+
+  static const _orbs = <({double x, double y, double size, double alpha})>[
+    (x: 0.145, y: 0.129, size: 22, alpha: 0.30),
+    (x: 0.846, y: 0.075, size: 9, alpha: 0.14),
+    (x: 0.246, y: 0.339, size: 45, alpha: 0.11),
+    (x: 0.225, y: 0.525, size: 43, alpha: 0.25),
+    (x: 0.805, y: 0.707, size: 36, alpha: 0.18),
+    (x: 0.467, y: 0.763, size: 22, alpha: 0.30),
+    (x: 0.136, y: 0.794, size: 9, alpha: 0.16),
+    (x: 0.846, y: 0.875, size: 22, alpha: 0.26),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            for (final orb in _orbs)
+              Positioned(
+                left: constraints.maxWidth * orb.x - orb.size / 2,
+                top: constraints.maxHeight * orb.y - orb.size / 2,
+                child: Container(
+                  width: orb.size,
+                  height: orb.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(
+                      0xFF8DBBFF,
+                    ).withValues(alpha: orb.alpha * 0.18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(
+                          0xFF8DBBFF,
+                        ).withValues(alpha: orb.alpha),
+                        blurRadius: orb.size * 0.45,
+                        spreadRadius: orb.size * 0.08,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: orb.size * 0.34,
+                      height: orb.size * 0.34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(
+                          0xFF8DBBFF,
+                        ).withValues(alpha: math.min(0.72, orb.alpha + 0.18)),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -4048,7 +4118,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
           // 어두운 스크림 — 배경 반딧불이는 은은하게 비침
           GestureDetector(
             onTap: widget.onSkip,
-            child: Container(color: Colors.black.withValues(alpha: 0.55)),
+            child: Container(color: Colors.black.withValues(alpha: 0.72)),
           ),
           // 콘텐츠 — 카드 배경 없이 요소만 배경 위에 배치
           Center(
@@ -4066,42 +4136,36 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   // 숫자 조작 행
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _StepButton(
-                        icon: Icons.remove,
-                        onTap: _decrement,
-                      ),
-                      const SizedBox(width: 20),
+                      _StepButton(icon: Icons.remove, onTap: _decrement),
+                      const SizedBox(width: 28),
                       _PageBox(
                         page: _page,
                         totalPages: widget.totalPages,
                         onChanged: (v) =>
                             setState(() => _page = v.clamp(0, _maxPage)),
                       ),
-                      const SizedBox(width: 20),
-                      _StepButton(
-                        icon: Icons.add,
-                        onTap: _increment,
-                      ),
+                      const SizedBox(width: 28),
+                      _StepButton(icon: Icons.add, onTap: _increment),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
                   // 슬라이더 — 화면 좌우로 넓게
                   SizedBox(
-                    width: double.infinity,
+                    width: 308,
                     child: SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: _kGreen,
-                        inactiveTrackColor: _kGreen.withValues(alpha: 0.18),
+                        inactiveTrackColor: const Color(0xFF474747),
                         thumbColor: _kGreen,
                         overlayColor: _kGreen.withValues(alpha: 0.15),
                         trackHeight: 3,
                         thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 8,
+                          enabledThumbRadius: 7,
                         ),
                         overlayShape: const RoundSliderOverlayShape(
                           overlayRadius: 18,
@@ -4127,7 +4191,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
                   // 확인 버튼 — 콘텐츠 크기만큼만, 솔리드 채움 사각형
                   GestureDetector(
                     onTap: () {
@@ -4136,22 +4200,22 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
+                        horizontal: 10,
+                        vertical: 7,
                       ),
                       decoration: BoxDecoration(
                         color: _kGreen,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
                             Icons.check_rounded,
-                            size: 18,
+                            size: 16,
                             color: Colors.black,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           Text(
                             '독서종료',
                             style: TextStyle(
@@ -4189,14 +4253,13 @@ class _StepButton extends StatelessWidget {
         onTap();
       },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 28,
+        height: 28,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _kGreen.withValues(alpha: 0.12),
-          border: Border.all(color: _kGreen.withValues(alpha: 0.35)),
+          color: const Color(0xFF202020),
         ),
-        child: Icon(icon, size: 18, color: _kGreen),
+        child: Icon(icon, size: 16, color: const Color(0xFF9B9B9B)),
       ),
     );
   }
@@ -4257,8 +4320,8 @@ class _PageBoxState extends State<_PageBox> {
   Widget build(BuildContext context) {
     if (_editing) {
       return SizedBox(
-        width: 100,
-        height: 56,
+        width: 106,
+        height: 60,
         child: TextField(
           controller: _ctrl,
           focusNode: _focus,
@@ -4267,7 +4330,7 @@ class _PageBoxState extends State<_PageBox> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: _kFont,
-            fontSize: 32,
+            fontSize: 40,
             color: _kGreen,
             fontWeight: FontWeight.w300,
           ),
@@ -4296,8 +4359,8 @@ class _PageBoxState extends State<_PageBox> {
         );
       }),
       child: Container(
-        width: 100,
-        height: 56,
+        width: 106,
+        height: 60,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -4311,7 +4374,7 @@ class _PageBoxState extends State<_PageBox> {
               '${widget.page}',
               style: TextStyle(
                 fontFamily: _kFont,
-                fontSize: 32,
+                fontSize: 40,
                 color: _kGreen,
                 fontWeight: FontWeight.w300,
               ),

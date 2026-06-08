@@ -97,22 +97,20 @@ class _FireflyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 최대 4명까지 노출 (한 줄)
-    final shown = mutuals.take(4).toList();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
       child: Row(
-        children: List.generate(shown.length, (i) {
+        children: List.generate(mutuals.length, (i) {
           // TODO: 실데이터 연동 시 친구별 오늘 독서 분으로 교체.
           // 현재는 이름 해시로 0/30/60분을 안정적으로 부여(데모).
-          final demoMinutes = (shown[i].username.hashCode.abs() % 3) * 30;
+          final demoMinutes = (mutuals[i].username.hashCode.abs() % 3) * 30;
           return Padding(
             padding: EdgeInsets.only(
-              right: i < shown.length - 1 ? _cardGap : 0,
+              right: i < mutuals.length - 1 ? _cardGap : 0,
             ),
             child: _FireflyAvatar(
-              name: shown[i].displayName,
+              name: mutuals[i].displayName,
               layers: layersForMinutes(demoMinutes),
             ),
           );

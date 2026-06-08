@@ -8,28 +8,55 @@ class ProfileRepository {
   ProfileRepository(this._client);
 
   Future<List<UserProfile>> searchUsers(String query, {int limit = 20}) async {
-    final q = query.trim();
+    final q = query.trim().replaceFirst(RegExp(r'^@+'), '');
     if (q.isEmpty) return const [];
-    final pattern = '%$q%';
 
-    final usernameRows = await _client
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, bio')
-        .ilike('username', pattern)
-        .limit(limit);
-    final displayNameRows = await _client
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, bio')
-        .ilike('display_name', pattern)
-        .limit(limit);
+    try {
+      final rows = await _client.rpc<List<dynamic>>(
+        'search_public_profiles',
+        params: {'p_query': q, 'p_limit': limit},
+      );
+      return rows
+          .cast<Map<String, dynamic>>()
+          .map(UserProfile.fromRow)
+          .toList();
+    } catch (_) {
+      return _searchUsersFromProfiles(q, limit: limit);
+    }
+  }
+
+  Future<List<UserProfile>> _searchUsersFromProfiles(
+    String q, {
+    required int limit,
+  }) async {
+    final pattern = '%$q%';
+    const columns = 'id, username, display_name, avatar_url, bio, is_private';
+
+    final results = await Future.wait([
+      _client.from('profiles').select(columns).eq('username', q).limit(limit),
+      _client
+          .from('profiles')
+          .select(columns)
+          .eq('display_name', q)
+          .limit(limit),
+      _client
+          .from('profiles')
+          .select(columns)
+          .ilike('username', pattern)
+          .limit(limit),
+      _client
+          .from('profiles')
+          .select(columns)
+          .ilike('display_name', pattern)
+          .limit(limit),
+    ]);
 
     final byId = <String, Map<String, dynamic>>{};
-    for (final row in [
-      ...(usernameRows as List),
-      ...(displayNameRows as List),
-    ]) {
-      final map = row as Map<String, dynamic>;
-      byId[map['id'] as String] = map;
+    for (final rows in results) {
+      for (final row in rows as List) {
+        final map = row as Map<String, dynamic>;
+        byId.putIfAbsent(map['id'] as String, () => map);
+      }
     }
 
     return byId.values.map(UserProfile.fromRow).take(limit).toList();

@@ -27,43 +27,33 @@ class StreakBanner extends ConsumerWidget {
             ? dbWeekly[todayIndex]
             : 0;
         final hasReadToday = todayMin > 0;
+        if (!hasReadToday) return const SizedBox.shrink();
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: ShapeDecoration(
-              color: hasReadToday
-                  ? AppTheme.warningColor.withValues(alpha: 0.08)
-                  : context.appCard,
+              color: AppTheme.warningColor.withValues(alpha: 0.08),
               shape: SmoothRectangleBorder(
                 smoothness: 0.6,
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
                 side: BorderSide(
-                  color: hasReadToday
-                      ? AppTheme.warningColor.withValues(alpha: 0.24)
-                      : context.appBorderSubtle,
+                  color: AppTheme.warningColor.withValues(alpha: 0.24),
                 ),
               ),
             ),
             child: Row(
               children: [
-                Text(
-                  hasReadToday ? '🔥' : '⏰',
-                  style: const TextStyle(fontSize: 24),
-                ),
+                Text('🔥', style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    hasReadToday
-                        ? '$days일 연속 독서 중'
-                        : '오늘 아직 안 읽었어요. 스트릭이 끊길 수도 있어요.',
+                    '$days일 연속 독서 중',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: hasReadToday
-                          ? AppTheme.warningColor
-                          : context.appTextSecondary,
+                      color: AppTheme.warningColor,
                       height: 1.4,
                     ),
                   ),

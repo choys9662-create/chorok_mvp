@@ -13,6 +13,10 @@ import 'package:smooth_corner/smooth_corner.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
+const _readingBookCardWidth = 118.0;
+const _readingBookCardHeight = 180.0;
+const _readingBookCardGap = 8.0;
+
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
 
@@ -70,7 +74,7 @@ class ReadingBooksSection extends ConsumerWidget {
         if (isLoading) ...[
           const SizedBox(height: 12),
           SizedBox(
-            height: 240,
+            height: _readingBookCardHeight,
             child: ListView(
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
@@ -78,9 +82,17 @@ class ReadingBooksSection extends ConsumerWidget {
                 horizontal: AppTheme.screenPadding,
               ),
               children: const [
-                ChorokShimmer(width: 160, height: 240, radius: 10),
-                SizedBox(width: 12),
-                ChorokShimmer(width: 160, height: 240, radius: 10),
+                ChorokShimmer(
+                  width: _readingBookCardWidth,
+                  height: _readingBookCardHeight,
+                  radius: 8,
+                ),
+                SizedBox(width: _readingBookCardGap),
+                ChorokShimmer(
+                  width: _readingBookCardWidth,
+                  height: _readingBookCardHeight,
+                  radius: 8,
+                ),
               ],
             ),
           ),
@@ -92,7 +104,7 @@ class ReadingBooksSection extends ConsumerWidget {
           const SizedBox(height: 12),
           // 가로 스크롤 카드 (마지막에 + 추가 카드)
           SizedBox(
-            height: 248,
+            height: _readingBookCardHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -103,7 +115,9 @@ class ReadingBooksSection extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final isLast = index == readingBooks.length;
                 return Padding(
-                  padding: EdgeInsets.only(right: isLast ? 0 : 12),
+                  padding: EdgeInsets.only(
+                    right: isLast ? 0 : _readingBookCardGap,
+                  ),
                   child: isLast
                       ? const AddBookCard()
                       : ReadingBookCard(book: readingBooks[index]),
@@ -289,15 +303,15 @@ class ReadingBookCardState extends State<ReadingBookCard> {
           coverUrl: b.coverUrl,
           gradientIndex:
               b.title.hashCode.abs() % AppTheme.coverGradients.length,
-          width: 158,
-          height: 248,
-          radius: AppTheme.radiusLG,
+          width: _readingBookCardWidth,
+          height: _readingBookCardHeight,
+          radius: 8,
           fallbackIcon: Positioned(
             right: -12,
-            bottom: 40,
+            bottom: 32,
             child: Icon(
               Icons.menu_book_rounded,
-              size: 96,
+              size: 72,
               color: Colors.white.withValues(alpha: 0.10),
             ),
           ),
@@ -308,21 +322,25 @@ class ReadingBookCardState extends State<ReadingBookCard> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
-                  height: 120,
+                  height: 92,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Color(0xCC000000)],
+                      colors: [
+                        Colors.transparent,
+                        Color(0x99000000),
+                        Color(0xE6000000),
+                      ],
                     ),
                   ),
                 ),
               ),
               // 제목 · 저자 · 진행바
               Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
+                left: 8,
+                right: 8,
+                bottom: 8,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -331,8 +349,10 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       style: AppTheme.bodySmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w400,
+                        fontSize: 11,
+                        height: 1.2,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
@@ -340,11 +360,13 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
                         color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 10,
+                        height: 1.2,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 7),
                     ProgressBar(value: progress),
                   ],
                 ),
@@ -372,17 +394,17 @@ class AddBookCard extends StatelessWidget {
           context.push(AppConstants.routeExplore);
         },
         child: Container(
-          width: 158,
-          height: 248,
+          width: _readingBookCardWidth,
+          height: _readingBookCardHeight,
           alignment: Alignment.center,
           decoration: AppTheme.smoothBox(
             color: context.primaryBg(0.04),
-            radius: AppTheme.radiusLG,
+            radius: 8,
             side: BorderSide(color: context.appBorderSubtle),
           ),
           child: Icon(
             Icons.add_rounded,
-            size: 40,
+            size: 30,
             color: context.appTextTertiary.withValues(alpha: 0.6),
           ),
         ),

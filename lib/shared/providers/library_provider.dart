@@ -427,14 +427,14 @@ final _kMockBooks = [
   // reading
   Book(
     id: '1',
-    title: '채식주의자',
+    title: '채식주의자 (리마스터판)',
     author: '한강',
     coverUrl:
         'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
     status: ReadingStatus.reading,
-    totalPages: 300,
-    currentPage: 186,
-    totalReadingHours: 5.2,
+    totalPages: 276,
+    currentPage: 196,
+    totalReadingHours: 2.5,
     savedSentences: ['나는 채식주의자가 되기로 했다.', '꿈 때문에.'],
   ),
   Book(
