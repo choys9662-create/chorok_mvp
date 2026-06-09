@@ -372,7 +372,8 @@ class DbService {
     final follows = await supabase
         .from('follows')
         .select('following_id')
-        .eq('follower_id', _uid);
+        .eq('follower_id', _uid)
+        .eq('status', 'accepted');
 
     final followingIds = (follows as List)
         .map((f) => f['following_id'] as String)
@@ -436,7 +437,8 @@ class DbService {
     final follows = await supabase
         .from('follows')
         .select('following_id')
-        .eq('follower_id', _uid);
+        .eq('follower_id', _uid)
+        .eq('status', 'accepted');
 
     final followingIds = (follows as List)
         .map((f) => f['following_id'] as String)
@@ -551,7 +553,8 @@ class DbService {
         .select(
           'following_id, profiles!follows_following_id_fkey(username, display_name, avatar_url)',
         )
-        .eq('follower_id', _uid);
+        .eq('follower_id', _uid)
+        .eq('status', 'accepted');
     return List<Map<String, dynamic>>.from(res);
   }
 
@@ -561,7 +564,8 @@ class DbService {
         .select(
           'follower_id, profiles!follows_follower_id_fkey(username, display_name, avatar_url)',
         )
-        .eq('following_id', _uid);
+        .eq('following_id', _uid)
+        .eq('status', 'accepted');
     return List<Map<String, dynamic>>.from(res);
   }
 

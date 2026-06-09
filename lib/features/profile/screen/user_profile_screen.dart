@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/utils/follow_relationship_text.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/user_profile_provider.dart';
 
@@ -18,25 +19,31 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
-  FollowState? _followOverride;
+  FollowRelationship? _relationshipOverride;
   bool _busy = false;
 
-  Future<void> _toggleFollow(FollowState current) async {
+  Future<void> _toggleFollow(FollowRelationship current) async {
     if (_busy) return;
     HapticFeedback.mediumImpact();
     setState(() => _busy = true);
     try {
       final repo = ref.read(followRepositoryProvider);
-      if (current == FollowState.none) {
+      if (current.outgoing == FollowState.none) {
         final result = await repo.follow(widget.profile.id);
         if (!mounted) return;
-        setState(() => _followOverride = result);
+        setState(
+          () => _relationshipOverride = current.copyWith(outgoing: result),
+        );
         ref.invalidate(userProfileProvider(widget.profile.id));
         ref.read(followMutationVersionProvider.notifier).state++;
       } else {
         await repo.unfollow(widget.profile.id);
         if (!mounted) return;
-        setState(() => _followOverride = FollowState.none);
+        setState(
+          () => _relationshipOverride = current.copyWith(
+            outgoing: FollowState.none,
+          ),
+        );
         ref.invalidate(userProfileProvider(widget.profile.id));
         ref.read(followMutationVersionProvider.notifier).state++;
       }
@@ -83,21 +90,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           onRetry: () => ref.invalidate(userProfileProvider(p.id)),
         ),
         data: (data) {
-          final followState = _followOverride ?? data.followState;
+          final relationship = _relationshipOverride ?? data.relationship;
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
               _Header(
                 profile: p,
-                followState: followState,
+                relationship: relationship,
                 busy: _busy,
-                onToggleFollow: () => _toggleFollow(followState),
+                onToggleFollow: () => _toggleFollow(relationship),
               ),
               const SizedBox(height: 24),
               if (data.sentences.isEmpty)
                 _EmptySentences(
                   isPrivate: p.isPrivate,
-                  followState: followState,
+                  followState: relationship.outgoing,
                 )
               else
                 ...data.sentences.map((s) => _SentenceTile(sentence: s)),
@@ -111,13 +118,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
 class _Header extends StatelessWidget {
   final UserProfile profile;
-  final FollowState followState;
+  final FollowRelationship relationship;
   final bool busy;
   final VoidCallback onToggleFollow;
 
   const _Header({
     required this.profile,
-    required this.followState,
+    required this.relationship,
     required this.busy,
     required this.onToggleFollow,
   });
@@ -158,9 +165,13 @@ class _Header extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
+        if (followRelationshipHint(relationship) case final hint?) ...[
+          const SizedBox(height: 10),
+          _RelationshipPill(label: hint),
+        ],
         const SizedBox(height: 16),
         _FollowButton(
-          followState: followState,
+          relationship: relationship,
           busy: busy,
           onTap: onToggleFollow,
         ),
@@ -170,23 +181,20 @@ class _Header extends StatelessWidget {
 }
 
 class _FollowButton extends StatelessWidget {
-  final FollowState followState;
+  final FollowRelationship relationship;
   final bool busy;
   final VoidCallback onTap;
 
   const _FollowButton({
-    required this.followState,
+    required this.relationship,
     required this.busy,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final (label, filled) = switch (followState) {
-      FollowState.none => ('팔로우', true),
-      FollowState.accepted => ('팔로잉', false),
-      FollowState.pending => ('요청됨', false),
-    };
+    final label = followActionLabel(relationship);
+    final filled = followActionIsFilled(relationship);
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -217,6 +225,33 @@ class _FollowButton extends StatelessWidget {
               ),
               child: _FollowButtonLabel(label: label, busy: busy),
             ),
+    );
+  }
+}
+
+class _RelationshipPill extends StatelessWidget {
+  final String label;
+  const _RelationshipPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: AppTheme.smoothBox(
+        color: context.appCardElevated,
+        radius: AppTheme.radiusSM,
+        side: BorderSide(
+          color: context.appPrimaryAccent.withValues(alpha: 0.24),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: context.appTextSecondary,
+        ),
+      ),
     );
   }
 }

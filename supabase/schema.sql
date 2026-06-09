@@ -78,6 +78,7 @@ create table if not exists public.sentences (
 create table if not exists public.follows (
   follower_id   uuid not null references public.profiles(id) on delete cascade,
   following_id  uuid not null references public.profiles(id) on delete cascade,
+  status        text not null default 'accepted' check (status in ('accepted', 'pending')),
   created_at    timestamptz default now() not null,
   primary key (follower_id, following_id)
 );
@@ -119,7 +120,12 @@ create policy "sessions_update" on public.reading_sessions for update using (aut
 -- sentences: 본인 것은 CRUD, 팔로우한 사람 것은 읽기
 create policy "sentences_select_own" on public.sentences for select using (auth.uid() = user_id);
 create policy "sentences_select_following" on public.sentences for select using (
-  exists (select 1 from public.follows where follower_id = auth.uid() and following_id = sentences.user_id)
+  exists (
+    select 1 from public.follows
+    where follower_id = auth.uid()
+      and following_id = sentences.user_id
+      and status = 'accepted'
+  )
 );
 create policy "sentences_insert" on public.sentences for insert with check (auth.uid() = user_id);
 create policy "sentences_update" on public.sentences for update using (auth.uid() = user_id) with check (auth.uid() = user_id);

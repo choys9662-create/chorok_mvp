@@ -12,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/utils/follow_relationship_text.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/book_search_controller.dart';
 import '../controller/user_search_controller.dart';
@@ -399,23 +400,23 @@ class _UserCard extends ConsumerStatefulWidget {
 }
 
 class _UserCardState extends ConsumerState<_UserCard> {
-  bool? _isFollowing;
+  FollowRelationship? _relationship;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
-    _loadFollowState();
+    _loadRelationship();
   }
 
-  Future<void> _loadFollowState() async {
+  Future<void> _loadRelationship() async {
     final me = Supabase.instance.client.auth.currentUser?.id;
     if (me == null || me == widget.profile.id) return;
-    final following = await ref
+    final relationship = await ref
         .read(followRepositoryProvider)
-        .isFollowing(widget.profile.id);
+        .relationshipWith(widget.profile.id);
     if (!mounted) return;
-    setState(() => _isFollowing = following);
+    setState(() => _relationship = relationship);
   }
 
   Future<void> _toggleFollow() async {
@@ -424,14 +425,17 @@ class _UserCardState extends ConsumerState<_UserCard> {
     setState(() => _busy = true);
     try {
       final repo = ref.read(followRepositoryProvider);
-      if (_isFollowing == true) {
+      final current = _relationship ?? FollowRelationship.none;
+      if (current.outgoing != FollowState.none) {
         await repo.unfollow(widget.profile.id);
         if (!mounted) return;
-        setState(() => _isFollowing = false);
+        setState(
+          () => _relationship = current.copyWith(outgoing: FollowState.none),
+        );
       } else {
-        await repo.follow(widget.profile.id);
+        final result = await repo.follow(widget.profile.id);
         if (!mounted) return;
-        setState(() => _isFollowing = true);
+        setState(() => _relationship = current.copyWith(outgoing: result));
       }
       ref.read(followMutationVersionProvider.notifier).state++;
     } finally {
@@ -497,6 +501,21 @@ class _UserCardState extends ConsumerState<_UserCard> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (followRelationshipHint(
+                        _relationship ?? FollowRelationship.none,
+                      )
+                      case final hint?) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      hint,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.appPrimaryAccent,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   if (p.bio != null && p.bio!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -515,8 +534,8 @@ class _UserCardState extends ConsumerState<_UserCard> {
             if (!isMe) ...[
               const SizedBox(width: 8),
               _FollowButton(
-                isFollowing: _isFollowing ?? false,
-                loaded: _isFollowing != null,
+                relationship: _relationship ?? FollowRelationship.none,
+                loaded: _relationship != null,
                 busy: _busy,
                 onTap: _toggleFollow,
               ),
@@ -529,13 +548,13 @@ class _UserCardState extends ConsumerState<_UserCard> {
 }
 
 class _FollowButton extends StatelessWidget {
-  final bool isFollowing;
+  final FollowRelationship relationship;
   final bool loaded;
   final bool busy;
   final VoidCallback onTap;
 
   const _FollowButton({
-    required this.isFollowing,
+    required this.relationship,
     required this.loaded,
     required this.busy,
     required this.onTap,
@@ -546,7 +565,8 @@ class _FollowButton extends StatelessWidget {
     if (!loaded) {
       return const SizedBox(width: 72, height: 32);
     }
-    final label = isFollowing ? '팔로잉' : '팔로우';
+    final label = followActionLabel(relationship);
+    final filled = followActionIsFilled(relationship);
     return Semantics(
       button: true,
       label: label,
@@ -558,9 +578,7 @@ class _FollowButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           decoration: AppTheme.smoothBox(
-            color: isFollowing
-                ? context.appCardElevated
-                : context.appPrimaryAccent,
+            color: filled ? context.appPrimaryAccent : context.appCardElevated,
             radius: AppTheme.radiusSM,
             side: BorderSide.none,
           ),
@@ -569,7 +587,7 @@ class _FollowButton extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w400,
-              color: isFollowing ? context.appTextSecondary : Colors.white,
+              color: filled ? Colors.white : context.appTextSecondary,
             ),
           ),
         ),

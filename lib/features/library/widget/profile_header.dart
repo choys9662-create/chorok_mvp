@@ -35,7 +35,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
   static final _buttonBorderRadius = BorderRadius.circular(AppTheme.radiusMD);
 
   String _name = '';
-  String _bio = kUseMock ? '책 속에서 길을 찾는 중 🌿' : '';
+  String _bio = kUseMock ? '책 속에서 길을 찾는 중' : '';
   int _followers = kUseMock ? 128 : 0;
   int _following = kUseMock ? 64 : 0;
   List<UserProfile> _followerProfiles = kUseMock

@@ -9,6 +9,7 @@ import '../util/sentence_row_parser.dart';
 typedef UserProfileData = ({
   List<FeedSentence> sentences,
   FollowState followState,
+  FollowRelationship relationship,
 });
 
 /// userId별 프로필 데이터를 로드한다.
@@ -18,12 +19,17 @@ final userProfileProvider = FutureProvider.family<UserProfileData, String>((
 ) async {
   final profileRepo = ref.read(profileRepositoryProvider);
   final followRepo = ref.read(followRepositoryProvider);
+  ref.watch(followMutationVersionProvider);
 
-  final followState = await followRepo.followStatus(userId);
+  final relationship = await followRepo.relationshipWith(userId);
   final rows = await profileRepo.getUserSentences(userId);
   final sentences = rows
       .map((r) => parseSentenceRow(r, fallbackUsername: '독자'))
       .toList();
 
-  return (sentences: sentences, followState: followState);
+  return (
+    sentences: sentences,
+    followState: relationship.outgoing,
+    relationship: relationship,
+  );
 });

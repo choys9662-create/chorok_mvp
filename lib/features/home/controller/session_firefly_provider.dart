@@ -22,6 +22,8 @@ final sessionFireflyProvider =
     FutureProvider<
       ({int mutualCount, int nearbyCount, List<UserProfile> mutuals})
     >((ref) async {
+      ref.watch(followMutationVersionProvider);
+
       if (_kUseMock) {
         final mutuals = _kMockMutuals
             .map(

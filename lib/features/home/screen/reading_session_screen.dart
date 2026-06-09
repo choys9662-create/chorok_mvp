@@ -24,13 +24,14 @@ import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
+import 'ocr_web_camera_stub.dart'
+    if (dart.library.js_interop) 'ocr_web_camera_web.dart';
 import 'session_recap_screen.dart';
 
 // 세션 화면은 항상 다크 — AppTheme 상수를 직접 alias
 const _kGreen = AppTheme.primaryLight;
 const _kFont = AppTheme.fontFamily;
 const _captureTimeout = Duration(seconds: 8);
-const _captureReadTimeout = Duration(seconds: 12);
 
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
@@ -169,6 +170,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
 
   void _dismissTopicAndStart() {
+    if (!_showTopic) return;
     setState(() => _showTopic = false);
     final timer = ref.read(timerProvider);
     if (timer.isIdle) {
@@ -197,6 +199,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   Future<void> _openOcr() async {
     ref.read(timerProvider.notifier).pause();
     _uiHideTimer?.cancel();
+
     final result = await Navigator.of(context).push<OcrResult>(
       PageRouteBuilder(
         pageBuilder: (_, animation, _) => const _OcrCaptureScreen(),
@@ -950,6 +953,7 @@ class _OcrCaptureScreen extends ConsumerStatefulWidget {
 class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     with SingleTickerProviderStateMixin {
   CameraController? _cameraCtrl;
+  OcrWebCameraController? _webCameraCtrl;
   CameraImage? _latestFrame;
   late final AnimationController _pulseCtrl;
   bool _initializing = true;
@@ -970,12 +974,18 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
 
   @override
   void dispose() {
+    _webCameraCtrl?.dispose();
     _cameraCtrl?.dispose();
     _pulseCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _initializeCamera() async {
+    if (kIsWeb) {
+      await _initializeWebCamera();
+      return;
+    }
+
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
@@ -1024,9 +1034,35 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     }
   }
 
+  Future<void> _initializeWebCamera() async {
+    final controller = OcrWebCameraController();
+    _webCameraCtrl = controller;
+    if (mounted) setState(() {});
+
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      await controller.initialize();
+      if (!mounted) return;
+      setState(() => _initializing = false);
+    } catch (_) {
+      controller.dispose();
+      if (!mounted) return;
+      setState(() {
+        _webCameraCtrl = null;
+        _initializing = false;
+        _statusMessage = '카메라를 열 수 없어요';
+      });
+    }
+  }
+
   Future<void> _capture() async {
     final controller = _cameraCtrl;
-    if (controller == null ||
+    final webController = _webCameraCtrl;
+    if (kIsWeb) {
+      if (webController == null || !webController.isReady || _processing) {
+        return;
+      }
+    } else if (controller == null ||
         !controller.value.isInitialized ||
         controller.value.isTakingPicture ||
         _processing) {
@@ -1041,10 +1077,10 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
       _processing = true;
       _statusMessage = null;
     });
-    HapticFeedback.mediumImpact();
+    if (!kIsWeb) HapticFeedback.mediumImpact();
 
     try {
-      final bytes = await _captureOcrBytes(controller);
+      final bytes = await _captureOcrBytes();
       final result = await ref
           .read(ocrServiceProvider)
           .extractTextFromBytes(bytes);
@@ -1059,12 +1095,19 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     }
   }
 
-  Future<Uint8List> _captureOcrBytes(CameraController controller) async {
+  Future<Uint8List> _captureOcrBytes() async {
     if (kIsWeb) {
-      final photo = await controller.takePicture().timeout(_captureTimeout);
-      return photo.readAsBytes().timeout(_captureReadTimeout);
+      final controller = _webCameraCtrl;
+      if (controller == null) {
+        throw StateError('Web camera is not ready.');
+      }
+      return controller.captureJpeg().timeout(_captureTimeout);
     }
 
+    final controller = _cameraCtrl;
+    if (controller == null) {
+      throw StateError('Camera is not ready.');
+    }
     final frame = _latestFrame;
     if (frame == null) {
       throw StateError('Camera stream frame is not ready.');
@@ -1076,6 +1119,8 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
   }
 
   Future<void> _toggleTorch() async {
+    if (kIsWeb) return;
+
     final controller = _cameraCtrl;
     if (controller == null || !controller.value.isInitialized || _processing) {
       return;
@@ -1100,7 +1145,11 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
   @override
   Widget build(BuildContext context) {
     final controller = _cameraCtrl;
-    final cameraReady = controller?.value.isInitialized == true;
+    final webController = _webCameraCtrl;
+    final webCameraReady = kIsWeb && webController?.isReady == true;
+    final nativeCameraReady =
+        !kIsWeb && controller?.value.isInitialized == true;
+    final cameraReady = webCameraReady || nativeCameraReady;
     final canCapture =
         cameraReady && _streamReady && !_processing && _statusMessage == null;
 
@@ -1111,17 +1160,21 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            if (cameraReady && controller != null)
+            if (kIsWeb && webController != null)
+              OcrWebCameraPreview(controller: webController)
+            else if (nativeCameraReady && controller != null)
               _CameraPreviewCover(controller: controller)
             else
               _CameraPreparingView(
                 initializing: _initializing,
                 message: _statusMessage,
               ),
+            if (kIsWeb && webController != null && !webCameraReady)
+              const Positioned.fill(child: _CameraWarmupOverlay()),
             Positioned.fill(child: _QuoteCameraOverlay(pulseCtrl: _pulseCtrl)),
             _CaptureTopBar(
               torchOn: _torchOn,
-              torchEnabled: cameraReady && !_processing,
+              torchEnabled: !kIsWeb && cameraReady && !_processing,
               onBack: _close,
               onTorch: _toggleTorch,
             ),
@@ -1132,6 +1185,34 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
               onCapture: _capture,
             ),
             if (_processing) const _OcrLoadingOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraWarmupOverlay extends StatelessWidget {
+  const _CameraWarmupOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.camera_alt_rounded,
+              color: Colors.white.withValues(alpha: 0.72),
+              size: 40,
+            ),
+            const SizedBox(height: 18),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
+            ),
           ],
         ),
       ),
@@ -2095,86 +2176,97 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _fadeAnim,
-      child: ColoredBox(
-        color: Colors.black.withValues(alpha: 0.94),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const _SessionEntryFireflies(),
-            SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxWidth = math.min(constraints.maxWidth, 430.0);
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(40, 75, 40, 54),
-                        child: Column(
-                          children: [
-                            const _SessionEntryBadge(label: '6번째 세션'),
-                            const SizedBox(height: 17),
-                            Text(
-                              widget.bookTitle,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF8DBBFF),
-                                fontSize: 20,
-                                height: 1.18,
-                                fontWeight: FontWeight.w400,
-                                fontFamily: _kFont,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              _sessionEntryBookMeta(widget.bookAuthor),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: const Color(
-                                  0xFF8DBBFF,
-                                ).withValues(alpha: 0.78),
-                                fontSize: 13,
-                                height: 1.2,
-                                fontWeight: FontWeight.w400,
-                                fontFamily: _kFont,
-                              ),
-                            ),
-                            const SizedBox(height: 23),
-                            BookCover(
-                              coverUrl: widget.coverUrl,
-                              gradientIndex: widget.bookTitle.hashCode.abs(),
-                              width: 200,
-                              height: 305,
-                              radius: 8,
-                              shadows: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF65A7FF,
-                                  ).withValues(alpha: 0.12),
-                                  blurRadius: 18,
-                                  spreadRadius: 1,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          widget.onStart();
+        },
+        child: ColoredBox(
+          color: Colors.black.withValues(alpha: 0.94),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const _SessionEntryFireflies(),
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = math.min(constraints.maxWidth, 430.0);
+                    final verticalOffset = constraints.maxHeight * 0.05;
+                    return Center(
+                      child: Transform.translate(
+                        offset: Offset(0, verticalOffset),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(40, 42, 40, 54),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: maxWidth),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const _SessionEntryBadge(label: '6번째 세션'),
+                                const SizedBox(height: 17),
+                                Text(
+                                  widget.bookTitle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF8DBBFF),
+                                    fontSize: 20,
+                                    height: 1.18,
+                                    fontWeight: FontWeight.w400,
+                                    fontFamily: _kFont,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _sessionEntryBookMeta(widget.bookAuthor),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: const Color(
+                                      0xFF8DBBFF,
+                                    ).withValues(alpha: 0.78),
+                                    fontSize: 13,
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w400,
+                                    fontFamily: _kFont,
+                                  ),
+                                ),
+                                const SizedBox(height: 23),
+                                BookCover(
+                                  coverUrl: widget.coverUrl,
+                                  gradientIndex: widget.bookTitle.hashCode
+                                      .abs(),
+                                  width: 200,
+                                  height: 305,
+                                  radius: 8,
+                                  shadows: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF65A7FF,
+                                      ).withValues(alpha: 0.12),
+                                      blurRadius: 18,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 34),
+                                _SessionEntryQuestionButton(
+                                  label: _sessionEntryQuestion(
+                                    widget.bookTitle,
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 34),
-                            _SessionEntryQuestionButton(
-                              label: _sessionEntryQuestion(widget.bookTitle),
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                                widget.onStart();
-                              },
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2225,40 +2317,36 @@ class _SessionEntryBadge extends StatelessWidget {
 
 class _SessionEntryQuestionButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
 
-  const _SessionEntryQuestionButton({required this.label, required this.onTap});
+  const _SessionEntryQuestionButton({required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 42,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.66),
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: const Color(0xFF8DBBFF), width: 1.1),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF8DBBFF).withValues(alpha: 0.14),
-              blurRadius: 14,
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFF8DBBFF),
-            fontSize: 16,
-            height: 1.15,
-            fontWeight: FontWeight.w400,
-            fontFamily: _kFont,
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.66),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF8DBBFF), width: 1.1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8DBBFF).withValues(alpha: 0.14),
+            blurRadius: 14,
           ),
+        ],
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFF8DBBFF),
+          fontSize: 16,
+          height: 1.15,
+          fontWeight: FontWeight.w400,
+          fontFamily: _kFont,
         ),
       ),
     );
