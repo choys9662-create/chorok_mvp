@@ -8,6 +8,12 @@
       "port": 8080
     },
     {
+      "name": "초록 앱 - 실기기(아이폰) 실데이터",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run"],
+      "port": 8080
+    },
+    {
       "name": "초록 앱 - Web",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"],

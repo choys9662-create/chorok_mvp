@@ -173,6 +173,15 @@ iOS 시뮬레이터 실행:
 ( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d "iPhone" )
 ```
 
+**실기기(아이폰) 실행 — 개발 중 폰 테스트의 기본 방법.** 시뮬레이터는 구글 로그인이 안 되므로, 폰에서 실제로 써보려면 아이폰을 케이블로 연결해 직접 돌린다. git push·웹배포 불필요 — 핫 리로드(`r`)로 즉시 반영되고 운영 Supabase에 붙어 실데이터가 그대로 보인다.
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d <아이폰-id> )  # id: flutter devices
+# 코드 수정 후 터미널:  r = 핫 리로드 ,  R = 핫 리스타트
+```
+
+최초 1회: 아이폰 USB 연결 → "이 컴퓨터 신뢰" → 설정에서 개발자 모드 ON → Xcode 로 `ios/Runner.xcworkspace` 열어 Signing & Capabilities 에서 Team(본인 Apple ID) 지정(Bundle ID `com.chorok.chorokApp` 유지). 무료 개인 팀은 앱이 7일마다 만료되며 `flutter run` 한 번이면 재서명됨.
+
 웹 실행 (목업 모드):
 
 ```bash
@@ -180,3 +189,16 @@ iOS 시뮬레이터 실행:
 ```
 
 VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일을 사용하면 작업 디렉토리 무관하게 실행 가능.
+
+---
+
+## 9. Git · 배포 · 롤백 · 테스트 데이터 워크플로
+
+**개발 루프:** 변경 확인은 git push 가 아니라 **실기기 `flutter run` + 핫 리로드**로 한다(§8). 웹 배포는 이제 "링크 공유 / 최종 교차확인"용이지 개발 루프가 아니다.
+
+**브랜치 → 배포:**
+- 수정은 `feat/...` 브랜치를 따서 작업 → 실기기로 테스트 → `main`에 머지.
+- `main` 머지 시 GitHub Actions 가 자동 배포: 디자인앱(`chorok-d1414`, `USE_MOCK=true`) + 실앱(`chorok-real`, 실데이터). 정의: `.github/workflows/deploy-design.yml`, `deploy-prod.yml`.
+- **롤백:** 배포 후 문제 시 `git revert <머지커밋>` → `main` 재배포. git 이력에 다 남아 있다.
+
+**테스트 데이터 (출시 전):** dev/prod DB 는 아직 분리 안 함(단일 운영 Supabase). 개발 테스트는 **전용 테스트 구글 계정**으로만 로그인해 데이터를 식별 가능하게 둔다. 유저 간 상호작용 테스트는 계정 2~3개(아이폰=계정A 실로그인 + 웹 `chorok-real`=계정B). 쌓인 테스트 데이터는 `supabase/scripts/purge_test_user.sql`로 이메일 기준 일괄 삭제(모든 user 테이블이 `auth.users` cascade). dev/prod Supabase 분리는 실유저 생기기 직전에(`.env.dev`/`.env.prod` + `--dart-define=ENV`).
