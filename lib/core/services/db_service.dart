@@ -356,6 +356,40 @@ class DbService {
         .eq('user_id', _uid);
   }
 
+  /// 알림 등에서 sentence_id만 있을 때, 문장 상세 화면에 필요한 정보를 조회.
+  /// RLS: 내 문장(own) / 팔로우한 문장(following) / 공개 문장(global_book_id 있음)만 보인다.
+  /// 못 찾거나 권한 없으면 null.
+  Future<Map<String, dynamic>?> fetchSentenceDetailById(
+    String sentenceId,
+  ) async {
+    final row = await supabase
+        .from('sentences')
+        .select(
+          'id, content, thought, page_number, '
+          'profiles!sentences_user_id_fkey(username, display_name), '
+          'books(title, author), global_books(title, author)',
+        )
+        .eq('id', sentenceId)
+        .maybeSingle();
+    if (row == null) return null;
+    final local = row['books'] as Map<String, dynamic>?;
+    final global = row['global_books'] as Map<String, dynamic>?;
+    final book = global ?? local;
+    final profile = row['profiles'] as Map<String, dynamic>?;
+    return {
+      'id': row['id'],
+      'content': row['content'] ?? '',
+      'thought': row['thought'],
+      'page_number': row['page_number'],
+      'book_title': book?['title'] ?? '알 수 없는 책',
+      'book_author': book?['author'] ?? '',
+      'username':
+          (profile?['display_name'] as String?) ??
+          (profile?['username'] as String?) ??
+          '독자',
+    };
+  }
+
   Future<List<Map<String, dynamic>>> fetchMySentences() async {
     final res = await supabase
         .from('sentences')
@@ -514,10 +548,10 @@ class DbService {
   // ────────────────────────────────────────────────────────────────────
 
   Future<void> likeSentence(String sentenceId) async {
-    await supabase.from('sentence_likes').insert({
+    await supabase.from('sentence_likes').upsert({
       'user_id': _uid,
       'sentence_id': sentenceId,
-    });
+    }, onConflict: 'user_id,sentence_id');
   }
 
   Future<void> unlikeSentence(String sentenceId) async {

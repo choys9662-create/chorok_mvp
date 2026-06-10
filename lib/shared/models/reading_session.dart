@@ -139,6 +139,7 @@ class FeedSentence {
   final String bookTitle;
   final String bookAuthor;
   final String? coverUrl;
+  final String? isbn13;
   final String username;
   final DateTime savedAt;
   final int empathyCount;
@@ -153,6 +154,7 @@ class FeedSentence {
     required this.bookTitle,
     required this.bookAuthor,
     this.coverUrl,
+    this.isbn13,
     required this.username,
     required this.savedAt,
     this.empathyCount = 0,

@@ -10,6 +10,9 @@ import 'package:chorok_app/shared/models/session_goal.dart';
 import 'package:chorok_app/shared/providers/library_provider.dart';
 
 class _FakeDbService extends DbService {
+  int? savedPagesRead;
+  String? savedClientSessionId;
+
   @override
   Future<String> saveSession({
     String? bookId,
@@ -25,6 +28,8 @@ class _FakeDbService extends DbService {
     int exitDurationSeconds = 0,
     String? clientSessionId,
   }) async {
+    savedPagesRead = pagesRead;
+    savedClientSessionId = clientSessionId;
     return clientSessionId ?? 'session-id';
   }
 }
@@ -46,7 +51,7 @@ class _FakeLibraryNotifier extends LibraryNotifier {
   }
 }
 
-Widget _buildRecapScreen() {
+Widget _buildRecapScreen({_FakeDbService? dbService, int? endPage}) {
   const book = Book(
     id: 'book-1',
     title: '채식주의자 (리마스터판)',
@@ -58,7 +63,7 @@ Widget _buildRecapScreen() {
 
   return ProviderScope(
     overrides: [
-      dbServiceProvider.overrideWithValue(_FakeDbService()),
+      dbServiceProvider.overrideWithValue(dbService ?? _FakeDbService()),
       libraryProvider.overrideWith(() => _FakeLibraryNotifier([book])),
     ],
     child: MaterialApp(
@@ -82,6 +87,7 @@ Widget _buildRecapScreen() {
           ),
           bookId: 'book-1',
           startPage: 196,
+          endPage: endPage,
           totalPages: 267,
           progressPercent: 70,
           sessionStartedAt: DateTime(2026, 1, 1, 9),
@@ -116,5 +122,42 @@ void main() {
     expect(find.text('공유하기'), findsOneWidget);
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('서재'), findsOneWidget);
+  });
+
+  testWidgets('초서 기록 화살표를 누르면 내 초서 기록이 펼쳐진다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildRecapScreen());
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('내 초서 기록 펼치기'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('내 초서 기록 접기'), findsOneWidget);
+    expect(find.text('문장 0'), findsOneWidget);
+    expect(find.text('기록 0'), findsOneWidget);
+  });
+
+  testWidgets('종료 페이지가 있으면 리캡과 원격 세션 저장에 반영한다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dbService = _FakeDbService();
+
+    await tester.pumpWidget(
+      _buildRecapScreen(dbService: dbService, endPage: 211),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('211 / 267'), findsOneWidget);
+    expect(dbService.savedPagesRead, 15);
+    expect(dbService.savedClientSessionId, isNotNull);
   });
 }

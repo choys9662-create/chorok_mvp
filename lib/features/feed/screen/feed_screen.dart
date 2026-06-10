@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/db_service.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
@@ -14,6 +15,7 @@ import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
+import '../../search/model/aladin_book.dart';
 import '../controller/feed_provider.dart';
 import 'sentence_detail_screen.dart';
 
@@ -22,6 +24,7 @@ typedef _TrendingBook = ({
   String title,
   String author,
   String? coverUrl,
+  String? isbn13,
   int sentenceCount,
   int gradientIndex,
 });
@@ -32,6 +35,7 @@ const List<_TrendingBook> _kMockTrendingBooks = [
     author: '한강',
     coverUrl:
         'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+    isbn13: '9788936434595',
     sentenceCount: 142,
     gradientIndex: 0,
   ),
@@ -40,6 +44,7 @@ const List<_TrendingBook> _kMockTrendingBooks = [
     author: '이민진',
     coverUrl:
         'https://image.aladin.co.kr/product/29496/39/cover500/s382931339_2.jpg',
+    isbn13: null,
     sentenceCount: 98,
     gradientIndex: 2,
   ),
@@ -48,6 +53,7 @@ const List<_TrendingBook> _kMockTrendingBooks = [
     author: '손원평',
     coverUrl:
         'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+    isbn13: null,
     sentenceCount: 87,
     gradientIndex: 4,
   ),
@@ -56,6 +62,7 @@ const List<_TrendingBook> _kMockTrendingBooks = [
     author: '한강',
     coverUrl:
         'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+    isbn13: null,
     sentenceCount: 76,
     gradientIndex: 3,
   ),
@@ -64,17 +71,24 @@ const List<_TrendingBook> _kMockTrendingBooks = [
     author: '조남주',
     coverUrl:
         'https://image.aladin.co.kr/product/9476/48/cover500/8937473135_1.jpg',
+    isbn13: null,
     sentenceCount: 61,
     gradientIndex: 1,
   ),
 ];
 
 List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
-  final counts = <String, ({String author, int count})>{};
+  final counts =
+      <
+        String,
+        ({String author, String? coverUrl, String? isbn13, int count})
+      >{};
   for (final s in sentences) {
     final existing = counts[s.bookTitle];
     counts[s.bookTitle] = (
       author: s.bookAuthor,
+      coverUrl: existing?.coverUrl ?? s.coverUrl,
+      isbn13: existing?.isbn13 ?? s.isbn13,
       count: (existing?.count ?? 0) + 1,
     );
   }
@@ -89,7 +103,8 @@ List<_TrendingBook> _trendingFromSentences(List<FeedSentence> sentences) {
         (e) => (
           title: e.value.key,
           author: e.value.value.author,
-          coverUrl: null,
+          coverUrl: e.value.value.coverUrl,
+          isbn13: e.value.value.isbn13,
           sentenceCount: e.value.value.count,
           gradientIndex: e.key,
         ),
@@ -234,6 +249,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   void _toggleLike(String id, bool willLike) {
     willLike ? HapticFeedback.mediumImpact() : HapticFeedback.selectionClick();
     setState(() => _likedOverrides[id] = willLike);
+    final op = willLike
+        ? ref.read(dbServiceProvider).likeSentence(id)
+        : ref.read(dbServiceProvider).unlikeSentence(id);
+    op.catchError((_) {
+      if (mounted) {
+        setState(() => _likedOverrides.remove(id));
+      }
+    });
   }
 
   // sentences 참조가 동일하면 overlap/trending 재계산 생략
@@ -701,6 +724,19 @@ class _TrendingBookCardState extends State<_TrendingBookCard> {
     final b = widget.book;
 
     return GestureDetector(
+      onTap: () {
+        setState(() => _isPressed = false);
+        context.push(
+          AppConstants.routeBookInfo,
+          extra: AladinBook(
+            title: b.title,
+            author: b.author,
+            publisher: '',
+            coverUrl: b.coverUrl,
+            isbn13: b.isbn13,
+          ),
+        );
+      },
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);

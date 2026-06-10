@@ -33,6 +33,7 @@ FeedSentence parseSentenceRow(
     bookTitle: book?['title'] as String? ?? '알 수 없는 책',
     bookAuthor: book?['author'] as String? ?? '',
     coverUrl: book?['cover_url'] as String?,
+    isbn13: globalBook?['isbn13'] as String? ?? localBook?['isbn'] as String?,
     username: username,
     savedAt: createdAt,
     empathyCount: likeCount,

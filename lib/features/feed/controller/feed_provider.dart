@@ -3,20 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_flags.dart';
-import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
-import '../../../shared/repositories/book_repository.dart';
-
-FeedSentence _toFeedSentence(IsarChoseo c) => FeedSentence(
-  id: c.choseoId,
-  content: c.content,
-  thought: c.myThought,
-  bookTitle: c.bookTitle.isNotEmpty ? c.bookTitle : '알 수 없는 책',
-  bookAuthor: c.bookAuthor,
-  coverUrl: null, // To be implemented later if IsarChoseo stores it
-  username: '나',
-  savedAt: c.createdAt,
-);
 
 class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
   @override
@@ -25,16 +12,11 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
     return _load();
   }
 
+  /// 이웃 피드는 팔로우한 독자의 초서(원격)만 의미가 있으므로,
+  /// 플랫폼과 무관하게 항상 Supabase에서 읽는다.
+  /// (모바일 로컬 sqlite는 "내 초서"만 담겨 이웃 피드로는 부적합 — 과거 결함)
   Future<List<FeedSentence>> _load() async {
-    if (kIsWeb) return _loadFromSupabase();
-    return _loadFromSqlite();
-  }
-
-  Future<List<FeedSentence>> _loadFromSqlite() async {
-    final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return const [];
-    final all = await repo.getAllChoseo(limit: 50);
-    return all.map(_toFeedSentence).toList();
+    return _loadFromSupabase();
   }
 
   Future<List<FeedSentence>> _loadFromSupabase() async {
@@ -52,13 +34,31 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
             // 임베드가 모호해지므로(PGRST201) 작성자 FK를 명시한다.
             'id, content, thought, created_at, '
             'profiles!sentences_user_id_fkey(username, display_name), '
-            'books(title, author, cover_url), '
-            'global_books(title, author, cover_url), '
+            'books(title, author, cover_url, isbn), '
+            'global_books(title, author, cover_url, isbn13), '
             'sentence_likes(count)',
           )
           .neq('user_id', userId)
           .order('created_at', ascending: false)
           .limit(50);
+
+      final sentenceIds = (rows as List)
+          .map((r) => (r as Map<String, dynamic>)['id'] as String?)
+          .whereType<String>()
+          .toList();
+      final likedIds = <String>{};
+      if (sentenceIds.isNotEmpty) {
+        final likes = await client
+            .from('sentence_likes')
+            .select('sentence_id')
+            .eq('user_id', userId)
+            .inFilter('sentence_id', sentenceIds);
+        likedIds.addAll(
+          (likes as List)
+              .map((r) => (r as Map<String, dynamic>)['sentence_id'] as String?)
+              .whereType<String>(),
+        );
+      }
 
       return (rows as List).map((r) {
         final map = r as Map<String, dynamic>;
@@ -84,9 +84,12 @@ class FeedNotifier extends AsyncNotifier<List<FeedSentence>> {
           bookTitle: book?['title'] as String? ?? '알 수 없는 책',
           bookAuthor: book?['author'] as String? ?? '',
           coverUrl: book?['cover_url'] as String?,
+          isbn13:
+              globalBook?['isbn13'] as String? ?? localBook?['isbn'] as String?,
           username: username,
           savedAt: createdAt,
           empathyCount: likeCount,
+          isLiked: likedIds.contains(map['id']),
         );
       }).toList();
     } catch (e) {

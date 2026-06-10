@@ -141,7 +141,7 @@ class _WeekCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
-        context.go(AppConstants.routeAnalytics);
+        context.push(AppConstants.routeAnalytics);
       },
       child: ForestAccentCard(
         radius: _cardRadius,

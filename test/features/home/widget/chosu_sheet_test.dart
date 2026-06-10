@@ -69,4 +69,39 @@ void main() {
     expect(textField.autofocus, isFalse);
     expect(textField.controller?.text, '스캔된 문장입니다.');
   });
+
+  testWidgets('ChosuSheet lifts thought field above keyboard insets', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetViewInsets();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: const Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: ChosuSheet(bookTitle: '채식주의자'),
+        ),
+      ),
+    );
+
+    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    await tester.enterText(sentenceField, '자연선택이라는 하나의 문장');
+    await tester.pump();
+    await tester.tap(find.text('생각 쓰기'));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+
+    final thoughtField = _textFieldWithHint('이 문장에서 무엇을 느꼈나요?');
+    expect(thoughtField, findsOneWidget);
+    expect(tester.getBottomLeft(thoughtField).dy, lessThanOrEqualTo(844 - 300));
+  });
 }

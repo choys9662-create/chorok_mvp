@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui_web' as ui_web;
 
@@ -39,22 +40,31 @@ class OcrWebCameraController {
     _ready = true;
   }
 
-  Future<Uint8List> captureJpeg() async {
+  Future<Uint8List> captureJpeg({Rect? cropRect, Size? viewportSize}) async {
     final width = _videoElement.videoWidth;
     final height = _videoElement.videoHeight;
     if (!_ready || width <= 0 || height <= 0) {
       throw StateError('Web camera video frame is not ready.');
     }
 
+    final sourceRect = _sourceRectForViewportCrop(
+      sourceSize: Size(width.toDouble(), height.toDouble()),
+      cropRect: cropRect,
+      viewportSize: viewportSize,
+    );
     final canvas = web.HTMLCanvasElement()
-      ..width = width
-      ..height = height;
+      ..width = sourceRect.width.round()
+      ..height = sourceRect.height.round();
     canvas.context2D.drawImage(
       _videoElement,
+      sourceRect.left,
+      sourceRect.top,
+      sourceRect.width,
+      sourceRect.height,
       0,
       0,
-      width.toDouble(),
-      height.toDouble(),
+      canvas.width,
+      canvas.height,
     );
 
     final completer = Completer<web.Blob>();
@@ -174,6 +184,46 @@ class OcrWebCameraController {
       await errorSub.cancel();
     }
   }
+}
+
+Rect _sourceRectForViewportCrop({
+  required Size sourceSize,
+  required Rect? cropRect,
+  required Size? viewportSize,
+}) {
+  if (cropRect == null ||
+      viewportSize == null ||
+      viewportSize.width <= 0 ||
+      viewportSize.height <= 0) {
+    return Offset.zero & sourceSize;
+  }
+
+  final scale = math.max(
+    viewportSize.width / sourceSize.width,
+    viewportSize.height / sourceSize.height,
+  );
+  final displayedWidth = sourceSize.width * scale;
+  final displayedHeight = sourceSize.height * scale;
+  final overflowX = (displayedWidth - viewportSize.width) / 2;
+  final overflowY = (displayedHeight - viewportSize.height) / 2;
+  final left = ((cropRect.left + overflowX) / scale).clamp(
+    0.0,
+    sourceSize.width - 1,
+  );
+  final top = ((cropRect.top + overflowY) / scale).clamp(
+    0.0,
+    sourceSize.height - 1,
+  );
+  final right = ((cropRect.right + overflowX) / scale).clamp(
+    left + 1,
+    sourceSize.width,
+  );
+  final bottom = ((cropRect.bottom + overflowY) / scale).clamp(
+    top + 1,
+    sourceSize.height,
+  );
+
+  return Rect.fromLTRB(left, top, right, bottom);
 }
 
 class OcrWebCameraPreview extends StatelessWidget {

@@ -27,34 +27,6 @@ class HomeAppBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // 검색 버튼
-          Semantics(
-            label: '책 검색',
-            button: true,
-            child: SizedBox(
-              width: 28,
-              height: 28,
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.push(AppConstants.routeExplore);
-                },
-                child: DecoratedBox(
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCard,
-                    radius: 6,
-                    side: BorderSide.none,
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    color: context.appTextSecondary,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
           // 알림 버튼
           Semantics(
             label: '알림',

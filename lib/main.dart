@@ -1,4 +1,3 @@
-import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,14 +20,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
+  final supabaseUrl = dotenv.env['SUPABASE_URL']!;
+  final authStorage = SharedPreferencesLocalStorage(
+    persistSessionKey: _supabasePersistSessionKey(supabaseUrl),
+  );
 
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    authOptions: const FlutterAuthClientOptions(
+    url: supabaseUrl,
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    authOptions: FlutterAuthClientOptions(
       authFlowType: AuthFlowType.pkce,
+      localStorage: authStorage,
     ),
   );
+  await _restoreCachedAuthSession(authStorage);
 
   // 목업 모드(USE_MOCK=true)이거나 웹이면 온보딩 체크 없이 바로 홈
   const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
@@ -40,7 +45,6 @@ Future<void> main() async {
   final savedThemeMode = await loadSavedThemeMode();
 
   if (kIsWeb) {
-    _initDeepLinks();
     runApp(
       ProviderScope(
         overrides: [
@@ -56,8 +60,6 @@ Future<void> main() async {
   // 로컬 DB 초기화 (모바일/데스크톱)
   final Database db = await openAppDatabase();
 
-  _initDeepLinks();
-
   runApp(
     ProviderScope(
       overrides: [
@@ -70,42 +72,34 @@ Future<void> main() async {
   );
 }
 
-void _initDeepLinks() {
-  final appLinks = AppLinks();
-  appLinks.uriLinkStream.listen((uri) async {
-    if (!_hasSupabaseAuthPayload(uri)) return;
-    try {
-      await supabase.auth.getSessionFromUrl(uri);
-    } catch (error, stack) {
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stack,
-          library: 'deep link auth',
-        ),
-      );
-    }
-  });
-}
-
-bool _hasSupabaseAuthPayload(Uri uri) {
-  final query = uri.queryParameters;
-  if (query.containsKey('code') ||
-      query.containsKey('access_token') ||
-      query.containsKey('refresh_token') ||
-      query.containsKey('error')) {
-    return true;
-  }
-
-  final fragment = uri.fragment;
-  return fragment.contains('code=') ||
-      fragment.contains('access_token=') ||
-      fragment.contains('refresh_token=') ||
-      fragment.contains('error=');
-}
-
 /// 앱 전역에서 Supabase 클라이언트 접근용 편의 getter
 final supabase = Supabase.instance.client;
+
+String _supabasePersistSessionKey(String supabaseUrl) {
+  final projectRef = Uri.parse(supabaseUrl).host.split('.').first;
+  return 'sb-$projectRef-auth-token';
+}
+
+Future<void> _restoreCachedAuthSession(LocalStorage authStorage) async {
+  final currentSession = supabase.auth.currentSession;
+  if (currentSession != null && !currentSession.isExpired) return;
+  if (!await authStorage.hasAccessToken()) return;
+
+  final persistedSession = await authStorage.accessToken();
+  if (persistedSession == null) return;
+
+  try {
+    await supabase.auth.recoverSession(persistedSession);
+  } on AuthException catch (error, stack) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'cached auth session',
+      ),
+    );
+  }
+}
 
 class ChorokApp extends ConsumerWidget {
   const ChorokApp({super.key});

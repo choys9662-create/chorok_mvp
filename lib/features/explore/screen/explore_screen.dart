@@ -183,27 +183,32 @@ class _AppBarArea extends StatelessWidget {
         children: [
           Row(
             children: [
-              Semantics(
-                label: '뒤로가기',
-                button: true,
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      Navigator.of(context).pop();
-                    },
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: context.appTextPrimary,
-                      size: 20,
+              // 탭 루트(쉘 브랜치)에서는 pop 대상이 없으므로 뒤로가기 숨김.
+              // 다른 화면에서 push로 진입했을 때만 노출.
+              if (Navigator.of(context).canPop())
+                Semantics(
+                  label: '뒤로가기',
+                  button: true,
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.of(context).pop();
+                      },
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: context.appTextPrimary,
+                        size: 20,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(width: 4),
               Text(
-                '탐색',
+                '검색',
                 style: AppTheme.headingLarge.copyWith(
                   color: context.appTextPrimary,
                   fontWeight: FontWeight.w400,

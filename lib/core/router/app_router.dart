@@ -118,10 +118,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationScreen(),
       ),
 
-      // 탐색 — 홈 검색 아이콘에서 전체 화면으로 표시
+      // 분석 — 탭에서 제거됨. 홈 카드·서재에서 드릴다운(push)으로 진입
       GoRoute(
-        path: AppConstants.routeExplore,
-        builder: (context, state) => const ExploreScreen(),
+        path: AppConstants.routeAnalytics,
+        builder: (context, state) => const AnalyticsScreen(),
       ),
 
       // 책 검색 (알라딘 API)
@@ -279,6 +279,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // 검색 (탐색) — 우상단 아이콘에서 하단 탭으로 승격
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppConstants.routeExplore,
+                builder: (context, state) => const ExploreScreen(),
+              ),
+            ],
+          ),
           // 피드
           StatefulShellBranch(
             routes: [
@@ -288,16 +297,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // 분석
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppConstants.routeAnalytics,
-                builder: (context, state) => const AnalyticsScreen(),
-              ),
-            ],
-          ),
-          // 서재
+          // 서재 (분석 통계 뷰 흡수)
           StatefulShellBranch(
             routes: [
               GoRoute(

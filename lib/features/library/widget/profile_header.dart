@@ -359,6 +359,9 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
         title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
         profiles: list,
         showFollowButton: kUseMock && !isFollower,
+        emptyMessage: isFollower
+            ? '아직 팔로워가 없어요'
+            : '아직 팔로우한 독자가 없어요',
       ),
     );
   }
@@ -599,11 +602,13 @@ class _FollowListSheet extends StatefulWidget {
   final String title;
   final List<UserProfile> profiles;
   final bool showFollowButton;
+  final String emptyMessage;
 
   const _FollowListSheet({
     required this.title,
     required this.profiles,
     required this.showFollowButton,
+    required this.emptyMessage,
   });
 
   @override
@@ -640,7 +645,9 @@ class _FollowListSheetState extends State<_FollowListSheet> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
+          child: widget.profiles.isEmpty
+              ? _FollowEmptyState(message: widget.emptyMessage)
+              : ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: widget.profiles.length,
             itemBuilder: (context, i) {
@@ -734,6 +741,40 @@ class _FollowListSheetState extends State<_FollowListSheet> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── 팔로우 목록 빈 상태 ────────────────────────────────────────────────
+class _FollowEmptyState extends StatelessWidget {
+  final String message;
+
+  const _FollowEmptyState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.people_outline_rounded,
+              size: 40,
+              color: context.appTextTertiary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/widgets/sheet_handle.dart';
+import 'web_keyboard_inset.dart';
 
 /// 초서 바텀시트 — 문장 수집 + 내 생각 입력 UI
 class ChosuSheet extends StatefulWidget {
@@ -31,21 +34,32 @@ class _ChosuSheetState extends State<ChosuSheet> {
   final _thoughtFocus = FocusNode();
   bool _isWritingThought = false;
   bool _saved = false;
+  late final WebKeyboardInsetController _webKeyboardInset;
 
   @override
   void initState() {
     super.initState();
     _sentenceCtrl = TextEditingController(text: widget.initialText);
+    _webKeyboardInset = WebKeyboardInsetController()
+      ..addListener(_handleWebKeyboardInsetChanged)
+      ..start();
   }
 
   @override
   void dispose() {
+    _webKeyboardInset
+      ..removeListener(_handleWebKeyboardInsetChanged)
+      ..dispose();
     _sentenceCtrl.dispose();
     _thoughtCtrl.dispose();
     _pageCtrl.dispose();
     _sentenceFocus.dispose();
     _thoughtFocus.dispose();
     super.dispose();
+  }
+
+  void _handleWebKeyboardInsetChanged() {
+    if (mounted) setState(() {});
   }
 
   void _openThoughtStep() {
@@ -78,8 +92,11 @@ class _ChosuSheetState extends State<ChosuSheet> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final keyboardInset = media.viewInsets.bottom;
-    final isKeyboardOpen = kIsWeb && keyboardInset > 0;
+    final keyboardInset = math.max(
+      media.viewInsets.bottom,
+      _webKeyboardInset.inset,
+    );
+    final isKeyboardOpen = keyboardInset > 0;
     final bottomPadding =
         media.padding.bottom + 16 + (isKeyboardOpen ? keyboardInset : 0);
 
@@ -153,6 +170,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                             saved: _saved,
                             canSave: _sentenceCtrl.text.trim().isNotEmpty,
                             compactForKeyboard: isKeyboardOpen,
+                            keyboardInset: keyboardInset,
                             onBack: () =>
                                 setState(() => _isWritingThought = false),
                             onSave: _save,
@@ -168,6 +186,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                             onSave: _save,
                             autofocus: widget.autofocusSentence,
                             compactForKeyboard: isKeyboardOpen,
+                            keyboardInset: keyboardInset,
                           ),
                   ),
                 ),
@@ -259,6 +278,7 @@ class _SentenceStep extends StatelessWidget {
   final VoidCallback onSave;
   final bool autofocus;
   final bool compactForKeyboard;
+  final double keyboardInset;
 
   const _SentenceStep({
     super.key,
@@ -271,6 +291,7 @@ class _SentenceStep extends StatelessWidget {
     required this.onSave,
     required this.autofocus,
     required this.compactForKeyboard,
+    required this.keyboardInset,
   });
 
   @override
@@ -344,6 +365,7 @@ class _SentenceStep extends StatelessWidget {
             italic: true,
             autofocus: autofocus,
             cursorColor: context.appPrimaryAccent,
+            keyboardInset: keyboardInset,
             onChanged: onChanged,
           ),
         ),
@@ -398,6 +420,7 @@ class _ThoughtStep extends StatelessWidget {
   final bool saved;
   final bool canSave;
   final bool compactForKeyboard;
+  final double keyboardInset;
   final VoidCallback onBack;
   final VoidCallback onSave;
 
@@ -409,6 +432,7 @@ class _ThoughtStep extends StatelessWidget {
     required this.saved,
     required this.canSave,
     required this.compactForKeyboard,
+    required this.keyboardInset,
     required this.onBack,
     required this.onSave,
   });
@@ -472,6 +496,7 @@ class _ThoughtStep extends StatelessWidget {
             hintText: '이 문장에서 무엇을 느꼈나요?',
             expands: true,
             cursorColor: context.appAccentColor,
+            keyboardInset: keyboardInset,
             onChanged: (_) {},
           ),
         ),
@@ -504,6 +529,7 @@ class _ChosuTextField extends StatefulWidget {
   final bool italic;
   final bool autofocus;
   final Color cursorColor;
+  final double keyboardInset;
   final ValueChanged<String> onChanged;
 
   const _ChosuTextField({
@@ -514,6 +540,7 @@ class _ChosuTextField extends StatefulWidget {
     this.italic = false,
     this.autofocus = false,
     required this.cursorColor,
+    this.keyboardInset = 0,
     required this.onChanged,
   });
 
@@ -578,7 +605,10 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardInset = math.max(
+      MediaQuery.viewInsetsOf(context).bottom,
+      widget.keyboardInset,
+    );
     if (keyboardInset != _lastKeyboardInset) {
       _lastKeyboardInset = keyboardInset;
       _scheduleCaretFollow();

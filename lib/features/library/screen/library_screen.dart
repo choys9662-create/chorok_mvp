@@ -30,6 +30,8 @@ import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/utils/follow_relationship_text.dart';
 import '../../profile/controller/user_profile_provider.dart';
 
+typedef _LibraryQuote = ({String content, String bookTitle, String bookAuthor});
+
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
   if (kIsWeb) {
@@ -72,6 +74,48 @@ final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
       )
       .toList();
 });
+
+final likedSentenceQuotesProvider =
+    FutureProvider.family<List<_LibraryQuote>, String?>((
+      ref,
+      viewedUserId,
+    ) async {
+      if (kUseMock) return const [];
+      final client = Supabase.instance.client;
+      final targetUserId = viewedUserId ?? client.auth.currentUser?.id;
+      if (targetUserId == null) return const [];
+
+      final rows = await client
+          .from('sentence_likes')
+          .select(
+            'created_at, '
+            'sentences!inner(content, '
+            'books(title, author), '
+            'global_books(title, author))',
+          )
+          .eq('user_id', targetUserId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      return (rows as List)
+          .map((row) {
+            final sentence =
+                (row as Map<String, dynamic>)['sentences']
+                    as Map<String, dynamic>?;
+            if (sentence == null) return null;
+            final localBook = sentence['books'] as Map<String, dynamic>?;
+            final globalBook =
+                sentence['global_books'] as Map<String, dynamic>?;
+            final book = globalBook ?? localBook;
+            return (
+              content: sentence['content'] as String? ?? '',
+              bookTitle: book?['title'] as String? ?? '',
+              bookAuthor: book?['author'] as String? ?? '',
+            );
+          })
+          .whereType<_LibraryQuote>()
+          .toList();
+    });
 
 Future<List<dynamic>> _fetchSupabaseReadingLogs(
   SupabaseClient client,
@@ -255,7 +299,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   // ── 서재 탭 (내/다른 사용자 데이터 분기) ──────────────────────────
-  Widget _buildShelfTab() {
+  Widget _buildShelfTab({ReadingStatus? initialStatus}) {
     return Consumer(
       builder: (ctx, r, _) {
         final List<Book> books;
@@ -276,6 +320,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         return _LibraryTab(
           books: books,
           logs: logs,
+          initialStatus: initialStatus,
           isOwner: _isOwner,
           viewedUserId: _uid,
           onAddBook: () => ctx.push(AppConstants.routeSearch),
@@ -306,7 +351,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           analytics = r.watch(userAnalyticsProvider(_uid!)).valueOrNull;
         }
 
-        final quotes = _overviewQuotes(viewerData);
+        final likedQuotes = r.watch(likedSentenceQuotesProvider(_uid));
+        final quotes = kUseMock
+            ? _overviewQuotes(viewerData)
+            : likedQuotes.valueOrNull ?? const <_LibraryQuote>[];
+        final sentenceItems = _sentenceItems(books, quotes);
         return _WatchaLibraryOverview(
           books: books,
           logs: logs,
@@ -314,9 +363,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           quotes: quotes,
           isOwner: _isOwner,
           onAddBook: () => ctx.push(AppConstants.routeSearch),
-          onOpenShelf: () {
+          onOpenStatus: (status) {
             HapticFeedback.selectionClick();
-            _showShelfSheet(ctx);
+            _showShelfSheetFor(ctx, status: status);
+          },
+          onOpenSentences: () {
+            HapticFeedback.selectionClick();
+            _showSentencesSheet(ctx, sentenceItems);
           },
           onOpenStats: () {
             HapticFeedback.selectionClick();
@@ -326,20 +379,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             HapticFeedback.selectionClick();
             setState(() => _viewIndex = 2);
           },
-          onOpenQuotes: _isOwner
-              ? () {
-                  HapticFeedback.selectionClick();
-                  ctx.push(AppConstants.routeChoseoList);
-                }
-              : null,
+          onOpenQuotes: null,
         );
       },
     );
   }
 
-  List<({String content, String bookTitle, String bookAuthor})> _overviewQuotes(
-    UserProfileData? viewerData,
-  ) {
+  List<_LibraryQuote> _overviewQuotes(UserProfileData? viewerData) {
     if (_isOwner) {
       final state = ref.watch(choseoListProvider);
       return state.items
@@ -363,7 +409,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         .toList();
   }
 
-  void _showShelfSheet(BuildContext context) {
+  List<_LibraryQuote> _sentenceItems(
+    List<Book> books,
+    List<_LibraryQuote> quotes,
+  ) {
+    return [
+      ...quotes,
+      for (final book in books)
+        for (final sentence in book.savedSentences)
+          (content: sentence, bookTitle: book.title, bookAuthor: book.author),
+    ];
+  }
+
+  void _showShelfSheetFor(BuildContext context, {ReadingStatus? status}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -376,7 +434,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         initialChildSize: 0.86,
         minChildSize: 0.5,
         maxChildSize: 0.94,
-        builder: (_, controller) => _ShelfSheet(child: _buildShelfTab()),
+        builder: (_, controller) => _ShelfSheet(
+          title: status == null ? '전체 서재' : status.label,
+          child: _buildShelfTab(initialStatus: status),
+        ),
+      ),
+    );
+  }
+
+  void _showSentencesSheet(
+    BuildContext context,
+    List<_LibraryQuote> sentences,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.appBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.86,
+        minChildSize: 0.5,
+        maxChildSize: 0.94,
+        builder: (_, controller) =>
+            _SentenceSheet(sentences: sentences, scrollController: controller),
       ),
     );
   }
@@ -411,9 +494,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 }
 
 class _ShelfSheet extends StatelessWidget {
+  final String title;
   final Widget child;
 
-  const _ShelfSheet({required this.child});
+  const _ShelfSheet({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -428,7 +512,7 @@ class _ShelfSheet extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  '전체 서재',
+                  title,
                   style: AppTheme.headingSmall.copyWith(
                     color: context.appTextPrimary,
                   ),
@@ -447,6 +531,128 @@ class _ShelfSheet extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 24),
               child: child,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SentenceSheet extends StatelessWidget {
+  final List<_LibraryQuote> sentences;
+  final ScrollController scrollController;
+
+  const _SentenceSheet({
+    required this.sentences,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          const ChorokSheetHandle(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                Text(
+                  '기록한 문장',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextPrimary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${sentences.length}',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                  color: context.appTextSecondary,
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: sentences.isEmpty
+                ? Center(
+                    child: Text(
+                      '아직 기록한 문장이 없어요',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    itemCount: sentences.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, index) =>
+                        _SentenceSheetItem(item: sentences[index]),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SentenceSheetItem extends StatelessWidget {
+  final _LibraryQuote item;
+
+  const _SentenceSheetItem({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 10,
+        side: BorderSide.none,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.content,
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextPrimary,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.menu_book_rounded,
+                size: 14,
+                color: context.appTextTertiary,
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  item.bookAuthor.isEmpty
+                      ? item.bookTitle
+                      : '${item.bookTitle} · ${item.bookAuthor}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -500,7 +706,8 @@ class _WatchaLibraryOverview extends StatelessWidget {
   final List<({String content, String bookTitle, String bookAuthor})> quotes;
   final bool isOwner;
   final VoidCallback onAddBook;
-  final VoidCallback onOpenShelf;
+  final ValueChanged<ReadingStatus> onOpenStatus;
+  final VoidCallback onOpenSentences;
   final VoidCallback onOpenStats;
   final VoidCallback onOpenCalendar;
   final VoidCallback? onOpenQuotes;
@@ -512,7 +719,8 @@ class _WatchaLibraryOverview extends StatelessWidget {
     required this.quotes,
     required this.isOwner,
     required this.onAddBook,
-    required this.onOpenShelf,
+    required this.onOpenStatus,
+    required this.onOpenSentences,
     required this.onOpenStats,
     required this.onOpenCalendar,
     required this.onOpenQuotes,
@@ -542,13 +750,16 @@ class _WatchaLibraryOverview extends StatelessWidget {
           completed: completed,
           sentenceCount: sentenceCount,
           totalMinutes: totalMinutes,
+          onCompletedTap: () => onOpenStatus(ReadingStatus.completed),
+          onSentenceTap: onOpenSentences,
         ),
         _ShelfQuickSection(
           reading: reading,
           completed: completed,
           want: want,
           sentenceCount: sentenceCount,
-          onOpenShelf: onOpenShelf,
+          onOpenStatus: onOpenStatus,
+          onOpenSentences: onOpenSentences,
         ),
         _TasteAnalysisPreview(
           books: books,
@@ -591,20 +802,24 @@ class _ProfileNumbersBand extends StatelessWidget {
   final int completed;
   final int sentenceCount;
   final int totalMinutes;
+  final VoidCallback onCompletedTap;
+  final VoidCallback onSentenceTap;
 
   const _ProfileNumbersBand({
     required this.completed,
     required this.sentenceCount,
     required this.totalMinutes,
+    required this.onCompletedTap,
+    required this.onSentenceTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final hours = totalMinutes ~/ 60;
     final items = [
-      (value: '$completed', label: '완독'),
-      (value: '$sentenceCount', label: '문장'),
-      (value: '$hours', label: '시간'),
+      (value: '$completed', label: '완독', onTap: onCompletedTap),
+      (value: '$sentenceCount', label: '문장', onTap: onSentenceTap),
+      (value: '$hours', label: '시간', onTap: null),
     ];
     return Container(
       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
@@ -626,24 +841,32 @@ class _ProfileNumbersBand extends StatelessWidget {
                     ? null
                     : Border(left: BorderSide(color: context.appDivider)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    item.value,
-                    style: AppTheme.headingSmall.copyWith(
-                      color: context.appTextPrimary,
-                      fontSize: 22,
-                    ),
+              child: Semantics(
+                label: '${item.label} ${item.value}',
+                button: item.onTap != null,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: item.onTap,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.value,
+                        style: AppTheme.headingSmall.copyWith(
+                          color: context.appTextPrimary,
+                          fontSize: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.label,
+                        style: AppTheme.captionLarge.copyWith(
+                          color: context.appTextTertiary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.label,
-                    style: AppTheme.captionLarge.copyWith(
-                      color: context.appTextTertiary,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -658,23 +881,45 @@ class _ShelfQuickSection extends StatelessWidget {
   final int completed;
   final int want;
   final int sentenceCount;
-  final VoidCallback onOpenShelf;
+  final ValueChanged<ReadingStatus> onOpenStatus;
+  final VoidCallback onOpenSentences;
 
   const _ShelfQuickSection({
     required this.reading,
     required this.completed,
     required this.want,
     required this.sentenceCount,
-    required this.onOpenShelf,
+    required this.onOpenStatus,
+    required this.onOpenSentences,
   });
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      (icon: Icons.auto_stories_outlined, label: '독서 중', value: reading),
-      (icon: Icons.check_box_outlined, label: '완독', value: completed),
-      (icon: Icons.bookmark_border_rounded, label: '위시', value: want),
-      (icon: Icons.notes_rounded, label: '문장', value: sentenceCount),
+      (
+        icon: Icons.auto_stories_outlined,
+        label: '독서 중',
+        value: reading,
+        onTap: () => onOpenStatus(ReadingStatus.reading),
+      ),
+      (
+        icon: Icons.check_box_outlined,
+        label: '완독',
+        value: completed,
+        onTap: () => onOpenStatus(ReadingStatus.completed),
+      ),
+      (
+        icon: Icons.bookmark_border_rounded,
+        label: '위시',
+        value: want,
+        onTap: () => onOpenStatus(ReadingStatus.wantToRead),
+      ),
+      (
+        icon: Icons.notes_rounded,
+        label: '문장',
+        value: sentenceCount,
+        onTap: onOpenSentences,
+      ),
     ];
     return _SectionBand(
       title: '보관함',
@@ -685,7 +930,7 @@ class _ShelfQuickSection extends StatelessWidget {
               label: '${item.label} ${item.value}',
               button: true,
               child: GestureDetector(
-                onTap: onOpenShelf,
+                onTap: item.onTap,
                 child: Column(
                   children: [
                     Container(
@@ -864,7 +1109,7 @@ class _LikesSection extends StatelessWidget {
           const SizedBox(height: 12),
           if (recentQuotes.isEmpty)
             Text(
-              '수집한 문장이 이곳에 모여요.',
+              '좋아요한 문장이 이곳에 모여요.',
               style: AppTheme.captionLarge.copyWith(
                 color: context.appTextTertiary,
               ),
@@ -904,7 +1149,7 @@ class _MonthCalendarPreview extends StatelessWidget {
     }
     final daysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
     final firstWeekday = DateTime(now.year, now.month, 1).weekday % 7;
-    final cells = List<int?>.filled(firstWeekday, null)
+    final cells = List<int?>.filled(firstWeekday, null, growable: true)
       ..addAll(List.generate(daysInMonth, (i) => i + 1));
     while (cells.length % 7 != 0) {
       cells.add(null);
@@ -1131,12 +1376,14 @@ class _RowLink extends StatelessWidget {
               fontSize: 18,
             ),
           ),
-          const Spacer(),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: context.appTextTertiary,
-            size: 28,
-          ),
+          if (onTap != null) ...[
+            const Spacer(),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: context.appTextTertiary,
+              size: 28,
+            ),
+          ],
         ],
       ),
     );
@@ -1268,6 +1515,7 @@ List<double> _tasteBars(List<Book> books, List<ReadingLog> logs) {
 class _LibraryTab extends StatefulWidget {
   final List<Book> books;
   final List<ReadingLog> logs;
+  final ReadingStatus? initialStatus;
   final VoidCallback onAddBook;
 
   /// 내 서재 여부. false면 다른 사용자의 서재(읽기 전용 — 책 추가/이어읽기 숨김).
@@ -1279,6 +1527,7 @@ class _LibraryTab extends StatefulWidget {
   const _LibraryTab({
     required this.books,
     required this.logs,
+    this.initialStatus,
     required this.onAddBook,
     this.isOwner = true,
     this.viewedUserId,
@@ -1296,6 +1545,10 @@ class _LibraryTabState extends State<_LibraryTab> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialStatus != null) {
+      _selectedStatus = widget.initialStatus!;
+      return;
+    }
     final hasReading = widget.books.any(
       (b) => b.status == ReadingStatus.reading,
     );
@@ -1659,7 +1912,7 @@ class _MonthlyAchievementCard extends ConsumerWidget {
             ? null
             : () {
                 HapticFeedback.selectionClick();
-                context.go(AppConstants.routeAnalytics);
+                context.push(AppConstants.routeAnalytics);
               },
         child: ChorokCard(
           padding: const EdgeInsets.all(AppTheme.cardPaddingMD),

@@ -10,8 +10,14 @@ class TimerData {
   final int seconds;
   final TimerState timerState;
   final SessionGoal? goal;
+  final SessionExtra? session;
 
-  const TimerData({required this.seconds, required this.timerState, this.goal});
+  const TimerData({
+    required this.seconds,
+    required this.timerState,
+    this.goal,
+    this.session,
+  });
 
   factory TimerData.initial() =>
       const TimerData(seconds: 0, timerState: TimerState.idle);
@@ -20,11 +26,13 @@ class TimerData {
     int? seconds,
     TimerState? timerState,
     SessionGoal? goal,
+    SessionExtra? session,
   }) {
     return TimerData(
       seconds: seconds ?? this.seconds,
       timerState: timerState ?? this.timerState,
       goal: goal ?? this.goal,
+      session: session ?? this.session,
     );
   }
 
@@ -96,12 +104,16 @@ class TimerNotifier extends Notifier<TimerData> {
     });
   }
 
-  void start({SessionGoal? goal}) {
+  void start({SessionGoal? goal, SessionExtra? session}) {
     if (state.isRunning) return;
     _accumulatedSeconds = 0;
     _runStartedAt = DateTime.now();
     state = state.copyWith(
-        seconds: 0, timerState: TimerState.running, goal: goal);
+      seconds: 0,
+      timerState: TimerState.running,
+      goal: goal,
+      session: session,
+    );
     _startTicking();
   }
 
@@ -111,7 +123,9 @@ class TimerNotifier extends Notifier<TimerData> {
     _accumulatedSeconds = _computeSeconds();
     _runStartedAt = null;
     state = state.copyWith(
-        seconds: _accumulatedSeconds, timerState: TimerState.paused);
+      seconds: _accumulatedSeconds,
+      timerState: TimerState.paused,
+    );
   }
 
   void updateGoal(SessionGoal goal) {

@@ -9,7 +9,7 @@ class OcrWebCameraController {
     throw UnsupportedError('Web camera is only available on web.');
   }
 
-  Future<Uint8List> captureJpeg() {
+  Future<Uint8List> captureJpeg({Rect? cropRect, Size? viewportSize}) {
     throw UnsupportedError('Web camera is only available on web.');
   }
 

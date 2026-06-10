@@ -37,13 +37,20 @@ final sessionFireflyProvider =
         return (mutualCount: mutuals.length, nearbyCount: 15, mutuals: mutuals);
       }
 
+      final presence = ref.read(readingPresenceRepositoryProvider);
       final mutuals = await ref
           .read(followRepositoryProvider)
           .getMutualFollows();
       // "읽고 있는 친구" = 지금 세션을 실행 중인 맞팔만. presence가 없으면 제외.
-      final activeIds = await ref
-          .read(readingPresenceRepositoryProvider)
-          .activeUserIds(mutuals.map((m) => m.id).toList());
+      final activeIds = await presence.activeUserIds(
+        mutuals.map((m) => m.id).toList(),
+      );
       final active = mutuals.where((m) => activeIds.contains(m.id)).toList();
-      return (mutualCount: active.length, nearbyCount: 0, mutuals: active);
+      // "읽고 있는 주변" = 전체에서 지금 읽는 중인 독자 수(맞팔 무관).
+      final counts = await presence.liveCounts();
+      return (
+        mutualCount: active.length,
+        nearbyCount: counts.active,
+        mutuals: active,
+      );
     });

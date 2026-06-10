@@ -90,6 +90,10 @@ create table if not exists public.sentence_likes (
   created_at  timestamptz default now() not null,
   primary key (user_id, sentence_id)
 );
+create index if not exists sentence_likes_user_created_at_idx
+  on public.sentence_likes (user_id, created_at desc);
+create index if not exists sentence_likes_sentence_id_idx
+  on public.sentence_likes (sentence_id);
 
 -- ================================================================
 -- Row Level Security (RLS) — 본인 데이터만 읽기/쓰기
@@ -157,3 +161,20 @@ from public.sentences s
 join public.profiles p on s.user_id = p.id
 left join public.sentence_likes sl on sl.sentence_id = s.id
 group by s.id, p.id;
+
+-- 좋아요한 문장 전용 조회: 작성한 문장(sentences.user_id)과
+-- 좋아요한 문장(sentence_likes.user_id)을 명확히 분리한다.
+create or replace view public.liked_sentences_with_books as
+select
+  sl.user_id as liked_by_user_id,
+  sl.created_at as liked_at,
+  s.id as sentence_id,
+  s.user_id as sentence_owner_id,
+  s.content,
+  s.thought,
+  coalesce(gb.title, b.title) as book_title,
+  coalesce(gb.author, b.author) as book_author
+from public.sentence_likes sl
+join public.sentences s on s.id = sl.sentence_id
+left join public.books b on b.id = s.book_id
+left join public.global_books gb on gb.id = s.global_book_id;

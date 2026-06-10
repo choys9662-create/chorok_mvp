@@ -16,10 +16,13 @@ import '../../../core/services/ocr_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../core/services/stt_service.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/reading_presence_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../forest/controller/live_forest_provider.dart';
 import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
@@ -49,8 +52,8 @@ class ReadingSessionScreen extends ConsumerStatefulWidget {
     super.key,
     this.goal,
     this.bookId,
-    this.bookTitle = '채식주의자',
-    this.bookAuthor = '한강',
+    this.bookTitle = '',
+    this.bookAuthor = '',
     this.coverUrl,
     this.startPage = 0,
     this.totalPages = 0,
@@ -62,6 +65,26 @@ class ReadingSessionScreen extends ConsumerStatefulWidget {
 }
 
 enum UiVisibility { hidden, revealed, social, actions }
+
+class _SessionBookMeta {
+  final String? id;
+  final String title;
+  final String author;
+  final String? coverUrl;
+  final int startPage;
+  final int totalPages;
+
+  const _SessionBookMeta({
+    required this.id,
+    required this.title,
+    required this.author,
+    required this.coverUrl,
+    required this.startPage,
+    required this.totalPages,
+  });
+
+  bool get hasBook => id != null && id!.isNotEmpty;
+}
 
 class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
@@ -127,6 +150,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   }
 
   void _openSentencesSheet() {
+    final book = _readSessionBook();
     _uiHideTimer?.cancel();
     showModalBottomSheet(
       context: context,
@@ -148,8 +172,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           }
         },
         onUpdateThought: _updateSentenceThought,
-        bookTitle: widget.bookTitle,
-        bookAuthor: widget.bookAuthor,
+        bookTitle: book.title,
+        bookAuthor: book.author,
       ),
     ).then(
       (_) => _setUi(
@@ -171,10 +195,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   void _dismissTopicAndStart() {
     if (!_showTopic) return;
+    final book = _readSessionBook();
     setState(() => _showTopic = false);
     final timer = ref.read(timerProvider);
     if (timer.isIdle) {
-      ref.read(timerProvider.notifier).start(goal: widget.goal);
+      ref
+          .read(timerProvider.notifier)
+          .start(goal: widget.goal, session: _sessionExtraForTimer(book));
     }
     _setUi(UiVisibility.hidden);
   }
@@ -194,7 +221,118 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   bool _showTopic = true;
   bool _showPageInput = false;
   int _stoppedSeconds = 0;
+  _SessionBookMeta? _sessionBook;
+  _SessionBookMeta? _stoppedBook;
   String _recognizedText = '';
+
+  _SessionBookMeta _resolveSessionBook({
+    required TimerData timer,
+    required List<Book> books,
+  }) {
+    Book? findBook(String? id) {
+      if (id == null || id.isEmpty) return null;
+      for (final book in books) {
+        if (book.id == id) return book;
+      }
+      return null;
+    }
+
+    final explicitId = widget.bookId;
+    if (explicitId != null && explicitId.isNotEmpty) {
+      final libraryBook = findBook(explicitId);
+      return _SessionBookMeta(
+        id: explicitId,
+        title: widget.bookTitle.isNotEmpty
+            ? widget.bookTitle
+            : libraryBook?.title ?? '',
+        author: widget.bookAuthor.isNotEmpty
+            ? widget.bookAuthor
+            : libraryBook?.author ?? '',
+        coverUrl: widget.coverUrl ?? libraryBook?.coverUrl,
+        startPage: widget.startPage > 0
+            ? widget.startPage
+            : libraryBook?.currentPage ?? widget.startPage,
+        totalPages: widget.totalPages > 0
+            ? widget.totalPages
+            : libraryBook?.totalPages ?? widget.totalPages,
+      );
+    }
+
+    final activeSession = timer.session;
+    if (activeSession != null &&
+        ((activeSession.bookId?.isNotEmpty ?? false) ||
+            activeSession.bookTitle.isNotEmpty)) {
+      final libraryBook = findBook(activeSession.bookId);
+      return _SessionBookMeta(
+        id: activeSession.bookId,
+        title: activeSession.bookTitle.isNotEmpty
+            ? activeSession.bookTitle
+            : libraryBook?.title ?? '',
+        author: activeSession.bookAuthor.isNotEmpty
+            ? activeSession.bookAuthor
+            : libraryBook?.author ?? '',
+        coverUrl: activeSession.coverUrl ?? libraryBook?.coverUrl,
+        startPage: activeSession.startPage > 0
+            ? activeSession.startPage
+            : libraryBook?.currentPage ?? activeSession.startPage,
+        totalPages: activeSession.totalPages > 0
+            ? activeSession.totalPages
+            : libraryBook?.totalPages ?? activeSession.totalPages,
+      );
+    }
+
+    if (widget.bookTitle.isNotEmpty || widget.bookAuthor.isNotEmpty) {
+      return _SessionBookMeta(
+        id: widget.bookId,
+        title: widget.bookTitle,
+        author: widget.bookAuthor,
+        coverUrl: widget.coverUrl,
+        startPage: widget.startPage,
+        totalPages: widget.totalPages,
+      );
+    }
+
+    return const _SessionBookMeta(
+      id: null,
+      title: '',
+      author: '',
+      coverUrl: null,
+      startPage: 0,
+      totalPages: 0,
+    );
+  }
+
+  _SessionBookMeta _readSessionBook() {
+    if (_sessionBook != null) return _sessionBook!;
+    return _lockResolvedSessionBook(
+      timer: ref.read(timerProvider),
+      books: ref.read(libraryProvider),
+    );
+  }
+
+  _SessionBookMeta _lockResolvedSessionBook({
+    required TimerData timer,
+    required List<Book> books,
+  }) {
+    if (_sessionBook != null) return _sessionBook!;
+    final book = _resolveSessionBook(timer: timer, books: books);
+    if (book.hasBook || book.title.isNotEmpty || book.author.isNotEmpty) {
+      _sessionBook = book;
+    }
+    return book;
+  }
+
+  SessionExtra _sessionExtraForTimer(_SessionBookMeta book) {
+    return SessionExtra(
+      goal: widget.goal,
+      bookId: book.id,
+      bookTitle: book.title,
+      bookAuthor: book.author,
+      coverUrl: book.coverUrl,
+      startPage: book.startPage,
+      totalPages: book.totalPages,
+    );
+  }
 
   Future<void> _openOcr() async {
     ref.read(timerProvider.notifier).pause();
@@ -367,26 +505,26 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         );
       }
 
-      final bookId = widget.bookId;
-      if (bookId != null && !const bool.fromEnvironment('USE_MOCK')) {
-        ref.read(dbServiceProvider).fetchMySentencesForBook(bookId).then((
-          rows,
-        ) {
-          if (mounted) {
-            setState(() {
-              _preExistingSentences = rows
-                  .map(
-                    (r) => CollectedSentence(
-                      content: r['content'] as String? ?? '',
-                      id: r['id'] as String?,
-                      thought: r['thought'] as String? ?? '',
-                      pageNumber: r['page_number'] as int?,
-                    ),
-                  )
-                  .toList();
-            });
-          }
-        });
+      final sessionBookId = _readSessionBook().id;
+      if (sessionBookId != null && !const bool.fromEnvironment('USE_MOCK')) {
+        ref.read(dbServiceProvider).fetchMySentencesForBook(sessionBookId).then(
+          (rows) {
+            if (mounted) {
+              setState(() {
+                _preExistingSentences = rows
+                    .map(
+                      (r) => CollectedSentence(
+                        content: r['content'] as String? ?? '',
+                        id: r['id'] as String?,
+                        thought: r['thought'] as String? ?? '',
+                        pageNumber: r['page_number'] as int?,
+                      ),
+                    )
+                    .toList();
+              });
+            }
+          },
+        );
       }
     });
   }
@@ -435,6 +573,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   Future<void> _openChosuSheet({String initialText = ''}) async {
     final hasInitialText = initialText.trim().isNotEmpty;
+    final book = _readSessionBook();
     ref.read(timerProvider.notifier).pause();
     final result = await showGeneralDialog<CollectedSentence>(
       context: context,
@@ -444,7 +583,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       transitionDuration: const Duration(milliseconds: 260),
       pageBuilder: (_, _, _) => ChosuSheet(
         initialText: initialText,
-        bookTitle: widget.bookTitle,
+        bookTitle: book.title,
         autofocusSentence: !hasInitialText,
       ),
       transitionBuilder: (_, animation, _, child) {
@@ -498,15 +637,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   void _onStop() {
     HapticFeedback.mediumImpact();
+    final book = _readSessionBook();
     final seconds = ref.read(timerProvider).seconds;
+    _stoppedBook = book;
     ref.read(timerProvider.notifier).stop();
-    if (widget.bookId != null) {
+    if (book.hasBook) {
       setState(() {
         _stoppedSeconds = seconds;
         _showPageInput = true;
       });
     } else {
-      _navigateToRecap(seconds);
+      _navigateToRecap(seconds, book: book);
     }
   }
 
@@ -521,19 +662,25 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     ref.read(timerProvider.notifier).resume();
   }
 
-  void _navigateToRecap(int seconds, {int? confirmedPage}) {
+  void _navigateToRecap(
+    int seconds, {
+    int? confirmedPage,
+    _SessionBookMeta? book,
+  }) {
     if (!mounted) return;
+    final sessionBook = book ?? _stoppedBook ?? _readSessionBook();
     context.pushReplacement(
       AppConstants.routeRecap,
       extra: RecapData(
         seconds: seconds,
-        bookTitle: widget.bookTitle,
-        bookAuthor: widget.bookAuthor,
-        coverUrl: widget.coverUrl,
+        bookTitle: sessionBook.title,
+        bookAuthor: sessionBook.author,
+        coverUrl: sessionBook.coverUrl,
         sentences: List.from(_collectedSentences),
-        bookId: widget.bookId,
-        startPage: confirmedPage ?? widget.startPage,
-        totalPages: widget.totalPages,
+        bookId: sessionBook.id,
+        startPage: sessionBook.startPage,
+        endPage: confirmedPage,
+        totalPages: sessionBook.totalPages,
         sessionStartedAt: _sessionStartedAt,
         exitCount: _exitCount,
         exitDurationSeconds: _exitDurationSeconds,
@@ -544,6 +691,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   Widget build(BuildContext context) {
     final timer = ref.watch(timerProvider);
+    final books = ref.watch(libraryProvider);
+    final book =
+        _stoppedBook ?? _lockResolvedSessionBook(timer: timer, books: books);
     final firefly = ref.watch(sessionFireflyProvider).valueOrNull;
     final mutuals = firefly?.mutuals ?? const [];
     final readersCount =
@@ -585,8 +735,19 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               // ① 배경
               const _SessionBackground(),
 
-              // ② 라이브 포레스트 반딧불 배경
-              const LiveForestWidget(),
+              // ② 라이브 포레스트 반딧불 배경 — 실시간 독자 수 반영
+              Builder(
+                builder: (context) {
+                  final counts =
+                      ref.watch(liveReaderCountsProvider).valueOrNull ??
+                      LiveReaderCounts.fallback;
+                  return LiveForestWidget(
+                    activeCount: counts.active,
+                    todayCount: counts.today,
+                    weekCount: counts.week,
+                  );
+                },
+              ),
 
               // ③ 반딧불이 + 독자 오브 + 중심 오브
               AnimatedBuilder(
@@ -622,8 +783,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 visible: _uiState == UiVisibility.revealed,
                 child: _RevealedView(
                   timer: timer,
-                  bookTitle: widget.bookTitle,
-                  bookAuthor: widget.bookAuthor,
+                  bookTitle: book.title,
+                  bookAuthor: book.author,
                   sessionStartedAt: _sessionStartedAt,
                   streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
                   sentenceCount:
@@ -649,8 +810,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 visible: _uiState == UiVisibility.actions,
                 child: _ActionsView(
                   timer: timer,
-                  bookTitle: widget.bookTitle,
-                  bookAuthor: widget.bookAuthor,
+                  bookTitle: book.title,
+                  bookAuthor: book.author,
                   isRecording: _isRecording,
                   onWrite: () => _openChosuSheet(),
                   onCamera: _openOcr,
@@ -679,17 +840,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
               // ⑦ 화두 오버레이
               if (_showTopic)
                 _TodaysTopicOverlay(
-                  bookTitle: widget.bookTitle,
-                  bookAuthor: widget.bookAuthor,
-                  coverUrl: widget.coverUrl,
+                  bookTitle: book.title,
+                  bookAuthor: book.author,
+                  coverUrl: book.coverUrl,
                   onStart: _dismissTopicAndStart,
                 ),
 
               // ⑧ 페이지 입력 오버레이
               if (_showPageInput)
                 _PageInputOverlay(
-                  initialPage: widget.startPage,
-                  totalPages: widget.totalPages,
+                  initialPage: book.startPage,
+                  totalPages: book.totalPages,
                   onConfirm: (page) {
                     setState(() => _showPageInput = false);
                     _navigateToRecap(_stoppedSeconds, confirmedPage: page);
@@ -1096,12 +1257,20 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
   }
 
   Future<Uint8List> _captureOcrBytes() async {
+    final viewportSize = MediaQuery.sizeOf(context);
+    final guideFrame = _quoteGuideFrameRect(
+      viewportSize,
+      MediaQuery.paddingOf(context),
+    );
+
     if (kIsWeb) {
       final controller = _webCameraCtrl;
       if (controller == null) {
         throw StateError('Web camera is not ready.');
       }
-      return controller.captureJpeg().timeout(_captureTimeout);
+      return controller
+          .captureJpeg(cropRect: guideFrame, viewportSize: viewportSize)
+          .timeout(_captureTimeout);
     }
 
     final controller = _cameraCtrl;
@@ -1115,6 +1284,8 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     return _encodeCameraFrameToJpeg(
       frame,
       rotationDegrees: _ocrFrameRotationDegrees(controller),
+      cropRect: guideFrame,
+      viewportSize: viewportSize,
     );
   }
 
@@ -1230,6 +1401,8 @@ ImageFormatGroup get _ocrCaptureImageFormatGroup {
 Uint8List _encodeCameraFrameToJpeg(
   CameraImage frame, {
   int rotationDegrees = 0,
+  Rect? cropRect,
+  Size? viewportSize,
 }) {
   final image = switch (frame.format.group) {
     ImageFormatGroup.jpeg => img.decodeImage(frame.planes.first.bytes),
@@ -1241,7 +1414,60 @@ Uint8List _encodeCameraFrameToJpeg(
     throw UnsupportedError('Unsupported camera image format.');
   }
 
-  return img.encodeJpg(_rotateImageForOcr(image, rotationDegrees), quality: 85);
+  final rotated = _rotateImageForOcr(image, rotationDegrees);
+  final cropped = _cropImageToViewportRect(
+    rotated,
+    cropRect: cropRect,
+    viewportSize: viewportSize,
+  );
+  return img.encodeJpg(cropped, quality: 85);
+}
+
+img.Image _cropImageToViewportRect(
+  img.Image image, {
+  required Rect? cropRect,
+  required Size? viewportSize,
+}) {
+  if (cropRect == null ||
+      viewportSize == null ||
+      viewportSize.width <= 0 ||
+      viewportSize.height <= 0) {
+    return image;
+  }
+
+  final imageSize = Size(image.width.toDouble(), image.height.toDouble());
+  final scale = math.max(
+    viewportSize.width / imageSize.width,
+    viewportSize.height / imageSize.height,
+  );
+  final displayedWidth = imageSize.width * scale;
+  final displayedHeight = imageSize.height * scale;
+  final overflowX = (displayedWidth - viewportSize.width) / 2;
+  final overflowY = (displayedHeight - viewportSize.height) / 2;
+  final left = ((cropRect.left + overflowX) / scale).clamp(
+    0.0,
+    imageSize.width - 1,
+  );
+  final top = ((cropRect.top + overflowY) / scale).clamp(
+    0.0,
+    imageSize.height - 1,
+  );
+  final right = ((cropRect.right + overflowX) / scale).clamp(
+    left + 1,
+    imageSize.width,
+  );
+  final bottom = ((cropRect.bottom + overflowY) / scale).clamp(
+    top + 1,
+    imageSize.height,
+  );
+
+  return img.copyCrop(
+    image,
+    x: left.round(),
+    y: top.round(),
+    width: math.max(1, (right - left).round()),
+    height: math.max(1, (bottom - top).round()),
+  );
 }
 
 int _ocrFrameRotationDegrees(CameraController controller) {
@@ -1407,6 +1633,18 @@ class _CameraPreparingView extends StatelessWidget {
   }
 }
 
+Rect _quoteGuideFrameRect(Size size, EdgeInsets padding) {
+  final frameW = math.min(size.width - 44, 360.0);
+  final maxFrameH = math.max(
+    190.0,
+    size.height - padding.top - padding.bottom - 230,
+  );
+  final frameH = math.min(math.max(frameW * 0.64, 210.0), maxFrameH);
+  final frameLeft = (size.width - frameW) / 2;
+  final frameTop = (size.height - frameH) / 2 - 22;
+  return Rect.fromLTWH(frameLeft, frameTop, frameW, frameH);
+}
+
 class _QuoteCameraOverlay extends StatelessWidget {
   final Animation<double> pulseCtrl;
 
@@ -1421,20 +1659,7 @@ class _QuoteCameraOverlay extends StatelessWidget {
           builder: (context, constraints) {
             final size = Size(constraints.maxWidth, constraints.maxHeight);
             final padding = MediaQuery.paddingOf(context);
-            final frameW = math.min(size.width - 44, 360.0);
-            final maxFrameH = math.max(
-              190.0,
-              size.height - padding.top - padding.bottom - 230,
-            );
-            final frameH = math.min(math.max(frameW * 0.64, 210.0), maxFrameH);
-            final frameLeft = (size.width - frameW) / 2;
-            final frameTop = (size.height - frameH) / 2 - 22;
-            final frameRect = Rect.fromLTWH(
-              frameLeft,
-              frameTop,
-              frameW,
-              frameH,
-            );
+            final frameRect = _quoteGuideFrameRect(size, padding);
             final quoteAlpha = 0.54 + pulseCtrl.value * 0.28;
 
             return SizedBox.expand(
@@ -1447,20 +1672,22 @@ class _QuoteCameraOverlay extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Positioned(
-                      left: frameLeft - 2,
-                      top: frameTop - 52,
+                      left: frameRect.left - 2,
+                      top: frameRect.top - 52,
                       child: _GuideQuote(mark: '“', opacity: quoteAlpha),
                     ),
                     Positioned(
-                      right: frameLeft - 2,
-                      top: frameTop + frameH - 28,
+                      right: frameRect.left - 2,
+                      top: frameRect.bottom - 28,
                       child: _GuideQuote(mark: '”', opacity: quoteAlpha),
                     ),
                     ...List.generate(4, (index) {
-                      final top = frameTop + frameH * (0.28 + index * 0.12);
+                      final top =
+                          frameRect.top +
+                          frameRect.height * (0.28 + index * 0.12);
                       return Positioned(
-                        left: frameLeft + 42,
-                        right: frameLeft + 42,
+                        left: frameRect.left + 42,
+                        right: frameRect.left + 42,
                         top: top,
                         child: Container(
                           height: 1,
@@ -1471,7 +1698,7 @@ class _QuoteCameraOverlay extends StatelessWidget {
                     Positioned(
                       left: 28,
                       right: 28,
-                      top: frameTop + frameH + 56,
+                      top: frameRect.bottom + 56,
                       child: Text(
                         '문장을 따옴표 안에 맞춰주세요',
                         textAlign: TextAlign.center,

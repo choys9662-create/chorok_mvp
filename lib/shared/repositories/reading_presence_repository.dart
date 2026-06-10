@@ -44,6 +44,20 @@ class ReadingPresenceRepository {
     await _client.from('reading_presence').delete().eq('user_id', me);
   }
 
+  /// 라이브 포레스트 전체 집계 — 지금 읽는 중(active) / 오늘 읽음(today) / 최근 7일(week).
+  /// RLS가 비팔로우 유저를 숨기므로 SECURITY DEFINER RPC([live_reader_counts])로 집계한다.
+  Future<({int active, int today, int week})> liveCounts() async {
+    final res = await _client.rpc('live_reader_counts');
+    final list = res as List;
+    if (list.isEmpty) return (active: 0, today: 0, week: 0);
+    final row = list.first as Map<String, dynamic>;
+    return (
+      active: (row['active_count'] as num?)?.toInt() ?? 0,
+      today: (row['today_count'] as num?)?.toInt() ?? 0,
+      week: (row['week_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// [candidateIds] 중 지금 세션을 실행 중(heartbeat가 TTL 이내)인 유저 id만 반환.
   Future<Set<String>> activeUserIds(List<String> candidateIds) async {
     if (candidateIds.isEmpty) return const {};

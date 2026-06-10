@@ -183,7 +183,7 @@ class EmptyBooksState extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.mediumImpact();
-                  context.push(AppConstants.routeExplore);
+                  context.go(AppConstants.routeExplore);
                 },
                 child: Container(
                   height: 48,
@@ -391,7 +391,7 @@ class AddBookCard extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
-          context.push(AppConstants.routeExplore);
+          context.go(AppConstants.routeExplore);
         },
         child: Container(
           width: _readingBookCardWidth,

@@ -95,7 +95,7 @@ class WeeklyStatusCard extends ConsumerWidget {
           GestureDetector(
             onTap: () {
               HapticFeedback.selectionClick();
-              context.go(AppConstants.routeAnalytics);
+              context.push(AppConstants.routeAnalytics);
             },
             child: SizedBox(
               height: 72,

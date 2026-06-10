@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -5,9 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,17 +20,8 @@ const _kBg = Color(0xFF121212); // AppTheme.darkBg
 const _kBorder = Color(0xFF2C2C2C); // AppTheme.darkBorder
 const _kAuthControlFill = Color(0xFF111811);
 const _kAuthControlBorder = Color(0x3D8DFF54);
-
-// ─── Google Sign-In 인스턴스 ──────────────────────────────────────────────
-// serverClientId: Supabase/웹에서 검증에 사용하는 Web OAuth client ID
-// clientId: iOS 네이티브 sign-in에 사용하는 iOS OAuth client ID
-//   → Info.plist REVERSED_CLIENT_ID의 역순이 clientId
-//     예) com.googleusercontent.apps.XXXX-YYY → XXXX-YYY.apps.googleusercontent.com
-final _googleSignIn = GoogleSignIn(
-  serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'],
-  clientId: dotenv.env['GOOGLE_IOS_CLIENT_ID'],
-  scopes: ['email', 'profile'],
-);
+const _authRedirectUri = 'com.chorok.chorokapp://login-callback/';
+const _naverProvider = OAuthProvider('custom:naver');
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -42,15 +32,21 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
   bool _loading = false;
+  late final StreamSubscription<AuthState> _authSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _authSubscription = supabase.auth.onAuthStateChange.listen((state) {
+      if (!mounted || state.session == null) return;
+      context.go(AppConstants.routeHome);
+    });
   }
 
   @override
   void dispose() {
+    _authSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -95,35 +91,38 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
 
     _setLoading(true);
     try {
-      if (kIsWeb) {
-        await supabase.auth.signInWithOAuth(
-          OAuthProvider.google,
-          redirectTo: Uri.base.origin,
-        );
-        return;
-      }
-
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return; // 사용자가 취소
-
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
-      final accessToken = googleAuth.accessToken;
-
-      if (idToken == null) throw Exception('Google ID 토큰을 받지 못했어요.');
-
-      await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? Uri.base.origin : _authRedirectUri,
+        authScreenLaunchMode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
       );
-
-      if (mounted) context.go(AppConstants.routeHome);
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
       debugPrint('[Google로그인 오류] $e');
       _showError('Google 로그인 실패\n${e.toString()}');
+    } finally {
+      if (!kIsWeb) _setLoading(false);
+    }
+  }
+
+  // ── Naver 로그인 ─────────────────────────────────────────────────
+  Future<void> _signInWithNaver() async {
+    HapticFeedback.mediumImpact();
+
+    _setLoading(true);
+    try {
+      await supabase.auth.signInWithOAuth(
+        _naverProvider,
+        redirectTo: kIsWeb ? Uri.base.origin : _authRedirectUri,
+      );
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      debugPrint('[네이버로그인 오류] $e');
+      _showError('네이버 로그인 실패\n${e.toString()}');
     } finally {
       if (!kIsWeb) _setLoading(false);
     }
@@ -220,6 +219,12 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                       onTap: _loading ? null : _signInWithGoogle,
                       icon: _googleIcon,
                       label: 'Google로 계속하기',
+                    ),
+                    const SizedBox(height: 12),
+                    _SocialButton(
+                      onTap: _loading ? null : _signInWithNaver,
+                      icon: _naverIcon,
+                      label: '네이버로 계속하기',
                     ),
                     const SizedBox(height: 12),
                     _SocialButton(
@@ -583,6 +588,7 @@ class _SubmitButton extends StatelessWidget {
 
 // ─── 소셜 로그인 아이콘 ──────────────────────────────────────────────────────
 const Widget _googleIcon = _GoogleIconPainter();
+const Widget _naverIcon = _NaverIcon();
 const Widget _appleIcon = _AppleIconPainter();
 
 class _GoogleIconPainter extends StatelessWidget {
@@ -646,5 +652,29 @@ class _AppleIconPainter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Icon(Icons.apple_rounded, color: Colors.black, size: 22);
+  }
+}
+
+class _NaverIcon extends StatelessWidget {
+  const _NaverIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF03C75A),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'N',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+          height: 1,
+        ),
+      ),
+    );
   }
 }

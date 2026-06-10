@@ -17,6 +17,7 @@ import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
 import '../../library/screen/library_screen.dart';
@@ -48,6 +49,7 @@ class RecapData {
   /// 페이지 진행 기록용 — 없으면 DB 저장 생략
   final String? bookId;
   final int startPage;
+  final int? endPage;
   final int totalPages;
   final int? progressPercent;
   final DateTime? sessionStartedAt;
@@ -66,6 +68,7 @@ class RecapData {
     required this.sentences,
     this.bookId,
     this.startPage = 0,
+    this.endPage,
     this.totalPages = 0,
     this.progressPercent,
     this.sessionStartedAt,
@@ -136,6 +139,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
   // 공유 카드 캡처용 키
   final _shareKey = GlobalKey();
+  bool _isChoseoExpanded = false;
 
   // 집중도 (0~100)
   double get _focusPercent => sessionFocusPercent(
@@ -233,25 +237,52 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     }
   }
 
+  int get _currentPage => widget.data.endPage ?? widget.data.startPage;
+
+  int get _pagesRead {
+    final endPage = widget.data.endPage;
+    if (endPage == null) return 0;
+    return (endPage - widget.data.startPage).clamp(0, 999999);
+  }
+
   Future<void> _autoSaveSession() async {
     if (widget.data.seconds <= 0) return;
     final repo = ref.read(bookRepositoryProvider);
     final bookId = widget.data.bookId;
+    final endPage = widget.data.endPage;
+    final pagesRead = _pagesRead;
     final validSentences = widget.data.sentences
         .where((e) => e.content.isNotEmpty)
         .toList();
 
     try {
       if (repo != null) {
-        await repo.saveSessionOnly(
-          sessionId: _sessionId,
-          bookId: bookId,
-          durationSeconds: widget.data.seconds,
-          choseoCount: validSentences.length,
-          startedAt: widget.data.sessionStartedAt,
-          exitCount: widget.data.exitCount,
-          exitDurationSeconds: widget.data.exitDurationSeconds,
-        );
+        if (bookId != null && endPage != null) {
+          final result = await repo.updateProgress(
+            bookId: bookId,
+            newCurrentPage: endPage,
+            durationSeconds: widget.data.seconds,
+            choseoCount: validSentences.length,
+            startedAt: widget.data.sessionStartedAt,
+            exitCount: widget.data.exitCount,
+            exitDurationSeconds: widget.data.exitDurationSeconds,
+            existingSessionId: _sessionId,
+          );
+          if (result.justCompleted && mounted) {
+            setState(() => _showNextBookSuggestion = true);
+            _suggestCtrl.forward();
+          }
+        } else {
+          await repo.saveSessionOnly(
+            sessionId: _sessionId,
+            bookId: bookId,
+            durationSeconds: widget.data.seconds,
+            choseoCount: validSentences.length,
+            startedAt: widget.data.sessionStartedAt,
+            exitCount: widget.data.exitCount,
+            exitDurationSeconds: widget.data.exitDurationSeconds,
+          );
+        }
 
         if (bookId != null && validSentences.isNotEmpty) {
           await Future.wait(
@@ -268,8 +299,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         }
       }
 
+      if (bookId != null && endPage != null) {
+        ref.read(libraryProvider.notifier).updateCurrentPage(bookId, endPage);
+      }
+
       if (bookId != null) {
-        unawaited(_uploadToSupabase(bookId, validSentences, 0));
+        unawaited(_uploadToSupabase(bookId, validSentences, pagesRead));
       }
     } catch (e) {
       debugPrint('Session auto-save failed: $e');
@@ -387,7 +422,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           icon: Icons.pie_chart_rounded,
                           label: '진행도',
                           child: _ProgressValue(
-                            current: widget.data.startPage,
+                            current: _currentPage,
                             total: widget.data.totalPages,
                             percentOverride: widget.data.progressPercent,
                             color: _recapBlue,
@@ -403,7 +438,18 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                                 .where((s) => s.thought.isNotEmpty)
                                 .length,
                             color: _recapBlue,
+                            isExpanded: _isChoseoExpanded,
+                            onToggle: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _isChoseoExpanded = !_isChoseoExpanded;
+                              });
+                            },
                           ),
+                        ),
+                        _ChoseoRecordsPanel(
+                          sentences: widget.data.sentences,
+                          isExpanded: _isChoseoExpanded,
                         ),
                         const _SummaryDivider(),
                         _SummaryRow(
@@ -470,7 +516,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       ),
     );
   }
-
 }
 
 // 세션 요약 — 큰 숫자 값 스타일 (독서시간/집중도/진행도/초서기록/한줄평 공용)
@@ -667,11 +712,15 @@ class _ChoseoValue extends StatelessWidget {
   final int sentenceCount;
   final int recordCount;
   final Color color;
+  final bool isExpanded;
+  final VoidCallback onToggle;
 
   const _ChoseoValue({
     required this.sentenceCount,
     required this.recordCount,
     required this.color,
+    required this.isExpanded,
+    required this.onToggle,
   });
 
   @override
@@ -706,8 +755,122 @@ class _ChoseoValue extends StatelessWidget {
         pillNum('문장', sentenceCount),
         const SizedBox(width: 11),
         pillNum('기록', recordCount),
-        const SizedBox(width: 2),
-        Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: color),
+        const SizedBox(width: 1),
+        Semantics(
+          button: true,
+          label: isExpanded ? '내 초서 기록 접기' : '내 초서 기록 펼치기',
+          child: InkResponse(
+            onTap: onToggle,
+            radius: 18,
+            child: SizedBox(
+              width: 30,
+              height: 30,
+              child: AnimatedRotation(
+                turns: isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: color,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 세션 요약: 펼쳐진 내 초서 기록 목록 ───────────────────────────────
+class _ChoseoRecordsPanel extends StatelessWidget {
+  final List<CollectedSentence> sentences;
+  final bool isExpanded;
+
+  const _ChoseoRecordsPanel({
+    required this.sentences,
+    required this.isExpanded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedCrossFade(
+      firstChild: const SizedBox(width: double.infinity),
+      secondChild: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(120, 0, 16, 18),
+        child: sentences.isEmpty
+            ? Text(
+                '아직 기록한 문장이 없어요',
+                textAlign: TextAlign.right,
+                style: _labelStyle(fontSize: 12),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (int i = 0; i < sentences.length; i++) ...[
+                    _ChoseoRecordItem(sentence: sentences[i]),
+                    if (i < sentences.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          height: 1,
+                          color: _recapLine.withValues(alpha: 0.72),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+      ),
+      crossFadeState: isExpanded
+          ? CrossFadeState.showSecond
+          : CrossFadeState.showFirst,
+      duration: const Duration(milliseconds: 180),
+      reverseDuration: const Duration(milliseconds: 140),
+      sizeCurve: Curves.easeOutCubic,
+    );
+  }
+}
+
+class _ChoseoRecordItem extends StatelessWidget {
+  final CollectedSentence sentence;
+
+  const _ChoseoRecordItem({required this.sentence});
+
+  @override
+  Widget build(BuildContext context) {
+    final thought = sentence.thought.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (sentence.pageNumber != null) ...[
+          Text(
+            '${sentence.pageNumber}쪽',
+            textAlign: TextAlign.right,
+            style: _labelStyle(
+              fontSize: 10,
+            ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.72)),
+          ),
+          const SizedBox(height: 5),
+        ],
+        Text(
+          sentence.content,
+          textAlign: TextAlign.right,
+          style: _labelStyle(
+            fontSize: 15,
+          ).copyWith(color: _recapBlue, height: 1.45),
+        ),
+        if (thought.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            thought,
+            textAlign: TextAlign.right,
+            style: _labelStyle(
+              fontSize: 12,
+            ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.88)),
+          ),
+        ],
       ],
     );
   }

@@ -5,10 +5,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/db_service.dart';
 import '../../../shared/models/app_notification.dart';
 import '../../../shared/repositories/notification_repository.dart';
 import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../feed/screen/sentence_detail_screen.dart';
 
 // ─── 데이터 모델 ──────────────────────────────────────────────────────────
 
@@ -17,6 +19,7 @@ enum NotiType { follow, like, comment, overlap, system }
 class NotiItem {
   final String? id; // 실데이터 알림 id (mock이면 null)
   final String? actorId; // 알림을 일으킨 유저 id (mock이면 null)
+  final String? sentenceId; // 연결된 문장 id (like/comment/overlap)
   final NotiType type;
   final String title;
   final String body;
@@ -26,6 +29,7 @@ class NotiItem {
   const NotiItem({
     this.id,
     this.actorId,
+    this.sentenceId,
     required this.type,
     required this.title,
     required this.body,
@@ -36,6 +40,7 @@ class NotiItem {
   NotiItem copyWith({bool? isRead}) => NotiItem(
     id: id,
     actorId: actorId,
+    sentenceId: sentenceId,
     type: type,
     title: title,
     body: body,
@@ -127,6 +132,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
   NotiItem _toItem(AppNotification n) => NotiItem(
     id: n.id,
     actorId: n.actorId,
+    sentenceId: n.sentenceId,
     type: _notiType(n.type),
     title: n.title,
     body: n.body,
@@ -194,19 +200,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       case NotiType.like:
       case NotiType.comment:
       case NotiType.overlap:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '문장 상세 페이지는 곧 지원돼요 🌿',
-              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
-            ),
-            backgroundColor: context.appCardElevated,
-            behavior: SnackBarBehavior.floating,
-            shape: AppTheme.smoothShape(radius: 10, side: BorderSide.none),
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (n.sentenceId != null) {
+          _openSentence(n.sentenceId!);
+        } else {
+          _showToast('문장을 찾을 수 없어요');
+        }
       case NotiType.system:
         // 시스템 알림은 읽음 처리만
         break;
@@ -231,6 +229,39 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       if (mounted) _showToast('프로필을 불러오지 못했어요');
     } finally {
       _openingProfile = false;
+    }
+  }
+
+  /// 좋아요·생각·겹문장 알림 → 해당 문장 상세로 이동.
+  /// 알림은 sentenceId만 들고 있어, 화면이 요구하는 본문·책 정보를 먼저 조회한다.
+  bool _openingSentence = false;
+  Future<void> _openSentence(String sentenceId) async {
+    if (_openingSentence) return;
+    _openingSentence = true;
+    try {
+      final row = await ref
+          .read(dbServiceProvider)
+          .fetchSentenceDetailById(sentenceId);
+      if (!mounted) return;
+      if (row == null) {
+        _showToast('문장을 찾을 수 없어요');
+        return;
+      }
+      context.push(
+        AppConstants.routeSentenceDetail,
+        extra: SentenceDetailExtra(
+          sentenceContent: row['content'] as String? ?? '',
+          bookTitle: row['book_title'] as String? ?? '알 수 없는 책',
+          bookAuthor: row['book_author'] as String? ?? '',
+          collectorUsername: row['username'] as String?,
+          collectorThought: row['thought'] as String?,
+          sentenceId: sentenceId,
+        ),
+      );
+    } catch (_) {
+      if (mounted) _showToast('문장을 불러오지 못했어요');
+    } finally {
+      _openingSentence = false;
     }
   }
 
