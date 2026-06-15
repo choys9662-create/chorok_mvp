@@ -59,7 +59,7 @@ class MainScaffold extends ConsumerWidget {
   }
 }
 
-// ─── 오브 FAB 위치 — centerDocked보다 12px 낮게 (네비바에 더 눌려있는 느낌) ───────
+// ─── 오브 FAB 위치 — 하단 바에 묻히지 않도록 살짝 위로 올린다 ───────────────────
 
 class _OrbDockedLocation extends FloatingActionButtonLocation {
   const _OrbDockedLocation();
@@ -69,10 +69,7 @@ class _OrbDockedLocation extends FloatingActionButtonLocation {
     final fabSize = scaffoldGeometry.floatingActionButtonSize;
     final w = scaffoldGeometry.scaffoldSize.width;
     final h = scaffoldGeometry.scaffoldSize.height;
-    return Offset(
-      (w - fabSize.width) / 2.0,
-      h - 38 - fabSize.height,
-    );
+    return Offset((w - fabSize.width) / 2.0, h - 44 - fabSize.height);
   }
 }
 
@@ -84,58 +81,77 @@ class _ChorokBottomBar extends StatelessWidget {
 
   const _ChorokBottomBar({required this.currentIndex, required this.onTap});
 
+  static const double _centerOrbGap = 104;
+
   @override
   Widget build(BuildContext context) {
     return MediaQuery.removePadding(
       context: context,
       removeBottom: true,
       child: BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      color: context.appSurface,
-      surfaceTintColor: Colors.transparent,
-      shadowColor: Colors.black.withValues(alpha: 0.22),
-      elevation: 10,
-      height: 84,
-      padding: EdgeInsets.zero,
-      child: Row(
-        children: [
-          _NavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
-            label: '홈',
-            index: 0,
-            currentIndex: currentIndex,
-            onTap: onTap,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 6,
+        color: context.appSurface,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withValues(alpha: 0.22),
+        elevation: 10,
+        height: 92,
+        padding: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavItem(
+                      icon: Icons.home_outlined,
+                      activeIcon: Icons.home_rounded,
+                      label: '홈',
+                      index: 0,
+                      currentIndex: currentIndex,
+                      onTap: onTap,
+                    ),
+                    _NavItem(
+                      icon: Icons.search_rounded,
+                      activeIcon: Icons.search_rounded,
+                      label: '검색',
+                      index: 1,
+                      currentIndex: currentIndex,
+                      onTap: onTap,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: _centerOrbGap),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavItem(
+                      icon: Icons.auto_stories_outlined,
+                      activeIcon: Icons.auto_stories,
+                      label: '피드',
+                      index: 2,
+                      currentIndex: currentIndex,
+                      onTap: onTap,
+                    ),
+                    _NavItem(
+                      icon: Icons.menu_book_outlined,
+                      activeIcon: Icons.menu_book_rounded,
+                      label: '서재',
+                      index: 3,
+                      currentIndex: currentIndex,
+                      onTap: onTap,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          _NavItem(
-            icon: Icons.search_rounded,
-            activeIcon: Icons.search_rounded,
-            label: '검색',
-            index: 1,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-          const Spacer(),
-          _NavItem(
-            icon: Icons.auto_stories_outlined,
-            activeIcon: Icons.auto_stories,
-            label: '피드',
-            index: 2,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-          _NavItem(
-            icon: Icons.menu_book_outlined,
-            activeIcon: Icons.menu_book_rounded,
-            label: '서재',
-            index: 3,
-            currentIndex: currentIndex,
-            onTap: onTap,
-          ),
-        ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -164,7 +180,8 @@ class _NavItem extends StatelessWidget {
         ? context.appPrimaryAccent
         : context.appTextSecondary;
 
-    return Expanded(
+    return SizedBox(
+      width: 64,
       child: Semantics(
         label: label,
         button: true,
@@ -172,14 +189,16 @@ class _NavItem extends StatelessWidget {
         child: GestureDetector(
           onTap: () => onTap(index),
           behavior: HitTestBehavior.opaque,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOutCubic,
-                  width: 36,
-                  height: 26,
+                  width: 34,
+                  height: 24,
                   decoration: AppTheme.smoothPill(
                     color: isActive
                         ? context.appPrimaryAccent.withValues(alpha: 0.14)
@@ -188,22 +207,24 @@ class _NavItem extends StatelessWidget {
                   child: Icon(
                     isActive ? activeIcon : icon,
                     color: color,
-                    size: 22,
+                    size: 21,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 6),
                 Text(
                   label,
                   style: TextStyle(
                     fontSize: 12,
                     color: color,
                     fontWeight: FontWeight.w400,
+                    height: 1,
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
     );
   }
 }
@@ -226,38 +247,38 @@ class _ForestOrbFab extends StatelessWidget {
         width: 62,
         height: 62,
         child: FloatingActionButton(
-        onPressed: onTap,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        focusElevation: 0,
-        hoverElevation: 0,
-        highlightElevation: 0,
-        shape: const CircleBorder(),
-        child: Container(
-          width: 62,
-          height: 62,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: accent,
-            boxShadow: [
-              BoxShadow(
-                color: accent.withValues(alpha: 0.34),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+          onPressed: onTap,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          focusElevation: 0,
+          hoverElevation: 0,
+          highlightElevation: 0,
+          shape: const CircleBorder(),
+          child: Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accent,
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.34),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(
+                isInSession ? Icons.play_arrow_rounded : Icons.timer_rounded,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black
+                    : Colors.white,
+                size: 24,
               ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              isInSession ? Icons.play_arrow_rounded : Icons.timer_rounded,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black
-                  : Colors.white,
-              size: 24,
             ),
           ),
         ),
-      ),
       ),
     );
   }

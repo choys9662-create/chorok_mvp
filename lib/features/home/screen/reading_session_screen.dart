@@ -18,6 +18,7 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../core/services/stt_service.dart';
+import '../../../shared/providers/cover_color_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/reading_presence_repository.dart';
@@ -27,6 +28,7 @@ import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
+import 'ocr_capture_crop.dart';
 import 'ocr_web_camera_stub.dart'
     if (dart.library.js_interop) 'ocr_web_camera_web.dart';
 import 'session_recap_screen.dart';
@@ -108,7 +110,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _uiHideTimer = Timer(autoHideAfter, () {
       if (!mounted) return;
       final t = ref.read(timerProvider);
-      if (!t.isRunning) return;
+      if (!t.isRunning) {
+        // 일시정지(시트·OCR·백그라운드) 중에는 숨기지 않되 포기하지도 않는다 —
+        // 재개될 때까지 같은 주기로 재시도해야 복귀 후 자동 숨김이 살아난다.
+        _setUi(_uiState, autoHideAfter: autoHideAfter);
+        return;
+      }
       switch (_uiState) {
         case UiVisibility.actions:
           _setUi(
@@ -172,6 +179,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           }
         },
         onUpdateThought: _updateSentenceThought,
+        onUpdatePage: _updateSentencePage,
         bookTitle: book.title,
         bookAuthor: book.author,
       ),
@@ -635,6 +643,39 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     });
   }
 
+  Future<void> _updateSentencePage(int index, int? page) async {
+    final offset = _preExistingSentences.length;
+
+    // copyWith은 null로 지울 수 없어 새 객체로 교체한다.
+    CollectedSentence withPage(CollectedSentence s) => CollectedSentence(
+      id: s.id,
+      content: s.content,
+      thought: s.thought,
+      pageNumber: page,
+    );
+
+    if (index < offset) {
+      final current = _preExistingSentences[index];
+      final sentenceId = current.id;
+      if (sentenceId != null && sentenceId.isNotEmpty) {
+        await ref.read(dbServiceProvider).updateSentencePage(sentenceId, page);
+      }
+      if (!mounted) return;
+      setState(() {
+        _preExistingSentences[index] = withPage(current);
+      });
+      return;
+    }
+
+    final localIndex = index - offset;
+    if (localIndex < 0 || localIndex >= _collectedSentences.length) return;
+    setState(() {
+      _collectedSentences[localIndex] = withPage(
+        _collectedSentences[localIndex],
+      );
+    });
+  }
+
   void _onStop() {
     HapticFeedback.mediumImpact();
     final book = _readSessionBook();
@@ -843,6 +884,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   bookTitle: book.title,
                   bookAuthor: book.author,
                   coverUrl: book.coverUrl,
+                  accentColor: _sessionEntryAccent(
+                    ref.watch(coverColorProvider(book.coverUrl)).valueOrNull,
+                  ),
                   onStart: _dismissTopicAndStart,
                 ),
 
@@ -1258,10 +1302,11 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
 
   Future<Uint8List> _captureOcrBytes() async {
     final viewportSize = MediaQuery.sizeOf(context);
-    final guideFrame = _quoteGuideFrameRect(
+    final guideFrame = quoteGuideFrameRect(
       viewportSize,
       MediaQuery.paddingOf(context),
     );
+    final cropFrame = ocrCaptureCropRect(guideFrame);
 
     if (kIsWeb) {
       final controller = _webCameraCtrl;
@@ -1269,7 +1314,7 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
         throw StateError('Web camera is not ready.');
       }
       return controller
-          .captureJpeg(cropRect: guideFrame, viewportSize: viewportSize)
+          .captureJpeg(cropRect: cropFrame, viewportSize: viewportSize)
           .timeout(_captureTimeout);
     }
 
@@ -1281,10 +1326,15 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     if (frame == null) {
       throw StateError('Camera stream frame is not ready.');
     }
+    final rotationDegrees = _ocrFrameRotationDegrees(controller);
+    debugPrint(
+      'OCR capture: frame=${frame.width}x${frame.height} '
+      'rot=$rotationDegrees viewport=$viewportSize crop=$cropFrame',
+    );
     return _encodeCameraFrameToJpeg(
       frame,
-      rotationDegrees: _ocrFrameRotationDegrees(controller),
-      cropRect: guideFrame,
+      rotationDegrees: rotationDegrees,
+      cropRect: cropFrame,
       viewportSize: viewportSize,
     );
   }
@@ -1435,42 +1485,33 @@ img.Image _cropImageToViewportRect(
     return image;
   }
 
-  final imageSize = Size(image.width.toDouble(), image.height.toDouble());
-  final scale = math.max(
-    viewportSize.width / imageSize.width,
-    viewportSize.height / imageSize.height,
+  final sourceRect = sourceRectForViewportCrop(
+    sourceSize: Size(image.width.toDouble(), image.height.toDouble()),
+    cropRect: cropRect,
+    viewportSize: viewportSize,
   );
-  final displayedWidth = imageSize.width * scale;
-  final displayedHeight = imageSize.height * scale;
-  final overflowX = (displayedWidth - viewportSize.width) / 2;
-  final overflowY = (displayedHeight - viewportSize.height) / 2;
-  final left = ((cropRect.left + overflowX) / scale).clamp(
-    0.0,
-    imageSize.width - 1,
+  debugPrint(
+    'OCR crop: rotated=${image.width}x${image.height} source=$sourceRect',
   );
-  final top = ((cropRect.top + overflowY) / scale).clamp(
-    0.0,
-    imageSize.height - 1,
-  );
-  final right = ((cropRect.right + overflowX) / scale).clamp(
-    left + 1,
-    imageSize.width,
-  );
-  final bottom = ((cropRect.bottom + overflowY) / scale).clamp(
-    top + 1,
-    imageSize.height,
-  );
+  final left = sourceRect.left.ceil().clamp(0, image.width - 1);
+  final top = sourceRect.top.ceil().clamp(0, image.height - 1);
+  final right = sourceRect.right.floor().clamp(left + 1, image.width);
+  final bottom = sourceRect.bottom.floor().clamp(top + 1, image.height);
 
   return img.copyCrop(
     image,
-    x: left.round(),
-    y: top.round(),
-    width: math.max(1, (right - left).round()),
-    height: math.max(1, (bottom - top).round()),
+    x: left,
+    y: top,
+    width: math.max(1, right - left),
+    height: math.max(1, bottom - top),
   );
 }
 
 int _ocrFrameRotationDegrees(CameraController controller) {
+  // iOS는 camera_avfoundation이 스트림 connection의 videoOrientation을 기기
+  // 방향으로 설정해 프레임이 이미 화면 방향으로 회전되어 도착한다.
+  // sensorOrientation(90 고정)으로 또 회전하면 이중 회전 → 크롭 좌표가 틀어진다.
+  if (defaultTargetPlatform == TargetPlatform.iOS) return 0;
   final sensorDegrees = controller.description.sensorOrientation;
   final deviceDegrees = switch (controller.value.lockedCaptureOrientation ??
       controller.value.deviceOrientation) {
@@ -1633,18 +1674,6 @@ class _CameraPreparingView extends StatelessWidget {
   }
 }
 
-Rect _quoteGuideFrameRect(Size size, EdgeInsets padding) {
-  final frameW = math.min(size.width - 44, 360.0);
-  final maxFrameH = math.max(
-    190.0,
-    size.height - padding.top - padding.bottom - 230,
-  );
-  final frameH = math.min(math.max(frameW * 0.64, 210.0), maxFrameH);
-  final frameLeft = (size.width - frameW) / 2;
-  final frameTop = (size.height - frameH) / 2 - 22;
-  return Rect.fromLTWH(frameLeft, frameTop, frameW, frameH);
-}
-
 class _QuoteCameraOverlay extends StatelessWidget {
   final Animation<double> pulseCtrl;
 
@@ -1659,7 +1688,7 @@ class _QuoteCameraOverlay extends StatelessWidget {
           builder: (context, constraints) {
             final size = Size(constraints.maxWidth, constraints.maxHeight);
             final padding = MediaQuery.paddingOf(context);
-            final frameRect = _quoteGuideFrameRect(size, padding);
+            final frameRect = quoteGuideFrameRect(size, padding);
             final quoteAlpha = 0.54 + pulseCtrl.value * 0.28;
 
             return SizedBox.expand(
@@ -1700,7 +1729,7 @@ class _QuoteCameraOverlay extends StatelessWidget {
                       right: 28,
                       top: frameRect.bottom + 56,
                       child: Text(
-                        '문장을 따옴표 안에 맞춰주세요',
+                        '초록 프레임 안의 문장만 인식해요',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.72),
@@ -2364,12 +2393,14 @@ class _TodaysTopicOverlay extends StatefulWidget {
   final String bookTitle;
   final String bookAuthor;
   final String? coverUrl;
+  final Color accentColor;
   final VoidCallback onStart;
 
   const _TodaysTopicOverlay({
     required this.bookTitle,
     required this.bookAuthor,
     this.coverUrl,
+    required this.accentColor,
     required this.onStart,
   });
 
@@ -2414,7 +2445,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              const _SessionEntryFireflies(),
+              _SessionEntryFireflies(accentColor: widget.accentColor),
               SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -2430,15 +2461,18 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const _SessionEntryBadge(label: '6번째 세션'),
+                                _SessionEntryBadge(
+                                  label: '6번째 세션',
+                                  accentColor: widget.accentColor,
+                                ),
                                 const SizedBox(height: 17),
                                 Text(
                                   widget.bookTitle,
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF8DBBFF),
+                                  style: TextStyle(
+                                    color: widget.accentColor,
                                     fontSize: 20,
                                     height: 1.18,
                                     fontWeight: FontWeight.w400,
@@ -2450,9 +2484,9 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                                   _sessionEntryBookMeta(widget.bookAuthor),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: const Color(
-                                      0xFF8DBBFF,
-                                    ).withValues(alpha: 0.78),
+                                    color: widget.accentColor.withValues(
+                                      alpha: 0.78,
+                                    ),
                                     fontSize: 13,
                                     height: 1.2,
                                     fontWeight: FontWeight.w400,
@@ -2469,9 +2503,9 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                                   radius: 8,
                                   shadows: [
                                     BoxShadow(
-                                      color: const Color(
-                                        0xFF65A7FF,
-                                      ).withValues(alpha: 0.12),
+                                      color: widget.accentColor.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       blurRadius: 18,
                                       spreadRadius: 1,
                                     ),
@@ -2482,6 +2516,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                                   label: _sessionEntryQuestion(
                                     widget.bookTitle,
                                   ),
+                                  accentColor: widget.accentColor,
                                 ),
                               ],
                             ),
@@ -2515,23 +2550,28 @@ String _sessionEntryQuestion(String bookTitle) {
 
 class _SessionEntryBadge extends StatelessWidget {
   final String label;
+  final Color accentColor;
 
-  const _SessionEntryBadge({required this.label});
+  const _SessionEntryBadge({
+    required this.label,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 20,
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF8DBBFF).withValues(alpha: 0.82),
+        color: accentColor.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Color(0xFF07101C),
+        style: TextStyle(
+          color: ThemeData.estimateBrightnessForColor(accentColor) ==
+                  Brightness.dark
+              ? Colors.white
+              : const Color(0xFF07101C),
           fontSize: 11,
           height: 1,
           fontWeight: FontWeight.w500,
@@ -2544,8 +2584,12 @@ class _SessionEntryBadge extends StatelessWidget {
 
 class _SessionEntryQuestionButton extends StatelessWidget {
   final String label;
+  final Color accentColor;
 
-  const _SessionEntryQuestionButton({required this.label});
+  const _SessionEntryQuestionButton({
+    required this.label,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2556,10 +2600,10 @@ class _SessionEntryQuestionButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.66),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: const Color(0xFF8DBBFF), width: 1.1),
+        border: Border.all(color: accentColor, width: 1.1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8DBBFF).withValues(alpha: 0.14),
+            color: accentColor.withValues(alpha: 0.14),
             blurRadius: 14,
           ),
         ],
@@ -2568,8 +2612,8 @@ class _SessionEntryQuestionButton extends StatelessWidget {
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFF8DBBFF),
+        style: TextStyle(
+          color: accentColor,
           fontSize: 16,
           height: 1.15,
           fontWeight: FontWeight.w400,
@@ -2581,7 +2625,9 @@ class _SessionEntryQuestionButton extends StatelessWidget {
 }
 
 class _SessionEntryFireflies extends StatelessWidget {
-  const _SessionEntryFireflies();
+  final Color accentColor;
+
+  const _SessionEntryFireflies({required this.accentColor});
 
   static const _orbs = <({double x, double y, double size, double alpha})>[
     (x: 0.145, y: 0.129, size: 22, alpha: 0.30),
@@ -2609,14 +2655,10 @@ class _SessionEntryFireflies extends StatelessWidget {
                   height: orb.size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(
-                      0xFF8DBBFF,
-                    ).withValues(alpha: orb.alpha * 0.18),
+                    color: accentColor.withValues(alpha: orb.alpha * 0.18),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(
-                          0xFF8DBBFF,
-                        ).withValues(alpha: orb.alpha),
+                        color: accentColor.withValues(alpha: orb.alpha),
                         blurRadius: orb.size * 0.45,
                         spreadRadius: orb.size * 0.08,
                       ),
@@ -2628,9 +2670,9 @@ class _SessionEntryFireflies extends StatelessWidget {
                       height: orb.size * 0.34,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(
-                          0xFF8DBBFF,
-                        ).withValues(alpha: math.min(0.72, orb.alpha + 0.18)),
+                        color: accentColor.withValues(
+                          alpha: math.min(0.72, orb.alpha + 0.18),
+                        ),
                       ),
                     ),
                   ),
@@ -2641,6 +2683,17 @@ class _SessionEntryFireflies extends StatelessWidget {
       },
     );
   }
+}
+
+Color _sessionEntryAccent(Color? source) {
+  if (source == null) return const Color(0xFF8DBBFF);
+  final hsl = HSLColor.fromColor(source);
+  final lightness = hsl.lightness.clamp(0.62, 0.78);
+  final saturation = hsl.saturation.clamp(0.35, 0.85);
+  return hsl
+      .withLightness(lightness.toDouble())
+      .withSaturation(saturation.toDouble())
+      .toColor();
 }
 
 // ─── 세션 UI 레이어 — 부드러운 페이드인/아웃 ─────────────────────────────────
@@ -2935,6 +2988,7 @@ class _SentencesReviewSheet extends ConsumerStatefulWidget {
   final List<CollectedSentence> sentences;
   final void Function(int index) onDelete;
   final Future<void> Function(int index, String? thought) onUpdateThought;
+  final Future<void> Function(int index, int? page) onUpdatePage;
   final String bookTitle;
   final String bookAuthor;
 
@@ -2942,6 +2996,7 @@ class _SentencesReviewSheet extends ConsumerStatefulWidget {
     required this.sentences,
     required this.onDelete,
     required this.onUpdateThought,
+    required this.onUpdatePage,
     required this.bookTitle,
     required this.bookAuthor,
   });
@@ -2986,6 +3041,34 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
     }
   }
 
+  Future<void> _editPage(int index) async {
+    final item = _items[index];
+    final result = await showDialog<({int? page})>(
+      context: context,
+      builder: (_) => _PageEditDialog(initialPage: item.pageNumber),
+    );
+    if (result == null) return;
+
+    try {
+      await widget.onUpdatePage(index, result.page);
+      if (!mounted) return;
+      setState(() {
+        _items[index] = CollectedSentence(
+          id: item.id,
+          content: item.content,
+          thought: item.thought,
+          pageNumber: result.page,
+        );
+        _expandedIndex = index;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('페이지를 저장하지 못했어요. 다시 시도해주세요.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final timer = ref.watch(timerProvider);
@@ -2993,7 +3076,10 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
     final bottom = media.padding.bottom;
     final size = media.size;
     final horizontal = math.min(math.max(size.width * 0.085, 24.0), 42.0);
-    final topGap = math.min(media.padding.top + 52, 92.0);
+    final topInset = math.max(media.viewPadding.top, media.padding.top);
+    final islandClearance = math.max(topInset, 66.0);
+    final dismissTop = islandClearance + 8;
+    final topGap = dismissTop + 58;
 
     return Container(
       height: size.height,
@@ -3002,18 +3088,11 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
         children: [
           const Positioned.fill(child: _SentenceReviewBackground()),
           Positioned(
-            top: media.padding.top + 10,
+            top: dismissTop,
             left: 0,
             right: 0,
-            child: Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+            child: _SentenceSheetDismissControl(
+              onTap: () => Navigator.of(context).pop(),
             ),
           ),
           Column(
@@ -3086,6 +3165,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                               () => _expandedIndex = expanded ? null : i,
                             ),
                             onEditThought: () => _editThought(i),
+                            onEditPage: () => _editPage(i),
                             onDelete: () {
                               setState(() {
                                 _items.removeAt(i);
@@ -3163,11 +3243,55 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
   }
 }
 
+class _SentenceSheetDismissControl extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SentenceSheetDismissControl({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Semantics(
+        button: true,
+        label: '문장 모아보기 닫기',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: SizedBox(
+            width: 88,
+            height: 48,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 46,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: _kGreen.withValues(alpha: 0.62),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 34,
+                  color: _kGreen.withValues(alpha: 0.72),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SwipeableSentenceReviewCard extends StatefulWidget {
   final CollectedSentence sentence;
   final bool expanded;
   final VoidCallback onTap;
   final VoidCallback onEditThought;
+  final VoidCallback onEditPage;
   final VoidCallback onDelete;
 
   const _SwipeableSentenceReviewCard({
@@ -3176,6 +3300,7 @@ class _SwipeableSentenceReviewCard extends StatefulWidget {
     required this.expanded,
     required this.onTap,
     required this.onEditThought,
+    required this.onEditPage,
     required this.onDelete,
   });
 
@@ -3296,6 +3421,7 @@ class _SwipeableSentenceReviewCardState
                 expanded: widget.expanded,
                 deleting: _deleting,
                 onEditThought: widget.onEditThought,
+                onEditPage: widget.onEditPage,
               ),
             ),
           ),
@@ -3310,12 +3436,14 @@ class _SentenceReviewRow extends StatelessWidget {
   final bool expanded;
   final bool deleting;
   final VoidCallback onEditThought;
+  final VoidCallback onEditPage;
 
   const _SentenceReviewRow({
     required this.sentence,
     required this.expanded,
     required this.deleting,
     required this.onEditThought,
+    required this.onEditPage,
   });
 
   @override
@@ -3392,34 +3520,85 @@ class _SentenceReviewRow extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 14),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: deleting ? null : onEditThought,
-                          icon: Icon(
-                            Icons.edit_note_rounded,
-                            size: 18,
-                            color: color,
-                          ),
-                          label: Text(
-                            sentence.thought.isEmpty ? '생각 추가' : '생각 수정',
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0,
-                              fontFamily: _kFont,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: TextButton.icon(
+                                  onPressed: deleting ? null : onEditPage,
+                                  icon: Icon(
+                                    Icons.bookmark_outline_rounded,
+                                    size: 18,
+                                    color: color,
+                                  ),
+                                  label: Text(
+                                    sentence.pageNumber == null
+                                        ? '쪽 추가'
+                                        : '쪽 수정',
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: 0,
+                                      fontFamily: _kFont,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 36),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 6,
+                                    ),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          style: TextButton.styleFrom(
-                            minimumSize: const Size(0, 36),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: TextButton.icon(
+                                  onPressed: deleting ? null : onEditThought,
+                                  icon: Icon(
+                                    Icons.edit_note_rounded,
+                                    size: 18,
+                                    color: color,
+                                  ),
+                                  label: Text(
+                                    sentence.thought.isEmpty
+                                        ? '생각 추가'
+                                        : '생각 수정',
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: 0,
+                                      fontFamily: _kFont,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    minimumSize: const Size(0, 36),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 6,
+                                    ),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
                             ),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   )
@@ -3475,17 +3654,21 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final shouldLiftSheet = !kIsWeb;
-    final maxHeight = (media.size.height - media.padding.top - 12)
-        .clamp(360.0, media.size.height * 0.9)
-        .toDouble();
+    final lift = !kIsWeb;
+    final liftInset = lift ? keyboardInset : 0.0;
+    // 키보드가 올라오면 시트를 키보드 위 공간에 맞춰, 입력란이 항상 키보드 바로
+    // 위에 보이게 한다. 원문은 위에서 줄어들고 스크롤되며 입력란이 우선이다.
+    final maxHeight =
+        (media.size.height - media.viewPadding.top - liftInset - 12)
+            .clamp(280.0, media.size.height * 0.92)
+            .toDouble();
     final bottomPadding =
-        media.padding.bottom + 22 + (shouldLiftSheet ? 0 : keyboardInset);
+        media.padding.bottom + 22 + (lift ? 0 : keyboardInset);
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(bottom: shouldLiftSheet ? keyboardInset : 0),
+      padding: EdgeInsets.only(bottom: liftInset),
       child: Container(
         constraints: BoxConstraints(maxHeight: maxHeight),
         decoration: const BoxDecoration(
@@ -3495,11 +3678,9 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
         child: SafeArea(
           top: false,
           bottom: false,
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Padding(
             padding: EdgeInsets.fromLTRB(22, 14, 22, bottomPadding),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
@@ -3534,73 +3715,85 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111211),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
-                    ),
-                  ),
-                  child: Text(
-                    widget.sentence.content,
-                    style: const TextStyle(
-                      color: _kGreen,
-                      fontSize: 16,
-                      height: 1.72,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0,
-                      fontFamily: _kFont,
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight * 0.32),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111211),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                      ),
+                      child: Text(
+                        widget.sentence.content,
+                        style: const TextStyle(
+                          color: _kGreen,
+                          fontSize: 16,
+                          height: 1.72,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0,
+                          fontFamily: _kFont,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
-                TextField(
-                  controller: _thoughtCtrl,
-                  autofocus: true,
-                  minLines: 5,
-                  maxLines: 8,
-                  keyboardType: TextInputType.multiline,
-                  textInputAction: TextInputAction.newline,
-                  cursorColor: _kGreen,
-                  style: const TextStyle(
-                    color: _kGreen,
-                    fontSize: 16,
-                    height: 1.62,
-                    letterSpacing: 0,
-                    fontFamily: _kFont,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '이 문장을 보며 든 생각을 적어보세요',
-                    hintStyle: TextStyle(
-                      color: _kGreen.withValues(alpha: 0.42),
+                Expanded(
+                  child: TextField(
+                    controller: _thoughtCtrl,
+                    autofocus: true,
+                    expands: true,
+                    minLines: null,
+                    maxLines: null,
+                    textAlignVertical: TextAlignVertical.top,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    cursorColor: _kGreen,
+                    style: const TextStyle(
+                      color: _kGreen,
                       fontSize: 16,
+                      height: 1.62,
                       letterSpacing: 0,
                       fontFamily: _kFont,
                     ),
-                    filled: true,
-                    fillColor: const Color(0xFF111211),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: _kGreen.withValues(alpha: 0.45),
+                    decoration: InputDecoration(
+                      hintText: '이 문장을 보며 든 생각을 적어보세요',
+                      hintStyle: TextStyle(
+                        color: _kGreen.withValues(alpha: 0.42),
+                        fontSize: 16,
+                        letterSpacing: 0,
+                        fontFamily: _kFont,
                       ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: _kGreen.withValues(alpha: 0.45),
+                      filled: true,
+                      fillColor: const Color(0xFF111211),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: _kGreen.withValues(alpha: 0.45),
+                        ),
                       ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: _kGreen, width: 1.4),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 15,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: _kGreen.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: _kGreen,
+                          width: 1.4,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 15,
+                      ),
                     ),
                   ),
                 ),
@@ -3632,6 +3825,115 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PageEditDialog extends StatefulWidget {
+  final int? initialPage;
+
+  const _PageEditDialog({required this.initialPage});
+
+  @override
+  State<_PageEditDialog> createState() => _PageEditDialogState();
+}
+
+class _PageEditDialogState extends State<_PageEditDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.initialPage?.toString() ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _save() =>
+      Navigator.pop(context, (page: int.tryParse(_ctrl.text.trim())));
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF111211),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text(
+        '몇 쪽에서 모은 문장인가요?',
+        style: TextStyle(
+          color: _kGreen,
+          fontSize: 18,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0,
+          fontFamily: _kFont,
+        ),
+      ),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
+        cursorColor: _kGreen,
+        onSubmitted: (_) => _save(),
+        style: const TextStyle(
+          color: _kGreen,
+          fontSize: 16,
+          letterSpacing: 0,
+          fontFamily: _kFont,
+        ),
+        decoration: InputDecoration(
+          hintText: '쪽 번호',
+          hintStyle: TextStyle(
+            color: _kGreen.withValues(alpha: 0.42),
+            fontFamily: _kFont,
+          ),
+          filled: true,
+          fillColor: const Color(0xFF1A1B1A),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: _kGreen.withValues(alpha: 0.45)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _kGreen, width: 1.4),
+          ),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, (page: null)),
+          child: Text(
+            '비우기',
+            style: TextStyle(
+              color: _kGreen.withValues(alpha: 0.6),
+              fontFamily: _kFont,
+            ),
+          ),
+        ),
+        FilledButton(
+          onPressed: _save,
+          style: FilledButton.styleFrom(
+            backgroundColor: _kGreen,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            '저장',
+            style: TextStyle(
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+              fontFamily: _kFont,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -4105,7 +4407,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
 
           // 콘텐츠
           Expanded(
-            child: fireflyAsync.isLoading
+            child: fireflyAsync.isLoading && !fireflyAsync.hasValue
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: _kGreen,

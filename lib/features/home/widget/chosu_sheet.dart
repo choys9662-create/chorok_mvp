@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
-import '../../../shared/widgets/sheet_handle.dart';
 import 'web_keyboard_inset.dart';
+
+const _chosuSheetPadding = 24.0;
 
 /// 초서 바텀시트 — 문장 수집 + 내 생각 입력 UI
 class ChosuSheet extends StatefulWidget {
@@ -96,101 +97,124 @@ class _ChosuSheetState extends State<ChosuSheet> {
       media.viewInsets.bottom,
       _webKeyboardInset.inset,
     );
-    final isKeyboardOpen = keyboardInset > 0;
     final bottomPadding =
-        media.padding.bottom + 16 + (isKeyboardOpen ? keyboardInset : 0);
+        media.padding.bottom + 16 + (kIsWeb ? keyboardInset : 0);
+    final isKeyboardOpen = keyboardInset > 0;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
       padding: EdgeInsets.only(bottom: kIsWeb ? 0 : keyboardInset),
       child: Material(
-        color: context.appCard,
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, bottomPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const ChorokSheetHandle(),
-                const SizedBox(height: 14),
+        color: context.appBg,
+        // 빈 영역 탭 → 키보드 내림 (키보드가 열려 있는 동안 하단 버튼이 숨겨지므로,
+        // 키보드를 내릴 수단이 없으면 저장 동선이 막힌다)
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                _chosuSheetPadding,
+                10,
+                _chosuSheetPadding,
+                bottomPadding,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _ChosuSheetHandle(),
+                  const SizedBox(height: 34),
 
-                // 헤더
-                Row(
-                  children: [
-                    Icon(
-                      Icons.format_quote_rounded,
-                      color: context.appPrimaryAccent,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '문장 수집',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (widget.bookTitle.isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          widget.bookTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.right,
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appTextTertiary,
+                  // 헤더
+                  SizedBox(
+                    height: 48,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.format_quote_rounded,
+                          color: context.appPrimaryAccent,
+                          size: 30,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '문장 수집',
+                          style: AppTheme.headingLarge.copyWith(
+                            color: context.appTextPrimary,
+                            letterSpacing: 0,
                           ),
                         ),
-                      ),
-                    IconButton(
-                      tooltip: '닫기',
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _StepHeader(isWritingThought: _isWritingThought),
-                const SizedBox(height: 18),
-
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 160),
-                    child: _isWritingThought
-                        ? _ThoughtStep(
-                            key: const ValueKey('thought'),
-                            sentence: _sentenceCtrl.text.trim(),
-                            thoughtCtrl: _thoughtCtrl,
-                            thoughtFocus: _thoughtFocus,
-                            saved: _saved,
-                            canSave: _sentenceCtrl.text.trim().isNotEmpty,
-                            compactForKeyboard: isKeyboardOpen,
-                            keyboardInset: keyboardInset,
-                            onBack: () =>
-                                setState(() => _isWritingThought = false),
-                            onSave: _save,
-                          )
-                        : _SentenceStep(
-                            key: const ValueKey('sentence'),
-                            sentenceCtrl: _sentenceCtrl,
-                            pageCtrl: _pageCtrl,
-                            sentenceFocus: _sentenceFocus,
-                            saved: _saved,
-                            onChanged: (_) => setState(() {}),
-                            onContinue: _openThoughtStep,
-                            onSave: _save,
-                            autofocus: widget.autofocusSentence,
-                            compactForKeyboard: isKeyboardOpen,
-                            keyboardInset: keyboardInset,
+                        const Spacer(),
+                        if (widget.bookTitle.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              widget.bookTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                              style: AppTheme.bodySmall.copyWith(
+                                color: context.appTextTertiary,
+                                letterSpacing: 0,
+                              ),
+                            ),
                           ),
+                        const SizedBox(width: 14),
+                        SizedBox(
+                          width: 42,
+                          height: 42,
+                          child: IconButton(
+                            tooltip: '닫기',
+                            padding: EdgeInsets.zero,
+                            onPressed: () => Navigator.pop(context),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: context.appTextTertiary,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  _StepHeader(isWritingThought: _isWritingThought),
+                  const SizedBox(height: 26),
+
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 160),
+                      child: _isWritingThought
+                          ? _ThoughtStep(
+                              key: const ValueKey('thought'),
+                              sentence: _sentenceCtrl.text.trim(),
+                              thoughtCtrl: _thoughtCtrl,
+                              thoughtFocus: _thoughtFocus,
+                              saved: _saved,
+                              canSave: _sentenceCtrl.text.trim().isNotEmpty,
+                              compactForKeyboard: isKeyboardOpen,
+                              keyboardInset: keyboardInset,
+                              onBack: () =>
+                                  setState(() => _isWritingThought = false),
+                              onSave: _save,
+                            )
+                          : _SentenceStep(
+                              key: const ValueKey('sentence'),
+                              sentenceCtrl: _sentenceCtrl,
+                              pageCtrl: _pageCtrl,
+                              sentenceFocus: _sentenceFocus,
+                              saved: _saved,
+                              onChanged: (_) => setState(() {}),
+                              onContinue: _openThoughtStep,
+                              onSave: _save,
+                              autofocus: widget.autofocusSentence,
+                              compactForKeyboard: isKeyboardOpen,
+                              keyboardInset: keyboardInset,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -211,9 +235,12 @@ class _StepHeader extends StatelessWidget {
         _StepBadge(number: '1', label: '문장', active: !isWritingThought),
         Expanded(
           child: Container(
-            height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            color: context.appBorder,
+            height: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: context.appPrimaryAccent.withValues(alpha: 0.28),
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         ),
         _StepBadge(number: '2', label: '생각', active: isWritingThought),
@@ -240,30 +267,52 @@ class _StepBadge extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 36,
+          height: 36,
           alignment: Alignment.center,
           decoration: ShapeDecoration(
-            color: active ? context.appPrimaryAccent : context.appCardElevated,
-            shape: AppTheme.smoothShape(radius: 10),
+            color: active
+                ? context.appPrimaryAccent
+                : context.appCardElevated.withValues(alpha: 0.62),
+            shape: AppTheme.smoothShape(radius: 18),
           ),
           child: Text(
             number,
-            style: AppTheme.captionSmall.copyWith(
+            style: AppTheme.bodySmall.copyWith(
               color: active ? Colors.black : context.appTextTertiary,
               fontWeight: FontWeight.w400,
+              letterSpacing: 0,
             ),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 10),
         Text(
           label,
-          style: AppTheme.captionLarge.copyWith(
+          style: AppTheme.bodyMedium.copyWith(
             color: color,
             fontWeight: FontWeight.w400,
+            letterSpacing: 0,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ChosuSheetHandle extends StatelessWidget {
+  const _ChosuSheetHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 88,
+        height: 6,
+        decoration: BoxDecoration(
+          color: context.appPrimaryAccent.withValues(alpha: 0.34),
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
     );
   }
 }
@@ -318,35 +367,60 @@ class _SentenceStep extends StatelessWidget {
                   style: AppTheme.captionLarge.copyWith(
                     color: context.appTextTertiary,
                     fontWeight: FontWeight.w400,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(width: 6),
                 SizedBox(
-                  width: 52,
-                  height: 28,
+                  width: 86,
+                  height: 48,
                   child: TextField(
                     controller: pageCtrl,
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
                     textAlign: TextAlign.center,
                     style: AppTheme.captionLarge.copyWith(
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
                     ),
                     decoration: InputDecoration(
                       hintText: '쪽',
                       hintStyle: AppTheme.captionLarge.copyWith(
                         color: context.appTextTertiary,
+                        letterSpacing: 0,
                       ),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: 12,
+                        vertical: 13,
                       ),
                       filled: true,
-                      fillColor: context.appCardElevated,
+                      fillColor: context.appCardElevated.withValues(
+                        alpha: 0.66,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(
+                          color: context.appBorderSubtle,
+                          width: 1.2,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: context.appBorderSubtle,
+                          width: 1.2,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.55,
+                          ),
+                          width: 1.2,
+                        ),
                       ),
                     ),
                   ),
@@ -355,7 +429,7 @@ class _SentenceStep extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Expanded(
           child: _ChosuTextField(
             controller: sentenceCtrl,
@@ -377,10 +451,11 @@ class _SentenceStep extends StatelessWidget {
               '${sentenceCtrl.text.length}자',
               style: AppTheme.captionSmall.copyWith(
                 color: context.appTextTertiary,
+                letterSpacing: 0,
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -388,14 +463,14 @@ class _SentenceStep extends StatelessWidget {
               style: _primaryButtonStyle(context),
               child: Text(
                 '생각 쓰기',
-                style: AppTheme.bodySmall.copyWith(
+                style: AppTheme.bodyMedium.copyWith(
                   fontWeight: FontWeight.w400,
                   color: hasSentence ? Colors.black : context.appTextTertiary,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: TextButton(
@@ -445,13 +520,16 @@ class _ThoughtStep extends StatelessWidget {
         if (!compactForKeyboard) ...[
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: ShapeDecoration(
-              color: context.appCardElevated,
+              color: context.appCard.withValues(alpha: 0.78),
               shape: SmoothRectangleBorder(
                 smoothness: 0.6,
                 borderRadius: BorderRadius.circular(10),
-                side: BorderSide.none,
+                side: BorderSide(
+                  color: context.appPrimaryAccent.withValues(alpha: 0.22),
+                  width: 1.2,
+                ),
               ),
             ),
             child: Text(
@@ -462,6 +540,7 @@ class _ThoughtStep extends StatelessWidget {
                 color: context.appTextSecondary,
                 height: 1.6,
                 fontStyle: FontStyle.italic,
+                letterSpacing: 0,
               ),
             ),
           ),
@@ -476,11 +555,12 @@ class _ThoughtStep extends StatelessWidget {
                 foregroundColor: context.appTextTertiary,
                 textStyle: AppTheme.captionSmall.copyWith(
                   fontWeight: FontWeight.w400,
+                  letterSpacing: 0,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
         ],
         _FieldLabel(
           icon: Icons.edit_note_rounded,
@@ -489,7 +569,11 @@ class _ThoughtStep extends StatelessWidget {
           optional: true,
         ),
         const SizedBox(height: 8),
+        // key 필수 — 키보드가 올라오며 compactForKeyboard가 바뀌면 앞쪽 위젯들이
+        // 사라져 Column 내 위치가 밀리는데, key가 없으면 위치 매칭으로 입력란이
+        // 재생성되어 텍스트 입력 연결이 끊긴다 (키보드가 올라오다 도로 내려감).
         Expanded(
+          key: const ValueKey('thought-field'),
           child: _ChosuTextField(
             controller: thoughtCtrl,
             focusNode: thoughtFocus,
@@ -617,12 +701,12 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: context.appCardElevated,
+        color: context.appCard.withValues(alpha: 0.78),
         shape: SmoothRectangleBorder(
           smoothness: 0.6,
           borderRadius: BorderRadius.circular(10),
           side: BorderSide(
-            color: widget.cursorColor.withValues(alpha: 0.65),
+            color: widget.cursorColor.withValues(alpha: 0.24),
             width: 1.2,
           ),
         ),
@@ -651,15 +735,17 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
           color: context.appTextPrimary,
           height: 1.75,
           fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
+          letterSpacing: 0,
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppTheme.bodyMedium.copyWith(
             color: context.appTextTertiary,
             fontStyle: widget.italic ? FontStyle.italic : FontStyle.normal,
+            letterSpacing: 0,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          contentPadding: const EdgeInsets.fromLTRB(26, 22, 26, 22),
         ),
         onChanged: widget.onChanged,
       ),
@@ -668,11 +754,16 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
 }
 
 ButtonStyle _primaryButtonStyle(BuildContext context, {bool saved = false}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   return FilledButton.styleFrom(
     backgroundColor: saved ? context.appAccentColor : context.appPrimaryAccent,
-    disabledBackgroundColor: context.appBorder,
-    foregroundColor: Colors.black,
-    padding: const EdgeInsets.symmetric(vertical: 14),
+    disabledBackgroundColor: isDark
+        ? const Color(0xFF2D5B22)
+        : context.appPrimaryAccent.withValues(alpha: 0.24),
+    foregroundColor: isDark ? Colors.black : Colors.white,
+    disabledForegroundColor: context.appTextTertiary,
+    minimumSize: const Size.fromHeight(58),
+    padding: const EdgeInsets.symmetric(vertical: 16),
     shape: SmoothRectangleBorder(
       smoothness: 0.6,
       borderRadius: BorderRadius.circular(10),
@@ -695,16 +786,20 @@ class _SavedButtonChild extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = primary
-        ? (enabled ? Colors.black : context.appTextTertiary)
+        ? (enabled
+              ? (isDark ? Colors.black : Colors.white)
+              : context.appTextTertiary)
         : context.appTextTertiary;
 
     if (!saved) {
       return Text(
         label,
-        style: AppTheme.bodySmall.copyWith(
+        style: AppTheme.bodyMedium.copyWith(
           fontWeight: FontWeight.w400,
           color: color,
+          letterSpacing: 0,
         ),
       );
     }
@@ -716,9 +811,10 @@ class _SavedButtonChild extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           '저장됐어요!',
-          style: AppTheme.bodySmall.copyWith(
+          style: AppTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.w400,
             color: color,
+            letterSpacing: 0,
           ),
         ),
       ],
@@ -743,13 +839,14 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 5),
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 8),
         Text(
           label,
-          style: AppTheme.captionLarge.copyWith(
+          style: AppTheme.bodyMedium.copyWith(
             color: color,
             fontWeight: FontWeight.w400,
+            letterSpacing: 0,
           ),
         ),
         if (optional) ...[
@@ -758,6 +855,7 @@ class _FieldLabel extends StatelessWidget {
             '선택',
             style: AppTheme.captionSmall.copyWith(
               color: context.appTextTertiary,
+              letterSpacing: 0,
             ),
           ),
         ],

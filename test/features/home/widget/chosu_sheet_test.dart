@@ -99,6 +99,7 @@ void main() {
 
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
 
     final thoughtField = _textFieldWithHint('이 문장에서 무엇을 느꼈나요?');
     expect(thoughtField, findsOneWidget);

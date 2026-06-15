@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -256,7 +255,7 @@ class AnalyticsNotifier extends AsyncNotifier<AnalyticsState> {
   }
 
   Future<AnalyticsState> _load() async {
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       return _loadFromSupabase();
     }
     return _loadFromSqlite();

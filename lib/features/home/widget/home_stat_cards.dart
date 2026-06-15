@@ -6,15 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/repositories/book_repository.dart';
-import '../../../shared/widgets/forest_accent_card.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
-const _goalMin = 30;
 const _cardRadius = 8.0;
-const _weekCardColor = Color(0xFFF0F0F0);
+const _summaryCardHeight = 78.0;
 
 /// 홈 상단 통계 — "오늘" / "이번 주" 두 장의 pill 카드.
 ///
@@ -30,7 +27,6 @@ class HomeStatCards extends ConsumerWidget {
     final dbWeekly =
         weeklyAsync.valueOrNull ??
         (kUseMock ? kWeeklyMinutes : List.filled(7, 0));
-    final streakAsync = ref.watch(readingStreakProvider);
 
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
     final dbTodayMin = dbWeekly.length > todayIndex ? dbWeekly[todayIndex] : 0;
@@ -43,19 +39,14 @@ class HomeStatCards extends ConsumerWidget {
           i == todayIndex ? todayMin : (i < dbWeekly.length ? dbWeekly[i] : 0),
     );
     final weekTotal = perDay.fold<int>(0, (a, b) => a + b);
-    final fallbackStreak = calcReadStreak(todayIndex, perDay);
-    final dbStreak = streakAsync.valueOrNull;
-    final streak = dbStreak != null && dbStreak > 0
-        ? dbStreak
-        : (kUseMock ? 50 : fallbackStreak);
     final weekSeconds = (weekTotal - todayMin) * 60 + todaySeconds;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Column(
         children: [
-          _TodayCard(streak: streak, todaySeconds: todaySeconds),
-          const SizedBox(height: 10),
+          _TodayCard(todaySeconds: todaySeconds),
+          const SizedBox(height: 12),
           _WeekCard(
             perDay: perDay,
             todayIndex: todayIndex,
@@ -69,54 +60,35 @@ class HomeStatCards extends ConsumerWidget {
 
 /// "오늘" 카드 — 연독 메시지 + 오늘 읽은 분.
 class _TodayCard extends StatelessWidget {
-  final int streak;
   final int todaySeconds;
-  const _TodayCard({required this.streak, required this.todaySeconds});
-
-  String get _message {
-    if (streak >= 2) return '연독 $streak일 째, 쭉 이어가자고';
-    if (todaySeconds >= _goalMin * 60) return '오늘 목표 달성, 멋져요';
-    if (todaySeconds > 0) return '잘 시작했어요, 계속 가볼까요';
-    return '오늘 첫 독서를 시작해볼까요';
-  }
+  const _TodayCard({required this.todaySeconds});
 
   @override
   Widget build(BuildContext context) {
-    return ForestAccentCard(
-      radius: _cardRadius,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
+    return _SummaryCard(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            '오늘',
-            style: AppTheme.headingMedium.copyWith(
-              fontSize: 16,
-              color: AppTheme.primaryLight,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0,
-            ),
+          _SummaryLabel(label: '오늘'),
+          const SizedBox(width: 40),
+          Icon(
+            Icons.check_rounded,
+            size: 28,
+            color: context.appTextTertiary.withValues(alpha: 0.20),
           ),
-          const SizedBox(width: 28),
+          const Spacer(),
           Expanded(
+            flex: 3,
             child: Text(
-              _message,
-              style: AppTheme.captionLarge.copyWith(
-                fontSize: 13,
-                color: AppTheme.primaryLight.withValues(alpha: 0.78),
-                letterSpacing: 0,
-              ),
+              _formatKoreanMinutes(todaySeconds ~/ 60),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            _formatSeconds(todaySeconds),
-            style: AppTheme.displayMedium.copyWith(
-              color: AppTheme.primaryLight,
-              fontSize: 30,
-              letterSpacing: 0,
+              textAlign: TextAlign.right,
+              style: AppTheme.captionLarge.copyWith(
+                color: context.appTextSecondary,
+                fontSize: 30,
+                letterSpacing: 0,
+                height: 1,
+              ),
             ),
           ),
         ],
@@ -143,46 +115,80 @@ class _WeekCard extends StatelessWidget {
         HapticFeedback.selectionClick();
         context.push(AppConstants.routeAnalytics);
       },
-      child: ForestAccentCard(
-        radius: _cardRadius,
-        darkBorderColor: _weekCardColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
+      child: _SummaryCard(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              '이번 주',
-              style: AppTheme.headingMedium.copyWith(
-                fontSize: 16,
-                color: _weekCardColor.withValues(alpha: 0.9),
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0,
-              ),
+            _SummaryLabel(label: '이번 주', active: true),
+            const SizedBox(width: 42),
+            Row(
+              children: List.generate(7, (i) {
+                final achieved = perDay[i] > 0;
+                final isFuture = i > todayIndex;
+                return Padding(
+                  padding: EdgeInsets.only(right: i < 6 ? 5 : 0),
+                  child: _DayDot(achieved: achieved, dim: isFuture),
+                );
+              }),
             ),
-            const SizedBox(width: 24),
+            const Spacer(),
             Expanded(
-              child: Row(
-                children: List.generate(7, (i) {
-                  final achieved = perDay[i] > 0;
-                  final isFuture = i > todayIndex;
-                  return Padding(
-                    padding: EdgeInsets.only(right: i < 6 ? 5 : 0),
-                    child: _DayDot(achieved: achieved, dim: isFuture),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              _formatSeconds(weekSeconds),
-              style: AppTheme.displayMedium.copyWith(
-                color: _weekCardColor,
-                fontSize: 30,
-                letterSpacing: 0,
+              flex: 3,
+              child: Text(
+                _formatKoreanMinutes(weekSeconds ~/ 60),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextPrimary,
+                  fontSize: 30,
+                  letterSpacing: 0,
+                  height: 1,
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final Widget child;
+
+  const _SummaryCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _summaryCardHeight,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: _cardRadius,
+        side: BorderSide.none,
+      ),
+      alignment: Alignment.center,
+      child: child,
+    );
+  }
+}
+
+class _SummaryLabel extends StatelessWidget {
+  final String label;
+  final bool active;
+
+  const _SummaryLabel({required this.label, this.active = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: AppTheme.headingSmall.copyWith(
+        color: active ? context.appTextPrimary : context.appTextTertiary,
+        fontSize: 20,
+        letterSpacing: 0,
       ),
     );
   }
@@ -195,26 +201,19 @@ class _DayDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _weekCardColor.withValues(
-      alpha: achieved ? 1.0 : (dim ? 0.5 : 0.75),
+    final color = context.appTextSecondary.withValues(
+      alpha: achieved ? 0.92 : (dim ? 0.18 : 0.50),
     );
     return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: achieved ? color : Colors.transparent,
-        shape: BoxShape.circle,
-        border: achieved ? null : Border.all(color: color, width: 1.5),
-      ),
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
 
-String _formatSeconds(int totalSeconds) {
-  final h = totalSeconds ~/ 3600;
-  final m = (totalSeconds % 3600) ~/ 60;
-  final s = totalSeconds % 60;
-  return '${h.toString().padLeft(2, '0')}:'
-      '${m.toString().padLeft(2, '0')}:'
-      '${s.toString().padLeft(2, '0')}';
+String _formatKoreanMinutes(int minutes) {
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  return '$h시간 $m분';
 }

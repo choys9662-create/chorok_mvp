@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_flags.dart';
@@ -118,7 +117,7 @@ class ChoseoListNotifier extends Notifier<ChoseoListState> {
   }
 
   Future<void> load() async {
-    if (kIsWeb) {
+    if (kUseRemoteDb && !kUseMock) {
       try {
         final rows = await ref.read(dbServiceProvider).fetchMySentences();
         final items = rows.map((r) {

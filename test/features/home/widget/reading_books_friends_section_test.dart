@@ -68,10 +68,11 @@ void main() {
     );
 
     expect(tester.getSize(find.byType(BookCover).first), const Size(118, 180));
-    expect(find.text('2권'), findsOneWidget);
+    expect(find.text('읽고 있는 책'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
   });
 
-  testWidgets('읽고 있는 친구가 4명 초과여도 오른쪽으로 스크롤된다', (tester) async {
+  testWidgets('읽고 있는 친구는 리스트 카드로 상위 3명과 전체 수를 보여준다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -102,12 +103,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('8명'), findsOneWidget);
-    expect(find.text('친구7'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('친구7'));
-    await tester.pumpAndSettle();
-
-    expect(tester.getTopLeft(find.text('친구7')).dx, lessThan(402));
+    expect(find.text('읽고 있는 친구'), findsOneWidget);
+    expect(find.text('8'), findsOneWidget);
+    expect(find.text('친구0'), findsOneWidget);
+    expect(find.text('친구1'), findsOneWidget);
+    expect(find.text('친구2'), findsOneWidget);
+    expect(find.text('친구7'), findsNothing);
   });
 }

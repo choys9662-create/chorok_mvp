@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:js_interop';
-import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/widgets.dart';
 import 'package:web/web.dart' as web;
+
+import 'ocr_capture_crop.dart';
 
 const _webCameraStartTimeout = Duration(seconds: 10);
 
@@ -47,7 +48,7 @@ class OcrWebCameraController {
       throw StateError('Web camera video frame is not ready.');
     }
 
-    final sourceRect = _sourceRectForViewportCrop(
+    final sourceRect = sourceRectForViewportCrop(
       sourceSize: Size(width.toDouble(), height.toDouble()),
       cropRect: cropRect,
       viewportSize: viewportSize,
@@ -184,46 +185,6 @@ class OcrWebCameraController {
       await errorSub.cancel();
     }
   }
-}
-
-Rect _sourceRectForViewportCrop({
-  required Size sourceSize,
-  required Rect? cropRect,
-  required Size? viewportSize,
-}) {
-  if (cropRect == null ||
-      viewportSize == null ||
-      viewportSize.width <= 0 ||
-      viewportSize.height <= 0) {
-    return Offset.zero & sourceSize;
-  }
-
-  final scale = math.max(
-    viewportSize.width / sourceSize.width,
-    viewportSize.height / sourceSize.height,
-  );
-  final displayedWidth = sourceSize.width * scale;
-  final displayedHeight = sourceSize.height * scale;
-  final overflowX = (displayedWidth - viewportSize.width) / 2;
-  final overflowY = (displayedHeight - viewportSize.height) / 2;
-  final left = ((cropRect.left + overflowX) / scale).clamp(
-    0.0,
-    sourceSize.width - 1,
-  );
-  final top = ((cropRect.top + overflowY) / scale).clamp(
-    0.0,
-    sourceSize.height - 1,
-  );
-  final right = ((cropRect.right + overflowX) / scale).clamp(
-    left + 1,
-    sourceSize.width,
-  );
-  final bottom = ((cropRect.bottom + overflowY) / scale).clamp(
-    top + 1,
-    sourceSize.height,
-  );
-
-  return Rect.fromLTRB(left, top, right, bottom);
 }
 
 class OcrWebCameraPreview extends StatelessWidget {

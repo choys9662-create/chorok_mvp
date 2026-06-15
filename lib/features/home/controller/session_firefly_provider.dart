@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/user_profile.dart';
@@ -36,6 +38,14 @@ final sessionFireflyProvider =
             .toList();
         return (mutualCount: mutuals.length, nearbyCount: 15, mutuals: mutuals);
       }
+
+      // 세션 중 친구가 새로 읽기 시작하거나 끝내면 반영되도록 30초 주기 재조회
+      // (heartbeat TTL 90s — liveReaderCountsProvider와 같은 폴링 주기).
+      final pollTimer = Timer(
+        const Duration(seconds: 30),
+        () => ref.invalidateSelf(),
+      );
+      ref.onDispose(pollTimer.cancel);
 
       final presence = ref.read(readingPresenceRepositoryProvider);
       final mutuals = await ref

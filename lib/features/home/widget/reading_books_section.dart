@@ -32,7 +32,6 @@ class ReadingBooksSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 섹션 헤더 — "읽고 있는 책" + 카운트 pill 뱃지
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -42,30 +41,48 @@ class ReadingBooksSection extends ConsumerWidget {
               Text(
                 '읽고 있는 책',
                 style: AppTheme.headingSmall.copyWith(
-                  color: context.appPrimaryAccent,
+                  color: context.appTextTertiary,
                   fontWeight: FontWeight.w400,
+                  fontSize: 20,
+                  letterSpacing: 0,
                 ),
               ),
               if (!isLoading) ...[
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: AppTheme.smoothBox(
-                    color: context.appPrimaryAccent,
-                    radius: 4,
+                Text(
+                  '|',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextTertiary.withValues(alpha: 0.35),
+                    fontSize: 20,
+                    letterSpacing: 0,
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${readingBooks.length}권',
-                    style: AppTheme.headingSmall.copyWith(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.15,
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${readingBooks.length}',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: context.appTextTertiary,
+                    fontSize: 20,
+                    letterSpacing: 0,
                   ),
                 ),
               ],
+              const Spacer(),
+              Semantics(
+                label: '책 추가하기',
+                button: true,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.go(AppConstants.routeExplore);
+                  },
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 30,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -111,16 +128,15 @@ class ReadingBooksSection extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTheme.screenPadding,
               ),
-              itemCount: readingBooks.length + 1,
+              itemCount: readingBooks.length,
               itemBuilder: (context, index) {
-                final isLast = index == readingBooks.length;
                 return Padding(
                   padding: EdgeInsets.only(
-                    right: isLast ? 0 : _readingBookCardGap,
+                    right: index == readingBooks.length - 1
+                        ? 0
+                        : _readingBookCardGap,
                   ),
-                  child: isLast
-                      ? const AddBookCard()
-                      : ReadingBookCard(book: readingBooks[index]),
+                  child: ReadingBookCard(book: readingBooks[index]),
                 );
               },
             ),
@@ -322,7 +338,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
-                  height: 92,
+                  height: 116,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -340,7 +356,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
               Positioned(
                 left: 8,
                 right: 8,
-                bottom: 8,
+                bottom: 12,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -349,8 +365,9 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       style: AppTheme.bodySmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w400,
-                        fontSize: 11,
+                        fontSize: 15,
                         height: 1.2,
+                        letterSpacing: 0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -360,8 +377,9 @@ class ReadingBookCardState extends State<ReadingBookCard> {
                       b.author,
                       style: AppTheme.captionSmall.copyWith(
                         color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 10,
+                        fontSize: 14,
                         height: 1.2,
+                        letterSpacing: 0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

@@ -10,8 +10,8 @@ import '../repositories/supabase_book_repository.dart';
 
 /// USE_MOCK=true (--dart-define) → 목업 데이터 (디자인 작업용)
 /// 기본값 false:
-///   - 모바일/데스크톱 → SQLite (BookRepository)
-///   - 웹 → Supabase (SupabaseBookRepository)
+///   - kUseRemoteDb=true → 모든 플랫폼이 Supabase (SupabaseBookRepository)
+///   - kUseRemoteDb=false → 모바일/데스크톱은 SQLite (BookRepository)
 
 Book _fromIsarBook(IsarBook b) => Book(
   id: b.bookId,
@@ -47,7 +47,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     debugPrint('LibraryProvider: Starting _loadFromDb');
     try {
       final List<Book> loaded;
-      if (kIsWeb) {
+      if (kUseRemoteDb) {
         final repo = ref.read(supabaseBookRepositoryProvider);
         loaded = await repo.getAllBooks();
       } else {
@@ -85,7 +85,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     if (isDuplicate) return false;
     state = [...state, book];
     if (kUseMock) return true;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
       ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
     } else {
@@ -133,7 +133,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
       ref.read(bookRepositoryProvider)?.saveFromBook(updated);
@@ -166,7 +166,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
       await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
@@ -190,7 +190,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
       await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
@@ -225,7 +225,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
     } else {
       ref.read(bookRepositoryProvider)?.saveFromBook(updated);
@@ -235,7 +235,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
   void deleteBook(String bookId) {
     state = state.where((b) => b.id != bookId).toList();
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       ref.read(supabaseBookRepositoryProvider).deleteByBookId(bookId);
     } else {
       ref.read(bookRepositoryProvider)?.deleteByBookId(bookId);
@@ -265,7 +265,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       return;
     }
 
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       await ref
           .read(dbServiceProvider)
           .saveSentenceStandalone(
@@ -298,7 +298,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     String? thought,
   }) async {
     if (kUseMock) return;
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       await ref
           .read(dbServiceProvider)
           .updateSentenceThought(sentenceId, thought);
@@ -326,7 +326,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     required int durationSeconds,
     required DateTime sessionDate,
   }) async {
-    if (kIsWeb) {
+    if (kUseRemoteDb) {
       await _addManualReadingLogToSupabase(
         bookId: bookId,
         startPage: startPage,

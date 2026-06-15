@@ -21,7 +21,15 @@ class _FakeDbService extends DbService {
     String? author,
     String? isbn,
   }) async {
-    return const [];
+    return const [
+      {
+        'id': 'sentence-1',
+        'content':
+            '그러므로 다른 요소들이 모두 동등하다고 가정했을 때 기술이 가장 빠르게 발달할 수 있는 곳은 생산성이 높고 면적이 넓으며 인구가 많은 지역이다.',
+        'thought': '',
+        'page_number': null,
+      },
+    ];
   }
 }
 
@@ -140,5 +148,37 @@ void main() {
     expect(timer.session?.bookId, 'guns-germs-steel');
     expect(timer.session?.bookTitle, '총균쇠');
     expect(timer.session?.startPage, 42);
+  });
+
+  testWidgets('문장 모아보기 확장 카드가 좁은 폭에서 overflow 하지 않는다', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    await tester.tapAt(const Offset(196, 426));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    await tester.tap(find.text('+1'));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final dismissFinder = find.bySemanticsLabel('문장 모아보기 닫기');
+    expect(dismissFinder, findsOneWidget);
+    expect(tester.getTopLeft(dismissFinder).dy, greaterThanOrEqualTo(74));
+
+    final sentenceFinder = find.textContaining('그러므로 다른 요소들이');
+    await tester.ensureVisible(sentenceFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(sentenceFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.takeException(), isNull);
   });
 }

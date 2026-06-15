@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,7 +11,7 @@ import '../../analytics/widgets/waffle_chart_widget.dart';
 
 final _bookReadingTimesProvider =
     FutureProvider.autoDispose<List<({String title, double hours})>>((ref) async {
-  if (kIsWeb) {
+  if (kUseRemoteDb) {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return const [];
     return _loadBookReadingTimesFromSupabase(userId);

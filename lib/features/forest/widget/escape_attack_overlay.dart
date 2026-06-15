@@ -18,7 +18,7 @@ const _kReturnMessages = [
   '독서로 돌아온 걸 환영해요.',
 ];
 
-class EscapeAttackOverlay extends StatelessWidget {
+class EscapeAttackOverlay extends StatefulWidget {
   final EscapeAttackTrigger trigger;
   final int? absentSeconds;
   final VoidCallback onDismiss;
@@ -30,8 +30,17 @@ class EscapeAttackOverlay extends StatelessWidget {
     required this.onDismiss,
   });
 
+  @override
+  State<EscapeAttackOverlay> createState() => _EscapeAttackOverlayState();
+}
+
+class _EscapeAttackOverlayState extends State<EscapeAttackOverlay> {
+  // 부모(세션 화면)가 타이머 틱마다 리빌드되므로, 문구는 오버레이가
+  // 나타날 때 한 번만 뽑아 고정한다 (build에서 뽑으면 매번 바뀜).
+  late final String _message = _pickMessage();
+
   String _pickMessage() {
-    return switch (trigger) {
+    return switch (widget.trigger) {
       EscapeAttackTrigger.escapeAttempt => PassiveAggroEngine.messageFor(
         AggroTrigger.sessionEscape,
         const AggroContext(),
@@ -42,7 +51,7 @@ class EscapeAttackOverlay extends StatelessWidget {
   }
 
   String? _absentLabel() {
-    final s = absentSeconds;
+    final s = widget.absentSeconds;
     if (s == null || s < 5) return null;
     if (s < 60) return '$s초 동안 자리를 비웠어요.';
     final m = s ~/ 60;
@@ -51,7 +60,7 @@ class EscapeAttackOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = _pickMessage();
+    final message = _message;
     final absentLabel = _absentLabel();
 
     return Material(
@@ -99,7 +108,7 @@ class EscapeAttackOverlay extends StatelessWidget {
                     ),
                     onPressed: () {
                       HapticFeedback.selectionClick();
-                      onDismiss();
+                      widget.onDismiss();
                     },
                     child: const Text(
                       '계속 읽을게요',

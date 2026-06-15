@@ -19,6 +19,7 @@ class _FakeDbService extends DbService {
     required int durationSeconds,
     required List<String> sentences,
     List<String?>? thoughts,
+    List<int?>? pageNumbers,
     int? sentenceCount,
     int? score,
     DateTime? startedAt,

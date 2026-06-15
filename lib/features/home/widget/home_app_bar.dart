@@ -10,7 +10,7 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 34, 20, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -18,8 +18,8 @@ class HomeAppBar extends StatelessWidget {
             child: Text(
               '오늘도 같이 읽어요',
               style: AppTheme.headingLarge.copyWith(
-                color: context.appPrimaryAccent,
-                fontSize: 24,
+                color: context.appTextSecondary,
+                fontSize: 28,
                 letterSpacing: 0,
               ),
               maxLines: 1,
@@ -32,24 +32,35 @@ class HomeAppBar extends StatelessWidget {
             label: '알림',
             button: true,
             child: SizedBox(
-              width: 28,
-              height: 28,
+              width: 42,
+              height: 42,
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
                   context.push(AppConstants.routeNotifications);
                 },
-                child: DecoratedBox(
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCard,
-                    radius: 6,
-                    side: BorderSide.none,
-                  ),
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    color: context.appTextSecondary,
-                    size: 17,
-                  ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      Icons.notifications_none_rounded,
+                      color: context.appTextSecondary,
+                      size: 32,
+                    ),
+                    Positioned(
+                      top: 7,
+                      right: 6,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.appPrimaryAccent,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

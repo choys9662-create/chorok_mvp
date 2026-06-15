@@ -224,6 +224,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         thoughts: sentences
             .map((e) => e.thought.isNotEmpty ? e.thought : null)
             .toList(),
+        pageNumbers: sentences.map((e) => e.pageNumber).toList(),
         sentenceCount: widget.data.sentences.length,
         score: _score,
         startedAt: widget.data.sessionStartedAt,
@@ -293,6 +294,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                 bookAuthor: widget.data.bookAuthor,
                 content: entry.content,
                 myThought: entry.thought.isEmpty ? null : entry.thought,
+                pageNumber: entry.pageNumber,
               ),
             ),
           );

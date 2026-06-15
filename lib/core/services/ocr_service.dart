@@ -55,6 +55,52 @@ bool _shouldKeepLineBreakSpace(String left, String right) {
 bool _isKoreanSyllable(int codeUnit) =>
     codeUnit >= 0xAC00 && codeUnit <= 0xD7A3;
 
+/// Vision fullTextAnnotation의 문단 구조를 살려 텍스트를 조립한다.
+/// 문단 내부 줄바꿈은 [normalizeOcrText]의 한국어 규칙으로 이어붙이고,
+/// 문단 사이에만 줄바꿈을 남긴다. 구조가 없으면 null (호출부에서 평문 폴백).
+String? extractParagraphsFromAnnotation(Map<String, dynamic>? annotation) {
+  if (annotation == null) return null;
+  try {
+    final paragraphs = <String>[];
+    for (final page in (annotation['pages'] as List? ?? const [])) {
+      for (final block
+          in ((page as Map<String, dynamic>)['blocks'] as List? ?? const [])) {
+        for (final para
+            in ((block as Map<String, dynamic>)['paragraphs'] as List? ??
+                const [])) {
+          final buf = StringBuffer();
+          for (final word
+              in ((para as Map<String, dynamic>)['words'] as List? ??
+                  const [])) {
+            for (final symbol
+                in ((word as Map<String, dynamic>)['symbols'] as List? ??
+                    const [])) {
+              final s = symbol as Map<String, dynamic>;
+              buf.write(s['text'] ?? '');
+              final breakType =
+                  (s['property'] as Map<String, dynamic>?)?['detectedBreak']
+                      ?['type'] as String?;
+              switch (breakType) {
+                case 'SPACE' || 'SURE_SPACE':
+                  buf.write(' ');
+                // 줄 끝 개행은 normalizeOcrText의 한국어 규칙으로 잇는다
+                case 'EOL_SURE_SPACE' || 'HYPHEN' || 'LINE_BREAK':
+                  buf.write('\n');
+              }
+            }
+          }
+          final normalized = normalizeOcrText(buf.toString());
+          if (normalized.isNotEmpty) paragraphs.add(normalized);
+        }
+      }
+    }
+    if (paragraphs.isEmpty) return null;
+    return paragraphs.join('\n');
+  } catch (_) {
+    return null;
+  }
+}
+
 abstract class OcrService {
   Future<OcrResult> extractTextFromCamera();
   Future<OcrResult> extractTextFromBytes(List<int> bytes);
@@ -102,7 +148,7 @@ class CloudVisionOcrService implements OcrService {
                 {
                   'image': {'content': base64Image},
                   'features': [
-                    {'type': 'TEXT_DETECTION', 'maxResults': 1},
+                    {'type': 'DOCUMENT_TEXT_DETECTION', 'maxResults': 1},
                   ],
                   'imageContext': {
                     'languageHints': ['ko'],
@@ -121,9 +167,13 @@ class CloudVisionOcrService implements OcrService {
       }
 
       final data = jsonDecode(response.body);
-      final text =
-          data['responses']?[0]?['fullTextAnnotation']?['text'] as String?;
-      final trimmed = normalizeOcrText(text ?? '');
+      final annotation =
+          data['responses']?[0]?['fullTextAnnotation'] as Map<String, dynamic>?;
+      // 문단 구조(pages→blocks→paragraphs)를 우선 사용 — 문단 사이 줄바꿈 유지.
+      // 구조 파싱 실패 시 평문(text) 폴백.
+      final structured = extractParagraphsFromAnnotation(annotation);
+      final trimmed =
+          structured ?? normalizeOcrText(annotation?['text'] as String? ?? '');
       if (trimmed.isEmpty) return const OcrNoText();
       return OcrSuccess(trimmed);
     } on TimeoutException {

@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/constants/app_flags.dart';
 import '../models/isar/isar_book.dart';
 import '../models/isar/isar_book_reflection.dart';
 import '../models/isar/isar_choseo.dart';
@@ -22,7 +22,7 @@ final bookRepositoryProvider = Provider<BookRepository?>((ref) {
 });
 
 final readingStreakProvider = FutureProvider<int>((ref) async {
-  if (kIsWeb) return _readingStreakFromSupabase();
+  if (kUseRemoteDb) return _readingStreakFromSupabase();
   return (await ref.read(bookRepositoryProvider)?.getReadingStreak()) ?? 0;
 });
 

@@ -104,6 +104,7 @@ class DbService {
     required int durationSeconds,
     required List<String> sentences,
     List<String?>? thoughts, // 추가 — nullable, 기존 호출부 변경 불필요
+    List<int?>? pageNumbers, // 추가 — sentences와 같은 순서, nullable
     int? sentenceCount,
     int? score,
     DateTime? startedAt,
@@ -186,6 +187,10 @@ class DbService {
                     ],
                     'thought': thoughts != null && e.key < thoughts.length
                         ? thoughts[e.key]
+                        : null,
+                    'page_number':
+                        pageNumbers != null && e.key < pageNumbers.length
+                        ? pageNumbers[e.key]
                         : null,
                   },
                 )
@@ -344,6 +349,14 @@ class DbService {
     await supabase
         .from('sentences')
         .update({'thought': trimmed?.isNotEmpty == true ? trimmed : null})
+        .eq('id', sentenceId)
+        .eq('user_id', _uid);
+  }
+
+  Future<void> updateSentencePage(String sentenceId, int? pageNumber) async {
+    await supabase
+        .from('sentences')
+        .update({'page_number': pageNumber})
         .eq('id', sentenceId)
         .eq('user_id', _uid);
   }

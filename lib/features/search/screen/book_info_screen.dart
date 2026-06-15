@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -256,7 +255,7 @@ final _bookPersonalRecordsProvider =
     ) async {
       if (kUseMock) return _PersonalRecordData.empty;
 
-      if (kIsWeb) {
+      if (kUseRemoteDb) {
         final sentences = await _fetchMyWebSentences(ref, query);
         final memos = await _fetchMyWebMemos(ref, query);
         final review = await _fetchMyWebReview(
