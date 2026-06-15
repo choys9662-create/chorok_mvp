@@ -25,6 +25,7 @@ import '../../features/home/screen/reading_session_screen.dart';
 import '../../features/home/screen/session_recap_screen.dart';
 import '../../features/library/book_reflection_screen.dart';
 import '../../features/library/screen/library_screen.dart';
+import '../../features/library/screen/taste_analysis_screen.dart';
 import '../../features/search/barcode_scanner_screen.dart';
 import '../../features/library/choseo_list_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
@@ -122,6 +123,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeAnalytics,
         builder: (context, state) => const AnalyticsScreen(),
+      ),
+
+      // 취향 분석 — 서재 쉘 밖에서 전체 화면으로 표시
+      GoRoute(
+        path: AppConstants.routeTasteAnalysis,
+        builder: (context, state) {
+          final userId = state.extra as String?;
+          return TasteAnalysisScreen(userId: userId);
+        },
       ),
 
       // 책 검색 (알라딘 API)

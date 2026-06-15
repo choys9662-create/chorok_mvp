@@ -4,27 +4,36 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-/// 트리맵 — 책별 독서 시간을 면적으로 표현
+/// 트리맵 — 독서 시간을 항목별 면적으로 표현
 ///
-/// [items] 각 항목: (title, hours) — 시간 많을수록 primaryLight에 가까운 색상
+/// [items] 각 항목: (label, hours) — 시간 많을수록 primaryLight에 가까운 색상
 class BookTreemapWidget extends StatelessWidget {
-  final List<({String title, double hours})> items;
+  final List<({String label, double hours})> items;
   final double height;
+  final double? width;
 
-  const BookTreemapWidget({super.key, required this.items, this.height = 260});
+  const BookTreemapWidget({
+    super.key,
+    required this.items,
+    this.height = 260,
+    this.width,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return ChorokCard(
-        padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
-        child: SizedBox(
-          height: height,
-          child: Center(
-            child: Text(
-              '아직 독서 기록이 없어요',
-              style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextTertiary,
+      return SizedBox(
+        width: width ?? double.infinity,
+        child: ChorokCard(
+          padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
+          child: SizedBox(
+            height: height,
+            child: Center(
+              child: Text(
+                '아직 독서 기록이 없어요',
+                style: AppTheme.bodyMedium.copyWith(
+                  color: context.appTextTertiary,
+                ),
               ),
             ),
           ),
@@ -32,82 +41,87 @@ class BookTreemapWidget extends StatelessWidget {
       );
     }
 
-    return ChorokCard(
-      padding: const EdgeInsets.all(AppTheme.spaceSM),
-      child: SizedBox(
-        height: height,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final sorted = [...items]
-              ..sort((a, b) => b.hours.compareTo(a.hours));
-            final maxH = sorted.first.hours;
-            final values = sorted.map((e) => e.hours).toList();
-            final bounds = Rect.fromLTWH(
-              0,
-              0,
-              constraints.maxWidth,
-              constraints.maxHeight,
-            );
-            final rects = _Squarify.compute(values, bounds);
+    return SizedBox(
+      width: width ?? double.infinity,
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.spaceSM),
+        child: SizedBox(
+          height: height,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final sorted = [...items]
+                ..sort((a, b) => b.hours.compareTo(a.hours));
+              final maxH = sorted.first.hours;
+              final values = sorted.map((e) => e.hours).toList();
+              final bounds = Rect.fromLTWH(
+                0,
+                0,
+                constraints.maxWidth,
+                constraints.maxHeight,
+              );
+              final rects = _Squarify.compute(values, bounds);
 
-            return Stack(
-              children: List.generate(math.min(rects.length, sorted.length), (
-                i,
-              ) {
-                final rect = rects[i];
-                final item = sorted[i];
-                final t = maxH > 0 ? item.hours / maxH : 0.0;
-                final color = Color.lerp(
-                  const Color(0xFF0F6E56),
-                  context.appPrimaryAccent,
-                  t,
-                )!;
-                final showLabel = rect.width > 80 && rect.height > 50;
+              return Stack(
+                children: List.generate(math.min(rects.length, sorted.length), (
+                  i,
+                ) {
+                  final rect = rects[i];
+                  final item = sorted[i];
+                  final t = maxH > 0 ? item.hours / maxH : 0.0;
+                  final color = Color.lerp(
+                    const Color(0xFF0F6E56),
+                    context.appPrimaryAccent,
+                    t,
+                  )!;
+                  final showLabel = rect.width > 80 && rect.height > 50;
 
-                return Positioned(
-                  left: rect.left + 1,
-                  top: rect.top + 1,
-                  width: rect.width - 2,
-                  height: rect.height - 2,
-                  child: SmoothClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    smoothness: 0.6,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      color: color.withValues(alpha: 0.85),
-                      child: showLabel
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    item.title,
+                  return Positioned(
+                    left: rect.left + 1,
+                    top: rect.top + 1,
+                    width: rect.width - 2,
+                    height: rect.height - 2,
+                    child: SmoothClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      smoothness: 0.6,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        color: color.withValues(alpha: 0.85),
+                        child: showLabel
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      item.label,
+                                      style: AppTheme.captionSmall.copyWith(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${item.hours.toStringAsFixed(1)}h',
                                     style: AppTheme.captionSmall.copyWith(
                                       color: Colors.black.withValues(
-                                        alpha: 0.8,
+                                        alpha: 0.6,
                                       ),
-                                      fontWeight: FontWeight.w400,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${item.hours.toStringAsFixed(1)}h',
-                                  style: AppTheme.captionSmall.copyWith(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            )
-                          : null,
+                                ],
+                              )
+                            : null,
+                      ),
                     ),
-                  ),
-                );
-              }),
-            );
-          },
+                  );
+                }),
+              );
+            },
+          ),
         ),
       ),
     );

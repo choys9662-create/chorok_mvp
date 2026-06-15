@@ -868,6 +868,29 @@ class BookRepository {
     }).toList();
   }
 
+  /// 장르별 누적 독서 시간 반환 — 트리맵용, 내림차순 최대 [limit]개
+  Future<List<({String label, double hours})>> getGenreReadingTimes({
+    int limit = 12,
+  }) async {
+    final rows = await _db.rawQuery(
+      '''
+      SELECT
+        COALESCE(NULLIF(TRIM(b.genre), ''), '미분류') AS genre,
+        SUM(rs.duration_seconds) AS total_seconds
+      FROM reading_sessions rs
+      LEFT JOIN books b ON rs.book_id = b.book_id
+      GROUP BY genre
+      ORDER BY total_seconds DESC
+      LIMIT ?
+      ''',
+      [limit],
+    );
+    return rows.map((r) {
+      final secs = (r['total_seconds'] as int?) ?? 0;
+      return (label: r['genre'] as String? ?? '미분류', hours: secs / 3600.0);
+    }).toList();
+  }
+
   /// 이번 주(월~일) 요일별 독서 분(分) 반환 — 인덱스 0=월, 6=일
   Future<List<int>> getWeeklyMinutes() async {
     final now = DateTime.now();

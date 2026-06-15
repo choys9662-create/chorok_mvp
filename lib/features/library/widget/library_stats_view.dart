@@ -4,50 +4,101 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/reading_session.dart';
+import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
 
-final _bookReadingTimesProvider =
-    FutureProvider.autoDispose<List<({String title, double hours})>>((ref) async {
-  if (kUseRemoteDb) {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return const [];
-    return _loadBookReadingTimesFromSupabase(userId);
-  }
-  final repo = ref.watch(bookRepositoryProvider);
-  if (repo == null) return const [];
-  return repo.getBookReadingTimes();
-});
+final _genreReadingTimesProvider =
+    FutureProvider.autoDispose<List<({String label, double hours})>>((
+      ref,
+    ) async {
+      if (kUseMock) {
+        return _buildGenreReadingTimesFromBooks(ref.watch(libraryProvider));
+      }
 
-/// 다른 사용자(팔로우한 사람)의 책별 독서시간 — 항상 Supabase.
-final _bookReadingTimesByUserProvider = FutureProvider.autoDispose
-    .family<List<({String title, double hours})>, String>((ref, userId) async {
-  return _loadBookReadingTimesFromSupabase(userId);
-});
+      if (kUseRemoteDb) {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) return const [];
+        return _loadGenreReadingTimesFromSupabase(userId);
+      }
+      final repo = ref.watch(bookRepositoryProvider);
+      if (repo == null) return const [];
+      return repo.getGenreReadingTimes();
+    });
 
-Future<List<({String title, double hours})>>
-    _loadBookReadingTimesFromSupabase(String userId) async {
+/// 다른 사용자(팔로우한 사람)의 장르별 독서시간 — 항상 Supabase.
+final _genreReadingTimesByUserProvider = FutureProvider.autoDispose
+    .family<List<({String label, double hours})>, String>((ref, userId) async {
+      return _loadGenreReadingTimesFromSupabase(userId);
+    });
+
+Future<List<({String label, double hours})>> _loadGenreReadingTimesFromSupabase(
+  String userId,
+) async {
   final client = Supabase.instance.client;
-  final rows = await client
-      .from('reading_sessions')
-      .select('duration_seconds, books(title)')
-      .eq('user_id', userId);
-  final byTitle = <String, int>{};
-  for (final row in rows as List) {
+  List rows;
+  try {
+    rows = await client
+        .from('reading_sessions')
+        .select('duration_seconds, books(title, genre)')
+        .eq('user_id', userId);
+  } catch (e) {
+    if (!e.toString().contains('genre')) rethrow;
+    rows = await client
+        .from('reading_sessions')
+        .select('duration_seconds, books(title)')
+        .eq('user_id', userId);
+  }
+  final byGenre = <String, int>{};
+  for (final row in rows) {
     final map = row as Map<String, dynamic>;
     final book = map['books'] as Map<String, dynamic>?;
-    final title = book?['title'] as String?;
-    if (title == null || title.isEmpty) continue;
+    final genre = _genreLabel(
+      book?['genre'] as String?,
+      fallbackTitle: book?['title'] as String?,
+    );
     final dur = (map['duration_seconds'] as num?)?.toInt() ?? 0;
-    byTitle[title] = (byTitle[title] ?? 0) + dur;
+    byGenre[genre] = (byGenre[genre] ?? 0) + dur;
   }
-  final list = byTitle.entries
-      .map((e) => (title: e.key, hours: e.value / 3600.0))
-      .toList()
-    ..sort((a, b) => b.hours.compareTo(a.hours));
+  final list =
+      byGenre.entries
+          .map((e) => (label: e.key, hours: e.value / 3600.0))
+          .toList()
+        ..sort((a, b) => b.hours.compareTo(a.hours));
   return list;
+}
+
+List<({String label, double hours})> _buildGenreReadingTimesFromBooks(
+  List<Book> books,
+) {
+  final byGenre = <String, double>{};
+  for (final book in books) {
+    if (book.totalReadingHours <= 0) continue;
+    final genre = _genreLabel(book.genre, fallbackTitle: book.title);
+    byGenre[genre] = (byGenre[genre] ?? 0) + book.totalReadingHours;
+  }
+  final list =
+      byGenre.entries.map((e) => (label: e.key, hours: e.value)).toList()
+        ..sort((a, b) => b.hours.compareTo(a.hours));
+  return list;
+}
+
+String _genreLabel(String? genre, {String? fallbackTitle}) {
+  final trimmed = genre?.trim();
+  if (trimmed != null && trimmed.isNotEmpty) return trimmed;
+  return _genreFromKnownTitle(fallbackTitle) ?? '미분류';
+}
+
+String? _genreFromKnownTitle(String? title) {
+  final t = title?.trim();
+  if (t == null || t.isEmpty) return null;
+  if (t.contains('지구 끝의 온실')) return 'SF';
+  if (t.contains('파친코')) return '역사소설';
+  if (t.contains('달러구트')) return '판타지';
+  return '소설';
 }
 
 List<({String name, Color color, int cells})> buildWaffleItems(
@@ -62,38 +113,70 @@ List<({String name, Color color, int cells})> buildWaffleItems(
 // ─── 통계 탭 — 책별 비중 · 장르 비율 ──────────────────────────────────────
 class LibraryStatsView extends ConsumerWidget {
   final ScrollController? scrollController;
+  final bool fullScreen;
 
   /// 다른 사용자의 통계를 볼 때 그 사용자 id. null이면 내 통계.
   final String? userId;
 
-  const LibraryStatsView({super.key, this.scrollController, this.userId});
+  const LibraryStatsView({
+    super.key,
+    this.scrollController,
+    this.fullScreen = false,
+    this.userId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timesAsync = userId != null
-        ? ref.watch(_bookReadingTimesByUserProvider(userId!))
-        : ref.watch(_bookReadingTimesProvider);
+        ? ref.watch(_genreReadingTimesByUserProvider(userId!))
+        : ref.watch(_genreReadingTimesProvider);
     final items = timesAsync.valueOrNull ?? const [];
+    final treemapHeight = fullScreen
+        ? (MediaQuery.sizeOf(context).height * 0.58).clamp(420.0, 620.0)
+        : 260.0;
+    final treemapWidth = fullScreen
+        ? MediaQuery.sizeOf(context).width - AppTheme.screenPadding * 2
+        : null;
 
     return ListView(
       controller: scrollController,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        16,
-        AppTheme.screenPadding,
-        40,
-      ),
+      shrinkWrap: !fullScreen,
+      physics: fullScreen
+          ? const BouncingScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 16, bottom: 40),
       children: [
-        const ChorokSectionHeader(title: '책별 독서 비중'),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+          child: ChorokSectionHeader(
+            title: '장르별 독서 비중',
+            subtitle: '읽은 시간 기준으로 취향을 묶었어요',
+          ),
+        ),
         const SizedBox(height: AppTheme.spaceMD),
-        BookTreemapWidget(items: items),
-        if (kUseMock) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: BookTreemapWidget(
+            items: items,
+            height: treemapHeight,
+            width: treemapWidth,
+          ),
+        ),
+        if (!fullScreen && kUseMock) ...[
           const SizedBox(height: AppTheme.spaceXL),
-          const ChorokSectionHeader(title: '장르 비율'),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+            child: ChorokSectionHeader(title: '장르 비율'),
+          ),
           const SizedBox(height: AppTheme.spaceMD),
-          WaffleChartWidget(genres: buildWaffleItems(context)),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
+            child: WaffleChartWidget(genres: buildWaffleItems(context)),
+          ),
         ],
       ],
     );

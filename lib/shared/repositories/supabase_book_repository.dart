@@ -40,7 +40,7 @@ class SupabaseBookRepository {
 
     final globalBookId = await _upsertGlobalBook(book);
 
-    await _client.from('books').upsert({
+    final row = {
       'user_id': userId,
       'book_id': book.id,
       'title': book.title,
@@ -58,8 +58,17 @@ class SupabaseBookRepository {
       'saved_sentences': book.savedSentences,
       'global_book_id': globalBookId,
       'completed_at': book.completedAt?.toIso8601String(),
+      'genre': book.genre,
       'updated_at': DateTime.now().toIso8601String(),
-    }, onConflict: 'user_id,book_id');
+    };
+
+    try {
+      await _client.from('books').upsert(row, onConflict: 'user_id,book_id');
+    } catch (e) {
+      if (!e.toString().contains('genre')) rethrow;
+      row.remove('genre');
+      await _client.from('books').upsert(row, onConflict: 'user_id,book_id');
+    }
   }
 
   /// 완독 후 남긴 공개 평가를 저장한다. 테이블 미적용 환경에서는 호출부에서 무시한다.
@@ -144,6 +153,7 @@ class SupabaseBookRepository {
       completedAt: r['completed_at'] != null
           ? DateTime.tryParse(r['completed_at'] as String)
           : null,
+      genre: r['genre'] as String?,
     );
   }
 }

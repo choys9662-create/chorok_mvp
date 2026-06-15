@@ -27,6 +27,7 @@ Book _fromIsarBook(IsarBook b) => Book(
     IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
   },
   completedAt: b.completedAt,
+  genre: b.genre,
 );
 
 class LibraryNotifier extends Notifier<List<Book>> {
@@ -161,6 +162,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       totalReadingHours: old.totalReadingHours,
       savedSentences: old.savedSentences,
       completedAt: null,
+      genre: old.genre,
     );
 
     state = [...state]..[idx] = updated;
@@ -222,6 +224,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       totalReadingHours: old.totalReadingHours,
       savedSentences: old.savedSentences,
       completedAt: old.completedAt,
+      genre: old.genre,
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
@@ -436,6 +439,7 @@ final _kMockBooks = [
     currentPage: 196,
     totalReadingHours: 2.5,
     savedSentences: ['나는 채식주의자가 되기로 했다.', '꿈 때문에.'],
+    genre: '소설',
   ),
   Book(
     id: '2',
@@ -447,6 +451,7 @@ final _kMockBooks = [
     totalPages: 688,
     currentPage: 234,
     totalReadingHours: 8.2,
+    genre: '역사소설',
   ),
   Book(
     id: '3',
@@ -458,6 +463,7 @@ final _kMockBooks = [
     totalPages: 304,
     currentPage: 88,
     totalReadingHours: 4.6,
+    genre: 'SF',
   ),
   // completed
   Book(
@@ -471,6 +477,7 @@ final _kMockBooks = [
     currentPage: 190,
     totalReadingHours: 4.1,
     completedAt: DateTime(2026, 5, 2),
+    genre: '소설',
   ),
   Book(
     id: '5',
@@ -483,6 +490,7 @@ final _kMockBooks = [
     currentPage: 264,
     totalReadingHours: 6.3,
     completedAt: DateTime(2026, 5, 5),
+    genre: '소설',
   ),
   // wantToRead
   Book(
@@ -494,6 +502,7 @@ final _kMockBooks = [
     status: ReadingStatus.wantToRead,
     totalPages: 216,
     currentPage: 0,
+    genre: '소설',
   ),
   Book(
     id: '7',
@@ -504,6 +513,7 @@ final _kMockBooks = [
     status: ReadingStatus.wantToRead,
     totalPages: 312,
     currentPage: 0,
+    genre: '소설',
   ),
   Book(
     id: '8',
@@ -514,5 +524,6 @@ final _kMockBooks = [
     status: ReadingStatus.wantToRead,
     totalPages: 304,
     currentPage: 0,
+    genre: '판타지',
   ),
 ];

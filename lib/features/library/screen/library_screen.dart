@@ -373,7 +373,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           },
           onOpenStats: () {
             HapticFeedback.selectionClick();
-            setState(() => _viewIndex = 1);
+            ctx.push(AppConstants.routeTasteAnalysis, extra: _uid);
           },
           onOpenCalendar: () {
             HapticFeedback.selectionClick();
