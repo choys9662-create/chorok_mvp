@@ -35,6 +35,7 @@ import '../../features/search/screen/book_info_screen.dart';
 import '../../features/search/model/aladin_book.dart';
 import '../../shared/models/user_profile.dart';
 import '../../shared/models/reading_session.dart';
+import '../../shared/providers/library_provider.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
 
@@ -262,6 +263,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.routeBookInfo,
         builder: (context, state) {
           final book = state.extra as AladinBook;
+          final libraryBook = ref.read(libraryProvider).where((candidate) {
+            final isbn = book.isbn13;
+            if (isbn != null && isbn.isNotEmpty) {
+              return candidate.isbn == isbn;
+            }
+            return candidate.title == book.title &&
+                candidate.author == book.author;
+          }).firstOrNull;
+          if (libraryBook != null) {
+            return BookDetailScreen(bookId: libraryBook.id);
+          }
           return BookInfoScreen(book: book);
         },
       ),

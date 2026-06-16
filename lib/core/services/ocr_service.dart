@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -184,6 +185,43 @@ class CloudVisionOcrService implements OcrService {
   }
 }
 
+/// Apple Vision(iOS) 온디바이스 OCR. 무료·오프라인·네트워크 호출 없음.
+/// 네이티브 인식은 `ios/Runner/AppDelegate.swift`의 `chorok/ocr` MethodChannel.
+/// Android는 추후 같은 인터페이스로 ML Kit 분기를 추가한다.
+class OnDeviceOcrService implements OcrService {
+  final _imagePicker = ImagePicker();
+  static const _channel = MethodChannel('chorok/ocr');
+  static const _imageReadTimeout = Duration(seconds: 12);
+
+  @override
+  Future<OcrResult> extractTextFromCamera() async {
+    final photo = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+    if (photo == null) return const OcrCancelled();
+    final bytes = await photo.readAsBytes().timeout(_imageReadTimeout);
+    return extractTextFromBytes(bytes);
+  }
+
+  @override
+  Future<OcrResult> extractTextFromBytes(List<int> bytes) async {
+    try {
+      final raw = await _channel.invokeMethod<String>('recognizeText', {
+        'bytes': Uint8List.fromList(bytes),
+      });
+      final trimmed = normalizeOcrText(raw ?? '');
+      if (trimmed.isEmpty) return const OcrNoText();
+      return OcrSuccess(trimmed);
+    } on PlatformException catch (e) {
+      return OcrError('OCR 처리 중 오류: ${e.message ?? e.code}');
+    } catch (e) {
+      return OcrError('OCR 처리 중 오류: $e');
+    }
+  }
+}
+
+// 온디바이스(무료) 전환. 유료 폴백이 필요하면 CloudVisionOcrService()로 교체.
 final ocrServiceProvider = Provider<OcrService>(
-  (ref) => CloudVisionOcrService(),
+  (ref) => OnDeviceOcrService(),
 );

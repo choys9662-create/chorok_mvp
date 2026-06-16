@@ -537,7 +537,7 @@ class DbService {
   /// 정규화된 문장과 exact-match되는 다른 유저들의 문장을 조회한다.
   ///
   /// Supabase GIN 인덱스를 통해 normalized_sentences 배열 포함 검색.
-  /// 반환: [{ id, content, thought, created_at, profiles, books }]
+  /// 반환: [{ id, user_id, content, thought, created_at, profiles, books, sentence_likes }]
   Future<List<Map<String, dynamic>>> findOverlappingSentences(
     String normalizedText,
   ) async {
@@ -545,9 +545,10 @@ class DbService {
     final res = await supabase
         .from('sentences')
         .select(
-          'id, content, thought, created_at, '
-          'profiles!sentences_user_id_fkey(username, display_name, avatar_url), '
-          'books(title)',
+          'id, user_id, content, thought, created_at, '
+          'profiles!sentences_user_id_fkey(id, username, display_name, avatar_url), '
+          'books(title), '
+          'sentence_likes(count)',
         )
         .filter('normalized_sentences', 'cs', '{"$normalizedText"}')
         .neq('user_id', _uid)

@@ -133,7 +133,8 @@ lib/
 │   ├── search/        # 검색·바코드 스캐너
 │   ├── settings/      # MY 탭 — 서재 포함
 │   ├── analytics/     # 통계·히트맵
-│   └── achievements/  # 스트릭·뱃지
+│   ├── achievements/  # 스트릭·뱃지
+│   └── profile/       # 유저 프로필
 └── shared/
     ├── models/        # 데이터 모델 (Book, SentenceRecord, ReadingSession 등)
     ├── providers/     # Riverpod 프로바이더
@@ -191,6 +192,23 @@ iOS 시뮬레이터 실행:
 
 VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일을 사용하면 작업 디렉토리 무관하게 실행 가능.
 
+**디바이스 ID (고정값):**
+- 실기기(아이폰): `00008120-0011549E3640C01E`
+- 디자인 앱 시뮬레이터 "New Chorok iPhone": `C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0`
+
+```bash
+# 디자인 앱 (시뮬레이터, 목업)
+flutter run -d C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0 --dart-define=USE_MOCK=true
+# 실기기 (실데이터)
+flutter run -d 00008120-0011549E3640C01E
+```
+
+**⚠️ iOS 서명 gotcha:**
+
+1. **Apple 로그인 + 무료 개인 팀 조합 불가.** `Runner.entitlements`에 `com.apple.developer.applesignin`이 있으면 기기 설치 시 `0xe8008001` 오류(코드 서명 검증 실패). 무료 팀(VQ45VLJ87Y, choys9662@gmail.com)으로는 Sign in with Apple entitlement를 프로비저닝 못 함. 현재 `Runner.entitlements`는 의도적으로 비워 둔 상태 — 유료 Apple Developer Program 가입 전까지 건드리지 않는다.
+
+2. **`path_provider_foundation` 2.6.0 시뮬레이터 크래시.** 2.6.0부터 objective_c native-assets 방식으로 전환됐는데, Flutter 3.41 + iOS 시뮬레이터에서 `SdkRoot` 미전달로 `dlopen` 실패 → 앱이 흰 화면으로 죽음. `pubspec.yaml`의 `dependency_overrides: path_provider_foundation: 2.5.1`로 고정 중 — 2.6.x로 올리지 않는다.
+
 ---
 
 ## 9. Git · 배포 · 롤백 · 테스트 데이터 워크플로
@@ -198,7 +216,7 @@ VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일�
 **개발 루프:** 변경 확인은 git push 가 아니라 **실기기 `flutter run` + 핫 리로드**로 한다(§8). 웹 배포는 이제 "링크 공유 / 최종 교차확인"용이지 개발 루프가 아니다.
 
 **브랜치 → 배포:**
-- 수정은 `feat/...` 브랜치를 따서 작업 → 실기기로 테스트 → `main`에 머지.
+- 기본: `main`에 직접 커밋·푸시 (빠른 개발 루프). 기능이 크거나 롤백 안전망이 필요할 때만 `feat/...` 브랜치.
 - `main` 머지 시 GitHub Actions 가 자동 배포: 디자인앱(`chorok-d1414`, `USE_MOCK=true`) + 실앱(`chorok-real`, 실데이터). 정의: `.github/workflows/deploy-design.yml`, `deploy-prod.yml`.
 - **롤백:** 배포 후 문제 시 `git revert <머지커밋>` → `main` 재배포. git 이력에 다 남아 있다.
 

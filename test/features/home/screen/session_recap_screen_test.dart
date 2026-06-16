@@ -8,10 +8,14 @@ import 'package:chorok_app/features/home/screen/session_recap_screen.dart';
 import 'package:chorok_app/shared/models/reading_session.dart';
 import 'package:chorok_app/shared/models/session_goal.dart';
 import 'package:chorok_app/shared/providers/library_provider.dart';
+import 'package:chorok_app/shared/utils/sentence_normalizer.dart';
 
 class _FakeDbService extends DbService {
+  final Map<String, List<Map<String, dynamic>>> overlaps;
   int? savedPagesRead;
   String? savedClientSessionId;
+
+  _FakeDbService({this.overlaps = const {}});
 
   @override
   Future<String> saveSession({
@@ -33,6 +37,13 @@ class _FakeDbService extends DbService {
     savedClientSessionId = clientSessionId;
     return clientSessionId ?? 'session-id';
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> findOverlappingSentences(
+    String normalizedText,
+  ) async {
+    return overlaps[normalizedText] ?? const [];
+  }
 }
 
 class _FakeLibraryNotifier extends LibraryNotifier {
@@ -52,7 +63,11 @@ class _FakeLibraryNotifier extends LibraryNotifier {
   }
 }
 
-Widget _buildRecapScreen({_FakeDbService? dbService, int? endPage}) {
+Widget _buildRecapScreen({
+  _FakeDbService? dbService,
+  int? endPage,
+  List<CollectedSentence>? sentences,
+}) {
   const book = Book(
     id: 'book-1',
     title: '채식주의자 (리마스터판)',
@@ -78,14 +93,16 @@ Widget _buildRecapScreen({_FakeDbService? dbService, int? endPage}) {
           bookAuthor: '한강',
           bookPublisher: '창비',
           publishedYear: '2022',
-          sentences: List.generate(
-            10,
-            (index) => CollectedSentence(
-              id: 'sentence-$index',
-              content: '문장 $index',
-              thought: index < 5 ? '기록 $index' : '',
-            ),
-          ),
+          sentences:
+              sentences ??
+              List.generate(
+                10,
+                (index) => CollectedSentence(
+                  id: 'sentence-$index',
+                  content: '문장 $index',
+                  thought: index < 5 ? '기록 $index' : '',
+                ),
+              ),
           bookId: 'book-1',
           startPage: 196,
           endPage: endPage,
@@ -125,7 +142,7 @@ void main() {
     expect(find.text('서재'), findsOneWidget);
   });
 
-  testWidgets('초서 기록 화살표를 누르면 내 초서 기록이 펼쳐진다', (tester) async {
+  testWidgets('리캡 진입 시 내 초서 기록이 바로 보이고 화살표로 접을 수 있다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -134,14 +151,14 @@ void main() {
     await tester.pumpWidget(_buildRecapScreen());
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('내 초서 기록 펼치기'), findsOneWidget);
+    expect(find.bySemanticsLabel('내 초서 기록 접기'), findsOneWidget);
+    expect(find.text('수집한 문장'), findsOneWidget);
+    expect(find.text('문장 0'), findsWidgets);
 
     await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('내 초서 기록 접기'), findsOneWidget);
-    expect(find.text('문장 0'), findsOneWidget);
-    expect(find.text('기록 0'), findsOneWidget);
+    expect(find.bySemanticsLabel('내 초서 기록 펼치기'), findsOneWidget);
   });
 
   testWidgets('종료 페이지가 있으면 리캡과 원격 세션 저장에 반영한다', (tester) async {
@@ -160,5 +177,64 @@ void main() {
     expect(find.text('211 / 267'), findsOneWidget);
     expect(dbService.savedPagesRead, 15);
     expect(dbService.savedClientSessionId, isNotNull);
+  });
+
+  testWidgets('겹문장이 있으면 리캡에 대표 생각을 노출하고 상세 시트를 연다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const mySentence = '나도, 너를 사랑 해';
+    final normalized = SentenceNormalizer.normalize(mySentence);
+    final dbService = _FakeDbService(
+      overlaps: {
+        normalized: [
+          {
+            'id': 'overlap-1',
+            'user_id': 'user-2',
+            'content': '나도 너를 사랑해',
+            'thought': '같은 문장에서 오래 멈췄어요.',
+            'created_at': DateTime(2026, 1, 2).toIso8601String(),
+            'profiles': {
+              'id': 'user-2',
+              'username': 'reader_yun',
+              'display_name': '윤',
+              'avatar_url': null,
+            },
+            'books': {'title': '다른 책'},
+            'sentence_likes': [
+              {'count': 3},
+            ],
+          },
+        ],
+      },
+    );
+
+    await tester.pumpWidget(
+      _buildRecapScreen(
+        dbService: dbService,
+        sentences: const [
+          CollectedSentence(id: 'mine-1', content: mySentence, thought: '내 생각'),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+
+    expect(find.text('수집한 문장'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+
+    await tester.ensureVisible(find.text(mySentence));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(mySentence));
+    await tester.pumpAndSettle();
+
+    expect(find.text('같은 문장, 다른 생각'), findsOneWidget);
+    expect(find.text('내가 기록한 문장'), findsOneWidget);
+    expect(find.text('1명의 독자가 이 문장에 남긴 생각'), findsOneWidget);
+    expect(find.text('같은 문장에서 오래 멈췄어요.'), findsOneWidget);
+    expect(find.text('공감 3'), findsOneWidget);
   });
 }

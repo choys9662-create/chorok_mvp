@@ -26,9 +26,11 @@ class RealSttService implements SttService {
   }) async {
     await _stt.listen(
       onResult: (result) => onResult(result.recognizedWords),
-      listenFor: listenFor,
-      localeId: 'ko_KR',
-      listenOptions: SpeechListenOptions(partialResults: true),
+      listenOptions: SpeechListenOptions(
+        partialResults: true,
+        listenFor: listenFor,
+        localeId: 'ko_KR',
+      ),
     );
   }
 

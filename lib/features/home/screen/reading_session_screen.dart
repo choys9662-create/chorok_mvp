@@ -28,6 +28,7 @@ import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
+import '../widget/sentence_organizer_sheet.dart';
 import 'ocr_capture_crop.dart';
 import 'ocr_web_camera_stub.dart'
     if (dart.library.js_interop) 'ocr_web_camera_web.dart';
@@ -225,7 +226,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   DateTime? _exitStartedAt;
 
   bool _isRecording = false;
-  bool _showSlideToStop = false;
   bool _showTopic = true;
   bool _showPageInput = false;
   int _stoppedSeconds = 0;
@@ -368,7 +368,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   void _handleOcrResult(OcrResult result, {required String noTextMessage}) {
     switch (result) {
       case OcrSuccess(text: final text):
-        _openChosuSheet(initialText: text);
+        _openSentenceOrganizer(text);
       case OcrNoText():
         ref.read(timerProvider.notifier).resume();
         _showOcrSnack(noTextMessage);
@@ -579,6 +579,42 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     super.dispose();
   }
 
+  // OCR 결과를 문장 단위로 끊어 정리(합치기/문단)한 뒤, 확정된 블록마다
+  // 기존 초서 수집(생각 입력) 흐름으로 넘긴다. STT(음성)는 한 발화이므로 거치지 않는다.
+  Future<void> _openSentenceOrganizer(String text) async {
+    final blocks = await showGeneralDialog<List<String>>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '문장 정리 닫기',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (_, _, _) => SentenceOrganizerSheet(rawText: text),
+      transitionBuilder: (_, animation, _, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        );
+      },
+    );
+    if (!mounted) return;
+    if (blocks == null || blocks.isEmpty) {
+      ref.read(timerProvider.notifier).resume();
+      return;
+    }
+    for (final block in blocks) {
+      if (!mounted) return;
+      await _openChosuSheet(initialText: block);
+    }
+  }
+
   Future<void> _openChosuSheet({String initialText = ''}) async {
     final hasInitialText = initialText.trim().isNotEmpty;
     final book = _readSessionBook();
@@ -676,31 +712,36 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     });
   }
 
-  void _onStop() {
+  void _beginStopFlow() {
     HapticFeedback.mediumImpact();
     final book = _readSessionBook();
     final seconds = ref.read(timerProvider).seconds;
     _stoppedBook = book;
-    ref.read(timerProvider.notifier).stop();
-    if (book.hasBook) {
-      setState(() {
-        _stoppedSeconds = seconds;
-        _showPageInput = true;
-      });
-    } else {
+    _stoppedSeconds = seconds;
+
+    if (!book.hasBook) {
+      ref.read(timerProvider.notifier).stop();
       _navigateToRecap(seconds, book: book);
+      return;
     }
-  }
 
-  void _showSlideToUnlock() {
-    HapticFeedback.mediumImpact();
     ref.read(timerProvider.notifier).pause();
-    setState(() => _showSlideToStop = true);
+    setState(() => _showPageInput = true);
   }
 
-  void _dismissSlideToUnlock() {
-    setState(() => _showSlideToStop = false);
+  void _cancelStopFlow() {
+    _stoppedBook = null;
+    _stoppedSeconds = 0;
+    setState(() => _showPageInput = false);
     ref.read(timerProvider.notifier).resume();
+  }
+
+  void _confirmStopFlow(int page) {
+    final seconds = _stoppedSeconds;
+    final book = _stoppedBook ?? _readSessionBook();
+    setState(() => _showPageInput = false);
+    ref.read(timerProvider.notifier).stop();
+    _navigateToRecap(seconds, confirmedPage: page, book: book);
   }
 
   void _navigateToRecap(
@@ -830,7 +871,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
                   sentenceCount:
                       _preExistingSentences.length + _collectedSentences.length,
-                  onLockLongPress: _showSlideToUnlock,
+                  onLockLongPress: _beginStopFlow,
                   onPlusTap: _onPlusTap,
                   onSentencesTap: _openSentencesSheet,
                 ),
@@ -868,17 +909,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   onStop: _toggleRecording,
                 ),
 
-              // ⑥ 슬라이드 종료 오버레이
-              if (_showSlideToStop)
-                _SlideToStopOverlay(
-                  onConfirm: () {
-                    setState(() => _showSlideToStop = false);
-                    _onStop();
-                  },
-                  onDismiss: _dismissSlideToUnlock,
-                ),
-
-              // ⑦ 화두 오버레이
+              // ⑥ 화두 오버레이
               if (_showTopic)
                 _TodaysTopicOverlay(
                   bookTitle: book.title,
@@ -890,19 +921,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   onStart: _dismissTopicAndStart,
                 ),
 
-              // ⑧ 페이지 입력 오버레이
+              // ⑦ 페이지 입력 오버레이
               if (_showPageInput)
                 _PageInputOverlay(
+                  timeText: _formatStoppedTime(_stoppedSeconds),
+                  sessionStartedAt: _sessionStartedAt,
                   initialPage: book.startPage,
                   totalPages: book.totalPages,
-                  onConfirm: (page) {
-                    setState(() => _showPageInput = false);
-                    _navigateToRecap(_stoppedSeconds, confirmedPage: page);
-                  },
-                  onSkip: () {
-                    setState(() => _showPageInput = false);
-                    _navigateToRecap(_stoppedSeconds);
-                  },
+                  onConfirm: _confirmStopFlow,
+                  onCancel: _cancelStopFlow,
                 ),
             ],
           ),
@@ -2552,10 +2579,7 @@ class _SessionEntryBadge extends StatelessWidget {
   final String label;
   final Color accentColor;
 
-  const _SessionEntryBadge({
-    required this.label,
-    required this.accentColor,
-  });
+  const _SessionEntryBadge({required this.label, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
@@ -2568,7 +2592,8 @@ class _SessionEntryBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: ThemeData.estimateBrightnessForColor(accentColor) ==
+          color:
+              ThemeData.estimateBrightnessForColor(accentColor) ==
                   Brightness.dark
               ? Colors.white
               : const Color(0xFF07101C),
@@ -2602,10 +2627,7 @@ class _SessionEntryQuestionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(9),
         border: Border.all(color: accentColor, width: 1.1),
         boxShadow: [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.14),
-            blurRadius: 14,
-          ),
+          BoxShadow(color: accentColor.withValues(alpha: 0.14), blurRadius: 14),
         ],
       ),
       child: Text(
@@ -4711,18 +4733,39 @@ class _SheetOrb extends StatelessWidget {
   }
 }
 
+String _formatStoppedTime(int seconds) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  final s = seconds % 60;
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(h)}:${two(m)}:${two(s)}';
+}
+
+String _sessionDateLabel(DateTime date) {
+  const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+  final y = date.year.toString().padLeft(4, '0');
+  final m = date.month.toString().padLeft(2, '0');
+  final d = date.day.toString().padLeft(2, '0');
+  final weekday = weekdays[(date.weekday - 1).clamp(0, 6)];
+  return '$y.$m.$d($weekday)';
+}
+
 // ─── 페이지 입력 오버레이 ─────────────────────────────────────────────────────
 class _PageInputOverlay extends StatefulWidget {
+  final String timeText;
+  final DateTime sessionStartedAt;
   final int initialPage;
   final int totalPages;
   final ValueChanged<int> onConfirm;
-  final VoidCallback onSkip;
+  final VoidCallback onCancel;
 
   const _PageInputOverlay({
+    required this.timeText,
+    required this.sessionStartedAt,
     required this.initialPage,
     required this.totalPages,
     required this.onConfirm,
-    required this.onSkip,
+    required this.onCancel,
   });
 
   @override
@@ -4731,6 +4774,7 @@ class _PageInputOverlay extends StatefulWidget {
 
 class _PageInputOverlayState extends State<_PageInputOverlay> {
   late int _page;
+  bool _hasRecordedPage = false;
 
   @override
   void initState() {
@@ -4740,129 +4784,187 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
 
   int get _maxPage => widget.totalPages > 0 ? widget.totalPages : 9999;
 
-  void _increment() => setState(() => _page = (_page + 1).clamp(0, _maxPage));
-  void _decrement() => setState(() => _page = (_page - 1).clamp(0, _maxPage));
+  void _increment() => setState(() {
+    _page = (_page + 1).clamp(0, _maxPage);
+    _hasRecordedPage = true;
+  });
+
+  void _decrement() => setState(() {
+    _page = (_page - 1).clamp(0, _maxPage);
+    _hasRecordedPage = true;
+  });
 
   @override
   Widget build(BuildContext context) {
     final ratio = _maxPage > 0 ? _page / _maxPage : 0.0;
+    final isActive = _hasRecordedPage;
+    final promptColor = isActive
+        ? _kGreen.withValues(alpha: 0.82)
+        : Colors.white.withValues(alpha: 0.46);
+    final pageColor = isActive ? _kGreen : Colors.white.withValues(alpha: 0.28);
+    final editColor = isActive
+        ? _kGreen.withValues(alpha: 0.92)
+        : Colors.white.withValues(alpha: 0.18);
+    final trackColor = isActive ? _kGreen : const Color(0xFF3D3D3D);
+    final buttonBg = isActive ? _kGreen : const Color(0xFF262626);
+    final buttonFg = isActive
+        ? Colors.black
+        : Colors.white.withValues(alpha: 0.35);
 
     return Material(
       color: Colors.transparent,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // 어두운 스크림 — 배경 반딧불이는 은은하게 비침
           GestureDetector(
-            onTap: widget.onSkip,
+            onTap: widget.onCancel,
             child: Container(color: Colors.black.withValues(alpha: 0.72)),
           ),
-          // 콘텐츠 — 카드 배경 없이 요소만 배경 위에 배치
-          Center(
+          SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
+                  _PageInputLockBadge(isActive: isActive),
+                  const SizedBox(height: 20),
+                  Text(
+                    widget.timeText,
+                    style: TextStyle(
+                      color: _kGreen.withValues(alpha: 0.22),
+                      fontSize: 64,
+                      height: 1.0,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -1,
+                      fontFamily: _kFont,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _sessionDateLabel(widget.sessionStartedAt),
+                    style: TextStyle(
+                      color: _kGreen.withValues(alpha: 0.20),
+                      fontSize: 12,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: _kFont,
+                    ),
+                  ),
+                  const Spacer(),
                   Text(
                     '오늘 몇 페이지까지 읽었나요?',
                     style: TextStyle(
                       fontFamily: _kFont,
                       fontSize: 15,
-                      color: _kGreen.withValues(alpha: 0.85),
+                      color: promptColor,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // 숫자 조작 행
+                  const SizedBox(height: 22),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _StepButton(icon: Icons.remove, onTap: _decrement),
-                      const SizedBox(width: 28),
+                      const SizedBox(width: 22),
                       _PageBox(
                         page: _page,
                         totalPages: widget.totalPages,
-                        onChanged: (v) =>
-                            setState(() => _page = v.clamp(0, _maxPage)),
+                        pageColor: pageColor,
+                        editColor: editColor,
+                        borderColor: Colors.white.withValues(alpha: 0.04),
+                        onChanged: (v) => setState(() {
+                          _page = v.clamp(0, _maxPage);
+                          _hasRecordedPage = true;
+                        }),
                       ),
-                      const SizedBox(width: 28),
+                      const SizedBox(width: 22),
                       _StepButton(icon: Icons.add, onTap: _increment),
                     ],
                   ),
                   const SizedBox(height: 18),
-                  // 슬라이더 — 화면 좌우로 넓게
                   SizedBox(
-                    width: 308,
+                    width: 346,
                     child: SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: _kGreen,
-                        inactiveTrackColor: const Color(0xFF474747),
-                        thumbColor: _kGreen,
-                        overlayColor: _kGreen.withValues(alpha: 0.15),
+                        activeTrackColor: trackColor,
+                        inactiveTrackColor: const Color(0xFF2A2A2A),
+                        thumbColor: trackColor,
+                        overlayColor: trackColor.withValues(alpha: 0.14),
                         trackHeight: 3,
                         thumbShape: const RoundSliderThumbShape(
                           enabledThumbRadius: 7,
                         ),
                         overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 18,
+                          overlayRadius: 16,
                         ),
                       ),
                       child: Slider(
                         value: ratio,
-                        onChanged: (v) => setState(
-                          () =>
-                              _page = (v * _maxPage).round().clamp(0, _maxPage),
-                        ),
+                        onChanged: (v) => setState(() {
+                          _page = (v * _maxPage).round().clamp(0, _maxPage);
+                          _hasRecordedPage = true;
+                        }),
                       ),
                     ),
                   ),
-                  if (widget.totalPages > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '전체 ${widget.totalPages}',
-                      style: TextStyle(
-                        fontFamily: _kFont,
-                        fontSize: 13,
-                        color: _kGreen.withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  // 확인 버튼 — 콘텐츠 크기만큼만, 솔리드 채움 사각형
+                  const SizedBox(height: 22),
                   GestureDetector(
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      widget.onConfirm(_page);
-                    },
-                    child: Container(
+                    onTap: isActive
+                        ? () {
+                            HapticFeedback.mediumImpact();
+                            widget.onConfirm(_page);
+                          }
+                        : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
+                        horizontal: 18,
+                        vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: _kGreen,
-                        borderRadius: BorderRadius.circular(8),
+                        color: buttonBg,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.check_rounded,
-                            size: 16,
-                            color: Colors.black,
-                          ),
-                          const SizedBox(width: 4),
+                          Icon(Icons.check_rounded, size: 16, color: buttonFg),
+                          const SizedBox(width: 6),
                           Text(
-                            '독서종료',
+                            '기록 및 독서종료',
                             style: TextStyle(
                               fontFamily: _kFont,
                               fontSize: 15,
-                              color: Colors.black,
+                              color: buttonFg,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.onCancel();
+                    },
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.46),
+                        ),
+                        color: Colors.black.withValues(alpha: 0.16),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: Colors.white.withValues(alpha: 0.62),
                       ),
                     ),
                   ),
@@ -4872,6 +4974,31 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PageInputLockBadge extends StatelessWidget {
+  final bool isActive;
+
+  const _PageInputLockBadge({required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isActive ? _kGreen : _kGreen.withValues(alpha: 0.10);
+    final fg = isActive ? Colors.black : _kGreen;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: bg,
+        border: Border.all(color: _kGreen.withValues(alpha: 0.24)),
+      ),
+      child: Icon(Icons.lock_rounded, color: fg, size: 18),
     );
   }
 }
@@ -4905,11 +5032,17 @@ class _StepButton extends StatelessWidget {
 class _PageBox extends StatefulWidget {
   final int page;
   final int totalPages;
+  final Color pageColor;
+  final Color editColor;
+  final Color borderColor;
   final ValueChanged<int> onChanged;
 
   const _PageBox({
     required this.page,
     required this.totalPages,
+    required this.pageColor,
+    required this.editColor,
+    required this.borderColor,
     required this.onChanged,
   });
 
@@ -4968,17 +5101,19 @@ class _PageBoxState extends State<_PageBox> {
           style: TextStyle(
             fontFamily: _kFont,
             fontSize: 40,
-            color: _kGreen,
+            color: widget.pageColor,
             fontWeight: FontWeight.w300,
           ),
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _kGreen.withValues(alpha: 0.5)),
+              borderSide: BorderSide(
+                color: widget.pageColor.withValues(alpha: 0.5),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: _kGreen),
+              borderSide: BorderSide(color: widget.pageColor),
             ),
             contentPadding: EdgeInsets.zero,
           ),
@@ -5001,23 +5136,35 @@ class _PageBoxState extends State<_PageBox> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kGreen.withValues(alpha: 0.55)),
-          color: Colors.black.withValues(alpha: 0.4),
+          border: Border.all(color: widget.borderColor),
+          color: const Color(0xFF171A17),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(Icons.edit, size: 13, color: widget.editColor),
+            const SizedBox(width: 6),
             Text(
               '${widget.page}',
               style: TextStyle(
                 fontFamily: _kFont,
                 fontSize: 40,
-                color: _kGreen,
+                color: widget.pageColor,
                 fontWeight: FontWeight.w300,
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.edit, size: 13, color: _kGreen.withValues(alpha: 0.6)),
+            if (widget.totalPages > 0) ...[
+              const SizedBox(width: 8),
+              Text(
+                '/ ${widget.totalPages}',
+                style: TextStyle(
+                  fontFamily: _kFont,
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.12),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ],
         ),
       ),

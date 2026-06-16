@@ -9,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'features/onboarding/onboarding_screen.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/repositories/book_repository.dart';
 
@@ -35,12 +34,7 @@ Future<void> main() async {
   );
   await _restoreCachedAuthSession(authStorage);
 
-  // 목업 모드(USE_MOCK=true)이거나 웹이면 온보딩 체크 없이 바로 홈
-  const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
-  final onboardingDone = useMock || kIsWeb || await isOnboardingCompleted();
-  final initialLocation = onboardingDone
-      ? AppConstants.routeHome
-      : AppConstants.routeOnboarding;
+  const initialLocation = AppConstants.routeHome;
 
   final savedThemeMode = await loadSavedThemeMode();
 

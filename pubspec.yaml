@@ -75,6 +75,12 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.13
 
+# path_provider_foundation 2.6.0은 objective_c native-assets로 전환됐는데,
+# Flutter 3.41 + iOS 시뮬레이터에서 SdkRoot 미전달로 프레임워크 로드 실패(dlopen).
+# objective_c를 안 쓰는 직전 버전으로 핀.
+dependency_overrides:
+  path_provider_foundation: 2.5.1
+
 flutter:
   uses-material-design: true
 

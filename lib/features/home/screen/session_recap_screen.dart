@@ -20,13 +20,16 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
+import '../../feed/screen/sentence_detail_screen.dart';
 import '../../library/screen/library_screen.dart';
 import 'session_score.dart';
 import '../controller/session_firefly_provider.dart';
+import '../controller/session_overlap_provider.dart';
 import '../controller/weekly_minutes_provider.dart';
 import '../controller/recommended_books_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 
@@ -175,6 +178,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   @override
   void initState() {
     super.initState();
+    _isChoseoExpanded = widget.data.sentences.isNotEmpty;
     _score = sessionScore(
       seconds: widget.data.seconds,
       sentenceCount: widget.data.sentences.length,
@@ -452,6 +456,8 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                         _ChoseoRecordsPanel(
                           sentences: widget.data.sentences,
                           isExpanded: _isChoseoExpanded,
+                          bookTitle: widget.data.bookTitle,
+                          bookAuthor: widget.data.bookAuthor,
                         ),
                         const _SummaryDivider(),
                         _SummaryRow(
@@ -785,23 +791,35 @@ class _ChoseoValue extends StatelessWidget {
   }
 }
 
-// ─── 세션 요약: 펼쳐진 내 초서 기록 목록 ───────────────────────────────
-class _ChoseoRecordsPanel extends StatelessWidget {
+// ─── 세션 요약: 수집한 문장 목록 ──────────────────────────────────────
+class _ChoseoRecordsPanel extends ConsumerWidget {
   final List<CollectedSentence> sentences;
   final bool isExpanded;
+  final String bookTitle;
+  final String bookAuthor;
 
   const _ChoseoRecordsPanel({
     required this.sentences,
     required this.isExpanded,
+    required this.bookTitle,
+    required this.bookAuthor,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final overlapAsync = ref.watch(sessionOverlapInsightsProvider(sentences));
+    final insightsByNormalized = overlapAsync.maybeWhen(
+      data: (insights) => {
+        for (final insight in insights) insight.normalizedText: insight,
+      },
+      orElse: () => const <String, SessionOverlapInsight>{},
+    );
+
     return AnimatedCrossFade(
       firstChild: const SizedBox(width: double.infinity),
       secondChild: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(120, 0, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
         child: sentences.isEmpty
             ? Text(
                 '아직 기록한 문장이 없어요',
@@ -811,16 +829,25 @@ class _ChoseoRecordsPanel extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Text(
+                    '수집한 문장',
+                    textAlign: TextAlign.center,
+                    style: _labelStyle(
+                      fontSize: 17,
+                    ).copyWith(color: _recapBlue, height: 1.25),
+                  ),
+                  const SizedBox(height: 22),
                   for (int i = 0; i < sentences.length; i++) ...[
-                    _ChoseoRecordItem(sentence: sentences[i]),
-                    if (i < sentences.length - 1)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Container(
-                          height: 1,
-                          color: _recapLine.withValues(alpha: 0.72),
-                        ),
-                      ),
+                    _ChoseoRecordItem(
+                      sentence: sentences[i],
+                      overlapInsight:
+                          insightsByNormalized[SentenceNormalizer.normalize(
+                            sentences[i].content,
+                          )],
+                      bookTitle: bookTitle,
+                      bookAuthor: bookAuthor,
+                    ),
+                    if (i < sentences.length - 1) const SizedBox(height: 14),
                   ],
                 ],
               ),
@@ -837,43 +864,500 @@ class _ChoseoRecordsPanel extends StatelessWidget {
 
 class _ChoseoRecordItem extends StatelessWidget {
   final CollectedSentence sentence;
+  final SessionOverlapInsight? overlapInsight;
+  final String bookTitle;
+  final String bookAuthor;
 
-  const _ChoseoRecordItem({required this.sentence});
+  const _ChoseoRecordItem({
+    required this.sentence,
+    required this.overlapInsight,
+    required this.bookTitle,
+    required this.bookAuthor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final thought = sentence.thought.trim();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (sentence.pageNumber != null) ...[
-          Text(
-            '${sentence.pageNumber}쪽',
-            textAlign: TextAlign.right,
-            style: _labelStyle(
-              fontSize: 10,
-            ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.72)),
-          ),
-          const SizedBox(height: 5),
-        ],
-        Text(
-          sentence.content,
-          textAlign: TextAlign.right,
-          style: _labelStyle(
-            fontSize: 15,
-          ).copyWith(color: _recapBlue, height: 1.45),
+    final insight = overlapInsight;
+    final hasOverlap = insight != null;
+
+    final card = Container(
+      constraints: const BoxConstraints(minHeight: 96),
+      padding: const EdgeInsets.fromLTRB(20, 18, 22, 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151515),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: hasOverlap ? _recapBlue : Colors.white.withValues(alpha: 0.03),
+          width: hasOverlap ? 1.6 : 1,
         ),
-        if (thought.isNotEmpty) ...[
-          const SizedBox(height: 8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Text(
+              sentence.pageNumber != null ? '${sentence.pageNumber}p' : '',
+              style: _labelStyle(fontSize: 13).copyWith(
+                color: hasOverlap
+                    ? _recapBlue.withValues(alpha: 0.82)
+                    : _recapBlueMuted.withValues(alpha: 0.68),
+                height: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              sentence.content,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: _labelStyle(fontSize: 16).copyWith(
+                color: Colors.white.withValues(alpha: 0.66),
+                height: 1.52,
+              ),
+            ),
+          ),
+          if (hasOverlap) ...[
+            const SizedBox(width: 10),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: _recapBlue.withValues(alpha: 0.76),
+              size: 20,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (!hasOverlap) return card;
+
+    return Semantics(
+      button: true,
+      label: '같은 문장에 멈춘 독자들의 생각 보기',
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          _showOverlapThoughtsSheet(
+            context,
+            insight,
+            bookTitle: bookTitle,
+            bookAuthor: bookAuthor,
+          );
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: card,
+      ),
+    );
+  }
+}
+
+// ─── 세션 후 겹문장 생각 상세 ─────────────────────────────────────────
+void _showOverlapThoughtsSheet(
+  BuildContext context,
+  SessionOverlapInsight insight, {
+  required String bookTitle,
+  required String bookAuthor,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.72),
+    builder: (sheetContext) => _OverlapThoughtsSheet(
+      rootContext: context,
+      insight: insight,
+      bookTitle: bookTitle,
+      bookAuthor: bookAuthor,
+    ),
+  );
+}
+
+class _OverlapThoughtsSheet extends StatelessWidget {
+  final BuildContext rootContext;
+  final SessionOverlapInsight insight;
+  final String bookTitle;
+  final String bookAuthor;
+
+  const _OverlapThoughtsSheet({
+    required this.rootContext,
+    required this.insight,
+    required this.bookTitle,
+    required this.bookAuthor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final myThought = insight.sentence.thought.trim();
+    return DraggableScrollableSheet(
+      initialChildSize: 0.88,
+      minChildSize: 0.55,
+      maxChildSize: 0.94,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF050805),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _recapBlueMuted.withValues(alpha: 0.34),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '같은 문장, 다른 생각',
+                        style: _valueStyle(
+                          fontSize: 26,
+                        ).copyWith(color: Colors.white, height: 1.15),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      color: _recapBlueMuted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _MyOverlapSentenceCard(
+                  sentence: insight.sentence.content,
+                  thought: myThought,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  '${insight.readerCount}명의 독자가 이 문장에 남긴 생각',
+                  style: _labelStyle(
+                    fontSize: 14,
+                  ).copyWith(color: _recapBlue, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 12),
+                for (final thought in insight.thoughts) ...[
+                  _OverlapThoughtCard(
+                    rootContext: rootContext,
+                    thought: thought,
+                    bookTitle: bookTitle,
+                    bookAuthor: bookAuthor,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MyOverlapSentenceCard extends StatelessWidget {
+  final String sentence;
+  final String thought;
+
+  const _MyOverlapSentenceCard({required this.sentence, required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryLight.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.primaryLight.withValues(alpha: 0.34),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            thought,
-            textAlign: TextAlign.right,
+            '내가 기록한 문장',
+            style: _labelStyle(fontSize: 11).copyWith(
+              color: AppTheme.primaryLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            sentence,
             style: _labelStyle(
-              fontSize: 12,
-            ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.88)),
+              fontSize: 16,
+            ).copyWith(color: Colors.white, height: 1.48),
+          ),
+          if (thought.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                thought,
+                style: _labelStyle(fontSize: 13).copyWith(
+                  color: _recapBlueMuted.withValues(alpha: 0.92),
+                  height: 1.45,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OverlapThoughtCard extends ConsumerStatefulWidget {
+  final BuildContext rootContext;
+  final OverlapThought thought;
+  final String bookTitle;
+  final String bookAuthor;
+
+  const _OverlapThoughtCard({
+    required this.rootContext,
+    required this.thought,
+    required this.bookTitle,
+    required this.bookAuthor,
+  });
+
+  @override
+  ConsumerState<_OverlapThoughtCard> createState() =>
+      _OverlapThoughtCardState();
+}
+
+class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
+  bool _liked = false;
+  bool _isToggling = false;
+
+  int get _visibleEmpathy => widget.thought.empathyCount + (_liked ? 1 : 0);
+
+  Future<void> _toggleLike() async {
+    if (_isToggling) return;
+    HapticFeedback.selectionClick();
+    final next = !_liked;
+    setState(() {
+      _liked = next;
+      _isToggling = true;
+    });
+    try {
+      final db = ref.read(dbServiceProvider);
+      if (next) {
+        await db.likeSentence(widget.thought.sentenceId);
+      } else {
+        await db.unlikeSentence(widget.thought.sentenceId);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _liked = !next);
+    } finally {
+      if (mounted) setState(() => _isToggling = false);
+    }
+  }
+
+  void _openProfile() {
+    final userId = widget.thought.userId;
+    if (userId == null || userId.isEmpty) return;
+    HapticFeedback.selectionClick();
+    Navigator.of(context).pop();
+    widget.rootContext.push(
+      AppConstants.routeUserProfile,
+      extra: UserProfile(
+        id: userId,
+        username: widget.thought.username,
+        displayName: widget.thought.displayNameOrUsername,
+        avatarUrl: widget.thought.avatarUrl,
+      ),
+    );
+  }
+
+  void _openSentenceDetail() {
+    HapticFeedback.selectionClick();
+    Navigator.of(context).pop();
+    widget.rootContext.push(
+      AppConstants.routeSentenceDetail,
+      extra: SentenceDetailExtra(
+        sentenceContent: widget.thought.content,
+        bookTitle: widget.thought.bookTitle ?? widget.bookTitle,
+        bookAuthor: widget.bookAuthor,
+        collectorUsername: widget.thought.displayNameOrUsername,
+        collectorThought: widget.thought.thought,
+        sentenceId: widget.thought.sentenceId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _openProfile,
+                child: _OverlapAvatar(thought: widget.thought),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _openProfile,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.thought.displayNameOrUsername,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _labelStyle(fontSize: 13).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        time_fmt.formatDate(widget.thought.createdAt),
+                        style: _labelStyle(fontSize: 10).copyWith(
+                          color: _recapBlueMuted.withValues(alpha: 0.64),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Text(
+                '공감 $_visibleEmpathy',
+                style: _labelStyle(
+                  fontSize: 11,
+                ).copyWith(color: AppTheme.primaryLight),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.thought.thought,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: _labelStyle(
+              fontSize: 14,
+            ).copyWith(color: _recapBlue, height: 1.48),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _OverlapActionButton(
+                icon: _liked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                label: '공감',
+                isActive: _liked,
+                onTap: _toggleLike,
+              ),
+              const SizedBox(width: 8),
+              if (widget.thought.userId != null &&
+                  widget.thought.userId!.isNotEmpty)
+                _OverlapActionButton(
+                  icon: Icons.person_outline_rounded,
+                  label: '프로필',
+                  onTap: _openProfile,
+                ),
+              const Spacer(),
+              _OverlapActionButton(
+                icon: Icons.notes_rounded,
+                label: '문장 보기',
+                onTap: _openSentenceDetail,
+              ),
+            ],
           ),
         ],
-      ],
+      ),
+    );
+  }
+}
+
+class _OverlapAvatar extends StatelessWidget {
+  final OverlapThought thought;
+
+  const _OverlapAvatar({required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = thought.avatarUrl;
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF101812),
+        border: Border.all(color: _recapBlue.withValues(alpha: 0.18)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: avatar != null && avatar.isNotEmpty
+          ? Image.network(avatar, fit: BoxFit.cover)
+          : Center(
+              child: Text(
+                thought.displayNameOrUsername.characters.first,
+                style: _labelStyle(fontSize: 14).copyWith(color: _recapBlue),
+              ),
+            ),
+    );
+  }
+}
+
+class _OverlapActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _OverlapActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppTheme.primaryLight : _recapBlueMuted;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: _labelStyle(fontSize: 11).copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

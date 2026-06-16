@@ -8,11 +8,15 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../features/feed/screen/sentence_detail_screen.dart';
+import '../../../features/library/controller/book_detail_social_provider.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/sheet_handle.dart';
@@ -408,8 +412,8 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             ),
           ),
 
-          // ── 수집한 문장 리스트 ──────────────────────────────────────
-          SliverToBoxAdapter(child: const _SectionHeader(title: '수집한 문장')),
+          // ── 내 수집 문장 리스트 ─────────────────────────────────────
+          SliverToBoxAdapter(child: const _SectionHeader(title: '내가 수집한 문장')),
           if (sentences.isEmpty)
             SliverToBoxAdapter(
               child: isLoadingSentences
@@ -430,6 +434,16 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
                 childCount: sentences.length,
               ),
             ),
+
+          _FollowingHighlightsSection(book: book),
+
+          _PopularThoughtsSection(book: book),
+
+          _ThoughtExplorerSection(book: book),
+
+          _ReviewsSummarySection(book: book),
+
+          SliverToBoxAdapter(child: _BookInfoSection(book: book)),
 
           SliverToBoxAdapter(
             child: SizedBox(
@@ -1015,6 +1029,944 @@ class _StatBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+BookDetailSocialQuery _socialQueryFor(Book book) =>
+    (title: book.title, author: book.author, isbn: book.isbn);
+
+class _PopularThoughtsSection extends ConsumerWidget {
+  final Book book;
+
+  const _PopularThoughtsSection({required this.book});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(bookDetailSocialProvider(_socialQueryFor(book)));
+    return async.when(
+      loading: () => SliverToBoxAdapter(
+        child: _SocialSectionShell(
+          title: '지금 많이 멈춘 생각',
+          child: const _SocialSkeletonRow(),
+        ),
+      ),
+      error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      data: (data) {
+        final thoughts = data.popularThoughts;
+        if (thoughts.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: _SocialSectionShell(
+            title: '지금 많이 멈춘 생각',
+            trailing: data.meta.readerCount > 0
+                ? '${data.meta.readerCount}명'
+                : null,
+            child: SizedBox(
+              height: 218,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: thoughts.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  return _BookThoughtCard(
+                    book: book,
+                    thought: thoughts[index],
+                    prominent: index == 0,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BookInfoSection extends StatefulWidget {
+  final Book book;
+
+  const _BookInfoSection({required this.book});
+
+  @override
+  State<_BookInfoSection> createState() => _BookInfoSectionState();
+}
+
+class _BookInfoSectionState extends State<_BookInfoSection> {
+  bool _authorExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final book = widget.book;
+    final description = _bookDescription(book);
+    final authorIntro = _authorIntro(book.author);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionHeader(title: '책 소개'),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  description,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: _detailText.withValues(alpha: 0.78),
+                    height: 1.65,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: [
+                    _BookInfoChip(label: book.author),
+                    if (book.genre != null) _BookInfoChip(label: book.genre!),
+                    if (book.totalPages > 0)
+                      _BookInfoChip(label: '${book.totalPages}쪽'),
+                    if (book.isbn?.isNotEmpty == true)
+                      const _BookInfoChip(label: 'ISBN'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '작가',
+                  style: AppTheme.captionSmall.copyWith(color: _detailAccent),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  authorIntro,
+                  maxLines: _authorExpanded ? null : 2,
+                  overflow: _authorExpanded ? null : TextOverflow.ellipsis,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: _detailText.withValues(alpha: 0.68),
+                    height: 1.55,
+                  ),
+                ),
+                if (authorIntro.length > 70)
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _authorExpanded = !_authorExpanded),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        _authorExpanded ? '접기' : '작가 더보기',
+                        style: AppTheme.captionSmall.copyWith(
+                          color: _detailAccent,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _bookDescription(Book book) {
+    if (book.title.contains('채식주의자')) {
+      return '일상의 질서 안에서 설명되지 않는 감각이 어떻게 한 사람의 삶을 바꾸는지 따라가는 소설. 초록에서는 이 책을 문장에 멈추는 경험과 다른 독자의 해석을 함께 보는 방식으로 읽는다.';
+    }
+    return '이 책의 소개와 독자들이 멈춘 문장을 함께 볼 수 있어요. 책 자체의 정보와 문장에 남긴 생각을 한 흐름에서 확인합니다.';
+  }
+
+  String _authorIntro(String author) {
+    if (author.contains('한강')) {
+      return '한강은 인간의 고통, 침묵, 회복의 가능성을 섬세한 문장으로 탐구해 온 작가입니다. 독자들은 작품의 사건보다 문장 안에 남은 감각에 오래 머무는 경우가 많습니다.';
+    }
+    return '$author 작가의 책을 읽은 독자들이 어떤 문장에 멈췄는지 함께 확인해보세요.';
+  }
+}
+
+class _FollowingHighlightsSection extends ConsumerWidget {
+  final Book book;
+
+  const _FollowingHighlightsSection({required this.book});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(bookDetailSocialProvider(_socialQueryFor(book)));
+    return async.maybeWhen(
+      data: (data) {
+        final thoughts = data.followingThoughts;
+        if (thoughts.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: _SocialSectionShell(
+            title: '이웃의 문장',
+            trailing: '${thoughts.length}명',
+            child: SizedBox(
+              height: 190,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: thoughts.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) =>
+                    _BookThoughtCard(book: book, thought: thoughts[index]),
+              ),
+            ),
+          ),
+        );
+      },
+      orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+    );
+  }
+}
+
+enum _ThoughtSortMode { popular, recent, following }
+
+class _ThoughtExplorerSection extends ConsumerStatefulWidget {
+  final Book book;
+
+  const _ThoughtExplorerSection({required this.book});
+
+  @override
+  ConsumerState<_ThoughtExplorerSection> createState() =>
+      _ThoughtExplorerSectionState();
+}
+
+class _ThoughtExplorerSectionState
+    extends ConsumerState<_ThoughtExplorerSection> {
+  _ThoughtSortMode _mode = _ThoughtSortMode.popular;
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(
+      bookDetailSocialProvider(_socialQueryFor(widget.book)),
+    );
+    return async.maybeWhen(
+      data: (data) {
+        final thoughts = switch (_mode) {
+          _ThoughtSortMode.popular => data.popularThoughts,
+          _ThoughtSortMode.recent => data.recentSentenceThoughts,
+          _ThoughtSortMode.following => data.followingThoughts,
+        };
+        if (data.recentSentenceThoughts.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(title: '문장과 생각'),
+                _ThoughtSegmentedControl(
+                  value: _mode,
+                  onChanged: (value) => setState(() => _mode = value),
+                ),
+                const SizedBox(height: 12),
+                if (thoughts.isEmpty)
+                  _SocialEmptyState(
+                    text: _mode == _ThoughtSortMode.following
+                        ? '팔로잉한 독자의 문장이 아직 없어요'
+                        : '아직 공개된 생각이 없어요',
+                  )
+                else
+                  ...thoughts
+                      .take(8)
+                      .map(
+                        (thought) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _BookThoughtListCard(
+                            book: widget.book,
+                            thought: thought,
+                          ),
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        );
+      },
+      orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+    );
+  }
+}
+
+class _ReviewsSummarySection extends ConsumerWidget {
+  final Book book;
+
+  const _ReviewsSummarySection({required this.book});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(bookDetailSocialProvider(_socialQueryFor(book)));
+    return async.maybeWhen(
+      data: (data) {
+        if (data.reviews.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(title: '이 책에 남긴 말'),
+                ...data.reviews
+                    .take(3)
+                    .map(
+                      (review) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ReviewSummaryCard(review: review),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        );
+      },
+      orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+    );
+  }
+}
+
+class _SocialSectionShell extends StatelessWidget {
+  final String title;
+  final String? trailing;
+  final Widget child;
+
+  const _SocialSectionShell({
+    required this.title,
+    this.trailing,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  title,
+                  style: AppTheme.bodySmall.copyWith(color: _detailAccent),
+                ),
+                const Spacer(),
+                if (trailing != null)
+                  Text(
+                    trailing!,
+                    style: AppTheme.captionSmall.copyWith(color: _detailMuted),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SocialSkeletonRow extends StatelessWidget {
+  const _SocialSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 190,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: 2,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (_, _) => Container(
+          width: 260,
+          decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+        ),
+      ),
+    );
+  }
+}
+
+class _BookThoughtCard extends ConsumerStatefulWidget {
+  final Book book;
+  final BookSocialThought thought;
+  final bool prominent;
+
+  const _BookThoughtCard({
+    required this.book,
+    required this.thought,
+    this.prominent = false,
+  });
+
+  @override
+  ConsumerState<_BookThoughtCard> createState() => _BookThoughtCardState();
+}
+
+class _BookThoughtCardState extends ConsumerState<_BookThoughtCard> {
+  bool? _followingOverride;
+  bool _isMutating = false;
+
+  bool get _isFollowing => _followingOverride ?? widget.thought.isFollowing;
+
+  Future<void> _toggleFollow() async {
+    final userId = widget.thought.userId;
+    if (userId == null || userId.isEmpty || _isMutating) return;
+    HapticFeedback.selectionClick();
+    final next = !_isFollowing;
+    setState(() {
+      _followingOverride = next;
+      _isMutating = true;
+    });
+    try {
+      final repo = ref.read(followRepositoryProvider);
+      if (next) {
+        await repo.follow(userId);
+      } else {
+        await repo.unfollow(userId);
+      }
+    } catch (_) {
+      if (mounted) _followingOverride = !next;
+    } finally {
+      if (mounted) setState(() => _isMutating = false);
+    }
+  }
+
+  void _openProfile() {
+    final userId = widget.thought.userId;
+    if (userId == null || userId.isEmpty) return;
+    HapticFeedback.selectionClick();
+    context.push(
+      AppConstants.routeUserProfile,
+      extra: UserProfile(
+        id: userId,
+        username: widget.thought.username ?? widget.thought.displayName,
+        displayName: widget.thought.displayName,
+        avatarUrl: widget.thought.avatarUrl,
+      ),
+    );
+  }
+
+  void _openSentence() {
+    HapticFeedback.selectionClick();
+    context.push(
+      AppConstants.routeSentenceDetail,
+      extra: SentenceDetailExtra(
+        sentenceContent: widget.thought.sentence,
+        bookTitle: widget.book.title,
+        bookAuthor: widget.book.author,
+        page: widget.thought.pageNumber,
+        collectorUsername: widget.thought.displayName,
+        collectorThought: widget.thought.thought,
+        sentenceId: widget.thought.sentenceId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final thought = widget.thought;
+    return Container(
+      width: widget.prominent ? 286 : 258,
+      padding: const EdgeInsets.all(14),
+      decoration: AppTheme.smoothBox(
+        color: widget.prominent
+            ? _detailAccent.withValues(alpha: 0.10)
+            : _detailCard,
+        radius: 10,
+        side: BorderSide(
+          color: widget.prominent
+              ? _detailAccent.withValues(alpha: 0.70)
+              : _detailMuted.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _openProfile,
+                child: _ThoughtAvatar(thought: thought),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _openProfile,
+                  child: Text(
+                    thought.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: _detailText,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _FollowMiniButton(
+                isFollowing: _isFollowing,
+                isBusy: _isMutating,
+                onTap: _toggleFollow,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: _openSentence,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    thought.thought,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: _detailText.withValues(alpha: 0.88),
+                      height: 1.55,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(9),
+                    decoration: AppTheme.smoothBox(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      radius: 8,
+                      side: BorderSide.none,
+                    ),
+                    child: Text(
+                      '“${thought.sentence}”',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: _detailMuted,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _ThoughtMetaRow(thought: thought),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookThoughtListCard extends StatelessWidget {
+  final Book book;
+  final BookSocialThought thought;
+
+  const _BookThoughtListCard({required this.book, required this.thought});
+
+  void _openSentence(BuildContext context) {
+    HapticFeedback.selectionClick();
+    context.push(
+      AppConstants.routeSentenceDetail,
+      extra: SentenceDetailExtra(
+        sentenceContent: thought.sentence,
+        bookTitle: book.title,
+        bookAuthor: book.author,
+        page: thought.pageNumber,
+        collectorUsername: thought.displayName,
+        collectorThought: thought.thought,
+        sentenceId: thought.sentenceId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _openSentence(context),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: AppTheme.smoothBox(
+          color: _detailCard,
+          radius: 10,
+          side: BorderSide(
+            color: thought.isFollowing
+                ? _detailAccent.withValues(alpha: 0.42)
+                : _detailMuted.withValues(alpha: 0.20),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _ThoughtAvatar(thought: thought),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    thought.displayName,
+                    style: AppTheme.captionLarge.copyWith(color: _detailText),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (thought.isFollowing) const _FollowingPill(),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              thought.thought,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionLarge.copyWith(
+                color: _detailText.withValues(alpha: 0.82),
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '“${thought.sentence}”',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionSmall.copyWith(
+                color: _detailMuted,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _ThoughtMetaRow(thought: thought),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThoughtAvatar extends StatelessWidget {
+  final BookSocialThought thought;
+
+  const _ThoughtAvatar({required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: AppTheme.smoothBox(
+        color: thought.isFollowing
+            ? _detailAccent.withValues(alpha: 0.18)
+            : Colors.white.withValues(alpha: 0.06),
+        radius: 9,
+        side: BorderSide.none,
+      ),
+      child: Text(
+        thought.displayName.characters.first,
+        style: TextStyle(
+          fontSize: 13,
+          color: thought.isFollowing ? _detailAccent : _detailMuted,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowMiniButton extends StatelessWidget {
+  final bool isFollowing;
+  final bool isBusy;
+  final VoidCallback onTap;
+
+  const _FollowMiniButton({
+    required this.isFollowing,
+    required this.isBusy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isBusy ? null : onTap,
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        decoration: AppTheme.smoothBox(
+          color: isFollowing
+              ? _detailAccent.withValues(alpha: 0.14)
+              : AppTheme.primaryLight,
+          radius: 9,
+          side: isFollowing
+              ? BorderSide(color: _detailAccent.withValues(alpha: 0.48))
+              : BorderSide.none,
+        ),
+        child: Text(
+          isFollowing ? '팔로잉' : '팔로우',
+          style: AppTheme.captionSmall.copyWith(
+            color: isFollowing ? _detailAccent : Colors.black,
+            height: 1.1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowingPill extends StatelessWidget {
+  const _FollowingPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: AppTheme.smoothBox(
+        color: _detailAccent.withValues(alpha: 0.14),
+        radius: 8,
+        side: BorderSide.none,
+      ),
+      child: Text(
+        '팔로잉',
+        style: AppTheme.captionSmall.copyWith(
+          color: _detailAccent,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
+class _ThoughtMetaRow extends StatelessWidget {
+  final BookSocialThought thought;
+
+  const _ThoughtMetaRow({required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          Icons.favorite_rounded,
+          size: 13,
+          color: _detailAccent.withValues(alpha: 0.86),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${thought.likeCount}',
+          style: AppTheme.captionSmall.copyWith(color: _detailMuted),
+        ),
+        const SizedBox(width: 10),
+        Icon(
+          Icons.chat_bubble_rounded,
+          size: 12,
+          color: _detailMuted.withValues(alpha: 0.72),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${thought.commentCount}',
+          style: AppTheme.captionSmall.copyWith(color: _detailMuted),
+        ),
+        const Spacer(),
+        Text(
+          _relativeDate(thought.createdAt),
+          style: AppTheme.captionSmall.copyWith(color: _detailMuted),
+        ),
+      ],
+    );
+  }
+}
+
+class _BookInfoChip extends StatelessWidget {
+  final String label;
+
+  const _BookInfoChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: AppTheme.smoothBox(
+        color: Colors.white.withValues(alpha: 0.05),
+        radius: 8,
+        side: BorderSide(color: _detailMuted.withValues(alpha: 0.18)),
+      ),
+      child: Text(
+        label,
+        style: AppTheme.captionSmall.copyWith(color: _detailMuted, height: 1.1),
+      ),
+    );
+  }
+}
+
+class _ThoughtSegmentedControl extends StatelessWidget {
+  final _ThoughtSortMode value;
+  final ValueChanged<_ThoughtSortMode> onChanged;
+
+  const _ThoughtSegmentedControl({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+      child: Row(
+        children: [
+          _SegmentButton(
+            label: '인기',
+            selected: value == _ThoughtSortMode.popular,
+            onTap: () => onChanged(_ThoughtSortMode.popular),
+          ),
+          _SegmentButton(
+            label: '최신',
+            selected: value == _ThoughtSortMode.recent,
+            onTap: () => onChanged(_ThoughtSortMode.recent),
+          ),
+          _SegmentButton(
+            label: '팔로잉',
+            selected: value == _ThoughtSortMode.following,
+            onTap: () => onChanged(_ThoughtSortMode.following),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SegmentButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SegmentButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: selected
+              ? AppTheme.smoothBox(
+                  color: _detailAccent.withValues(alpha: 0.18),
+                  radius: 8,
+                  side: BorderSide.none,
+                )
+              : null,
+          child: Text(
+            label,
+            style: AppTheme.captionSmall.copyWith(
+              color: selected ? _detailAccent : _detailMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialEmptyState extends StatelessWidget {
+  final String text;
+
+  const _SocialEmptyState({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 22),
+      alignment: Alignment.center,
+      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+      child: Text(
+        text,
+        style: AppTheme.captionLarge.copyWith(color: _detailMuted),
+      ),
+    );
+  }
+}
+
+class _ReviewSummaryCard extends StatelessWidget {
+  final BookReviewSummary review;
+
+  const _ReviewSummaryCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  review.displayName,
+                  style: AppTheme.captionLarge.copyWith(color: _detailText),
+                ),
+              ),
+              if (review.isFollowing) const _FollowingPill(),
+              const SizedBox(width: 8),
+              Text(
+                '★ ${review.starRating}',
+                style: AppTheme.captionSmall.copyWith(color: _detailAccent),
+              ),
+            ],
+          ),
+          if (review.memorableLine?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 10),
+            Text(
+              '“${review.memorableLine!.trim()}”',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionLarge.copyWith(
+                color: _detailText.withValues(alpha: 0.80),
+                height: 1.5,
+              ),
+            ),
+          ],
+          if (review.legacy?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Text(
+              review.legacy!.trim(),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionSmall.copyWith(
+                color: _detailMuted,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _relativeDate(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inDays >= 365) return '${diff.inDays ~/ 365}년 전';
+  if (diff.inDays >= 30) return '${diff.inDays ~/ 30}달 전';
+  if (diff.inDays >= 1) return '${diff.inDays}일 전';
+  if (diff.inHours >= 1) return '${diff.inHours}시간 전';
+  return '방금';
 }
 
 // ─── 공통 서브 위젯 ───────────────────────────────────────────────────────
