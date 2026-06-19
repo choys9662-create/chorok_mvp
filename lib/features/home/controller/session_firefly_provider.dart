@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/repositories/reading_presence_repository.dart';
-
-const _kUseMock = bool.fromEnvironment('USE_MOCK');
 
 // 목업 맞팔 프로필 목록 (USE_MOCK=true 시 사용)
 const _kMockMutuals = [
@@ -26,7 +25,7 @@ final sessionFireflyProvider =
     >((ref) async {
       ref.watch(followMutationVersionProvider);
 
-      if (_kUseMock) {
+      if (kUseMock) {
         final mutuals = _kMockMutuals
             .map(
               (m) => UserProfile(

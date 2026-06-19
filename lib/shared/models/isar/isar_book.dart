@@ -16,6 +16,7 @@ class IsarBook {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? genre;
+  final String? description;
 
   const IsarBook({
     this.isarId,
@@ -31,6 +32,7 @@ class IsarBook {
     required this.createdAt,
     required this.updatedAt,
     this.genre,
+    this.description,
   });
 
   IsarBook copyWith({
@@ -41,6 +43,7 @@ class IsarBook {
     DateTime? completedAt,
     DateTime? updatedAt,
     String? genre,
+    String? description,
   }) {
     return IsarBook(
       isarId: isarId ?? this.isarId,
@@ -56,6 +59,7 @@ class IsarBook {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       genre: genre ?? this.genre,
+      description: description ?? this.description,
     );
   }
 
@@ -72,6 +76,7 @@ class IsarBook {
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     'genre': genre,
+    'description': description,
   };
 
   factory IsarBook.fromMap(Map<String, dynamic> m) => IsarBook(
@@ -93,6 +98,7 @@ class IsarBook {
     createdAt: DateTime.parse(m['created_at'] as String),
     updatedAt: DateTime.parse(m['updated_at'] as String),
     genre: m['genre'] as String?,
+    description: m['description'] as String?,
   );
 }
 

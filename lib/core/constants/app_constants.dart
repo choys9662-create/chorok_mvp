@@ -5,6 +5,7 @@ class AppConstants {
   static const String routeExplore = '/explore';
   static const String routeAnalytics = '/analytics';
   static const String routeTasteAnalysis = '/taste-analysis';
+  static const String routeReadingHistory = '/reading-history';
   static const String routeFeed = '/feed';
   static const String routeLibrary = '/library';
   static const String routeSession = '/session';

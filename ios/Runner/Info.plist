@@ -10,6 +10,10 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>읽은 문장을 음성으로 기록하기 위해 마이크를 사용합니다.</string>
 
+	<!-- 사진 보관함 권한 (프로필 사진 + OCR 이미지 선택) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진을 선택하고 책 페이지 이미지를 불러오기 위해 사진 보관함을 사용합니다.</string>
+
 	<!-- 음성 인식 권한 (STT) -->
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>음성을 텍스트로 변환하여 문장을 빠르게 기록하기 위해 음성 인식 기능을 사용합니다.</string>

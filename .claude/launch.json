@@ -4,19 +4,19 @@
     {
       "name": "디자인 앱 - iOS 시뮬레이터 (목업)",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0 --dart-define=USE_MOCK=true"],
+      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0 --dart-define=APP_MODE=design --dart-define=USE_MOCK=true"],
       "port": 8080
     },
     {
       "name": "테스트 앱 - iPhone 실기기 (실데이터)",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d 00008120-0011549E3640C01E"],
+      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d 00008120-0011549E3640C01E --dart-define=APP_MODE=test --dart-define=USE_MOCK=false"],
       "port": 8080
     },
     {
       "name": "테스트 앱 - Web/LAN (실데이터)",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"],
+      "runtimeArgs": ["-c", "cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0 --dart-define=APP_MODE=test --dart-define=USE_MOCK=false"],
       "port": 8080
     }
   ]

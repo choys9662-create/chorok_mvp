@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
-import '../widget/library_stats_view.dart';
+import '../../../shared/models/reading_session.dart';
+import '../../../shared/providers/library_provider.dart';
+import '../../../shared/providers/user_library_providers.dart';
+import '../widget/library_calendar_view.dart';
+import 'library_screen.dart' show readingLogsProvider;
 
-class TasteAnalysisScreen extends StatelessWidget {
+class ReadingHistoryScreen extends ConsumerWidget {
   final String? userId;
 
-  const TasteAnalysisScreen({super.key, this.userId});
+  const ReadingHistoryScreen({super.key, this.userId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isOwner = userId == null;
+    final List<Book> books;
+    final List<ReadingLog> logs;
+
+    if (isOwner) {
+      books = ref.watch(libraryProvider);
+      logs = kUseMock
+          ? mockReadingLogs
+          : ref.watch(readingLogsProvider).valueOrNull ?? const <ReadingLog>[];
+    } else {
+      books =
+          ref.watch(userBooksProvider(userId!)).valueOrNull ?? const <Book>[];
+      logs =
+          ref.watch(userReadingLogsProvider(userId!)).valueOrNull ??
+          const <ReadingLog>[];
+    }
+
     return Scaffold(
       backgroundColor: context.appBg,
       body: SafeArea(
@@ -23,7 +46,7 @@ class TasteAnalysisScreen extends StatelessWidget {
                 AppTheme.screenPadding,
                 18,
                 AppTheme.screenPadding,
-                24,
+                16,
               ),
               child: Row(
                 children: [
@@ -53,7 +76,7 @@ class TasteAnalysisScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 18),
                   Text(
-                    '독서 분석',
+                    '독서 기록',
                     style: AppTheme.headingLarge.copyWith(
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w400,
@@ -63,7 +86,13 @@ class TasteAnalysisScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(child: LibraryStatsView(userId: userId, fullScreen: true)),
+            Expanded(
+              child: LibraryCalendarView(
+                logs: logs,
+                books: books,
+                scrollController: null,
+              ),
+            ),
           ],
         ),
       ),

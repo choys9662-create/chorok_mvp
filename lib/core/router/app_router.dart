@@ -25,6 +25,7 @@ import '../../features/home/screen/reading_session_screen.dart';
 import '../../features/home/screen/session_recap_screen.dart';
 import '../../features/library/book_reflection_screen.dart';
 import '../../features/library/screen/library_screen.dart';
+import '../../features/library/screen/reading_history_screen.dart';
 import '../../features/library/screen/taste_analysis_screen.dart';
 import '../../features/search/barcode_scanner_screen.dart';
 import '../../features/library/choseo_list_screen.dart';
@@ -38,6 +39,7 @@ import '../../shared/models/reading_session.dart';
 import '../../shared/providers/library_provider.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import '../constants/app_constants.dart';
+import '../constants/app_flags.dart';
 
 /// Supabase auth 상태 변경을 GoRouter가 감지하도록 래핑.
 /// 로그인/로그아웃 직후 router가 redirect를 재평가하게 만든다.
@@ -71,8 +73,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // ── 인증 가드 ────────────────────────────────────────────────
     redirect: (context, state) {
       // 목업 모드(USE_MOCK=true): 인증 우회, 항상 홈으로
-      const useMock = bool.fromEnvironment('USE_MOCK', defaultValue: false);
-      if (useMock) {
+      if (kUseMock) {
         final loc = state.matchedLocation;
         if (loc == AppConstants.routeAuth ||
             loc == AppConstants.routeOnboarding) {
@@ -132,6 +133,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final userId = state.extra as String?;
           return TasteAnalysisScreen(userId: userId);
+        },
+      ),
+
+      // 독서 기록 — 서재 쉘 밖에서 전체 화면으로 표시
+      GoRoute(
+        path: AppConstants.routeReadingHistory,
+        builder: (context, state) {
+          final userId = state.extra as String?;
+          return ReadingHistoryScreen(userId: userId);
         },
       ),
 

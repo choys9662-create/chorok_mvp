@@ -127,6 +127,24 @@ void main() {
     expect(find.text('영혜는 왜 채식을 결심했을까요?'), findsNothing);
   });
 
+  testWidgets('세션 시작 질문 박스가 텍스트와 내부 여백만큼만 차지한다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+
+    final buttonSize = tester.getSize(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    final textSize = tester.getSize(find.text('이 책은 어떤 질문을 남길까요?'));
+
+    expect(buttonSize.width, closeTo(textSize.width + 32.2, 0.1));
+    expect(buttonSize.width, lessThan(402 - 80));
+  });
+
   testWidgets('세션 시작 시 선택한 책 메타를 타이머에 저장한다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
@@ -179,6 +197,36 @@ void main() {
     await tester.tap(sentenceFinder);
     await tester.pump(const Duration(milliseconds: 300));
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('종료 페이지 슬라이더를 끝까지 밀어도 페이지 박스가 overflow 하지 않는다', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+
+    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    await tester.tapAt(const Offset(196, 426));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    await tester.longPress(
+      find.byKey(const ValueKey('reading-session-lock-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final slider = find.byType(Slider);
+    expect(slider, findsOneWidget);
+
+    await tester.drag(slider, const Offset(500, 0));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('751'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

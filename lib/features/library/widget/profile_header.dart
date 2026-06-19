@@ -1,3 +1,5 @@
+import 'package:image/image.dart' as image_lib;
+import 'package:image_picker/image_picker.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +38,9 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
 
   String _name = '';
   String _bio = kUseMock ? '책 속에서 길을 찾는 중' : '';
+  String? _avatarUrl;
+  Uint8List? _avatarBytes;
+  bool _isUploadingAvatar = false;
   int _followers = kUseMock ? 128 : 0;
   int _following = kUseMock ? 64 : 0;
   List<UserProfile> _followerProfiles = kUseMock
@@ -95,6 +100,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
         if (profile != null) {
           if (profile.displayName.isNotEmpty) _name = profile.displayName;
           _bio = profile.bio ?? '';
+          _avatarUrl = profile.avatarUrl;
         }
         _followers = followers.length;
         _following = following.length;
@@ -113,6 +119,11 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
     });
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ImageProvider<Object>? avatarImage = _avatarBytes != null
+        ? MemoryImage(_avatarBytes!)
+        : (_avatarUrl != null && _avatarUrl!.isNotEmpty
+              ? NetworkImage(_avatarUrl!)
+              : null);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -142,11 +153,14 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
                       backgroundColor: isDark
                           ? AppTheme.primary.withValues(alpha: 0.4)
                           : context.primaryBg(0.14),
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 32,
-                        color: context.appPrimaryAccent,
-                      ),
+                      backgroundImage: avatarImage,
+                      child: avatarImage == null
+                          ? Icon(
+                              Icons.person_rounded,
+                              size: 32,
+                              color: context.appPrimaryAccent,
+                            )
+                          : null,
                     ),
                     Positioned(
                       right: 0,
@@ -159,11 +173,20 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
                               : context.appPrimaryAccent,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          size: 10,
-                          color: Colors.white,
-                        ),
+                        child: _isUploadingAvatar
+                            ? const SizedBox(
+                                width: 10,
+                                height: 10,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.add_rounded,
+                                size: 10,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ],
@@ -312,15 +335,55 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
     );
   }
 
-  void _onPickPhoto() {
+  Future<void> _onPickPhoto() async {
+    if (_isUploadingAvatar) return;
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('프로필 사진 변경 기능은 출시 예정이에요'),
-        backgroundColor: AppTheme.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+
+      final sourceBytes = await picked.readAsBytes();
+      final decoded = image_lib.decodeImage(sourceBytes);
+      if (decoded == null) throw const FormatException('invalid image');
+      final avatar = image_lib.copyResizeCropSquare(
+        image_lib.bakeOrientation(decoded),
+        size: 512,
+        interpolation: image_lib.Interpolation.cubic,
+      );
+      final bytes = image_lib.encodeJpg(avatar, quality: 88);
+      if (!mounted) return;
+
+      setState(() {
+        _avatarBytes = bytes;
+        _isUploadingAvatar = true;
+      });
+
+      if (!kUseMock) {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) throw StateError('unauthenticated');
+        final avatarUrl = await ProfileRepository(
+          Supabase.instance.client,
+        ).uploadAvatar(userId, bytes);
+        if (!mounted) return;
+        setState(() => _avatarUrl = avatarUrl);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _avatarBytes = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('프로필 사진을 변경하지 못했어요. 다시 시도해주세요.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
   }
 
   void _showEditProfileSheet(BuildContext context) {
@@ -359,9 +422,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
         title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
         profiles: list,
         showFollowButton: kUseMock && !isFollower,
-        emptyMessage: isFollower
-            ? '아직 팔로워가 없어요'
-            : '아직 팔로우한 독자가 없어요',
+        emptyMessage: isFollower ? '아직 팔로워가 없어요' : '아직 팔로우한 독자가 없어요',
       ),
     );
   }
@@ -648,97 +709,99 @@ class _FollowListSheetState extends State<_FollowListSheet> {
           child: widget.profiles.isEmpty
               ? _FollowEmptyState(message: widget.emptyMessage)
               : ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: widget.profiles.length,
-            itemBuilder: (context, i) {
-              final p = widget.profiles[i];
-              final initial = p.displayName.isNotEmpty
-                  ? p.displayName[0]
-                  : '?';
-              return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                // 빈 id(목업)는 실제 프로필이 없으므로 이동하지 않는다.
-                onTap: p.id.isEmpty
-                    ? null
-                    : () {
-                        HapticFeedback.selectionClick();
-                        final router = GoRouter.of(context);
-                        Navigator.pop(context);
-                        router.push(
-                          AppConstants.routeUserProfile,
-                          extra: p,
-                        );
-                      },
-                child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: isDark
-                        ? AppTheme.primary.withValues(alpha: 0.3)
-                        : context.primaryBg(0.12),
-                    child: Text(
-                      initial,
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      p.displayName,
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                  ),
-                  if (widget.showFollowButton)
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _followStates[i] = !_followStates[i]);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: widget.profiles.length,
+                  itemBuilder: (context, i) {
+                    final p = widget.profiles[i];
+                    final initial = p.displayName.isNotEmpty
+                        ? p.displayName[0]
+                        : '?';
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        // 빈 id(목업)는 실제 프로필이 없으므로 이동하지 않는다.
+                        onTap: p.id.isEmpty
+                            ? null
+                            : () {
+                                HapticFeedback.selectionClick();
+                                final router = GoRouter.of(context);
+                                Navigator.pop(context);
+                                router.push(
+                                  AppConstants.routeUserProfile,
+                                  extra: p,
+                                );
+                              },
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: isDark
+                                  ? AppTheme.primary.withValues(alpha: 0.3)
+                                  : context.primaryBg(0.12),
+                              child: Text(
+                                initial,
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: context.appPrimaryAccent,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                p.displayName,
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: context.appTextPrimary,
+                                ),
+                              ),
+                            ),
+                            if (widget.showFollowButton)
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(
+                                    () => _followStates[i] = !_followStates[i],
+                                  );
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOutCubic,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: ShapeDecoration(
+                                    color: _followStates[i]
+                                        ? context.appCardElevated
+                                        : isDark
+                                        ? AppTheme.primary
+                                        : context.appPrimaryAccent,
+                                    shape: SmoothRectangleBorder(
+                                      smoothness: 0.6,
+                                      borderRadius: _followButtonRadius,
+                                      side: BorderSide.none,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _followStates[i] ? '팔로잉' : '팔로우',
+                                    style: AppTheme.captionLarge.copyWith(
+                                      color: _followStates[i]
+                                          ? context.appTextTertiary
+                                          : isDark
+                                          ? context.appPrimaryAccent
+                                          : Colors.white,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        decoration: ShapeDecoration(
-                          color: _followStates[i]
-                              ? context.appCardElevated
-                              : isDark
-                              ? AppTheme.primary
-                              : context.appPrimaryAccent,
-                          shape: SmoothRectangleBorder(
-                            smoothness: 0.6,
-                            borderRadius: _followButtonRadius,
-                            side: BorderSide.none,
-                          ),
-                        ),
-                        child: Text(
-                          _followStates[i] ? '팔로잉' : '팔로우',
-                          style: AppTheme.captionLarge.copyWith(
-                            color: _followStates[i]
-                                ? context.appTextTertiary
-                                : isDark
-                                ? context.appPrimaryAccent
-                                : Colors.white,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-              );
-            },
-          ),
+                    );
+                  },
+                ),
         ),
       ],
     );

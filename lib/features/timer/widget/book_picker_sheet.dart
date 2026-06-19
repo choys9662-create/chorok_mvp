@@ -8,7 +8,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart'; // AppThemeExt on BuildContext
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
-import '../../../shared/providers/cover_color_provider.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
@@ -39,8 +38,9 @@ class BookPickerSheet extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 12),
             const ChorokSheetHandle(),
-            const SizedBox(height: 4),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
@@ -82,8 +82,7 @@ class _BookList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: books.length,
           separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) =>
-              _BookCard(book: books[index], highlighted: index == 0),
+          itemBuilder: (context, index) => _BookCard(book: books[index]),
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -120,19 +119,14 @@ class _BookList extends StatelessWidget {
   }
 }
 
-class _BookCard extends ConsumerWidget {
+class _BookCard extends StatelessWidget {
   final Book book;
-  final bool highlighted;
 
-  const _BookCard({required this.book, this.highlighted = false});
+  const _BookCard({required this.book});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final progress = book.readingProgress;
-
-    // 표지에서 추출한 강조색 — 추출 전/실패 시 브랜드 초록으로 폴백
-    final coverColor = ref.watch(coverColorProvider(book.coverUrl)).valueOrNull;
-    final accent = coverColor ?? context.appPrimaryAccent;
 
     return GestureDetector(
       onTap: () {
@@ -155,10 +149,7 @@ class _BookCard extends ConsumerWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: 10,
-          side: BorderSide(
-            color: accent.withValues(alpha: highlighted ? 0.85 : 0.55),
-            width: highlighted ? 1.4 : 1.2,
-          ),
+          side: BorderSide(color: context.appBorderSubtle),
         ),
         child: Row(
           children: [
@@ -207,16 +198,7 @@ class _BookCard extends ConsumerWidget {
                               height: 4,
                               width:
                                   constraints.maxWidth * progress.clamp(0, 1),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    accent.withValues(alpha: 0.75),
-                                    accent,
-                                  ],
-                                ),
-                              ),
+                              color: context.appPrimaryAccent,
                             ),
                           ],
                         ),

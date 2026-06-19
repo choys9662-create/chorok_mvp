@@ -21,7 +21,6 @@ import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/profile_header.dart';
 import '../widget/library_calendar_view.dart';
-import '../widget/library_stats_view.dart';
 import '../../../shared/widgets/book_cover.dart';
 
 import '../../../shared/models/user_profile.dart';
@@ -191,8 +190,6 @@ class LibraryScreen extends ConsumerStatefulWidget {
 }
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
-  int _viewIndex = 0; // 0: 서재, 1: 통계, 2: 캘린더
-
   bool get _isOwner => widget.viewedUser == null;
   String? get _uid => widget.viewedUser?.id;
 
@@ -277,21 +274,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
             if (isLocked)
               const _PrivateLibraryLock()
-            else if (_viewIndex == 0)
-              _buildOverviewTab(viewerData)
-            else ...[
-              _LibraryDetailHeader(
-                title: _viewIndex == 1 ? '취향분석' : '캘린더',
-                onBack: () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _viewIndex = 0);
-                },
-              ),
-              if (_viewIndex == 1)
-                LibraryStatsView(scrollController: null, userId: _uid)
-              else
-                _buildCalendarTab(),
-            ],
+            else
+              _buildOverviewTab(viewerData),
           ],
         ),
       ),
@@ -377,7 +361,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           },
           onOpenCalendar: () {
             HapticFeedback.selectionClick();
-            setState(() => _viewIndex = 2);
+            ctx.push(AppConstants.routeReadingHistory, extra: _uid);
           },
           onOpenQuotes: null,
         );
@@ -461,34 +445,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         builder: (_, controller) =>
             _SentenceSheet(sentences: sentences, scrollController: controller),
       ),
-    );
-  }
-
-  // ── 캘린더 탭 ─────────────────────────────────────────────────
-  Widget _buildCalendarTab() {
-    return Consumer(
-      builder: (ctx2, r, child) {
-        final List<Book> books;
-        final List<ReadingLog> logs;
-        if (_isOwner) {
-          logs = kUseMock
-              ? mockReadingLogs
-              : r.watch(readingLogsProvider).valueOrNull ??
-                    const <ReadingLog>[];
-          books = r.watch(libraryProvider);
-        } else {
-          logs =
-              r.watch(userReadingLogsProvider(_uid!)).valueOrNull ??
-              const <ReadingLog>[];
-          books =
-              r.watch(userBooksProvider(_uid!)).valueOrNull ?? const <Book>[];
-        }
-        return LibraryCalendarView(
-          logs: logs,
-          books: books,
-          scrollController: null,
-        );
-      },
     );
   }
 }
@@ -660,45 +616,6 @@ class _SentenceSheetItem extends StatelessWidget {
   }
 }
 
-class _LibraryDetailHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback onBack;
-
-  const _LibraryDetailHeader({required this.title, required this.onBack});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        8,
-        AppTheme.screenPadding,
-        12,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-            color: context.appTextSecondary,
-            style: IconButton.styleFrom(
-              backgroundColor: context.appCard,
-              padding: EdgeInsets.zero,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _WatchaLibraryOverview extends StatelessWidget {
   final List<Book> books;
   final List<ReadingLog> logs;
@@ -769,13 +686,13 @@ class _WatchaLibraryOverview extends StatelessWidget {
           onOpenSentences: onOpenSentences,
         ),
         _ShelfRailSection(books: books, isOwner: isOwner, onAddBook: onAddBook),
-        _TasteAnalysisPreview(
-          books: books,
+        _ReadingHabitPreview(
           logs: logs,
           analytics: analytics,
           onTap: onOpenStats,
         ),
-        _LikesSection(books: books, quotes: quotes, onOpenQuotes: onOpenQuotes),
+        _TasteAnalysisPreview(books: books, onTap: onOpenStats),
+        _LikesSection(quotes: quotes, onOpenQuotes: onOpenQuotes),
         _MonthCalendarPreview(logs: logs, onTap: onOpenCalendar),
         if (isOwner)
           Padding(
@@ -1121,8 +1038,8 @@ class _ShelfQuickSection extends StatelessWidget {
     final items = [
       (
         icon: Icons.auto_stories_outlined,
-        label: '독서 중',
-        meta: '이어갈 책',
+        label: '읽는 중',
+        meta: '지금 읽는 책',
         value: reading,
         onTap: () => onOpenStatus(ReadingStatus.reading),
       ),
@@ -1135,21 +1052,21 @@ class _ShelfQuickSection extends StatelessWidget {
       ),
       (
         icon: Icons.bookmark_border_rounded,
-        label: '읽고 싶음',
-        meta: '다음 후보',
+        label: '읽고 싶은 책',
+        meta: '나중에 읽을 책',
         value: want,
         onTap: () => onOpenStatus(ReadingStatus.wantToRead),
       ),
       (
         icon: Icons.notes_rounded,
-        label: '문장',
-        meta: '수집한 초서',
+        label: '저장한 문장',
+        meta: '책에서 남긴 문장',
         value: sentenceCount,
         onTap: onOpenSentences,
       ),
     ];
     return _SectionBand(
-      title: '서재 구조',
+      title: '내 책 현황',
       child: Column(
         children: [
           Row(
@@ -1289,7 +1206,7 @@ class _ShelfRailSection extends StatelessWidget {
     final railBooks = [...reading, ...completed, ...want].take(8).toList();
 
     return _SectionBand(
-      title: '최근 서가',
+      title: '책 모아보기',
       child: SizedBox(
         height: 176,
         child: railBooks.isEmpty
@@ -1529,14 +1446,12 @@ class _CompactIconButton extends StatelessWidget {
   }
 }
 
-class _TasteAnalysisPreview extends StatelessWidget {
-  final List<Book> books;
+class _ReadingHabitPreview extends StatelessWidget {
   final List<ReadingLog> logs;
   final AnalyticsState? analytics;
   final VoidCallback onTap;
 
-  const _TasteAnalysisPreview({
-    required this.books,
+  const _ReadingHabitPreview({
     required this.logs,
     required this.analytics,
     required this.onTap,
@@ -1544,17 +1459,35 @@ class _TasteAnalysisPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed = books.where((b) => b.status == ReadingStatus.completed);
-    final favoriteGenre = _topGenre(books);
-    final score = analytics?.monthFocusScore ?? 0;
-    final activeDays = analytics?.monthReadDays ?? _logDays(logs);
-    final label = favoriteGenre == null
-        ? '아직 취향을 읽는 중이에요.'
-        : '$favoriteGenre 쪽으로 자주 손이 가는 독자예요.';
-    final bars = _tasteBars(books, logs);
+    final now = DateTime.now();
+    final monthLogs = logs
+        .where(
+          (log) => log.date.year == now.year && log.date.month == now.month,
+        )
+        .toList();
+    final fallbackMinutes = monthLogs.fold<int>(
+      0,
+      (sum, log) => sum + log.minutes,
+    );
+    final totalMinutes = (analytics?.monthTotalSeconds ?? 0) > 0
+        ? analytics!.monthTotalSeconds ~/ 60
+        : fallbackMinutes;
+    final activeDays = (analytics?.monthReadDays ?? 0) > 0
+        ? analytics!.monthReadDays
+        : _logDays(monthLogs);
+    final averageMinutes = (analytics?.monthAvgSessionMinutes ?? 0) > 0
+        ? analytics!.monthAvgSessionMinutes
+        : (monthLogs.isEmpty ? 0 : totalMinutes ~/ monthLogs.length);
+    final pages = monthLogs.fold<int>(0, (sum, log) => sum + log.pages);
+    final summary = switch ((activeDays, averageMinutes)) {
+      (0, _) => '이번 달 독서 기록이 쌓이면 습관을 알려드려요.',
+      (>= 12, _) => '이번 달에는 여러 날에 걸쳐 꾸준히 읽고 있어요.',
+      (_, >= 40) => '한 번 읽기 시작하면 비교적 길게 집중하는 편이에요.',
+      _ => '짧게라도 자주 책을 펼치는 습관을 만들고 있어요.',
+    };
 
     return _SectionBand(
-      title: '취향분석',
+      title: '독서 습관',
       trailing: _ChevronButton(onTap: onTap),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -1562,57 +1495,57 @@ class _TasteAnalysisPreview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: AppTheme.smoothBox(
-                color: AppTheme.empathyColor.withValues(alpha: 0.12),
-                radius: 10,
-              ),
-              child: Text(
-                '#취향분포',
-                style: AppTheme.captionSmall.copyWith(
-                  color: AppTheme.empathyColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             Text(
-              label,
+              summary,
               style: AppTheme.bodyMedium.copyWith(
                 color: context.appTextPrimary,
-                height: 1.35,
+                height: 1.45,
               ),
             ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 86,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: bars.asMap().entries.map((entry) {
-                  final selected = entry.key == bars.length - 3;
-                  return Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        height: 18 + entry.value * 62,
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        decoration: AppTheme.smoothBox(
-                          color: selected
-                              ? AppTheme.empathyColor
-                              : AppTheme.empathyColor.withValues(alpha: 0.38),
-                          radius: 5,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _HabitMetric(
+                    icon: Icons.schedule_rounded,
+                    value: _formatReadingMinutes(totalMinutes),
+                    label: '이번 달 읽은 시간',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _HabitMetric(
+                    icon: Icons.calendar_today_outlined,
+                    value: '$activeDays일',
+                    label: '책을 읽은 날',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _HabitMetric(
+                    icon: Icons.timelapse_rounded,
+                    value: '$averageMinutes분',
+                    label: '한 번에 읽는 시간',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _HabitMetric(
+                    icon: Icons.menu_book_outlined,
+                    value: '$pages쪽',
+                    label: '이번 달 읽은 분량',
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             _AnalysisCta(
-              text: '모든 분석 보기',
-              meta: '${completed.length}권 완독 · $activeDays일 기록 · 집중 $score',
+              text: '독서 기록 자세히 보기',
+              meta: '${now.month}월 기준',
               onTap: onTap,
             ),
           ],
@@ -1622,48 +1555,188 @@ class _TasteAnalysisPreview extends StatelessWidget {
   }
 }
 
-class _LikesSection extends StatelessWidget {
-  final List<Book> books;
-  final List<({String content, String bookTitle, String bookAuthor})> quotes;
-  final VoidCallback? onOpenQuotes;
+class _HabitMetric extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
 
-  const _LikesSection({
-    required this.books,
-    required this.quotes,
-    required this.onOpenQuotes,
+  const _HabitMetric({
+    required this.icon,
+    required this.value,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    final authors = _topAuthors(books).take(3).toList();
-    final recentQuotes = quotes.take(4).toList();
-    return _SectionBand(
-      title: '좋아요',
+    return Container(
+      height: 88,
+      padding: const EdgeInsets.all(12),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 8,
+        side: BorderSide(color: context.appBorderSubtle),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _RowLink(title: '좋아한 작가', count: authors.length, onTap: null),
-          const SizedBox(height: 14),
-          if (authors.isEmpty)
-            Text(
-              '완독한 책이 쌓이면 자주 읽는 작가가 보여요.',
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appTextTertiary,
+          Icon(icon, size: 17, color: context.appPrimaryAccent),
+          const Spacer(),
+          Text(
+            value,
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextPrimary,
+              fontSize: 18,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TasteAnalysisPreview extends StatelessWidget {
+  final List<Book> books;
+  final VoidCallback onTap;
+
+  const _TasteAnalysisPreview({required this.books, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final genres = _genreCounts(books);
+    final total = genres.fold<int>(0, (sum, entry) => sum + entry.value);
+    final topGenres = genres.take(3).toList();
+
+    return _SectionBand(
+      title: '나의 독서 취향',
+      trailing: _ChevronButton(onTap: onTap),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (genres.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: AppTheme.smoothBox(
+                  color: context.appCard,
+                  radius: 8,
+                  side: BorderSide(color: context.appBorderSubtle),
+                ),
+                child: Text(
+                  '책에 장르 정보가 쌓이면 자주 읽는 분야를 보여드려요.',
+                  style: AppTheme.bodySmall.copyWith(
+                    color: context.appTextSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              )
+            else ...[
+              Text(
+                '${genres.first.key} 책을 가장 자주 읽고 있어요.',
+                style: AppTheme.bodyMedium.copyWith(
+                  color: context.appTextPrimary,
+                  height: 1.45,
+                ),
               ),
-            )
-          else
-            SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: authors.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 18),
-                itemBuilder: (_, index) =>
-                    _AuthorBubble(author: authors[index]),
+              const SizedBox(height: 16),
+              for (final entry in topGenres) ...[
+                _GenrePreferenceRow(
+                  genre: entry.key,
+                  count: entry.value,
+                  ratio: total == 0 ? 0 : entry.value / total,
+                ),
+                if (entry != topGenres.last) const SizedBox(height: 12),
+              ],
+            ],
+            const SizedBox(height: 12),
+            _AnalysisCta(
+              text: '독서 취향 자세히 보기',
+              meta: total == 0 ? '장르 정보 없음' : '$total권 기준',
+              onTap: onTap,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GenrePreferenceRow extends StatelessWidget {
+  final String genre;
+  final int count;
+  final double ratio;
+
+  const _GenrePreferenceRow({
+    required this.genre,
+    required this.count,
+    required this.ratio,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                genre,
+                style: AppTheme.bodySmall.copyWith(
+                  color: context.appTextPrimary,
+                ),
               ),
             ),
-          const SizedBox(height: 18),
-          _RowLink(title: '좋아한 문장', count: quotes.length, onTap: onOpenQuotes),
+            Text(
+              '$count권 · ${(ratio * 100).round()}%',
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 5,
+            backgroundColor: context.appProgressTrack,
+            valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LikesSection extends StatelessWidget {
+  final List<({String content, String bookTitle, String bookAuthor})> quotes;
+  final VoidCallback? onOpenQuotes;
+
+  const _LikesSection({required this.quotes, required this.onOpenQuotes});
+
+  @override
+  Widget build(BuildContext context) {
+    final recentQuotes = quotes.take(4).toList();
+    return _SectionBand(
+      title: '좋아한 문장',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _RowLink(title: '모아둔 문장', count: quotes.length, onTap: onOpenQuotes),
           const SizedBox(height: 12),
           if (recentQuotes.isEmpty)
             Text(
@@ -1714,7 +1787,7 @@ class _MonthCalendarPreview extends StatelessWidget {
     }
 
     return _SectionBand(
-      title: '${now.month}월 캘린더',
+      title: '${now.month}월 독서 기록',
       trailing: _ChevronButton(onTap: onTap),
       child: Column(
         children: [
@@ -1939,44 +2012,6 @@ class _RowLink extends StatelessWidget {
   }
 }
 
-class _AuthorBubble extends StatelessWidget {
-  final String author;
-
-  const _AuthorBubble({required this.author});
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = author.characters.isEmpty ? '?' : author.characters.first;
-    return SizedBox(
-      width: 72,
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: context.appCardElevated,
-            child: Text(
-              initial,
-              style: AppTheme.headingSmall.copyWith(
-                color: context.appTextSecondary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            author,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: AppTheme.captionLarge.copyWith(
-              color: context.appTextPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _QuoteMiniCard extends StatelessWidget {
   final ({String content, String bookTitle, String bookAuthor}) item;
 
@@ -2019,27 +2054,19 @@ class _QuoteMiniCard extends StatelessWidget {
   }
 }
 
-String? _topGenre(List<Book> books) {
+List<MapEntry<String, int>> _genreCounts(List<Book> books) {
   final counts = <String, int>{};
   for (final book in books) {
     final genre = book.genre?.trim();
     if (genre == null || genre.isEmpty) continue;
     counts[genre] = (counts[genre] ?? 0) + 1;
   }
-  if (counts.isEmpty) return null;
-  return counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-}
-
-List<String> _topAuthors(List<Book> books) {
-  final counts = <String, int>{};
-  for (final book in books) {
-    final author = book.author.trim();
-    if (author.isEmpty) continue;
-    counts[author] = (counts[author] ?? 0) + 1;
-  }
   final entries = counts.entries.toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
-  return entries.map((e) => e.key).toList();
+    ..sort((a, b) {
+      final byCount = b.value.compareTo(a.value);
+      return byCount != 0 ? byCount : a.key.compareTo(b.key);
+    });
+  return entries;
 }
 
 int _logDays(List<ReadingLog> logs) {
@@ -2049,13 +2076,11 @@ int _logDays(List<ReadingLog> logs) {
       .length;
 }
 
-List<double> _tasteBars(List<Book> books, List<ReadingLog> logs) {
-  final seed = books.length + logs.length;
-  if (seed == 0) return const [0.22, 0.32, 0.42, 0.48, 0.62, 0.92, 0.76, 0.36];
-  return List.generate(8, (i) {
-    final v = ((seed * (i + 3)) % 9 + 2) / 11;
-    return v.clamp(0.18, 0.96);
-  });
+String _formatReadingMinutes(int minutes) {
+  if (minutes < 60) return '$minutes분';
+  final hours = minutes ~/ 60;
+  final remainder = minutes % 60;
+  return remainder == 0 ? '$hours시간' : '$hours시간 $remainder분';
 }
 
 // ════════════════════════════════════════════════════════════════════════════

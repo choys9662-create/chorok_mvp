@@ -34,7 +34,10 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web (USE_MOCK=true)
-        run: flutter build web --release --dart-define=USE_MOCK=true
+        run: >
+          flutter build web --release
+          --dart-define=APP_MODE=design
+          --dart-define=USE_MOCK=true
 
       - name: Deploy to Firebase Hosting (design)
         uses: FirebaseExtended/action-hosting-deploy@v0

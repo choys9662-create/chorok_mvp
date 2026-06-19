@@ -32,6 +32,7 @@ void main() {
       currentPage: 196,
       totalPages: 276,
       savedSentences: ['나는 채식주의자가 되기로 했다.'],
+      description: '알라딘에서 가져온 책 소개가 서재 상세에 표시됩니다.',
     );
 
     await tester.pumpWidget(
@@ -73,6 +74,7 @@ void main() {
       currentPage: 196,
       totalPages: 276,
       savedSentences: ['나는 채식주의자가 되기로 했다.'],
+      description: '채식을 선언한 인물을 둘러싼 가족과 사회의 균열을 따라가는 소설입니다.',
     );
 
     final socialData = BookDetailSocialData(
@@ -140,6 +142,10 @@ void main() {
     expect(find.text('내가 수집한 문장'), findsOneWidget);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
     await tester.pumpAndSettle();
+    expect(
+      find.text('채식을 선언한 인물을 둘러싼 가족과 사회의 균열을 따라가는 소설입니다.'),
+      findsOneWidget,
+    );
     expect(find.text('이웃의 문장'), findsOneWidget);
     expect(find.text('지금 많이 멈춘 생각'), findsOneWidget);
     expect(find.text('유나'), findsOneWidget);

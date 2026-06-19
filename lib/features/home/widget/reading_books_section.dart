@@ -74,7 +74,7 @@ class ReadingBooksSection extends ConsumerWidget {
                 child: GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    context.go(AppConstants.routeExplore);
+                    context.push(AppConstants.routeExplore);
                   },
                   child: Icon(
                     Icons.add_rounded,
@@ -199,7 +199,7 @@ class EmptyBooksState extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.mediumImpact();
-                  context.go(AppConstants.routeExplore);
+                  context.push(AppConstants.routeExplore);
                 },
                 child: Container(
                   height: 48,
@@ -409,7 +409,7 @@ class AddBookCard extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.selectionClick();
-          context.go(AppConstants.routeExplore);
+          context.push(AppConstants.routeExplore);
         },
         child: Container(
           width: _readingBookCardWidth,

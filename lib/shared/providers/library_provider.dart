@@ -28,6 +28,7 @@ Book _fromIsarBook(IsarBook b) => Book(
   },
   completedAt: b.completedAt,
   genre: b.genre,
+  description: b.description,
 );
 
 class LibraryNotifier extends Notifier<List<Book>> {
@@ -163,6 +164,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       savedSentences: old.savedSentences,
       completedAt: null,
       genre: old.genre,
+      description: old.description,
     );
 
     state = [...state]..[idx] = updated;
@@ -225,6 +227,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
       savedSentences: old.savedSentences,
       completedAt: old.completedAt,
       genre: old.genre,
+      description: old.description,
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
@@ -440,6 +443,8 @@ final _kMockBooks = [
     totalReadingHours: 2.5,
     savedSentences: ['나는 채식주의자가 되기로 했다.', '꿈 때문에.'],
     genre: '소설',
+    description:
+        '어느 날 갑자기 채식을 선언한 영혜와 그를 둘러싼 가족의 시선을 따라가며, 몸과 욕망, 폭력과 침묵의 감각을 집요하게 묻는 소설입니다.',
   ),
   Book(
     id: '2',
@@ -452,6 +457,8 @@ final _kMockBooks = [
     currentPage: 234,
     totalReadingHours: 8.2,
     genre: '역사소설',
+    description:
+        '재일조선인 가족의 삶을 여러 세대에 걸쳐 따라가며, 이주와 생존, 가족의 선택이 개인의 운명을 어떻게 바꾸는지 보여주는 장편소설입니다.',
   ),
   Book(
     id: '3',
@@ -464,6 +471,8 @@ final _kMockBooks = [
     currentPage: 88,
     totalReadingHours: 4.6,
     genre: 'SF',
+    description:
+        '더스트로 무너진 세계 이후의 시간을 배경으로, 식물과 인간, 기억과 회복이 서로를 어떻게 붙드는지 그리는 한국 SF 소설입니다.',
   ),
   // completed
   Book(
@@ -478,6 +487,8 @@ final _kMockBooks = [
     totalReadingHours: 4.1,
     completedAt: DateTime(2026, 5, 2),
     genre: '소설',
+    description:
+        '평범하게 보이는 한 여성의 생애를 통해 한국 사회의 성별 경험과 일상의 구조적 차별을 압축적으로 드러내는 소설입니다.',
   ),
   Book(
     id: '5',
@@ -491,6 +502,8 @@ final _kMockBooks = [
     totalReadingHours: 6.3,
     completedAt: DateTime(2026, 5, 5),
     genre: '소설',
+    description:
+        '감정을 잘 느끼지 못하는 소년 윤재가 여러 만남을 지나며 타인의 마음과 자신의 감각을 배워가는 성장소설입니다.',
   ),
   // wantToRead
   Book(
@@ -503,6 +516,8 @@ final _kMockBooks = [
     totalPages: 216,
     currentPage: 0,
     genre: '소설',
+    description:
+        '1980년 광주의 시간을 여러 인물의 목소리로 따라가며, 폭력 이후에도 사라지지 않는 기억과 애도의 문제를 묻는 소설입니다.',
   ),
   Book(
     id: '7',
@@ -514,6 +529,8 @@ final _kMockBooks = [
     totalPages: 312,
     currentPage: 0,
     genre: '소설',
+    description:
+        '서울역 노숙인 독고가 편의점 야간 알바를 맡으며 손님과 이웃들의 삶에 작은 균열과 온기를 만드는 이야기입니다.',
   ),
   Book(
     id: '8',
@@ -525,5 +542,7 @@ final _kMockBooks = [
     totalPages: 304,
     currentPage: 0,
     genre: '판타지',
+    description:
+        '잠든 사람들이 꿈을 사러 가는 백화점을 배경으로, 꿈의 의미와 일상의 감정을 다정하게 풀어낸 판타지 소설입니다.',
   ),
 ];

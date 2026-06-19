@@ -7,14 +7,15 @@
             "request": "launch",
             "program": "lib/main.dart",
             "deviceId": "C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0",
-            "toolArgs": ["--dart-define=USE_MOCK=true"]
+            "toolArgs": ["--dart-define=APP_MODE=design", "--dart-define=USE_MOCK=true"]
         },
         {
             "name": "테스트 앱 — iPhone 실기기 (실데이터)",
             "type": "dart",
             "request": "launch",
             "program": "lib/main.dart",
-            "deviceId": "00008120-0011549E3640C01E"
+            "deviceId": "00008120-0011549E3640C01E",
+            "toolArgs": ["--dart-define=APP_MODE=test", "--dart-define=USE_MOCK=false"]
         },
         {
             "name": "테스트 앱 — Web/LAN (실데이터)",
@@ -22,13 +23,14 @@
             "request": "launch",
             "program": "lib/main.dart",
             "deviceId": "web-server",
-            "toolArgs": ["--web-port", "8080", "--web-hostname", "0.0.0.0"]
+            "toolArgs": ["--web-port", "8080", "--web-hostname", "0.0.0.0", "--dart-define=APP_MODE=test", "--dart-define=USE_MOCK=false"]
         },
         {
             "name": "테스트 앱 — Android (실데이터)",
             "type": "dart",
             "request": "launch",
-            "program": "lib/main.dart"
+            "program": "lib/main.dart",
+            "toolArgs": ["--dart-define=APP_MODE=test", "--dart-define=USE_MOCK=false"]
         }
     ]
 }

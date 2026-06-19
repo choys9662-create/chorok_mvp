@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -114,12 +116,33 @@ class ProfileRepository {
     String userId, {
     String? displayName,
     String? bio,
+    String? avatarUrl,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) updates['display_name'] = displayName;
     if (bio != null) updates['bio'] = bio;
+    if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
     if (updates.isEmpty) return;
     await _client.from('profiles').update(updates).eq('id', userId);
+  }
+
+  Future<String> uploadAvatar(String userId, Uint8List bytes) async {
+    final path = '$userId/avatar.jpg';
+    final storage = _client.storage.from('avatars');
+    await storage.uploadBinary(
+      path,
+      bytes,
+      fileOptions: const FileOptions(
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/jpeg',
+      ),
+    );
+    final publicUrl = storage.getPublicUrl(path);
+    final versionedUrl =
+        '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+    await updateProfile(userId, avatarUrl: versionedUrl);
+    return versionedUrl;
   }
 }
 

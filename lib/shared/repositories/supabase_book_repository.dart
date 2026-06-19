@@ -22,14 +22,24 @@ class SupabaseBookRepository {
   /// 특정 사용자의 서재를 읽는다. 소셜(팔로우한 사람 서재 보기)에서 사용.
   /// RLS `books_select_following` 정책이 팔로워에게만 읽기를 허용한다.
   Future<List<Book>> getBooksByUser(String userId) async {
-    final rows = await _client
-        .from('books')
-        .select()
-        .eq('user_id', userId)
-        .order('updated_at', ascending: false);
-    return (rows as List)
-        .map((r) => _bookFromRow(r as Map<String, dynamic>))
-        .toList();
+    final rows = await _selectBooksByUser(userId);
+    return rows.map((r) => _bookFromRow(r as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<dynamic>> _selectBooksByUser(String userId) async {
+    try {
+      return await _client
+          .from('books')
+          .select('*, global_books(description)')
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false);
+    } catch (_) {
+      return await _client
+          .from('books')
+          .select()
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false);
+    }
   }
 
   /// 책을 upsert. 같은 (user_id, book_id) 조합이면 덮어쓴다.
@@ -113,15 +123,20 @@ class SupabaseBookRepository {
   Future<String?> _upsertGlobalBook(Book book) async {
     if (book.isbn == null || book.isbn!.isEmpty) return null;
     try {
+      final row = {
+        'isbn13': book.isbn,
+        'title': book.title,
+        'author': book.author,
+        'cover_url': book.coverUrl,
+        'total_pages': book.totalPages,
+      };
+      final description = book.description?.trim();
+      if (description != null && description.isNotEmpty) {
+        row['description'] = description;
+      }
       final gbRow = await _client
           .from('global_books')
-          .upsert({
-            'isbn13': book.isbn,
-            'title': book.title,
-            'author': book.author,
-            'cover_url': book.coverUrl,
-            'total_pages': book.totalPages,
-          }, onConflict: 'isbn13')
+          .upsert(row, onConflict: 'isbn13')
           .select('id')
           .single();
       return gbRow['id'] as String?;
@@ -132,6 +147,7 @@ class SupabaseBookRepository {
   }
 
   Book _bookFromRow(Map<String, dynamic> r) {
+    final globalBook = r['global_books'] as Map<String, dynamic>?;
     return Book(
       id: r['book_id'] as String,
       title: r['title'] as String,
@@ -154,6 +170,8 @@ class SupabaseBookRepository {
           ? DateTime.tryParse(r['completed_at'] as String)
           : null,
       genre: r['genre'] as String?,
+      description:
+          r['description'] as String? ?? globalBook?['description'] as String?,
     );
   }
 }

@@ -79,7 +79,7 @@ Future<Database> openAppDatabase() async {
 
   return openDatabase(
     path,
-    version: 6,
+    version: 7,
     onCreate: (db, version) async {
       await _createAllTables(db);
     },
@@ -134,6 +134,10 @@ Future<Database> openAppDatabase() async {
         // books에 장르 컬럼 추가
         await db.execute('ALTER TABLE books ADD COLUMN genre TEXT');
       }
+      if (oldVersion < 7) {
+        // books에 알라딘 책 소개 컬럼 추가
+        await db.execute('ALTER TABLE books ADD COLUMN description TEXT');
+      }
     },
   );
 }
@@ -152,6 +156,7 @@ Future<void> _createAllTables(Database db) async {
       status       TEXT    NOT NULL DEFAULT 'reading',
       completed_at TEXT,
       genre        TEXT,
+      description  TEXT,
       created_at   TEXT    NOT NULL,
       updated_at   TEXT    NOT NULL
     )
@@ -220,6 +225,7 @@ class BookRepository {
     IsarReadingStatus status = IsarReadingStatus.reading,
     DateTime? completedAt,
     String? genre,
+    String? description,
   }) async {
     final now = DateTime.now();
 
@@ -239,6 +245,7 @@ class BookRepository {
           'completed_at': completedAt?.toIso8601String(),
           'updated_at': now.toIso8601String(),
           'genre': genre,
+          'description': description,
         },
         where: 'book_id = ?',
         whereArgs: [bookId],
@@ -258,6 +265,7 @@ class BookRepository {
       createdAt: now,
       updatedAt: now,
       genre: genre,
+      description: description,
     );
 
     await _db.insert(
@@ -551,6 +559,7 @@ class BookRepository {
       status: status,
       completedAt: book.completedAt,
       genre: book.genre,
+      description: book.description,
     );
   }
 

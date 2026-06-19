@@ -44,8 +44,8 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
   static const _red = Color(0xFFE5484D);
 
   String get _headerText {
-    if (_selected.isNotEmpty) return '${_selected.length}개의 문장을 선택했어요';
     if (_justMergedCount > 0) return '$_justMergedCount개의 문장을 합쳤어요';
+    if (_selected.isNotEmpty) return '${_selected.length}개의 문장을 선택했어요';
     return '${_blocks.length}개의 문장을 찾았어요';
   }
 
@@ -67,7 +67,9 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
       }
       _blocks.insert(insertAt, merged);
       _justMergedCount = indices.length;
-      _selected.clear();
+      _selected
+        ..clear()
+        ..add(insertAt);
     });
   }
 
@@ -80,12 +82,19 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
   }
 
   void _confirm() {
-    Navigator.pop(context, List<String>.from(_blocks));
+    if (_selected.isEmpty) return;
+    final selectedBlocks = _selected.toList()
+      ..sort();
+    Navigator.pop(
+      context,
+      selectedBlocks.map((index) => _blocks[index]).toList(growable: false),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final canMerge = _selected.length >= 2;
+    final canConfirm = _selected.isNotEmpty;
     return Material(
       color: context.appBg,
       child: SafeArea(
@@ -157,7 +166,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                     color: context.appPrimaryAccent,
                     tooltip: '문장 기록하기',
                     filled: true,
-                    onTap: _confirm,
+                    onTap: canConfirm ? _confirm : null,
                   ),
                 ],
               ),

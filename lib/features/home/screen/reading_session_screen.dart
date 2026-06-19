@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/services/ocr_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -503,7 +505,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       WakelockPlus.enable();
 
       // 세션 시작 — 실시간 presence 등록 + 주기적 heartbeat (TTL 90s의 절반 주기).
-      if (!const bool.fromEnvironment('USE_MOCK')) {
+      if (!kUseMock) {
         final presence = ref.read(readingPresenceRepositoryProvider);
         _presence = presence;
         presence.start();
@@ -514,7 +516,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
 
       final sessionBookId = _readSessionBook().id;
-      if (sessionBookId != null && !const bool.fromEnvironment('USE_MOCK')) {
+      if (sessionBookId != null && !kUseMock) {
         ref.read(dbServiceProvider).fetchMySentencesForBook(sessionBookId).then(
           (rows) {
             if (mounted) {
@@ -2477,12 +2479,20 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final maxWidth = math.min(constraints.maxWidth, 430.0);
-                    final verticalOffset = constraints.maxHeight * 0.05;
-                    return Center(
-                      child: Transform.translate(
-                        offset: Offset(0, verticalOffset),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(40, 42, 40, 54),
+                    const verticalPadding = 28.0;
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: verticalPadding,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: math.max(
+                            0,
+                            constraints.maxHeight - verticalPadding * 2,
+                          ),
+                        ),
+                        child: Center(
                           child: ConstrainedBox(
                             constraints: BoxConstraints(maxWidth: maxWidth),
                             child: Column(
@@ -2619,9 +2629,8 @@ class _SessionEntryQuestionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      alignment: Alignment.center,
+      key: const ValueKey('session-entry-question-button'),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.66),
         borderRadius: BorderRadius.circular(9),
@@ -2907,6 +2916,7 @@ class _LockBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final alpha = isPaused ? 0.5 : 0.85;
     return GestureDetector(
+      key: const ValueKey('reading-session-lock-button'),
       behavior: HitTestBehavior.opaque,
       onLongPress: () {
         HapticFeedback.mediumImpact();
@@ -4794,8 +4804,18 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
     _hasRecordedPage = true;
   });
 
+  void _handleBackgroundTap() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus != null && focus.hasFocus) {
+      focus.unfocus();
+      return;
+    }
+    widget.onCancel();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final ratio = _maxPage > 0 ? _page / _maxPage : 0.0;
     final isActive = _hasRecordedPage;
     final promptColor = isActive
@@ -4817,158 +4837,189 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
         fit: StackFit.expand,
         children: [
           GestureDetector(
-            onTap: widget.onCancel,
-            child: Container(color: Colors.black.withValues(alpha: 0.72)),
+            onTap: _handleBackgroundTap,
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: ColoredBox(color: Colors.black.withValues(alpha: 0.80)),
+              ),
+            ),
           ),
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-              child: Column(
-                children: [
-                  _PageInputLockBadge(isActive: isActive),
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.timeText,
-                    style: TextStyle(
-                      color: _kGreen.withValues(alpha: 0.22),
-                      fontSize: 64,
-                      height: 1.0,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: -1,
-                      fontFamily: _kFont,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _sessionDateLabel(widget.sessionStartedAt),
-                    style: TextStyle(
-                      color: _kGreen.withValues(alpha: 0.20),
-                      fontSize: 12,
-                      letterSpacing: 0.3,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: _kFont,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '오늘 몇 페이지까지 읽었나요?',
-                    style: TextStyle(
-                      fontFamily: _kFont,
-                      fontSize: 15,
-                      color: promptColor,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _StepButton(icon: Icons.remove, onTap: _decrement),
-                      const SizedBox(width: 22),
-                      _PageBox(
-                        page: _page,
-                        totalPages: widget.totalPages,
-                        pageColor: pageColor,
-                        editColor: editColor,
-                        borderColor: Colors.white.withValues(alpha: 0.04),
-                        onChanged: (v) => setState(() {
-                          _page = v.clamp(0, _maxPage);
-                          _hasRecordedPage = true;
-                        }),
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.only(bottom: keyboardInset),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                child: Column(
+                  children: [
+                    _PageInputLockBadge(isActive: isActive),
+                    const SizedBox(height: 20),
+                    Text(
+                      widget.timeText,
+                      style: TextStyle(
+                        color: _kGreen.withValues(alpha: 0.22),
+                        fontSize: 64,
+                        height: 1.0,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -1,
+                        fontFamily: _kFont,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
-                      const SizedBox(width: 22),
-                      _StepButton(icon: Icons.add, onTap: _increment),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: 346,
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: trackColor,
-                        inactiveTrackColor: const Color(0xFF2A2A2A),
-                        thumbColor: trackColor,
-                        overlayColor: trackColor.withValues(alpha: 0.14),
-                        trackHeight: 3,
-                        thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 7,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _sessionDateLabel(widget.sessionStartedAt),
+                      style: TextStyle(
+                        color: _kGreen.withValues(alpha: 0.20),
+                        fontSize: 12,
+                        letterSpacing: 0.3,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: _kFont,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '오늘 몇 페이지까지 읽었나요?',
+                      style: TextStyle(
+                        fontFamily: _kFont,
+                        fontSize: 15,
+                        color: promptColor,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _StepButton(icon: Icons.remove, onTap: _decrement),
+                        const SizedBox(width: 22),
+                        _PageBox(
+                          page: _page,
+                          totalPages: widget.totalPages,
+                          pageColor: pageColor,
+                          editColor: editColor,
+                          borderColor: Colors.white.withValues(alpha: 0.04),
+                          onChanged: (v) => setState(() {
+                            _page = v.clamp(0, _maxPage);
+                            _hasRecordedPage = true;
+                          }),
                         ),
-                        overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 16,
-                        ),
-                      ),
-                      child: Slider(
-                        value: ratio,
-                        onChanged: (v) => setState(() {
-                          _page = (v * _maxPage).round().clamp(0, _maxPage);
-                          _hasRecordedPage = true;
-                        }),
-                      ),
+                        const SizedBox(width: 22),
+                        _StepButton(icon: Icons.add, onTap: _increment),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 22),
-                  GestureDetector(
-                    onTap: isActive
-                        ? () {
-                            HapticFeedback.mediumImpact();
-                            widget.onConfirm(_page);
-                          }
-                        : null,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: buttonBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_rounded, size: 16, color: buttonFg),
-                          const SizedBox(width: 6),
-                          Text(
-                            '기록 및 독서종료',
-                            style: TextStyle(
-                              fontFamily: _kFont,
-                              fontSize: 15,
-                              color: buttonFg,
-                              fontWeight: FontWeight.w400,
+                    const SizedBox(height: 18),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 346),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: trackColor,
+                            inactiveTrackColor: const Color(0xFF2A2A2A),
+                            thumbColor: trackColor,
+                            overlayColor: trackColor.withValues(alpha: 0.14),
+                            trackHeight: 3,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 7,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 16,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      widget.onCancel();
-                    },
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.46),
+                          child: Slider(
+                            value: ratio,
+                            onChanged: (v) => setState(() {
+                              _page = (v * _maxPage).round().clamp(0, _maxPage);
+                              _hasRecordedPage = true;
+                            }),
+                          ),
                         ),
-                        color: Colors.black.withValues(alpha: 0.16),
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18,
-                        color: Colors.white.withValues(alpha: 0.62),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 22),
+                    GestureDetector(
+                      onTap: isActive
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              widget.onConfirm(_page);
+                            }
+                          : null,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: buttonBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_rounded,
+                              size: 16,
+                              color: buttonFg,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '기록 및 독서종료',
+                              style: TextStyle(
+                                fontFamily: _kFont,
+                                fontSize: 15,
+                                color: buttonFg,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        widget.onCancel();
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.82),
+                              width: 1.2,
+                            ),
+                            color: const Color(
+                              0xFF181818,
+                            ).withValues(alpha: 0.94),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.48),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 22,
+                            color: Colors.white.withValues(alpha: 0.96),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -5090,7 +5141,7 @@ class _PageBoxState extends State<_PageBox> {
   Widget build(BuildContext context) {
     if (_editing) {
       return SizedBox(
-        width: 106,
+        width: 148,
         height: 60,
         child: TextField(
           controller: _ctrl,
@@ -5117,6 +5168,10 @@ class _PageBoxState extends State<_PageBox> {
             ),
             contentPadding: EdgeInsets.zero,
           ),
+          onChanged: (text) {
+            final v = int.tryParse(text.trim());
+            if (v != null) widget.onChanged(v);
+          },
           onSubmitted: (_) => _commit(),
         ),
       );
@@ -5131,7 +5186,7 @@ class _PageBoxState extends State<_PageBox> {
         );
       }),
       child: Container(
-        width: 106,
+        width: 148,
         height: 60,
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -5144,13 +5199,19 @@ class _PageBoxState extends State<_PageBox> {
           children: [
             Icon(Icons.edit, size: 13, color: widget.editColor),
             const SizedBox(width: 6),
-            Text(
-              '${widget.page}',
-              style: TextStyle(
-                fontFamily: _kFont,
-                fontSize: 40,
-                color: widget.pageColor,
-                fontWeight: FontWeight.w300,
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${widget.page}',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: _kFont,
+                    fontSize: 40,
+                    color: widget.pageColor,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
               ),
             ),
             if (widget.totalPages > 0) ...[

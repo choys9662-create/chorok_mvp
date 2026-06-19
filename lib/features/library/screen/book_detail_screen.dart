@@ -1173,6 +1173,9 @@ class _BookInfoSectionState extends State<_BookInfoSection> {
   }
 
   String _bookDescription(Book book) {
+    final description = book.description?.trim();
+    if (description != null && description.isNotEmpty) return description;
+
     if (book.title.contains('채식주의자')) {
       return '일상의 질서 안에서 설명되지 않는 감각이 어떻게 한 사람의 삶을 바꾸는지 따라가는 소설. 초록에서는 이 책을 문장에 멈추는 경험과 다른 독자의 해석을 함께 보는 방식으로 읽는다.';
     }

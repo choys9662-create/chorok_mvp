@@ -58,7 +58,9 @@ class AladinBook {
     final parts = categoryName.split('>');
     if (parts.length < 2) return null;
     final seg = parts[1].trim();
-    if (seg.contains('소설') || seg.contains('시/') || seg.contains('희곡')) return '소설';
+    if (seg.contains('소설') || seg.contains('시/') || seg.contains('희곡')) {
+      return '소설';
+    }
     if (seg.contains('인문')) return '인문';
     if (seg.contains('자기계발')) return '자기계발';
     if (seg.contains('에세이')) return '에세이';
@@ -87,6 +89,7 @@ class AladinBook {
       status: status,
       totalPages: totalPages,
       genre: genre,
+      description: description,
     );
   }
 }
