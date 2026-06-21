@@ -15,6 +15,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/services/ocr_service.dart';
+import '../../../core/services/screen_time_detox_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
@@ -204,17 +205,63 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     ).then((_) => _setUi(UiVisibility.hidden));
   }
 
-  void _dismissTopicAndStart() {
+  Future<void> _dismissTopicAndStart() async {
     if (!_showTopic) return;
     final book = _readSessionBook();
-    setState(() => _showTopic = false);
     final timer = ref.read(timerProvider);
     if (timer.isIdle) {
+      final detoxStatus = kUseMock
+          ? DetoxStartStatus.unsupported
+          : await ScreenTimeDetoxService.instance.startDetox();
+      if (!mounted) return;
+      if (detoxStatus
+          case DetoxStartStatus.denied ||
+              DetoxStartStatus.cancelled ||
+              DetoxStartStatus.emptySelection ||
+              DetoxStartStatus.failed) {
+        _showDetoxStartFailure(detoxStatus);
+        return;
+      }
       ref
           .read(timerProvider.notifier)
           .start(goal: widget.goal, session: _sessionExtraForTimer(book));
+      if (detoxStatus == DetoxStartStatus.unsupported) {
+        _showSoftDetoxNotice();
+      }
     }
+    setState(() => _showTopic = false);
     _setUi(UiVisibility.hidden);
+  }
+
+  void _showDetoxStartFailure(DetoxStartStatus status) {
+    final message = switch (status) {
+      DetoxStartStatus.denied => '스크린 타임 권한을 허용해야 디톡스 독서를 시작할 수 있어요.',
+      DetoxStartStatus.cancelled => '제한할 앱을 선택하면 디톡스 독서를 시작할 수 있어요.',
+      DetoxStartStatus.emptySelection => '독서 중 제한할 앱을 하나 이상 선택해 주세요.',
+      _ => '앱 제한을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.',
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message, style: const TextStyle(fontFamily: _kFont)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
+  void _showSoftDetoxNotice() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            '앱 내 집중 모드로 시작했어요. Screen Time 지원 빌드에서는 선택한 다른 앱도 제한돼요.',
+            style: TextStyle(fontFamily: _kFont),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   final List<CollectedSentence> _collectedSentences = [];
@@ -369,8 +416,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   void _handleOcrResult(OcrResult result, {required String noTextMessage}) {
     switch (result) {
-      case OcrSuccess(text: final text):
-        _openSentenceOrganizer(text);
+      case OcrSuccess(text: final text, sentences: final sentences):
+        _openSentenceOrganizer(text, sentences: sentences);
       case OcrNoText():
         ref.read(timerProvider.notifier).resume();
         _showOcrSnack(noTextMessage);
@@ -471,7 +518,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   @override
   void initState() {
     super.initState();
-    _sessionStartedAt = DateTime.now();
+    _sessionStartedAt = ref.read(timerProvider).startedAt ?? DateTime.now();
     WidgetsBinding.instance.addObserver(this);
 
     SystemChrome.setSystemUIOverlayStyle(
@@ -583,14 +630,18 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   // OCR 결과를 문장 단위로 끊어 정리(합치기/문단)한 뒤, 확정된 블록마다
   // 기존 초서 수집(생각 입력) 흐름으로 넘긴다. STT(음성)는 한 발화이므로 거치지 않는다.
-  Future<void> _openSentenceOrganizer(String text) async {
+  Future<void> _openSentenceOrganizer(
+    String text, {
+    List<String>? sentences,
+  }) async {
     final blocks = await showGeneralDialog<List<String>>(
       context: context,
       barrierDismissible: true,
       barrierLabel: '문장 정리 닫기',
       barrierColor: Colors.black.withValues(alpha: 0.4),
       transitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (_, _, _) => SentenceOrganizerSheet(rawText: text),
+      pageBuilder: (_, _, _) =>
+          SentenceOrganizerSheet(rawText: text, sentences: sentences),
       transitionBuilder: (_, animation, _, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -920,7 +971,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   accentColor: _sessionEntryAccent(
                     ref.watch(coverColorProvider(book.coverUrl)).valueOrNull,
                   ),
-                  onStart: _dismissTopicAndStart,
+                  onStart: () {
+                    _dismissTopicAndStart();
+                  },
                 ),
 
               // ⑦ 페이지 입력 오버레이

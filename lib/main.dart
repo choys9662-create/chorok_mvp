@@ -8,7 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
+import 'core/services/screen_time_detox_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/timer/controller/timer_controller.dart';
 import 'shared/providers/theme_provider.dart';
 import 'shared/repositories/book_repository.dart';
 
@@ -34,7 +36,13 @@ Future<void> main() async {
   );
   await _restoreCachedAuthSession(authStorage);
 
-  const initialLocation = AppConstants.routeHome;
+  final restoredTimer = await loadPersistedTimerData();
+  if (restoredTimer.isIdle) {
+    await ScreenTimeDetoxService.instance.stopDetox();
+  }
+  final initialLocation = restoredTimer.isIdle
+      ? AppConstants.routeHome
+      : AppConstants.routeSession;
 
   final savedThemeMode = await loadSavedThemeMode();
 
@@ -44,6 +52,7 @@ Future<void> main() async {
         overrides: [
           initialLocationProvider.overrideWithValue(initialLocation),
           initialThemeModeProvider.overrideWithValue(savedThemeMode),
+          initialTimerDataProvider.overrideWithValue(restoredTimer),
         ],
         child: const ChorokApp(),
       ),
@@ -60,6 +69,7 @@ Future<void> main() async {
         dbProvider.overrideWithValue(db),
         initialLocationProvider.overrideWithValue(initialLocation),
         initialThemeModeProvider.overrideWithValue(savedThemeMode),
+        initialTimerDataProvider.overrideWithValue(restoredTimer),
       ],
       child: const ChorokApp(),
     ),

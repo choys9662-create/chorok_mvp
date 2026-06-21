@@ -10,7 +10,14 @@ import '../../../core/theme/app_theme.dart';
 class SentenceOrganizerSheet extends StatefulWidget {
   final String rawText;
 
-  const SentenceOrganizerSheet({super.key, required this.rawText});
+  /// AI가 이미 문장 단위로 끊어 준 경우. 있으면 규칙 분리 대신 그대로 사용한다.
+  final List<String>? sentences;
+
+  const SentenceOrganizerSheet({
+    super.key,
+    required this.rawText,
+    this.sentences,
+  });
 
   @override
   State<SentenceOrganizerSheet> createState() => _SentenceOrganizerSheetState();
@@ -36,7 +43,11 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     return result;
   }
 
-  late final List<String> _initial = _split(widget.rawText);
+  // AI가 끊어 준 문장이 있으면 그대로, 없으면 규칙 분리로 폴백.
+  late final List<String> _initial =
+      (widget.sentences != null && widget.sentences!.isNotEmpty)
+      ? List.of(widget.sentences!)
+      : _split(widget.rawText);
   late List<String> _blocks = List.of(_initial);
   final Set<int> _selected = <int>{};
   int _justMergedCount = 0;

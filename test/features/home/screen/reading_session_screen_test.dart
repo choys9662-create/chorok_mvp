@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -166,6 +168,29 @@ void main() {
     expect(timer.session?.bookId, 'guns-germs-steel');
     expect(timer.session?.bookTitle, '총균쇠');
     expect(timer.session?.startPage, 42);
+    expect(find.textContaining('앱 내 집중 모드로 시작했어요'), findsOneWidget);
+  });
+
+  testWidgets('iOS Screen Time 권한이 거절되면 디톡스 세션을 시작하지 않는다', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    const channel = MethodChannel('chorok/screen_time');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async => 'denied');
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+
+    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ReadingSessionScreen)),
+    );
+    debugDefaultTargetPlatformOverride = null;
+    expect(container.read(timerProvider).isIdle, isTrue);
+    expect(find.textContaining('스크린 타임 권한을 허용해야'), findsOneWidget);
   });
 
   testWidgets('문장 모아보기 확장 카드가 좁은 폭에서 overflow 하지 않는다', (tester) async {

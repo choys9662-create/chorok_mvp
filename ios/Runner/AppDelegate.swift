@@ -7,6 +7,7 @@ import Vision
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   // 채널이 해제되지 않도록 강한 참조로 보관.
   private var ocrChannel: FlutterMethodChannel?
+  private var screenTimeChannel: FlutterMethodChannel?
 
   // Apple Vision 온디바이스 한국어 텍스트 인식.
   // observation들을 위→아래(boundingBox.y 내림차순) 순으로 정렬해 줄 단위로 합쳐 반환.
@@ -85,6 +86,66 @@ import Vision
         self?.recognizeText(in: data.data, result: result)
       }
       ocrChannel = channel
+    }
+
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ChorokScreenTime") {
+      let channel = FlutterMethodChannel(
+        name: "chorok/screen_time",
+        binaryMessenger: registrar.messenger()
+      )
+      channel.setMethodCallHandler { call, result in
+        guard #available(iOS 16.0, *) else {
+          result("unsupported")
+          return
+        }
+
+        switch call.method {
+        case "startDetox":
+          guard ScreenTimeDetoxService.shared.isCapabilityEnabled else {
+            result("unsupported")
+            return
+          }
+          guard
+            let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let presenter = scene.windows.first(where: \.isKeyWindow)?.rootViewController?
+              .chorokTopViewController()
+          else {
+            result(
+              FlutterError(
+                code: "no_presenter",
+                message: "디톡스 앱 선택 화면을 열 수 없어요.",
+                details: nil
+              )
+            )
+            return
+          }
+          ScreenTimeDetoxService.shared.start(from: presenter) { startResult in
+            switch startResult {
+            case .success(let status):
+              result(status)
+            case .failure(let error):
+              result(
+                FlutterError(
+                  code: "screen_time_error",
+                  message: error.localizedDescription,
+                  details: nil
+                )
+              )
+            }
+          }
+        case "stopDetox":
+          ScreenTimeDetoxService.shared.stop()
+          result(nil)
+        case "isDetoxEnabled":
+          result(
+            ScreenTimeDetoxService.shared.isCapabilityEnabled
+              && ScreenTimeDetoxService.shared.isEnabled
+          )
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      screenTimeChannel = channel
     }
   }
 }

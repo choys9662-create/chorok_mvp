@@ -1,6 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../shared/models/session_goal.dart';
+
+const _timerSnapshotKey = 'live_forest_timer_snapshot_v1';
 
 /// 타이머 상태 enum
 enum TimerState { idle, running, paused }
@@ -11,12 +17,14 @@ class TimerData {
   final TimerState timerState;
   final SessionGoal? goal;
   final SessionExtra? session;
+  final DateTime? startedAt;
 
   const TimerData({
     required this.seconds,
     required this.timerState,
     this.goal,
     this.session,
+    this.startedAt,
   });
 
   factory TimerData.initial() =>
@@ -27,12 +35,14 @@ class TimerData {
     TimerState? timerState,
     SessionGoal? goal,
     SessionExtra? session,
+    DateTime? startedAt,
   }) {
     return TimerData(
       seconds: seconds ?? this.seconds,
       timerState: timerState ?? this.timerState,
       goal: goal ?? this.goal,
       session: session ?? this.session,
+      startedAt: startedAt ?? this.startedAt,
     );
   }
 
@@ -89,7 +99,13 @@ class TimerNotifier extends Notifier<TimerData> {
   @override
   TimerData build() {
     ref.onDispose(() => _timer?.cancel());
-    return TimerData.initial();
+    final initial = ref.watch(initialTimerDataProvider);
+    _accumulatedSeconds = initial.seconds;
+    if (initial.isRunning) {
+      _runStartedAt = DateTime.now();
+      _startTicking();
+    }
+    return initial;
   }
 
   int _computeSeconds() {
@@ -113,8 +129,10 @@ class TimerNotifier extends Notifier<TimerData> {
       timerState: TimerState.running,
       goal: goal,
       session: session,
+      startedAt: DateTime.now(),
     );
     _startTicking();
+    unawaited(persistTimerData(state));
   }
 
   void pause() {
@@ -126,10 +144,12 @@ class TimerNotifier extends Notifier<TimerData> {
       seconds: _accumulatedSeconds,
       timerState: TimerState.paused,
     );
+    unawaited(persistTimerData(state));
   }
 
   void updateGoal(SessionGoal goal) {
     state = state.copyWith(goal: goal);
+    unawaited(persistTimerData(state));
   }
 
   void resume() {
@@ -137,6 +157,7 @@ class TimerNotifier extends Notifier<TimerData> {
     _runStartedAt = DateTime.now();
     state = state.copyWith(timerState: TimerState.running);
     _startTicking();
+    unawaited(persistTimerData(state));
   }
 
   void stop() {
@@ -144,6 +165,7 @@ class TimerNotifier extends Notifier<TimerData> {
     _accumulatedSeconds = 0;
     _runStartedAt = null;
     state = TimerData.initial();
+    unawaited(persistTimerData(state));
   }
 
   /// 앱이 백그라운드에서 복귀했을 때 즉시 경과시간을 재계산해 UI에 반영
@@ -156,3 +178,98 @@ class TimerNotifier extends Notifier<TimerData> {
 final timerProvider = NotifierProvider<TimerNotifier, TimerData>(
   TimerNotifier.new,
 );
+
+final initialTimerDataProvider = Provider<TimerData>(
+  (_) => TimerData.initial(),
+);
+
+Future<TimerData> loadPersistedTimerData() async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString(_timerSnapshotKey);
+  if (raw == null) return TimerData.initial();
+
+  try {
+    final json = jsonDecode(raw) as Map<String, dynamic>;
+    final timerState = TimerState.values.byName(json['timerState'] as String);
+    var seconds = json['seconds'] as int? ?? 0;
+    final updatedAt = DateTime.tryParse(json['updatedAt'] as String? ?? '');
+    if (timerState == TimerState.running && updatedAt != null) {
+      seconds += DateTime.now().difference(updatedAt).inSeconds.clamp(0, 86400);
+    }
+
+    return TimerData(
+      seconds: seconds,
+      timerState: timerState,
+      goal: _decodeGoal(json['goal']),
+      session: _decodeSession(json['session']),
+      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? ''),
+    );
+  } catch (_) {
+    await prefs.remove(_timerSnapshotKey);
+    return TimerData.initial();
+  }
+}
+
+Future<void> persistTimerData(TimerData data) async {
+  final prefs = await SharedPreferences.getInstance();
+  if (data.isIdle) {
+    await prefs.remove(_timerSnapshotKey);
+    return;
+  }
+
+  await prefs.setString(
+    _timerSnapshotKey,
+    jsonEncode({
+      'seconds': data.seconds,
+      'timerState': data.timerState.name,
+      'updatedAt': DateTime.now().toIso8601String(),
+      'startedAt': data.startedAt?.toIso8601String(),
+      'goal': _encodeGoal(data.goal),
+      'session': _encodeSession(data.session),
+    }),
+  );
+}
+
+Map<String, dynamic>? _encodeGoal(SessionGoal? goal) {
+  if (goal == null) return null;
+  return {
+    'type': goal.type.name,
+    'targetMinutes': goal.targetMinutes,
+    'targetPage': goal.targetPage,
+    'startPage': goal.startPage,
+  };
+}
+
+SessionGoal? _decodeGoal(Object? raw) {
+  if (raw is! Map<String, dynamic>) return null;
+  return SessionGoal(
+    type: SessionGoalType.values.byName(raw['type'] as String),
+    targetMinutes: raw['targetMinutes'] as int?,
+    targetPage: raw['targetPage'] as int?,
+    startPage: raw['startPage'] as int? ?? 0,
+  );
+}
+
+Map<String, dynamic>? _encodeSession(SessionExtra? session) {
+  if (session == null) return null;
+  return {
+    'bookId': session.bookId,
+    'bookTitle': session.bookTitle,
+    'bookAuthor': session.bookAuthor,
+    'coverUrl': session.coverUrl,
+    'startPage': session.startPage,
+    'totalPages': session.totalPages,
+  };
+}
+
+SessionExtra? _decodeSession(Object? raw) {
+  if (raw is! Map<String, dynamic>) return null;
+  return SessionExtra(
+    bookId: raw['bookId'] as String?,
+    bookTitle: raw['bookTitle'] as String? ?? '',
+    bookAuthor: raw['bookAuthor'] as String? ?? '',
+    coverUrl: raw['coverUrl'] as String?,
+    startPage: raw['startPage'] as int? ?? 0,
+    totalPages: raw['totalPages'] as int? ?? 0,
+  );
+}

@@ -32,6 +32,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>chorok_app</string>
+	<key>ChorokFamilyControlsEnabled</key>
+	<string>$(CHOROK_FAMILY_CONTROLS_ENABLED)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
