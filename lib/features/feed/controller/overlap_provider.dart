@@ -6,6 +6,7 @@ import '../../../core/services/db_service.dart';
 
 class OverlapMatch {
   final String sentenceId;
+  final String? userId;
   final String content;
   final String? thought;
   final String username;
@@ -16,6 +17,7 @@ class OverlapMatch {
 
   const OverlapMatch({
     required this.sentenceId,
+    this.userId,
     required this.content,
     this.thought,
     required this.username,
@@ -30,6 +32,7 @@ class OverlapMatch {
     final book = m['books'] as Map<String, dynamic>?;
     return OverlapMatch(
       sentenceId: m['id'] as String,
+      userId: m['user_id'] as String? ?? profile?['id'] as String?,
       content: m['content'] as String,
       thought: m['thought'] as String?,
       username: profile?['username'] as String? ?? '알 수 없음',

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/models/user_profile.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/repositories/comment_repository.dart';
 import '../controller/overlap_provider.dart';
@@ -19,6 +21,7 @@ class SentenceDetailExtra {
   final String bookAuthor;
   final int? page;
   final String? collectorUsername; // 원 수집자
+  final String? collectorUserId; // 원 수집자 id (프로필 이동용)
   final String? collectorThought; // 원 수집자의 생각
   final String? sentenceId; // 실데이터 댓글 연결용 (Supabase sentences.id)
 
@@ -28,6 +31,7 @@ class SentenceDetailExtra {
     required this.bookAuthor,
     this.page,
     this.collectorUsername,
+    this.collectorUserId,
     this.collectorThought,
     this.sentenceId,
   });
@@ -37,6 +41,7 @@ class SentenceDetailExtra {
 
 class _ReaderThought {
   final String? id; // 실데이터 댓글 id (mock이면 null)
+  final String? userId; // 작성자 id (프로필 이동용)
   final String username;
   final String thought;
   final DateTime createdAt;
@@ -45,6 +50,7 @@ class _ReaderThought {
 
   _ReaderThought({
     this.id,
+    this.userId,
     required this.username,
     required this.thought,
     required this.createdAt,
@@ -146,6 +152,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
             comments.map(
               (c) => _ReaderThought(
                 id: c.id,
+                userId: c.userId,
                 username: c.username,
                 thought: c.content,
                 createdAt: c.createdAt,
@@ -239,6 +246,21 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     );
   }
 
+  /// 생각 작성자의 프로필(서재)로 이동. id 없으면(내 임시 댓글 등) 무시.
+  void _openReaderProfile(_ReaderThought t) {
+    final uid = t.userId;
+    if (uid == null || uid.isEmpty) return;
+    HapticFeedback.selectionClick();
+    context.push(
+      AppConstants.routeUserProfile,
+      extra: UserProfile(
+        id: uid,
+        username: t.username,
+        displayName: t.username,
+      ),
+    );
+  }
+
   Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
     if (kUseMock) return const SizedBox.shrink();
 
@@ -250,7 +272,14 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     return overlapsAsync.when(
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
-      data: (matches) {
+      data: (allMatches) {
+        // 수집자 본인 문장(= 지금 보고 있는 문장)은 상단 수집자 카드와 중복되므로
+        // "다른 독자들의 생각"에서는 제외한다.
+        final matches = widget.data.sentenceId != null
+            ? allMatches
+                  .where((m) => m.sentenceId != widget.data.sentenceId)
+                  .toList()
+            : allMatches;
         if (matches.isEmpty) return const SizedBox.shrink();
 
         return Padding(
@@ -284,6 +313,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
               SplitHighlightWidget(
                 anchorText: d.sentenceContent,
                 collectorUsername: d.collectorUsername ?? '나',
+                collectorUserId: d.collectorUserId,
                 collectorThought: d.collectorThought,
                 matches: matches,
               ),
@@ -550,6 +580,8 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                         thought: _thoughts[index],
                         formatTime: time_fmt.formatRelative,
                         onToggleLike: () => _toggleThoughtLike(index),
+                        onOpenProfile: () =>
+                            _openReaderProfile(_thoughts[index]),
                       ),
                     ),
                   ),
@@ -649,101 +681,117 @@ class _ThoughtCard extends StatelessWidget {
   final _ReaderThought thought;
   final String Function(DateTime) formatTime;
   final VoidCallback onToggleLike;
+  final VoidCallback onOpenProfile;
 
   const _ThoughtCard({
     required this.thought,
     required this.formatTime,
     required this.onToggleLike,
+    required this.onOpenProfile,
   });
 
   @override
   Widget build(BuildContext context) {
     final t = thought;
+    final tappable = t.userId != null && t.userId!.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: AppTheme.radiusLG,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 유저 정보 + 시간 ────────────────────────────
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: context.appPrimaryAccent.withValues(
-                  alpha: 0.12,
-                ),
-                child: Text(
-                  t.username[0].toUpperCase(),
-                  style: AppTheme.captionSmall.copyWith(
-                    color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  t.username,
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextPrimary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-              Text(
-                formatTime(t.createdAt),
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ── 생각 내용 ──────────────────────────────────
-          Text(
-            t.thought,
-            style: AppTheme.bodyMedium.copyWith(
-              color: context.appTextPrimary,
-              height: 1.6,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // ── 좋아요 버튼 ────────────────────────────────
-          GestureDetector(
-            onTap: onToggleLike,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    return GestureDetector(
+      onTap: tappable ? onOpenProfile : null,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: AppTheme.radiusLG,
+          side: BorderSide.none,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── 유저 정보 + 시간 ────────────────────────────
+            Row(
               children: [
-                Icon(
-                  t.isLiked
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  size: 16,
-                  color: t.isLiked
-                      ? AppTheme.empathyColor
-                      : context.appTextTertiary,
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: context.appPrimaryAccent.withValues(
+                    alpha: 0.12,
+                  ),
+                  child: Text(
+                    t.username[0].toUpperCase(),
+                    style: AppTheme.captionSmall.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.username,
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                if (tappable)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: context.appTextTertiary,
+                    ),
+                  ),
                 Text(
-                  '${t.empathyCount + (t.isLiked ? 1 : 0)}',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: t.isLiked
-                        ? AppTheme.empathyColor
-                        : context.appTextTertiary,
+                  formatTime(t.createdAt),
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appTextTertiary,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            // ── 생각 내용 ──────────────────────────────────
+            Text(
+              t.thought,
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextPrimary,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── 좋아요 버튼 ────────────────────────────────
+            GestureDetector(
+              onTap: onToggleLike,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    t.isLiked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 16,
+                    color: t.isLiked
+                        ? AppTheme.empathyColor
+                        : context.appTextTertiary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${t.empathyCount + (t.isLiked ? 1 : 0)}',
+                    style: AppTheme.captionLarge.copyWith(
+                      color: t.isLiked
+                          ? AppTheme.empathyColor
+                          : context.appTextTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

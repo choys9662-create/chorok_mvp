@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
+import '../../../shared/utils/book_genre.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
@@ -87,18 +88,20 @@ List<({String label, double hours})> _buildGenreReadingTimesFromBooks(
 }
 
 String _genreLabel(String? genre, {String? fallbackTitle}) {
-  final trimmed = genre?.trim();
-  if (trimmed != null && trimmed.isNotEmpty) return trimmed;
-  return _genreFromKnownTitle(fallbackTitle) ?? '미분류';
+  final byGenre = classifyBookGenre(genre);
+  if (byGenre != unclassifiedGenre) return byGenre;
+  return _genreFromKnownTitle(fallbackTitle) ?? unclassifiedGenre;
 }
 
+// 장르 정보가 비어 있는 소수의 알려진 책만 제목으로 보정한다.
+// (그 외에는 '소설'로 단정하지 않고 미분류로 둔다)
 String? _genreFromKnownTitle(String? title) {
   final t = title?.trim();
   if (t == null || t.isEmpty) return null;
   if (t.contains('지구 끝의 온실')) return 'SF';
   if (t.contains('파친코')) return '역사소설';
   if (t.contains('달러구트')) return '판타지';
-  return '소설';
+  return null;
 }
 
 List<({String name, Color color, int cells})> buildWaffleItems(
@@ -114,6 +117,7 @@ List<({String name, Color color, int cells})> buildWaffleItems(
 class LibraryStatsView extends ConsumerWidget {
   final ScrollController? scrollController;
   final bool fullScreen;
+  final bool embedded;
 
   /// 다른 사용자의 통계를 볼 때 그 사용자 id. null이면 내 통계.
   final String? userId;
@@ -122,6 +126,7 @@ class LibraryStatsView extends ConsumerWidget {
     super.key,
     this.scrollController,
     this.fullScreen = false,
+    this.embedded = false,
     this.userId,
   });
 
@@ -131,6 +136,10 @@ class LibraryStatsView extends ConsumerWidget {
         ? ref.watch(_genreReadingTimesByUserProvider(userId!))
         : ref.watch(_genreReadingTimesProvider);
     final items = timesAsync.valueOrNull ?? const [];
+    if (embedded) {
+      return BookTreemapWidget(items: items, height: 260);
+    }
+
     final treemapHeight = fullScreen
         ? (MediaQuery.sizeOf(context).height * 0.58).clamp(420.0, 620.0)
         : 260.0;

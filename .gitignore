@@ -35,6 +35,7 @@ migrate_working_dir/
 /build/
 /ios/build/
 /coverage/
+/supabase/.temp/
 
 # Symbolication related
 app.*.symbols

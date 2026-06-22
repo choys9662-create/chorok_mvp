@@ -166,6 +166,38 @@ final recommendedBooksProvider =
         coverUrl:
             'https://image.aladin.co.kr/product/10743/98/cover500/8954637930_2.jpg',
       ),
+      (
+        title: '어린 왕자',
+        author: '앙투안 드 생텍쥐페리',
+        reason: "'관계', '여행' 감성을 자주 기록하셨어요",
+        gradientIndex: 5,
+        matchScore: 0.85,
+        coverUrl: '',
+      ),
+      (
+        title: '데미안',
+        author: '헤르만 헤세',
+        reason: "'성장', '자아' 감성을 자주 기록하셨어요",
+        gradientIndex: 6,
+        matchScore: 0.83,
+        coverUrl: '',
+      ),
+      (
+        title: '1984',
+        author: '조지 오웰',
+        reason: "'사회', '권력' 감성을 자주 기록하셨어요",
+        gradientIndex: 1,
+        matchScore: 0.81,
+        coverUrl: '',
+      ),
+      (
+        title: '노르웨이의 숲',
+        author: '무라카미 하루키',
+        reason: "'상실', '사랑' 감성을 자주 기록하셨어요",
+        gradientIndex: 2,
+        matchScore: 0.80,
+        coverUrl: '',
+      ),
     ];
   }
 
