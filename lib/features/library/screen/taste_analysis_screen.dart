@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../widget/library_stats_view.dart';
 
 class TasteAnalysisScreen extends StatelessWidget {
   final String? userId;
@@ -63,7 +62,7 @@ class TasteAnalysisScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(child: LibraryStatsView(userId: userId, fullScreen: true)),
+            const Expanded(child: SizedBox.shrink()),
           ],
         ),
       ),

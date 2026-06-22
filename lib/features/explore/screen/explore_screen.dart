@@ -16,6 +16,7 @@ import '../../search/model/aladin_book.dart';
 import '../../search/util/add_book_flow.dart';
 import '../../search/widget/add_to_library_sheet.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../widget/discovery_view.dart';
 
 enum _ExploreSearchTab { book, author, user }
 
@@ -111,6 +112,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     context.push(AppConstants.routeUserProfile, extra: profile);
   }
 
+  /// 디스커버리에서 항목을 탭하면 해당 탭으로 전환 후 즉시 검색한다.
+  void _searchFromDiscovery(String query, _ExploreSearchTab tab) {
+    HapticFeedback.selectionClick();
+    setState(() => _selectedTab = tab);
+    _searchController.text = query;
+    _searchController.selection = TextSelection.collapsed(offset: query.length);
+    _searchFocusNode.requestFocus();
+    _debounce?.cancel();
+    _runSearch(query);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isSearchActive = _searchController.text.isNotEmpty;
@@ -141,7 +153,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     onNavigate: _onBookNavigate,
                     onUserNavigate: _onUserNavigate,
                   )
-                : const _IdleSearchView(),
+                : DiscoveryView(
+                    onBookNavigate: _onBookNavigate,
+                    onAuthorTap: (author) =>
+                        _searchFromDiscovery(author, _ExploreSearchTab.author),
+                    onTitleTap: (title) =>
+                        _searchFromDiscovery(title, _ExploreSearchTab.book),
+                  ),
           ),
         ],
       ),
@@ -181,42 +199,31 @@ class _AppBarArea extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              // 탭 루트(쉘 브랜치)에서는 pop 대상이 없으므로 뒤로가기 숨김.
-              // 다른 화면에서 push로 진입했을 때만 노출.
-              if (Navigator.of(context).canPop())
-                Semantics(
-                  label: '뒤로가기',
-                  button: true,
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        Navigator.of(context).pop();
-                      },
-                      child: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: context.appTextPrimary,
-                        size: 20,
-                      ),
+          // 탭 루트(쉘 브랜치)에서는 pop 대상이 없어 뒤로가기를 숨긴다.
+          // 다른 화면에서 push로 진입했을 때만 노출.
+          if (Navigator.of(context).canPop())
+            Semantics(
+              label: '뒤로가기',
+              button: true,
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.of(context).pop();
+                  },
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: context.appTextPrimary,
+                      size: 20,
                     ),
                   ),
-                )
-              else
-                const SizedBox(width: 4),
-              Text(
-                '검색',
-                style: AppTheme.headingLarge.copyWith(
-                  color: context.appTextPrimary,
-                  fontWeight: FontWeight.w400,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
+            ),
           _SearchBar(
             controller: searchController,
             focusNode: focusNode,
@@ -291,17 +298,18 @@ class _SearchTabChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
-            color: isSelected ? AppTheme.accent : context.appCard,
+            color: context.appCard,
             side: BorderSide(
               color: isSelected
                   ? AppTheme.accent
                   : context.appTextTertiary.withValues(alpha: 0.18),
+              width: isSelected ? 1.5 : 1,
             ),
           ),
           child: Text(
             label,
             style: AppTheme.captionSmall.copyWith(
-              color: isSelected ? Colors.black : context.appTextSecondary,
+              color: isSelected ? AppTheme.accent : context.appTextSecondary,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -387,31 +395,6 @@ class _SearchBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Idle State ───────────────────────────────────────────────────────────────
-
-class _IdleSearchView extends StatelessWidget {
-  const _IdleSearchView();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.search_rounded, size: 52, color: context.appTextTertiary),
-          const SizedBox(height: 16),
-          Text(
-            '책, 작가, 유저를 검색해보세요',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextSecondary,
-            ),
-          ),
         ],
       ),
     );

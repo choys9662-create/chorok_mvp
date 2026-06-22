@@ -557,6 +557,54 @@ class DbService {
     return List<Map<String, dynamic>>.from(res);
   }
 
+  /// 겹문장(나 ∩ 팔로잉, 같은 책) 판정용 후보 문장.
+  ///
+  /// exact-match 서버 쿼리(findOverlappingSentences)와 달리 부분 일치까지
+  /// 잡아야 하므로, 내 문장과 팔로잉 문장 원본을 함께 반환해 클라이언트에서
+  /// 책 단위로 OverlapDetector 비교를 돌린다.
+  Future<({List<Map<String, dynamic>> mine, List<Map<String, dynamic>> neighbors})>
+  fetchFollowOverlapCandidates() async {
+    final follows = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', _uid)
+        .eq('status', 'accepted');
+    final followingIds = (follows as List)
+        .map((f) => (f as Map<String, dynamic>)['following_id'] as String?)
+        .whereType<String>()
+        .toList();
+    if (followingIds.isEmpty) {
+      return (mine: const <Map<String, dynamic>>[], neighbors: const <Map<String, dynamic>>[]);
+    }
+
+    const cols =
+        'id, user_id, content, thought, page_number, book_id, global_book_id, '
+        'normalized_sentences, created_at, '
+        'books(title, author, cover_url, isbn), '
+        'global_books(title, author, cover_url, isbn13)';
+
+    final mineRes = await supabase
+        .from('sentences')
+        .select(cols)
+        .eq('user_id', _uid)
+        .order('created_at', ascending: false)
+        .limit(100);
+
+    final neighborRes = await supabase
+        .from('sentences')
+        .select(
+          '$cols, profiles!sentences_user_id_fkey(id, username, display_name, avatar_url)',
+        )
+        .inFilter('user_id', followingIds)
+        .order('created_at', ascending: false)
+        .limit(150);
+
+    return (
+      mine: List<Map<String, dynamic>>.from(mineRes),
+      neighbors: List<Map<String, dynamic>>.from(neighborRes),
+    );
+  }
+
   // ────────────────────────────────────────────────────────────────────
   // 좋아요
   // ────────────────────────────────────────────────────────────────────

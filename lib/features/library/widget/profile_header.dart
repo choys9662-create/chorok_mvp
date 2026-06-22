@@ -125,211 +125,103 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
               ? NetworkImage(_avatarUrl!)
               : null);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
-        16,
+        28,
         AppTheme.screenPadding,
-        0,
+        4,
       ),
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ─── 프로필 사진 ───────────────────────────────────
-              GestureDetector(
-                onTap: _onPickPhoto,
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: isDark
-                          ? AppTheme.primary.withValues(alpha: 0.4)
-                          : context.primaryBg(0.14),
-                      backgroundImage: avatarImage,
-                      child: avatarImage == null
-                          ? Icon(
-                              Icons.person_rounded,
-                              size: 32,
-                              color: context.appPrimaryAccent,
-                            )
-                          : null,
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppTheme.primary
-                              : context.appPrimaryAccent,
-                          shape: BoxShape.circle,
+          Semantics(
+            label: '프로필 사진 변경',
+            button: true,
+            child: GestureDetector(
+              onTap: _onPickPhoto,
+              child: CircleAvatar(
+                radius: 29,
+                backgroundColor: isDark
+                    ? AppTheme.primary.withValues(alpha: 0.4)
+                    : context.primaryBg(0.14),
+                backgroundImage: avatarImage,
+                child: _isUploadingAvatar
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
-                        child: _isUploadingAvatar
-                            ? const SizedBox(
-                                width: 10,
-                                height: 10,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.add_rounded,
-                                size: 10,
-                                color: Colors.white,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
+                      )
+                    : avatarImage == null
+                    ? Icon(
+                        Icons.person_rounded,
+                        size: 30,
+                        color: context.appPrimaryAccent,
+                      )
+                    : null,
               ),
-              const SizedBox(width: 16),
-
-              // ─── 이름 + 통계 ───────────────────────────────────
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Semantics(
+              label: '프로필 편집',
+              button: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _showEditProfileSheet(context),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextPrimary,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _StatItem(
-                          label: '팔로워',
-                          count: _followers,
-                          onTap: () =>
-                              _showFollowList(context, isFollower: true),
-                        ),
-                        const SizedBox(width: 24),
-                        _StatItem(
-                          label: '팔로잉',
-                          count: _following,
-                          onTap: () =>
-                              _showFollowList(context, isFollower: false),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // ─── 액션 버튼들 (편집 + 설정) ─────────────────────
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    label: '프로필 편집',
-                    button: true,
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: IconButton(
-                        onPressed: () => _showEditProfileSheet(context),
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        style: IconButton.styleFrom(
-                          foregroundColor: context.appPrimaryAccent,
-                          backgroundColor: isDark
-                              ? AppTheme.primary.withValues(alpha: 0.2)
-                              : context.primaryBg(0.12),
-                          padding: EdgeInsets.zero,
+                    Flexible(
+                      child: Text(
+                        _name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          color: context.appTextPrimary,
+                          height: 1.2,
                         ),
                       ),
                     ),
-                  ),
-                  if (widget.onSettingsTap != null) ...[
-                    const SizedBox(width: 8),
-                    Semantics(
-                      label: '설정',
-                      button: true,
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: IconButton(
-                          onPressed: widget.onSettingsTap,
-                          icon: const Icon(Icons.settings_outlined, size: 18),
-                          style: IconButton.styleFrom(
-                            foregroundColor: context.appTextSecondary,
-                            backgroundColor: context.appCardElevated,
-                            padding: EdgeInsets.zero,
+                    if (widget.onSettingsTap != null) ...[
+                      const SizedBox(width: 5),
+                      Semantics(
+                        label: '설정',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: widget.onSettingsTap,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              Icons.settings_outlined,
+                              size: 17,
+                              color: context.appTextSecondary,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-
-          // ─── 자기소개 ──────────────────────────────────────────
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              _bio.isEmpty ? '자기소개를 입력해보세요' : _bio,
-              style: TextStyle(
-                fontSize: 12,
-                color: _bio.isEmpty
-                    ? context.appTextTertiary
-                    : context.appTextSecondary,
-                height: 1.4,
-              ),
-            ),
-          ),
-
-          // ─── 스트릭 배지 ───────────────────────────────────────
-          if (widget.streak > 0) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: AppTheme.smoothPill(
-                    color: isDark
-                        ? AppTheme.primary.withValues(alpha: 0.3)
-                        : context.primaryBg(0.10),
-                    side: BorderSide.none,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('🔥', style: TextStyle(fontSize: 12)),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${widget.streak}일 연속 독서 중',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appPrimaryAccent,
-                          height: 1.4,
-                        ),
-                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ],
+          ),
+          _StatItem(
+            label: '팔로잉',
+            count: _following,
+            onTap: () => _showFollowList(context, isFollower: false),
+          ),
+          const SizedBox(width: 22),
+          _StatItem(
+            label: '팔로워',
+            count: _followers,
+            onTap: () => _showFollowList(context, isFollower: true),
+          ),
         ],
       ),
     );
@@ -448,26 +340,27 @@ class _StatItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: SizedBox(
-          height: 48,
+          height: 46,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: context.appTextTertiary,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 '$count',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: context.appPrimaryAccent,
-                  height: 1.4,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextSecondary,
-                  height: 1.4,
+                  color: context.appTextPrimary,
+                  height: 1.2,
                 ),
               ),
             ],
