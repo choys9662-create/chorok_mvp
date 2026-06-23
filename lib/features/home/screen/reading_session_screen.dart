@@ -3099,9 +3099,8 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
   @override
   void initState() {
     super.initState();
-    // 페이지 오름차순 정렬. 페이지가 없는 문장은 맨 뒤로.
-    // 같은 페이지(또는 둘 다 페이지 없음)는 기록 순서를 유지해
-    // 최근 기록한 문장이 뒤에 오도록 한다.
+    // 페이지 내림차순 정렬. 페이지가 없는 문장은 맨 뒤로.
+    // 같은 페이지(또는 둘 다 페이지 없음)는 기록 순서를 유지한다.
     final indexed = widget.sentences.indexed.toList()
       ..sort((a, b) {
         final pa = a.$2.pageNumber;
@@ -3112,7 +3111,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
             ? 1
             : pb == null
             ? -1
-            : pa.compareTo(pb);
+            : pb.compareTo(pa);
         return byPage != 0 ? byPage : a.$1.compareTo(b.$1);
       });
     _items = indexed.map((e) => e.$2).toList();
