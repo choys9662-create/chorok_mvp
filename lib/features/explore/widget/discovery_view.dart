@@ -22,6 +22,116 @@ class DiscoveryView extends ConsumerWidget {
     required this.onTitleTap,
   });
 
+  void _showPopularBooks(BuildContext context, List<AladinBook> books) {
+    _showDiscoverySheet(
+      context,
+      title: '지금 가장 많이 검색되는 책',
+      children: [
+        for (var i = 0; i < books.length; i++)
+          ListTile(
+            onTap: () {
+              Navigator.of(context).pop();
+              onBookNavigate(books[i]);
+            },
+            leading: SizedBox(
+              width: 38,
+              child: Text(
+                '${i + 1}',
+                textAlign: TextAlign.center,
+                style: AppTheme.bodyMedium.copyWith(color: AppTheme.accent),
+              ),
+            ),
+            title: Text(books[i].title),
+            subtitle: Text(books[i].author),
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+      ],
+    );
+  }
+
+  void _showPopularAuthors(BuildContext context, List<PopularAuthor> authors) {
+    _showDiscoverySheet(
+      context,
+      title: '지금 가장 많이 검색되는 작가',
+      children: [
+        for (final author in authors)
+          ListTile(
+            onTap: () {
+              Navigator.of(context).pop();
+              onAuthorTap(author.name);
+            },
+            title: Text(author.name),
+            subtitle: Text(author.titles.join(' · ')),
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+      ],
+    );
+  }
+
+  void _showRecommendations(
+    BuildContext context,
+    String title,
+    List<RecommendedBook> books,
+  ) {
+    _showDiscoverySheet(
+      context,
+      title: title,
+      children: [
+        for (final book in books)
+          ListTile(
+            onTap: () {
+              Navigator.of(context).pop();
+              onTitleTap(book.title);
+            },
+            title: Text(book.title),
+            subtitle: Text('${book.author} · ${book.reason}'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+          ),
+      ],
+    );
+  }
+
+  void _showDiscoverySheet(
+    BuildContext context, {
+    required String title,
+    required List<Widget> children,
+  }) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appSurface,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.72,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  4,
+                  AppTheme.screenPadding,
+                  12,
+                ),
+                child: Text(
+                  title,
+                  style: AppTheme.headingSmall.copyWith(
+                    color: sheetContext.appTextPrimary,
+                  ),
+                ),
+              ),
+              Flexible(child: ListView(children: children)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final popularBooks = ref.watch(popularBooksProvider);
@@ -32,6 +142,7 @@ class DiscoveryView extends ConsumerWidget {
     final books = popularBooks.valueOrNull ?? const <AladinBook>[];
     final authors = popularAuthors.valueOrNull ?? const <PopularAuthor>[];
     final recs = recommended.valueOrNull ?? const <RecommendedBook>[];
+    final recommendationTitle = myName != null ? '$myName님 맞춤 추천 책' : '맞춤 추천 책';
 
     final hasContent =
         books.isNotEmpty || authors.isNotEmpty || recs.isNotEmpty;
@@ -71,20 +182,32 @@ class DiscoveryView extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 4, bottom: 40),
       children: [
         if (books.isNotEmpty) ...[
-          const _SectionHeader(title: '지금 가장 많이 검색되는 책'),
+          _SectionHeader(
+            title: '지금 가장 많이 검색되는 책',
+            onTap: () => _showPopularBooks(context, books),
+          ),
           const SizedBox(height: 12),
           _PopularBooksRow(books: books, onTap: onBookNavigate),
           const SizedBox(height: 28),
         ],
         if (authors.isNotEmpty) ...[
-          const _SectionHeader(title: '지금 가장 많이 검색되는 작가'),
+          _SectionHeader(
+            title: '지금 가장 많이 검색되는 작가',
+            onTap: () => _showPopularAuthors(context, authors),
+          ),
           const SizedBox(height: 12),
-          _PopularAuthorsCard(authors: authors, onTap: onAuthorTap),
+          _PopularAuthorsCard(
+            authors: authors,
+            onTap: onAuthorTap,
+            onMoreTap: () => _showPopularAuthors(context, authors),
+          ),
           const SizedBox(height: 28),
         ],
         if (recs.isNotEmpty) ...[
           _SectionHeader(
-            title: myName != null ? '$myName님 맞춤 추천 책' : '맞춤 추천 책',
+            title: recommendationTitle,
+            onTap: () =>
+                _showRecommendations(context, recommendationTitle, recs),
           ),
           const SizedBox(height: 12),
           _RecommendedGrid(books: recs, onTap: onTitleTap),
@@ -98,29 +221,41 @@ class DiscoveryView extends ConsumerWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final VoidCallback onTap;
+  const _SectionHeader({required this.title, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: AppTheme.headingSmall.copyWith(
-                color: context.appTextPrimary,
-                fontWeight: FontWeight.w400,
-              ),
+      child: Semantics(
+        label: '$title 전체 보기',
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: context.appTextTertiary,
+                ),
+              ],
             ),
           ),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 22,
-            color: context.appTextTertiary,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -234,8 +369,13 @@ class _PopularBookItem extends StatelessWidget {
 class _PopularAuthorsCard extends StatelessWidget {
   final List<PopularAuthor> authors;
   final void Function(String) onTap;
+  final VoidCallback onMoreTap;
 
-  const _PopularAuthorsCard({required this.authors, required this.onTap});
+  const _PopularAuthorsCard({
+    required this.authors,
+    required this.onTap,
+    required this.onMoreTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -264,10 +404,18 @@ class _PopularAuthorsCard extends StatelessWidget {
             ],
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Icon(
-                Icons.more_vert_rounded,
-                size: 18,
-                color: context.appTextTertiary,
+              child: Semantics(
+                label: '인기 작가 전체 보기',
+                button: true,
+                child: IconButton(
+                  onPressed: onMoreTap,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    size: 18,
+                    color: context.appTextTertiary,
+                  ),
+                ),
               ),
             ),
           ],

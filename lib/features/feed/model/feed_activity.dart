@@ -26,7 +26,8 @@ class FeedActivity {
   final FeedActivityType type;
 
   // 행위자
-  final String username;
+  final String username; // 표시명 (display_name)
+  final String? handle; // @아이디 (동명이인 구분용)
   final String? avatarUrl;
   final bool isFriend;
 
@@ -52,6 +53,7 @@ class FeedActivity {
     required this.id,
     required this.type,
     required this.username,
+    this.handle,
     this.avatarUrl,
     this.isFriend = false,
     required this.bookTitle,

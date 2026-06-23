@@ -4,12 +4,15 @@ import '../../core/constants/app_flags.dart';
 import '../../core/services/db_service.dart';
 import '../models/overlap_group.dart';
 import '../utils/overlap_detector.dart';
+import '../utils/overlap_text_merger.dart';
 
 /// 겹문장 한 건 — 내 문장과 팔로잉 독자의 문장이 같은 책에서 겹친 결과.
 class FollowOverlap {
   final String bookTitle;
   final String bookAuthor;
   final String? coverUrl;
+  final String? bookId;
+  final String? globalBookId;
 
   final String mySentenceId;
   final String myContent;
@@ -17,6 +20,7 @@ class FollowOverlap {
 
   final String neighborUserId;
   final String neighborName;
+  final String? neighborHandle;
   final String? neighborAvatar;
   final String neighborSentenceId;
   final String neighborContent;
@@ -25,16 +29,21 @@ class FollowOverlap {
 
   final double ratio;
   final String commonPhrase;
+  final String mergedContent;
+  final HighlightRange mergedHighlight;
 
   const FollowOverlap({
     required this.bookTitle,
     required this.bookAuthor,
     this.coverUrl,
+    this.bookId,
+    this.globalBookId,
     required this.mySentenceId,
     required this.myContent,
     this.myPage,
     required this.neighborUserId,
     required this.neighborName,
+    this.neighborHandle,
     this.neighborAvatar,
     required this.neighborSentenceId,
     required this.neighborContent,
@@ -42,6 +51,8 @@ class FollowOverlap {
     required this.neighborCreatedAt,
     required this.ratio,
     required this.commonPhrase,
+    required this.mergedContent,
+    required this.mergedHighlight,
   });
 }
 
@@ -62,7 +73,9 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
     if (kUseMock) return _mockOverlaps();
 
     try {
-      final data = await ref.read(dbServiceProvider).fetchFollowOverlapCandidates();
+      final data = await ref
+          .read(dbServiceProvider)
+          .fetchFollowOverlapCandidates();
       if (data.mine.isEmpty || data.neighbors.isEmpty) return const [];
       return _detect(data.mine, data.neighbors);
     } catch (_) {
@@ -99,7 +112,8 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
         if (myContent.isEmpty) continue;
 
         for (final neighborRow in theirList) {
-          final neighborContent = (neighborRow['content'] as String? ?? '').trim();
+          final neighborContent = (neighborRow['content'] as String? ?? '')
+              .trim();
           if (neighborContent.isEmpty) continue;
 
           final result = OverlapDetector.compare(myContent, neighborContent);
@@ -140,22 +154,33 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
     final neighborContent = (neighborRow['content'] as String? ?? '').trim();
     final common = result.commonPhrase.trim().isNotEmpty
         ? result.commonPhrase.trim()
-        : (myContent.length <= neighborContent.length ? myContent : neighborContent);
+        : (myContent.length <= neighborContent.length
+              ? myContent
+              : neighborContent);
+    final merged = mergeOverlapText(
+      mine: myContent,
+      neighbor: neighborContent,
+      result: result,
+    );
 
     return FollowOverlap(
       bookTitle: book?['title'] as String? ?? '알 수 없는 책',
       bookAuthor: book?['author'] as String? ?? '',
       coverUrl: book?['cover_url'] as String?,
+      bookId: neighborRow['book_id'] as String?,
+      globalBookId: neighborRow['global_book_id'] as String?,
       mySentenceId: mineRow['id'] as String? ?? '',
       myContent: myContent,
       myPage: (mineRow['page_number'] as num?)?.toInt(),
       neighborUserId:
           neighborRow['user_id'] as String? ?? profile?['id'] as String? ?? '',
       neighborName: neighborName,
+      neighborHandle: (profile?['username'] as String?)?.trim(),
       neighborAvatar: profile?['avatar_url'] as String?,
       neighborSentenceId: neighborRow['id'] as String? ?? '',
       neighborContent: neighborContent,
-      neighborThought: (neighborRow['thought'] as String?)?.trim().isNotEmpty == true
+      neighborThought:
+          (neighborRow['thought'] as String?)?.trim().isNotEmpty == true
           ? neighborRow['thought'] as String
           : null,
       neighborCreatedAt:
@@ -163,6 +188,8 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
           DateTime.now(),
       ratio: result.ratio,
       commonPhrase: common,
+      mergedContent: merged.content,
+      mergedHighlight: merged.highlight,
     );
   }
 
@@ -196,11 +223,13 @@ List<FollowOverlap> _mockOverlaps() {
       bookTitle: '데미안',
       bookAuthor: '헤르만 헤세',
       coverUrl: demianCover,
+      bookId: 'mock_demian',
       mySentenceId: 'mock_my_1',
       myContent: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
       myPage: 12,
       neighborUserId: 'mock_haejin',
       neighborName: '해진짱짱',
+      neighborHandle: 'haejin_jjang',
       neighborAvatar: null,
       neighborSentenceId: 'mock_nb_1',
       neighborContent: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
@@ -208,24 +237,29 @@ List<FollowOverlap> _mockOverlaps() {
       neighborCreatedAt: now.subtract(const Duration(minutes: 16)),
       ratio: 1.0,
       commonPhrase: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
+      mergedContent: '나는 채식주의자가 되기로 했다. 꿈 때문에.',
+      mergedHighlight: HighlightRange(0, 24),
     ),
     FollowOverlap(
       bookTitle: '데미안',
       bookAuthor: '헤르만 헤세',
       coverUrl: demianCover,
+      bookId: 'mock_demian',
       mySentenceId: 'mock_my_2',
       myContent: '아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.',
       myPage: 9,
       neighborUserId: 'mock_haejin',
       neighborName: '해진짱짱',
+      neighborHandle: 'haejin_jjang',
       neighborAvatar: null,
       neighborSentenceId: 'mock_nb_2',
       neighborContent: '나는 그녀가 특별한 사람이라고 생각한 적이 없었다.',
-      neighborThought:
-          '평범함에 대한 진술이 아니라 곧 닥칠 균열의 예고편이다.',
+      neighborThought: '평범함에 대한 진술이 아니라 곧 닥칠 균열의 예고편이다.',
       neighborCreatedAt: now.subtract(const Duration(hours: 1)),
       ratio: 0.78,
       commonPhrase: '나는 그녀가 특별한 사람이라고 생각한 적이 없었다',
+      mergedContent: '아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.',
+      mergedHighlight: HighlightRange(17, 44),
     ),
   ];
 }

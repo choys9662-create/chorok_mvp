@@ -37,6 +37,7 @@ void _openProfile(
 class SplitHighlightWidget extends StatelessWidget {
   final String anchorText;
   final String collectorUsername;
+  final String? collectorUserHandle;
   final String? collectorUserId;
   final String? collectorThought;
   final List<OverlapMatch> matches;
@@ -45,6 +46,7 @@ class SplitHighlightWidget extends StatelessWidget {
     super.key,
     required this.anchorText,
     required this.collectorUsername,
+    this.collectorUserHandle,
     this.collectorUserId,
     this.collectorThought,
     required this.matches,
@@ -60,6 +62,8 @@ class SplitHighlightWidget extends StatelessWidget {
           anchorText: anchorText,
           username: collectorUsername,
           userId: collectorUserId,
+          rawUsername: collectorUserHandle,
+          displayName: collectorUsername,
           thought: collectorThought,
           isCollector: true,
         ),
@@ -188,15 +192,35 @@ class _OverlapCard extends StatelessWidget {
                       : null,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  username,
-                  style: AppTheme.captionLarge.copyWith(
-                    color: isCollector
-                        ? context.appPrimaryAccent
-                        : context.appTextSecondary,
-                    fontWeight: FontWeight.w400,
+                Flexible(
+                  child: Text(
+                    username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: isCollector
+                          ? context.appPrimaryAccent
+                          : context.appTextSecondary,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ),
+                if (rawUsername != null &&
+                    rawUsername!.isNotEmpty &&
+                    rawUsername != username) ...[
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '@$rawUsername',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
                 if (tappable) ...[
                   const SizedBox(width: 2),
                   Icon(

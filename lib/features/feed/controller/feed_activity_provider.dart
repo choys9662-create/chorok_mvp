@@ -78,6 +78,7 @@ class _FeedActivityLoader {
           id: data['event_id'] as String,
           type: type,
           username: data['username'] as String? ?? '독자',
+          handle: (data['handle'] as String?)?.trim(),
           avatarUrl: data['avatar_url'] as String?,
           bookTitle: data['book_title'] as String? ?? '알 수 없는 책',
           bookAuthor: data['book_author'] as String? ?? '',
@@ -118,16 +119,15 @@ class _FeedActivityLoader {
 
   /// user_id → 프로필 맵. 세션/완독 행에는 작성자 프로필 임베드가 없으므로
   /// 한 번에 조회해 매핑한다.
-  Future<Map<String, ({String name, String? avatarUrl})>> _profiles(
-    Set<String> userIds,
-  ) async {
+  Future<Map<String, ({String name, String? handle, String? avatarUrl})>>
+  _profiles(Set<String> userIds) async {
     if (userIds.isEmpty) return const {};
     try {
       final rows = await client
           .from('profiles')
           .select('id, username, display_name, avatar_url')
           .inFilter('id', userIds.toList());
-      final map = <String, ({String name, String? avatarUrl})>{};
+      final map = <String, ({String name, String? handle, String? avatarUrl})>{};
       for (final r in rows as List) {
         final m = r as Map<String, dynamic>;
         final id = m['id'] as String?;
@@ -137,6 +137,7 @@ class _FeedActivityLoader {
               (m['display_name'] as String?) ??
               (m['username'] as String?) ??
               '독자',
+          handle: (m['username'] as String?)?.trim(),
           avatarUrl: m['avatar_url'] as String?,
         );
       }
@@ -195,6 +196,7 @@ class _FeedActivityLoader {
             (profile?['display_name'] as String?) ??
             (profile?['username'] as String?) ??
             '독자';
+        final handle = (profile?['username'] as String?)?.trim();
         final occurredAt =
             DateTime.tryParse(first['created_at'] as String? ?? '') ??
             DateTime.now();
@@ -215,6 +217,7 @@ class _FeedActivityLoader {
             id: 'sb_$key',
             type: FeedActivityType.sentenceBatch,
             username: username,
+            handle: handle,
             avatarUrl: profile?['avatar_url'] as String?,
             isFriend: followingIds != null,
             bookTitle: book?['title'] as String? ?? '알 수 없는 책',
@@ -274,6 +277,7 @@ class _FeedActivityLoader {
           id: 'ss_${m['id']}',
           type: FeedActivityType.sessionComplete,
           username: profile?.name ?? '독자',
+          handle: profile?.handle,
           avatarUrl: profile?.avatarUrl,
           isFriend: followingIds != null,
           bookTitle: book?['title'] as String? ?? '알 수 없는 책',
@@ -326,6 +330,7 @@ class _FeedActivityLoader {
           id: 'bc_${m['id']}',
           type: FeedActivityType.bookComplete,
           username: profile?.name ?? '독자',
+          handle: profile?.handle,
           avatarUrl: profile?.avatarUrl,
           isFriend: followingIds != null,
           bookTitle: m['title'] as String? ?? '알 수 없는 책',
@@ -355,6 +360,7 @@ List<FeedActivity> _mockActivities() {
       id: 'm1',
       type: FeedActivityType.sentenceBatch,
       username: '해진짱짱',
+      handle: 'haejin_jjang',
       isFriend: true,
       bookTitle: '데미안',
       bookAuthor: '헤르만 헤세',
@@ -386,6 +392,7 @@ List<FeedActivity> _mockActivities() {
       id: 'm2',
       type: FeedActivityType.sessionComplete,
       username: '해진짱짱',
+      handle: 'haejin_jjang',
       isFriend: true,
       bookTitle: '데미안',
       bookAuthor: '헤르만 헤세',
@@ -397,6 +404,7 @@ List<FeedActivity> _mockActivities() {
       id: 'm3',
       type: FeedActivityType.sessionComplete,
       username: '해골맨',
+      handle: 'skull_man',
       isFriend: true,
       bookTitle: '채식주의자',
       bookAuthor: '한강',
@@ -408,6 +416,7 @@ List<FeedActivity> _mockActivities() {
       id: 'm4',
       type: FeedActivityType.bookComplete,
       username: '해골맨',
+      handle: 'skull_man',
       isFriend: true,
       bookTitle: '채식주의자',
       bookAuthor: '한강',

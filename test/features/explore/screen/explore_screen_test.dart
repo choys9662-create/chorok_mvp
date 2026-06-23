@@ -98,6 +98,29 @@ void main() {
     expect(find.widgetWithText(TextField, '한강'), findsOneWidget);
   });
 
+  testWidgets('디스커버리 섹션 화살표와 더보기 버튼이 전체 목록을 연다', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('지금 가장 많이 검색되는 책'));
+    await tester.pumpAndSettle();
+    expect(find.text('지금 가장 많이 검색되는 책'), findsNWidgets(2));
+
+    await tester.tapAt(const Offset(10, 100));
+    await tester.pumpAndSettle();
+
+    final moreButton = find.byIcon(Icons.more_vert_rounded);
+    await tester.ensureVisible(moreButton);
+    await tester.tap(moreButton);
+    await tester.pumpAndSettle();
+    expect(find.text('지금 가장 많이 검색되는 작가'), findsNWidgets(2));
+  });
+
   testWidgets('일부 디스커버리 데이터가 아직 로딩 중이면 빈 상태를 표시하지 않는다', (tester) async {
     final authors = Completer<List<PopularAuthor>>();
     final recommendations = Completer<List<RecommendedBook>>();

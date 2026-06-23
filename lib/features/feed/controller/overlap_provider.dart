@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/db_service.dart';
+import '../../../shared/utils/overlap_detector.dart';
 
 // ─── OverlapMatch 모델 ─────────────────────────────────────────────────────
 
@@ -29,7 +30,9 @@ class OverlapMatch {
 
   factory OverlapMatch.fromMap(Map<String, dynamic> m) {
     final profile = m['profiles'] as Map<String, dynamic>?;
-    final book = m['books'] as Map<String, dynamic>?;
+    final book =
+        (m['global_books'] as Map<String, dynamic>?) ??
+        (m['books'] as Map<String, dynamic>?);
     return OverlapMatch(
       sentenceId: m['id'] as String,
       userId: m['user_id'] as String? ?? profile?['id'] as String?,
@@ -46,18 +49,73 @@ class OverlapMatch {
 
 // ─── Provider ─────────────────────────────────────────────────────────────
 
-class OverlapNotifier
-    extends FamilyAsyncNotifier<List<OverlapMatch>, String> {
+class OverlapNotifier extends FamilyAsyncNotifier<List<OverlapMatch>, String> {
   @override
   Future<List<OverlapMatch>> build(String normalizedText) async {
     if (normalizedText.isEmpty) return const [];
-    final rows =
-        await ref.read(dbServiceProvider).findOverlappingSentences(normalizedText);
+    final rows = await ref
+        .read(dbServiceProvider)
+        .findOverlappingSentences(normalizedText);
     return rows.map(OverlapMatch.fromMap).toList();
   }
 }
 
-final overlappingSentencesProvider = AsyncNotifierProvider.family<
-    OverlapNotifier, List<OverlapMatch>, String>(
-  OverlapNotifier.new,
-);
+final overlappingSentencesProvider =
+    AsyncNotifierProvider.family<OverlapNotifier, List<OverlapMatch>, String>(
+      OverlapNotifier.new,
+    );
+
+class OverlapGroupQuery {
+  final String commonPhrase;
+  final String? globalBookId;
+  final String? bookId;
+
+  const OverlapGroupQuery({
+    required this.commonPhrase,
+    this.globalBookId,
+    this.bookId,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is OverlapGroupQuery &&
+      other.commonPhrase == commonPhrase &&
+      other.globalBookId == globalBookId &&
+      other.bookId == bookId;
+
+  @override
+  int get hashCode => Object.hash(commonPhrase, globalBookId, bookId);
+}
+
+class OverlapGroupNotifier
+    extends FamilyAsyncNotifier<List<OverlapMatch>, OverlapGroupQuery> {
+  @override
+  Future<List<OverlapMatch>> build(OverlapGroupQuery query) async {
+    if (query.commonPhrase.trim().isEmpty) return const [];
+    final rows = await ref
+        .read(dbServiceProvider)
+        .fetchBookSentenceCandidates(
+          globalBookId: query.globalBookId,
+          bookId: query.bookId,
+        );
+
+    return rows
+        .where((row) {
+          final content = (row['content'] as String? ?? '').trim();
+          return content.isNotEmpty &&
+              OverlapDetector.compare(
+                query.commonPhrase,
+                content,
+              ).isOverlapping;
+        })
+        .map(OverlapMatch.fromMap)
+        .toList();
+  }
+}
+
+final overlapGroupProvider =
+    AsyncNotifierProvider.family<
+      OverlapGroupNotifier,
+      List<OverlapMatch>,
+      OverlapGroupQuery
+    >(OverlapGroupNotifier.new);

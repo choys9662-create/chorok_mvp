@@ -11,7 +11,6 @@ import '../../main.dart' show initialLocationProvider;
 
 import '../../features/analytics/screen/analytics_screen.dart';
 import '../../features/auth/screen/auth_screen.dart';
-import '../../features/auth/screen/sign_up_screen.dart';
 import '../../features/explore/screen/explore_screen.dart';
 import '../../features/feed/screen/feed_screen.dart';
 import '../../features/forest/widget/forest_lock_layer.dart';
@@ -87,7 +86,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       final isPublic =
           loc == AppConstants.routeAuth ||
-          loc == AppConstants.routeSignUp ||
           loc == AppConstants.routeOnboarding;
       if (!isLoggedIn && !isPublic) return AppConstants.routeAuth;
       if (isLoggedIn && loc == AppConstants.routeAuth) {
@@ -107,12 +105,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeAuth,
         builder: (context, state) => const AuthScreen(),
-      ),
-
-      // 회원가입
-      GoRoute(
-        path: AppConstants.routeSignUp,
-        builder: (context, state) => const SignUpScreen(),
       ),
 
       // 알림 — 쉘 밖에서 전체 화면으로 표시

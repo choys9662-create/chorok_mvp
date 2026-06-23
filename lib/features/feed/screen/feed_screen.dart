@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/overlap_group.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/providers/follow_overlap_provider.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
@@ -76,10 +77,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final isLoading = async.isLoading;
     final scrollCtrl = ref.read(tabScrollControllersProvider)[1];
     final topPad = MediaQuery.of(context).padding.top;
+    final canGoBack = Navigator.of(context).canPop();
 
     // 겹문장(나 ∩ 팔로잉, 같은 책) — 친구 피드에서만 의미가 있다.
     final overlaps = ref.watch(followOverlapProvider).valueOrNull ?? const [];
-    final showOverlapSection = _scope == FeedScope.friends &&
+    final showOverlapSection =
+        _scope == FeedScope.friends &&
         !isLoading &&
         !async.hasError &&
         overlaps.isNotEmpty;
@@ -89,12 +92,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       backgroundColor: context.appBg,
       body: Column(
         children: [
-          SizedBox(height: topPad + 12),
+          SizedBox(height: topPad + 8),
           // ─── 친구 / 전체 토글 (고정) ─────────────────────
           _ScopeToggle(
             scope: _scope,
             onChanged: _setScope,
             busy: _isRefreshing,
+            showBack: canGoBack,
+            onBack: () {
+              HapticFeedback.selectionClick();
+              Navigator.of(context).pop();
+            },
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -201,11 +209,15 @@ class _ScopeToggle extends StatelessWidget {
   final FeedScope scope;
   final ValueChanged<FeedScope> onChanged;
   final bool busy;
+  final bool showBack;
+  final VoidCallback onBack;
 
   const _ScopeToggle({
     required this.scope,
     required this.onChanged,
     required this.busy,
+    required this.showBack,
+    required this.onBack,
   });
 
   @override
@@ -215,7 +227,7 @@ class _ScopeToggle extends StatelessWidget {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 40,
+          height: 48,
           child: Center(
             child: Container(
               width: 132,
@@ -246,6 +258,22 @@ class _ScopeToggle extends StatelessWidget {
             ),
           ),
         ),
+        if (showBack)
+          Positioned(
+            left: AppTheme.screenPadding,
+            child: Semantics(
+              label: '뒤로 가기',
+              button: true,
+              child: IconButton(
+                onPressed: onBack,
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 20,
+                  color: context.appTextSecondary,
+                ),
+              ),
+            ),
+          ),
         if (busy)
           Positioned(
             right: 20,
@@ -407,7 +435,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ─── 겹문장 알림 카드 (1차: 나와 겹친 부분 / 2차: 상대 전체 문장 + 생각) ──────────
+// ─── 겹문장 알림 카드 ────────────────────────────────────────────────────────
 class _OverlapNotificationCard extends StatelessWidget {
   final FollowOverlap overlap;
   const _OverlapNotificationCard({required this.overlap});
@@ -417,13 +445,18 @@ class _OverlapNotificationCard extends StatelessWidget {
     context.push(
       AppConstants.routeSentenceDetail,
       extra: SentenceDetailExtra(
-        sentenceContent: overlap.neighborContent,
+        sentenceContent: overlap.mergedContent,
         bookTitle: overlap.bookTitle,
         bookAuthor: overlap.bookAuthor,
         collectorUsername: overlap.neighborName,
+        collectorUserHandle: overlap.neighborHandle,
         collectorUserId: overlap.neighborUserId,
         collectorThought: overlap.neighborThought,
         sentenceId: overlap.neighborSentenceId,
+        overlapCommonPhrase: overlap.commonPhrase,
+        overlapHighlight: overlap.mergedHighlight,
+        bookId: overlap.bookId,
+        globalBookId: overlap.globalBookId,
       ),
     );
   }
@@ -437,7 +470,9 @@ class _OverlapNotificationCard extends StatelessWidget {
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusLG,
-          side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.55)),
+          side: BorderSide(
+            color: context.appPrimaryAccent.withValues(alpha: 0.55),
+          ),
           shadows: _feedCardShadow(context),
         ),
         padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
@@ -469,6 +504,15 @@ class _OverlapNotificationCard extends StatelessWidget {
                                 color: context.appTextPrimary,
                               ),
                             ),
+                            if (o.neighborHandle != null &&
+                                o.neighborHandle!.isNotEmpty &&
+                                o.neighborHandle != o.neighborName)
+                              TextSpan(
+                                text: ' @${o.neighborHandle}',
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: context.appTextTertiary,
+                                ),
+                              ),
                             const TextSpan(text: '님과 같은 문장에 멈췄어요'),
                           ],
                         ),
@@ -500,7 +544,8 @@ class _OverlapNotificationCard extends StatelessWidget {
                 BookCover(
                   coverUrl: o.coverUrl,
                   gradientIndex:
-                      o.bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
+                      o.bookTitle.hashCode.abs() %
+                      AppTheme.coverGradients.length,
                   width: 38,
                   height: 50,
                   radius: 8,
@@ -508,27 +553,10 @@ class _OverlapNotificationCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            // 1차: 나와 겹친 부분
-            _OverlapAnchor(commonPhrase: o.commonPhrase),
-            const SizedBox(height: 8),
-            // 2차: 상대가 실제로 남긴 전체 문장
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: AppTheme.smoothBox(
-                color: context.appCardElevated,
-                radius: AppTheme.radiusMD,
-                side: BorderSide(color: context.appBorderSubtle),
-              ),
-              child: Text(
-                o.neighborContent,
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextPrimary,
-                  height: 1.55,
-                ),
-              ),
+            _MergedOverlapParagraph(
+              content: o.mergedContent,
+              highlight: o.mergedHighlight,
             ),
-            // 2차: 그 문장에 남긴 생각
             if (o.neighborThought != null && o.neighborThought!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
@@ -562,55 +590,51 @@ class _OverlapNotificationCard extends StatelessWidget {
   }
 }
 
-// ─── 겹문장 1차: 나와 겹친 부분 ───────────────────────────────────────────────
-class _OverlapAnchor extends StatelessWidget {
-  final String commonPhrase;
-  const _OverlapAnchor({required this.commonPhrase});
+class _MergedOverlapParagraph extends StatelessWidget {
+  final String content;
+  final HighlightRange highlight;
+
+  const _MergedOverlapParagraph({
+    required this.content,
+    required this.highlight,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final hasHighlight =
+        highlight.start >= 0 &&
+        highlight.end > highlight.start &&
+        highlight.end <= content.length;
+    final baseStyle = AppTheme.bodySmall.copyWith(
+      color: context.appTextPrimary,
+      height: 1.55,
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
-      decoration: ShapeDecoration(
-        color: context.appPrimaryAccent.withValues(alpha: 0.08),
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.55),
-          ),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        ),
+      decoration: AppTheme.smoothBox(
+        color: context.appCardElevated,
+        radius: AppTheme.radiusMD,
+        side: BorderSide(color: context.appBorderSubtle),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.join_inner_rounded,
-                size: 12,
-                color: context.appPrimaryAccent,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '나와 겹친 부분',
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '"$commonPhrase"',
-            style: AppTheme.bodySmall.copyWith(
-              color: context.appPrimaryAccent,
-              height: 1.55,
-            ),
-          ),
-        ],
+      child: Text.rich(
+        TextSpan(
+          style: baseStyle,
+          children: hasHighlight
+              ? [
+                  TextSpan(text: content.substring(0, highlight.start)),
+                  TextSpan(
+                    text: content.substring(highlight.start, highlight.end),
+                    style: baseStyle.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  TextSpan(text: content.substring(highlight.end)),
+                ]
+              : [TextSpan(text: content)],
+        ),
       ),
     );
   }
@@ -748,6 +772,8 @@ class _ActivityHeader extends StatelessWidget {
         break;
     }
 
+    final showHandle =
+        a.handle != null && a.handle!.isNotEmpty && a.handle != a.username;
     return RichText(
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
@@ -755,6 +781,11 @@ class _ActivityHeader extends StatelessWidget {
         style: base,
         children: [
           TextSpan(text: a.username, style: name),
+          if (showHandle)
+            TextSpan(
+              text: ' @${a.handle}',
+              style: base.copyWith(color: context.appTextTertiary),
+            ),
           ...children,
         ],
       ),
@@ -835,6 +866,7 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
         bookAuthor: widget.activity.bookAuthor,
         page: s.pageNumber,
         collectorUsername: widget.activity.username,
+        collectorUserHandle: widget.activity.handle,
         collectorThought: s.thought,
         sentenceId: s.id,
       ),

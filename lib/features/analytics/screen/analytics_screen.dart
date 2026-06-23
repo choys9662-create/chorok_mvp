@@ -227,28 +227,43 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
     if (!kUseMock && asyncA?.hasError == true) {
       return Scaffold(
-        body: Center(
+        body: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline_rounded,
-                color: context.appTextTertiary,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '데이터를 불러오지 못했어요',
-                style: AppTheme.bodyMedium.copyWith(
-                  color: context.appTextSecondary,
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
                 ),
+                child: _AnalyticsHeader(),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => ref.read(analyticsProvider.notifier).refresh(),
-                child: Text(
-                  '다시 시도',
-                  style: TextStyle(color: context.appPrimaryAccent),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        color: context.appTextTertiary,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '데이터를 불러오지 못했어요',
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () =>
+                            ref.read(analyticsProvider.notifier).refresh(),
+                        child: Text(
+                          '다시 시도',
+                          style: TextStyle(color: context.appPrimaryAccent),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -266,17 +281,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
             AppTheme.screenPadding,
-            topPad + 20,
+            topPad + 8,
             AppTheme.screenPadding,
             40,
           ),
           children: [
-            Text(
-              '분석',
-              style: AppTheme.headingLarge.copyWith(
-                color: context.appTextPrimary,
-              ),
-            ),
+            const _AnalyticsHeader(),
             const SizedBox(height: 16),
             TabSelector(
               selected: _tab,
@@ -310,7 +320,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         (kUseMock
             ? const [85, 42, 120, 65, 30, 153, 83]
             : const [0, 0, 0, 0, 0, 0, 0]);
-    final timeOfDay =
+    final rawTimeOfDay =
         a?.weekTimeOfDay ??
         (kUseMock
             ? const [
@@ -320,6 +330,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 (label: '저녁', range: '18–24', minutes: 353),
               ]
             : const <({String label, String range, int minutes})>[]);
+    final timeOfDay = rawTimeOfDay.isNotEmpty
+        ? rawTimeOfDay
+        : const [
+            (label: '새벽', range: '00–06', minutes: 0),
+            (label: '오전', range: '06–12', minutes: 0),
+            (label: '오후', range: '12–18', minutes: 0),
+            (label: '저녁', range: '18–24', minutes: 0),
+          ];
     final focusScore = a?.weekFocusScore ?? 0;
     final maxSessMin = a?.weekMaxSessionMinutes ?? 0;
     final avgSessMin = a?.weekAvgSessionMinutes ?? 0;
@@ -1233,6 +1251,45 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AnalyticsHeader extends StatelessWidget {
+  const _AnalyticsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          Semantics(
+            label: '뒤로 가기',
+            button: true,
+            child: IconButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                Navigator.of(context).pop();
+              },
+              padding: EdgeInsets.zero,
+              alignment: Alignment.centerLeft,
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: context.appTextSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '분석',
+            style: AppTheme.headingLarge.copyWith(
+              color: context.appTextPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

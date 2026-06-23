@@ -32,6 +32,7 @@ class _BookSentence {
   final String content;
   final String? thought;
   final String username;
+  final String? handle;
   final String? avatarUrl;
   final DateTime savedAt;
   final int likeCount;
@@ -43,6 +44,7 @@ class _BookSentence {
     required this.content,
     this.thought,
     required this.username,
+    this.handle,
     this.avatarUrl,
     required this.savedAt,
     this.likeCount = 0,
@@ -55,6 +57,7 @@ class _BookComment {
   final String? userId;
   final String content;
   final String username;
+  final String? handle;
   final String? avatarUrl;
   final DateTime createdAt;
   final String? sentenceContent;
@@ -66,6 +69,7 @@ class _BookComment {
     this.userId,
     required this.content,
     required this.username,
+    this.handle,
     this.avatarUrl,
     required this.createdAt,
     this.sentenceContent,
@@ -78,6 +82,7 @@ class _BookReview {
   final String id;
   final String? userId;
   final String username;
+  final String? handle;
   final String? avatarUrl;
   final int starRating;
   final String? memorableLine;
@@ -89,6 +94,7 @@ class _BookReview {
     required this.id,
     this.userId,
     required this.username,
+    this.handle,
     this.avatarUrl,
     required this.starRating,
     this.memorableLine,
@@ -105,6 +111,7 @@ class _BookSocialThought {
   final String id;
   final String? userId;
   final String username;
+  final String? handle;
   final String? avatarUrl;
   final String content;
   final String? anchor;
@@ -117,6 +124,7 @@ class _BookSocialThought {
     required this.id,
     required this.userId,
     required this.username,
+    this.handle,
     this.avatarUrl,
     required this.content,
     this.anchor,
@@ -251,6 +259,7 @@ final _bookInfoCommunityProvider =
           content: row['content'] as String,
           thought: row['thought'] as String?,
           username: _displayName(row),
+          handle: _handle(row),
           avatarUrl: row['avatar_url'] as String?,
           savedAt: _parseDate(row['created_at']),
           likeCount: (row['like_count'] as num?)?.toInt() ?? 0,
@@ -272,6 +281,7 @@ final _bookInfoCommunityProvider =
               userId: sentence.userId,
               content: sentence.thought!.trim(),
               username: sentence.username,
+              handle: sentence.handle,
               avatarUrl: sentence.avatarUrl,
               createdAt: sentence.savedAt,
               sentenceContent: sentence.content,
@@ -324,6 +334,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       content: '사람은 어떤 문장 앞에서 오래 멈출 때, 자기 마음의 모양을 조금 더 알게 된다.',
       thought: '이 책을 읽는 동안 계속 밑줄을 긋게 된 문장. 조용한 위로보다 정확한 진단에 가까웠다.',
       username: '유나',
+      handle: 'yuna',
       savedAt: now.subtract(const Duration(hours: 3)),
       likeCount: 18,
       isFollowing: true,
@@ -334,6 +345,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       content: '좋은 책은 답을 주기보다 내가 오래 피하던 질문을 다시 내 앞에 놓는다.',
       thought: '읽고 나서 바로 덮기 어려웠다. 다음 장으로 넘어가기 전에 내 생활을 먼저 돌아보게 했다.',
       username: '마고',
+      handle: 'mago',
       savedAt: now.subtract(const Duration(days: 1, hours: 2)),
       likeCount: 11,
     ),
@@ -343,6 +355,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       content: '우리가 끝내 이해하지 못한 마음도, 어떤 문장 안에서는 잠시 같은 자리에 앉는다.',
       thought: '같은 장면을 보고도 서로 다른 곳에서 멈춘다는 게 좋았다.',
       username: '온도',
+      handle: 'ondo',
       savedAt: now.subtract(const Duration(days: 2)),
       likeCount: 7,
       isFollowing: true,
@@ -353,6 +366,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       content: '오래된 기억은 사라지는 게 아니라, 말할 수 있는 문장을 기다리고 있었다.',
       thought: null,
       username: '진',
+      handle: 'jin',
       savedAt: now.subtract(const Duration(days: 3)),
       likeCount: 4,
     ),
@@ -377,6 +391,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       userId: 'mock_following_yuna',
       content: '후반부보다 초반의 문장들이 더 오래 남았어요. 천천히 읽을수록 밀도가 살아나는 책.',
       username: '유나',
+      handle: 'yuna',
       createdAt: now.subtract(const Duration(hours: 8)),
       sentenceContent: sentences[1].content,
       likeCount: 6,
@@ -387,6 +402,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       userId: 'mock_reader_river',
       content: '문장이 차분한데 감정은 꽤 깊게 들어와요. 읽는 속도를 일부러 늦추게 됐습니다.',
       username: '리버',
+      handle: 'river',
       createdAt: now.subtract(const Duration(days: 1, hours: 5)),
       sentenceContent: sentences[0].content,
       likeCount: 3,
@@ -398,6 +414,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       id: 'mock_review_${isbn13}_1',
       userId: 'mock_following_ondo',
       username: '온도',
+      handle: 'ondo',
       starRating: 5,
       memorableLine: '말할 수 있는 문장을 기다리고 있었다.',
       legacy: '짧은 문장마다 생각이 남아서, 완독보다 멈춤이 더 많았던 책.',
@@ -408,6 +425,7 @@ _BookCommunityData _mockBookCommunityData(String isbn13) {
       id: 'mock_review_${isbn13}_2',
       userId: 'mock_reader_mago',
       username: '마고',
+      handle: 'mago',
       starRating: 4,
       memorableLine: '자기 마음의 모양을 조금 더 알게 된다.',
       legacy: '인상적인 문장이 많고, 읽은 뒤에 다른 사람의 밑줄이 궁금해지는 책.',
@@ -619,6 +637,7 @@ Future<List<_BookComment>> _fetchSentenceComments(
         userId: userId,
         content: row['content'] as String,
         username: _displayName(profile),
+        handle: _handle(profile),
         avatarUrl: profile?['avatar_url'] as String?,
         createdAt: _parseDate(row['created_at']),
         likeCount: (row['like_count'] as num?)?.toInt() ?? 0,
@@ -653,6 +672,7 @@ Future<List<_BookReview>> _fetchBookReviews(
         id: row['id'] as String,
         userId: userId,
         username: _displayName(profile),
+        handle: _handle(profile),
         avatarUrl: profile?['avatar_url'] as String?,
         starRating: (row['star_rating'] as num?)?.toInt() ?? 0,
         memorableLine: row['memorable_line'] as String?,
@@ -679,6 +699,7 @@ List<_BookSocialThought> _buildFollowingThoughts({
           id: sentence.id,
           userId: sentence.userId,
           username: sentence.username,
+          handle: sentence.handle,
           avatarUrl: sentence.avatarUrl,
           content: sentence.thought!.trim(),
           anchor: sentence.content,
@@ -694,6 +715,7 @@ List<_BookSocialThought> _buildFollowingThoughts({
           id: review.id,
           userId: review.userId,
           username: review.username,
+          handle: review.handle,
           avatarUrl: review.avatarUrl,
           content: review.legacy?.trim().isNotEmpty == true
               ? review.legacy!.trim()
@@ -715,6 +737,7 @@ List<_BookSocialThought> _buildFollowingThoughts({
           id: comment.id,
           userId: comment.userId,
           username: comment.username,
+          handle: comment.handle,
           avatarUrl: comment.avatarUrl,
           content: comment.content.trim(),
           anchor: comment.sentenceContent,
@@ -751,6 +774,12 @@ String _displayName(Map<String, dynamic>? row) {
   if (displayName != null && displayName.isNotEmpty) return displayName;
   final username = (row?['username'] as String?)?.trim();
   return username != null && username.isNotEmpty ? username : '독자';
+}
+
+/// @아이디(핸들) — 동명이인 구분용. 없으면 null.
+String? _handle(Map<String, dynamic>? row) {
+  final username = (row?['username'] as String?)?.trim();
+  return username != null && username.isNotEmpty ? username : null;
 }
 
 DateTime _parseDate(Object? value) {
@@ -1820,6 +1849,7 @@ class _PopularBookThoughtCard extends StatelessWidget {
         bookTitle: book.title,
         bookAuthor: book.author,
         collectorUsername: sentence.username,
+        collectorUserHandle: sentence.handle,
         collectorThought: sentence.thought,
         sentenceId: sentence.id,
       ),
@@ -1856,14 +1886,10 @@ class _PopularBookThoughtCard extends StatelessWidget {
                       username: sentence.username,
                       avatarUrl: sentence.avatarUrl,
                     ),
-                    child: Text(
-                      sentence.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextSecondary,
-                      ),
+                    child: _AuthorLabel(
+                      displayName: sentence.username,
+                      handle: sentence.handle,
+                      color: context.appTextSecondary,
                     ),
                   ),
                 ),
@@ -2047,15 +2073,10 @@ class _FollowingThoughtCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      thought.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
+                    child: _AuthorLabel(
+                      displayName: thought.username,
+                      handle: thought.handle,
+                      color: context.appTextSecondary,
                     ),
                   ),
                   Container(
@@ -2228,17 +2249,12 @@ class _ReviewCard extends StatelessWidget {
                     username: review.username,
                     avatarUrl: review.avatarUrl,
                   ),
-                  child: Text(
-                    review.username,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: review.userId == null
-                          ? context.appTextTertiary
-                          : context.appTextSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: _AuthorLabel(
+                    displayName: review.username,
+                    handle: review.handle,
+                    color: review.userId == null
+                        ? context.appTextTertiary
+                        : context.appTextSecondary,
                   ),
                 ),
               ),
@@ -2374,17 +2390,12 @@ class _CommentCard extends StatelessWidget {
                     username: comment.username,
                     avatarUrl: comment.avatarUrl,
                   ),
-                  child: Text(
-                    comment.username,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: comment.userId == null
-                          ? context.appTextTertiary
-                          : context.appTextSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: _AuthorLabel(
+                    displayName: comment.username,
+                    handle: comment.handle,
+                    color: comment.userId == null
+                        ? context.appTextTertiary
+                        : context.appTextSecondary,
                   ),
                 ),
               ),
@@ -2801,17 +2812,12 @@ class _SentenceCard extends StatelessWidget {
                     username: sentence.username,
                     avatarUrl: sentence.avatarUrl,
                   ),
-                  child: Text(
-                    sentence.username,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: sentence.userId == null
-                          ? context.appTextTertiary
-                          : context.appTextSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  child: _AuthorLabel(
+                    displayName: sentence.username,
+                    handle: sentence.handle,
+                    color: sentence.userId == null
+                        ? context.appTextTertiary
+                        : context.appTextSecondary,
                   ),
                 ),
               ),
@@ -2838,6 +2844,47 @@ class _SentenceCard extends StatelessWidget {
 }
 
 // ─── 유저 아바타 ──────────────────────────────────────────────────────────────
+
+/// 표시명 + @아이디(핸들)를 함께 보여주는 작성자 라벨. 동명이인 구분용.
+class _AuthorLabel extends StatelessWidget {
+  final String displayName;
+  final String? handle;
+  final Color color;
+
+  const _AuthorLabel({
+    required this.displayName,
+    required this.color,
+    this.handle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final showHandle =
+        handle != null && handle!.isNotEmpty && handle != displayName;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          displayName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        if (showHandle)
+          Text(
+            '@$handle',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 10, color: context.appTextTertiary),
+          ),
+      ],
+    );
+  }
+}
 
 class _Avatar extends StatelessWidget {
   final String username;

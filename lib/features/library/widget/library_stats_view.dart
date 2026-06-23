@@ -40,25 +40,17 @@ Future<List<({String label, double hours})>> _loadGenreReadingTimesFromSupabase(
   String userId,
 ) async {
   final client = Supabase.instance.client;
-  List rows;
-  try {
-    rows = await client
-        .from('reading_sessions')
-        .select('duration_seconds, books(title, genre)')
-        .eq('user_id', userId);
-  } catch (e) {
-    if (!e.toString().contains('genre')) rethrow;
-    rows = await client
-        .from('reading_sessions')
-        .select('duration_seconds, books(title)')
-        .eq('user_id', userId);
-  }
+  // 장르는 books에 컬럼이 없고 global_books.category(알라딘 분류)에 있다.
+  final rows = await client
+      .from('reading_sessions')
+      .select('duration_seconds, books(title, global_books(category))')
+      .eq('user_id', userId);
   final byGenre = <String, int>{};
-  for (final row in rows) {
-    final map = row as Map<String, dynamic>;
+  for (final map in rows) {
     final book = map['books'] as Map<String, dynamic>?;
+    final globalBook = book?['global_books'] as Map<String, dynamic>?;
     final genre = _genreLabel(
-      book?['genre'] as String?,
+      globalBook?['category'] as String?,
       fallbackTitle: book?['title'] as String?,
     );
     final dur = (map['duration_seconds'] as num?)?.toInt() ?? 0;

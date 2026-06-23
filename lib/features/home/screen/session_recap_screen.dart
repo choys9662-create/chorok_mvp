@@ -1195,6 +1195,7 @@ class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
         bookTitle: widget.thought.bookTitle ?? widget.bookTitle,
         bookAuthor: widget.bookAuthor,
         collectorUsername: widget.thought.displayNameOrUsername,
+        collectorUserHandle: widget.thought.username,
         collectorThought: widget.thought.thought,
         sentenceId: widget.thought.sentenceId,
       ),
@@ -1226,14 +1227,35 @@ class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.thought.displayNameOrUsername,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _labelStyle(fontSize: 13).copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.thought.displayNameOrUsername,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _labelStyle(fontSize: 13).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (widget.thought.username.isNotEmpty &&
+                              widget.thought.username !=
+                                  widget.thought.displayNameOrUsername) ...[
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '@${widget.thought.username}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: _labelStyle(fontSize: 11).copyWith(
+                                  color: _recapBlueMuted.withValues(alpha: 0.64),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Text(

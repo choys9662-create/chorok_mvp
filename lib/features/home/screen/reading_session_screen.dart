@@ -831,8 +831,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         _stoppedBook ?? _lockResolvedSessionBook(timer: timer, books: books);
     final firefly = ref.watch(sessionFireflyProvider).valueOrNull;
     final mutuals = firefly?.mutuals ?? const [];
-    final readersCount =
-        (firefly?.mutualCount ?? 0) + (firefly?.nearbyCount ?? 0);
+    // 함께 읽는 독자 CTA — 시트(_PeopleTab)·오브와 동일하게 '지금 읽는 맞팔' 수.
+    // nearbyCount(전체 active, 본인 포함)를 더하면 시트 목록과 안 맞아서 제외.
+    final readersCount = firefly?.mutualCount ?? 0;
 
     if (timer.goalReached && !_goalReachedNotified) {
       _goalReachedNotified = true;
@@ -3098,7 +3099,23 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
   @override
   void initState() {
     super.initState();
-    _items = List.from(widget.sentences);
+    // 페이지 오름차순 정렬. 페이지가 없는 문장은 맨 뒤로.
+    // 같은 페이지(또는 둘 다 페이지 없음)는 기록 순서를 유지해
+    // 최근 기록한 문장이 뒤에 오도록 한다.
+    final indexed = widget.sentences.indexed.toList()
+      ..sort((a, b) {
+        final pa = a.$2.pageNumber;
+        final pb = b.$2.pageNumber;
+        final byPage = (pa == null && pb == null)
+            ? 0
+            : pa == null
+            ? 1
+            : pb == null
+            ? -1
+            : pa.compareTo(pb);
+        return byPage != 0 ? byPage : a.$1.compareTo(b.$1);
+      });
+    _items = indexed.map((e) => e.$2).toList();
   }
 
   Future<void> _editThought(int index) async {

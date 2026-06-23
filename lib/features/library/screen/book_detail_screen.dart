@@ -1469,6 +1469,7 @@ class _BookThoughtCardState extends ConsumerState<_BookThoughtCard> {
         bookAuthor: widget.book.author,
         page: widget.thought.pageNumber,
         collectorUsername: widget.thought.displayName,
+        collectorUserHandle: widget.thought.username,
         collectorThought: widget.thought.thought,
         sentenceId: widget.thought.sentenceId,
       ),
@@ -1505,14 +1506,31 @@ class _BookThoughtCardState extends ConsumerState<_BookThoughtCard> {
               Expanded(
                 child: GestureDetector(
                   onTap: _openProfile,
-                  child: Text(
-                    thought.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.captionLarge.copyWith(
-                      color: _detailText,
-                      height: 1.2,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        thought.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.captionLarge.copyWith(
+                          color: _detailText,
+                          height: 1.2,
+                        ),
+                      ),
+                      if (thought.username != null &&
+                          thought.username!.isNotEmpty &&
+                          thought.username != thought.displayName)
+                        Text(
+                          '@${thought.username}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.captionSmall.copyWith(
+                            color: _detailMuted,
+                            height: 1.2,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -1586,6 +1604,7 @@ class _BookThoughtListCard extends StatelessWidget {
         bookAuthor: book.author,
         page: thought.pageNumber,
         collectorUsername: thought.displayName,
+        collectorUserHandle: thought.username,
         collectorThought: thought.thought,
         sentenceId: thought.sentenceId,
       ),
@@ -1615,11 +1634,28 @@ class _BookThoughtListCard extends StatelessWidget {
                 _ThoughtAvatar(thought: thought),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    thought.displayName,
-                    style: AppTheme.captionLarge.copyWith(color: _detailText),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        thought.displayName,
+                        style:
+                            AppTheme.captionLarge.copyWith(color: _detailText),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (thought.username != null &&
+                          thought.username!.isNotEmpty &&
+                          thought.username != thought.displayName)
+                        Text(
+                          '@${thought.username}',
+                          style: AppTheme.captionSmall.copyWith(
+                            color: _detailMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
                 if (thought.isFollowing) const _FollowingPill(),
@@ -1920,9 +1956,25 @@ class _ReviewSummaryCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  review.displayName,
-                  style: AppTheme.captionLarge.copyWith(color: _detailText),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.displayName,
+                      style: AppTheme.captionLarge.copyWith(color: _detailText),
+                    ),
+                    if (review.username != null &&
+                        review.username!.isNotEmpty &&
+                        review.username != review.displayName)
+                      Text(
+                        '@${review.username}',
+                        style: AppTheme.captionSmall.copyWith(
+                          color: _detailMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
               if (review.isFollowing) const _FollowingPill(),

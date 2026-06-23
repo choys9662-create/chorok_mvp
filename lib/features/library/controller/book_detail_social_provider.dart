@@ -70,6 +70,7 @@ class BookDetailSocialMeta {
 class BookReviewSummary {
   final String id;
   final String displayName;
+  final String? username;
   final int starRating;
   final String? memorableLine;
   final String? legacy;
@@ -79,6 +80,7 @@ class BookReviewSummary {
   const BookReviewSummary({
     required this.id,
     required this.displayName,
+    required this.username,
     required this.starRating,
     required this.memorableLine,
     required this.legacy,
@@ -278,6 +280,7 @@ class BookDetailSocialRepository {
       return BookReviewSummary(
         id: row['id'] as String? ?? '',
         displayName: _displayName(profile),
+        username: (profile?['username'] as String?)?.trim(),
         starRating: (row['star_rating'] as num?)?.toInt() ?? 0,
         memorableLine: row['memorable_line'] as String?,
         legacy: row['legacy'] as String?,
@@ -392,6 +395,7 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       BookReviewSummary(
         id: 'mock_review_1',
         displayName: '온도',
+        username: 'ondo',
         starRating: 5,
         memorableLine: '산다는 것은 이상한 일이라고.',
         legacy: '완독보다 멈춤이 더 많았던 책.',

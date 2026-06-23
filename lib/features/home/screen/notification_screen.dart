@@ -254,6 +254,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           bookTitle: row['book_title'] as String? ?? '알 수 없는 책',
           bookAuthor: row['book_author'] as String? ?? '',
           collectorUsername: row['username'] as String?,
+          collectorUserHandle: row['handle'] as String?,
           collectorThought: row['thought'] as String?,
           sentenceId: sentenceId,
         ),

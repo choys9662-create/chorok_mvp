@@ -65,6 +65,33 @@ void main() {
     );
   }
 
+  Widget buildPushedSubject() {
+    return ProviderScope(
+      overrides: [
+        feedActivityProvider.overrideWith(
+          (ref, scope) async => [sentenceActivity, sessionActivity],
+        ),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.dark,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.dark,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const FeedScreen()),
+                ),
+                child: const Text('피드 열기'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   testWidgets('활동 카드와 문장 더보기를 표시하고 펼친다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
@@ -108,5 +135,19 @@ void main() {
 
     expect(activityTitle('다른독자'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
+  });
+
+  testWidgets('push로 진입한 피드에는 뒤로가기를 표시하고 이전 화면으로 돌아간다', (tester) async {
+    await tester.pumpWidget(buildPushedSubject());
+
+    await tester.tap(find.text('피드 열기'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('피드 열기'), findsOneWidget);
   });
 }

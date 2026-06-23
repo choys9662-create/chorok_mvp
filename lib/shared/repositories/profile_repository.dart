@@ -103,13 +103,24 @@ class ProfileRepository {
     return (rows as List).cast<Map<String, dynamic>>();
   }
 
-  /// 가입 전 anon도 호출 가능 (SECURITY DEFINER RPC 사용)
+  /// 가입 전 anon도 호출 가능 (SECURITY DEFINER RPC 사용).
+  /// 형식 위반(3~20자 a-z0-9_ 아님)이거나 대소문자 무시 중복이면 false.
   Future<bool> isUsernameAvailable(String username) async {
     final result = await _client.rpc(
       'is_username_available',
       params: {'p_username': username},
     );
     return result as bool? ?? false;
+  }
+
+  /// seed(표시명·이메일 등)에서 사용 가능한 고유 핸들을 자동 생성한다.
+  /// 서버가 정규화 + 중복 회피까지 끝낸 값을 돌려준다.
+  Future<String> generateUsername(String seed) async {
+    final result = await _client.rpc(
+      'generate_username',
+      params: {'p_seed': seed},
+    );
+    return result as String;
   }
 
   Future<void> updateProfile(

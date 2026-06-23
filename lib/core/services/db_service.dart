@@ -400,6 +400,7 @@ class DbService {
           (profile?['display_name'] as String?) ??
           (profile?['username'] as String?) ??
           '독자',
+      'handle': (profile?['username'] as String?)?.trim(),
     };
   }
 
@@ -557,12 +558,38 @@ class DbService {
     return List<Map<String, dynamic>>.from(res);
   }
 
+  /// 같은 책의 겹문장 그룹을 상세 화면에서 재구성하기 위한 후보 문장.
+  Future<List<Map<String, dynamic>>> fetchBookSentenceCandidates({
+    String? globalBookId,
+    String? bookId,
+  }) async {
+    if ((globalBookId == null || globalBookId.isEmpty) &&
+        (bookId == null || bookId.isEmpty)) {
+      return const [];
+    }
+
+    var query = supabase
+        .from('sentences')
+        .select(
+          'id, user_id, content, thought, created_at, '
+          'profiles!sentences_user_id_fkey(id, username, display_name, avatar_url), '
+          'books(title), global_books(title)',
+        );
+    final filtered = globalBookId != null && globalBookId.isNotEmpty
+        ? query.eq('global_book_id', globalBookId)
+        : query.eq('book_id', bookId!);
+    final res = await filtered.order('created_at', ascending: false).limit(100);
+    return List<Map<String, dynamic>>.from(res);
+  }
+
   /// 겹문장(나 ∩ 팔로잉, 같은 책) 판정용 후보 문장.
   ///
   /// exact-match 서버 쿼리(findOverlappingSentences)와 달리 부분 일치까지
   /// 잡아야 하므로, 내 문장과 팔로잉 문장 원본을 함께 반환해 클라이언트에서
   /// 책 단위로 OverlapDetector 비교를 돌린다.
-  Future<({List<Map<String, dynamic>> mine, List<Map<String, dynamic>> neighbors})>
+  Future<
+    ({List<Map<String, dynamic>> mine, List<Map<String, dynamic>> neighbors})
+  >
   fetchFollowOverlapCandidates() async {
     final follows = await supabase
         .from('follows')
@@ -574,7 +601,10 @@ class DbService {
         .whereType<String>()
         .toList();
     if (followingIds.isEmpty) {
-      return (mine: const <Map<String, dynamic>>[], neighbors: const <Map<String, dynamic>>[]);
+      return (
+        mine: const <Map<String, dynamic>>[],
+        neighbors: const <Map<String, dynamic>>[],
+      );
     }
 
     const cols =

@@ -45,6 +45,7 @@ class CommentRepository {
         username: (name != null && name.isNotEmpty)
             ? name
             : (p?['username'] as String? ?? '익명'),
+        handle: (p?['username'] as String?)?.trim(),
         content: r['content'] as String,
         likeCount: (r['like_count'] as num?)?.toInt() ?? 0,
         likedByMe: liked.contains(r['id']),

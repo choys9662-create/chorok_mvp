@@ -11,7 +11,6 @@ class AppConstants {
   static const String routeSession = '/session';
   static const String routeRecap = '/recap';
   static const String routeAuth = '/auth';
-  static const String routeSignUp = '/sign-up';
   static const String routeNotifications = '/notifications';
   static const String routeBookDetail = '/book-detail';
   static const String routeSearch = '/search';

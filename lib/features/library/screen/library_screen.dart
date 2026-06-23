@@ -33,6 +33,7 @@ import '../../../shared/utils/follow_relationship_text.dart';
 import '../../profile/controller/user_profile_provider.dart';
 
 typedef _LibraryQuote = ({String content, String bookTitle, String bookAuthor});
+typedef _CalendarDaySummary = ({ReadingLog representative, int bookCount});
 
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
@@ -76,48 +77,6 @@ final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
       )
       .toList();
 });
-
-final likedSentenceQuotesProvider =
-    FutureProvider.family<List<_LibraryQuote>, String?>((
-      ref,
-      viewedUserId,
-    ) async {
-      if (kUseMock) return const [];
-      final client = Supabase.instance.client;
-      final targetUserId = viewedUserId ?? client.auth.currentUser?.id;
-      if (targetUserId == null) return const [];
-
-      final rows = await client
-          .from('sentence_likes')
-          .select(
-            'created_at, '
-            'sentences!inner(content, '
-            'books(title, author), '
-            'global_books(title, author))',
-          )
-          .eq('user_id', targetUserId)
-          .order('created_at', ascending: false)
-          .limit(50);
-
-      return (rows as List)
-          .map((row) {
-            final sentence =
-                (row as Map<String, dynamic>)['sentences']
-                    as Map<String, dynamic>?;
-            if (sentence == null) return null;
-            final localBook = sentence['books'] as Map<String, dynamic>?;
-            final globalBook =
-                sentence['global_books'] as Map<String, dynamic>?;
-            final book = globalBook ?? localBook;
-            return (
-              content: sentence['content'] as String? ?? '',
-              bookTitle: book?['title'] as String? ?? '',
-              bookAuthor: book?['author'] as String? ?? '',
-            );
-          })
-          .whereType<_LibraryQuote>()
-          .toList();
-    });
 
 Future<List<dynamic>> _fetchSupabaseReadingLogs(
   SupabaseClient client,
@@ -338,10 +297,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           analytics = r.watch(userAnalyticsProvider(_uid!)).valueOrNull;
         }
 
-        final likedQuotes = r.watch(likedSentenceQuotesProvider(_uid));
-        final quotes = kUseMock
-            ? _overviewQuotes(viewerData)
-            : likedQuotes.valueOrNull ?? const <_LibraryQuote>[];
+        final quotes = _overviewQuotes(viewerData);
         final sentenceItems = _sentenceItems(books, quotes);
         final overlaps = _isOwner
             ? r.watch(followOverlapProvider).valueOrNull ??
@@ -1157,6 +1113,46 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
     setState(() => _month = next);
   }
 
+  Map<int, _CalendarDaySummary> _summariesByDay(List<ReadingLog> monthLogs) {
+    final logsByDay = <int, List<ReadingLog>>{};
+    for (final log in monthLogs) {
+      logsByDay.putIfAbsent(log.date.day, () => []).add(log);
+    }
+
+    return logsByDay.map((day, dayLogs) {
+      final byBook = <String, List<ReadingLog>>{};
+      for (final log in dayLogs) {
+        final key = '${log.bookTitle}\u0000${log.bookAuthor}';
+        byBook.putIfAbsent(key, () => []).add(log);
+      }
+
+      late ReadingLog representative;
+      var representativeMinutes = -1;
+      var representativeLatestAt = DateTime.fromMillisecondsSinceEpoch(0);
+      for (final bookLogs in byBook.values) {
+        final totalMinutes = bookLogs.fold<int>(
+          0,
+          (sum, log) => sum + log.minutes,
+        );
+        final latestLog = bookLogs.reduce(
+          (latest, log) => log.date.isAfter(latest.date) ? log : latest,
+        );
+        if (totalMinutes > representativeMinutes ||
+            (totalMinutes == representativeMinutes &&
+                latestLog.date.isAfter(representativeLatestAt))) {
+          representative = latestLog;
+          representativeMinutes = totalMinutes;
+          representativeLatestAt = latestLog.date;
+        }
+      }
+
+      return MapEntry(day, (
+        representative: representative,
+        bookCount: byBook.length,
+      ));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -1165,10 +1161,7 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
           (l) => l.date.year == _month.year && l.date.month == _month.month,
         )
         .toList();
-    final byDay = <int, ReadingLog>{};
-    for (final log in monthLogs) {
-      byDay.putIfAbsent(log.date.day, () => log);
-    }
+    final byDay = _summariesByDay(monthLogs);
     final daysInMonth = DateUtils.getDaysInMonth(_month.year, _month.month);
     final firstWeekday = DateTime(_month.year, _month.month, 1).weekday % 7;
     final cells = List<int?>.filled(firstWeekday, null, growable: true)
@@ -1242,7 +1235,7 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
               itemBuilder: (_, index) {
                 final day = cells[index];
                 if (day == null) return const SizedBox.shrink();
-                final log = byDay[day];
+                final summary = byDay[day];
                 final isToday = isCurrentMonth && day == now.day;
                 return GestureDetector(
                   onTap: widget.onTap,
@@ -1255,13 +1248,60 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                           ? BorderSide(color: context.appPrimaryAccent)
                           : BorderSide.none,
                     ),
-                    child: log != null
-                        ? Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: BookCover(
-                              coverUrl: log.coverUrl,
-                              gradientIndex: log.gradientIndex,
-                              radius: 3,
+                    child: summary != null
+                        ? Semantics(
+                            label: summary.bookCount > 1
+                                ? '$day일, ${summary.bookCount}권 읽음'
+                                : '$day일, 1권 읽음',
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(2),
+                                  child: BookCover(
+                                    coverUrl: summary.representative.coverUrl,
+                                    gradientIndex:
+                                        summary.representative.gradientIndex,
+                                    radius: 3,
+                                  ),
+                                ),
+                                if (summary.bookCount > 1)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 20,
+                                        minHeight: 20,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.78,
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.72,
+                                          ),
+                                          width: 0.7,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '+${summary.bookCount - 1}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w400,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           )
                         : Center(

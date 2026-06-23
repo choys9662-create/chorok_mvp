@@ -5,6 +5,7 @@ import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/models/user_profile.dart';
+import '../../../shared/models/overlap_group.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/repositories/comment_repository.dart';
 import '../controller/overlap_provider.dart';
@@ -20,10 +21,15 @@ class SentenceDetailExtra {
   final String bookTitle;
   final String bookAuthor;
   final int? page;
-  final String? collectorUsername; // 원 수집자
+  final String? collectorUsername; // 원 수집자 (표시명)
+  final String? collectorUserHandle; // 원 수집자 @핸들 (동명이인 구분용)
   final String? collectorUserId; // 원 수집자 id (프로필 이동용)
   final String? collectorThought; // 원 수집자의 생각
   final String? sentenceId; // 실데이터 댓글 연결용 (Supabase sentences.id)
+  final String? overlapCommonPhrase;
+  final HighlightRange? overlapHighlight;
+  final String? bookId;
+  final String? globalBookId;
 
   const SentenceDetailExtra({
     required this.sentenceContent,
@@ -31,10 +37,18 @@ class SentenceDetailExtra {
     required this.bookAuthor,
     this.page,
     this.collectorUsername,
+    this.collectorUserHandle,
     this.collectorUserId,
     this.collectorThought,
     this.sentenceId,
+    this.overlapCommonPhrase,
+    this.overlapHighlight,
+    this.bookId,
+    this.globalBookId,
   });
+
+  bool get isOverlapGroup =>
+      overlapCommonPhrase != null && overlapCommonPhrase!.trim().isNotEmpty;
 }
 
 // ─── 내부 모델 ────────────────────────────────────────────────────────────
@@ -43,6 +57,7 @@ class _ReaderThought {
   final String? id; // 실데이터 댓글 id (mock이면 null)
   final String? userId; // 작성자 id (프로필 이동용)
   final String username;
+  final String? handle; // @아이디 (동명이인 구분용)
   final String thought;
   final DateTime createdAt;
   final int empathyCount; // 내 좋아요를 제외한 수 (표시 = empathyCount + isLiked)
@@ -52,6 +67,7 @@ class _ReaderThought {
     this.id,
     this.userId,
     required this.username,
+    this.handle,
     required this.thought,
     required this.createdAt,
     this.empathyCount = 0,
@@ -154,6 +170,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                 id: c.id,
                 userId: c.userId,
                 username: c.username,
+                handle: c.handle,
                 thought: c.content,
                 createdAt: c.createdAt,
                 empathyCount: c.likeCount - (c.likedByMe ? 1 : 0),
@@ -262,7 +279,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   }
 
   Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
-    if (kUseMock) return const SizedBox.shrink();
+    if (kUseMock || d.isOverlapGroup) return const SizedBox.shrink();
 
     final normalizedText = SentenceNormalizer.normalize(d.sentenceContent);
     final overlapsAsync = ref.watch(
@@ -313,6 +330,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
               SplitHighlightWidget(
                 anchorText: d.sentenceContent,
                 collectorUsername: d.collectorUsername ?? '나',
+                collectorUserHandle: d.collectorUserHandle,
                 collectorUserId: d.collectorUserId,
                 collectorThought: d.collectorThought,
                 matches: matches,
@@ -327,6 +345,59 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final d = widget.data;
+    final groupMatches = d.isOverlapGroup && !kUseMock
+        ? ref
+                  .watch(
+                    overlapGroupProvider(
+                      OverlapGroupQuery(
+                        commonPhrase: d.overlapCommonPhrase!,
+                        globalBookId: d.globalBookId,
+                        bookId: d.bookId,
+                      ),
+                    ),
+                  )
+                  .valueOrNull ??
+              const <OverlapMatch>[]
+        : const <OverlapMatch>[];
+    final recordThoughts = groupMatches
+        .where((match) => match.thought?.trim().isNotEmpty == true)
+        .map(
+          (match) => _ReaderThought(
+            userId: match.userId,
+            username: match.displayName ?? match.username,
+            handle: match.username,
+            thought: match.thought!.trim(),
+            createdAt: match.createdAt,
+          ),
+        )
+        .toList();
+    final collectorThought = d.collectorThought?.trim();
+    if (d.isOverlapGroup &&
+        collectorThought != null &&
+        collectorThought.isNotEmpty &&
+        !recordThoughts.any(
+          (thought) =>
+              thought.userId == d.collectorUserId &&
+              thought.thought == collectorThought,
+        )) {
+      recordThoughts.insert(
+        0,
+        _ReaderThought(
+          userId: d.collectorUserId,
+          username: d.collectorUsername ?? '독자',
+          handle: d.collectorUserHandle,
+          thought: collectorThought,
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
+    final visibleThoughts = d.isOverlapGroup
+        ? <_ReaderThought>[...recordThoughts, ..._thoughts]
+        : _thoughts;
+    final thoughtAuthorCount = visibleThoughts
+        .map((thought) => thought.userId ?? thought.username)
+        .toSet()
+        .length;
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
@@ -447,15 +518,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                             color: context.appCard,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
-                            '"${d.sentenceContent}"',
-                            style: AppTheme.headingSmall.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: context.appTextPrimary,
-                              height: 1.7,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
+                          child: _SentenceHeroText(data: d),
                         ),
                       ],
                     ),
@@ -495,13 +558,13 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                               ),
                               children: [
                                 TextSpan(
-                                  text: '${_thoughts.length}명',
+                                  text: '$thoughtAuthorCount',
                                   style: AppTheme.captionLarge.copyWith(
                                     color: context.appPrimaryAccent,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                const TextSpan(text: '이 이 문장에 생각을 남겼어요'),
+                                const TextSpan(text: '명이 이 문장에 생각을 남겼어요'),
                               ],
                             ),
                           ),
@@ -543,7 +606,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                 ),
 
                 // ── 생각 목록 ────────────────────────────────
-                if (_thoughts.isEmpty)
+                if (visibleThoughts.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
@@ -573,16 +636,24 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                       horizontal: AppTheme.screenPadding,
                     ),
                     sliver: SliverList.separated(
-                      itemCount: _thoughts.length,
+                      itemCount: visibleThoughts.length,
                       separatorBuilder: (_, _) =>
                           const SizedBox(height: AppTheme.spaceMD),
-                      itemBuilder: (context, index) => _ThoughtCard(
-                        thought: _thoughts[index],
-                        formatTime: time_fmt.formatRelative,
-                        onToggleLike: () => _toggleThoughtLike(index),
-                        onOpenProfile: () =>
-                            _openReaderProfile(_thoughts[index]),
-                      ),
+                      itemBuilder: (context, index) {
+                        final recordThoughtCount = d.isOverlapGroup
+                            ? visibleThoughts.length - _thoughts.length
+                            : 0;
+                        final commentIndex = index - recordThoughtCount;
+                        return _ThoughtCard(
+                          thought: visibleThoughts[index],
+                          formatTime: time_fmt.formatRelative,
+                          onToggleLike: commentIndex >= 0
+                              ? () => _toggleThoughtLike(commentIndex)
+                              : null,
+                          onOpenProfile: () =>
+                              _openReaderProfile(visibleThoughts[index]),
+                        );
+                      },
                     ),
                   ),
 
@@ -675,12 +746,54 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   }
 }
 
+class _SentenceHeroText extends StatelessWidget {
+  final SentenceDetailExtra data;
+
+  const _SentenceHeroText({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTheme.headingSmall.copyWith(
+      fontStyle: FontStyle.italic,
+      color: context.appTextPrimary,
+      height: 1.7,
+      fontWeight: FontWeight.w400,
+    );
+    final highlight = data.overlapHighlight;
+    final content = data.sentenceContent;
+    final hasHighlight =
+        highlight != null &&
+        highlight.start >= 0 &&
+        highlight.end > highlight.start &&
+        highlight.end <= content.length;
+
+    if (!hasHighlight) return Text('"$content"', style: style);
+
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          TextSpan(text: '"${content.substring(0, highlight.start)}'),
+          TextSpan(
+            text: content.substring(highlight.start, highlight.end),
+            style: style.copyWith(
+              color: context.appPrimaryAccent,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          TextSpan(text: '${content.substring(highlight.end)}"'),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── 생각 카드 ────────────────────────────────────────────────────────────
 
 class _ThoughtCard extends StatelessWidget {
   final _ReaderThought thought;
   final String Function(DateTime) formatTime;
-  final VoidCallback onToggleLike;
+  final VoidCallback? onToggleLike;
   final VoidCallback onOpenProfile;
 
   const _ThoughtCard({
@@ -726,12 +839,30 @@ class _ThoughtCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    t.username,
-                    style: AppTheme.bodySmall.copyWith(
-                      color: context.appTextPrimary,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.bodySmall.copyWith(
+                          color: context.appTextPrimary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      if (t.handle != null &&
+                          t.handle!.isNotEmpty &&
+                          t.handle != t.username)
+                        Text(
+                          '@${t.handle}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (tappable)
@@ -761,35 +892,35 @@ class _ThoughtCard extends StatelessWidget {
                 height: 1.6,
               ),
             ),
-            const SizedBox(height: 12),
-
-            // ── 좋아요 버튼 ────────────────────────────────
-            GestureDetector(
-              onTap: onToggleLike,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    t.isLiked
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    size: 16,
-                    color: t.isLiked
-                        ? AppTheme.empathyColor
-                        : context.appTextTertiary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${t.empathyCount + (t.isLiked ? 1 : 0)}',
-                    style: AppTheme.captionLarge.copyWith(
+            if (onToggleLike != null) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: onToggleLike,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      t.isLiked
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      size: 16,
                       color: t.isLiked
                           ? AppTheme.empathyColor
                           : context.appTextTertiary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      '${t.empathyCount + (t.isLiked ? 1 : 0)}',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: t.isLiked
+                            ? AppTheme.empathyColor
+                            : context.appTextTertiary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

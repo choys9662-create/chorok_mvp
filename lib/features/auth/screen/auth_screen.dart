@@ -17,7 +17,6 @@ import '../util/auth_error.dart';
 
 // ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
 const _kBg = Color(0xFF121212); // AppTheme.darkBg
-const _kBorder = Color(0xFF2C2C2C); // AppTheme.darkBorder
 const _kAuthControlFill = Color(0xFF111811);
 const _kAuthControlBorder = Color(0x3D8DFF54);
 const _authRedirectUri = 'com.chorok.chorokapp://login-callback/';
@@ -68,21 +67,6 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
   void _showError(String msg) {
     if (!mounted) return;
     showAuthError(context, msg);
-  }
-
-  // ── 이메일 로그인 ─────────────────────────────────────────────────
-  Future<void> _signIn(String email, String password) async {
-    _setLoading(true);
-    try {
-      await supabase.auth.signInWithPassword(email: email, password: password);
-      if (mounted) context.go(AppConstants.routeHome);
-    } on AuthException catch (e) {
-      _showError(e.message);
-    } catch (_) {
-      _showError('네트워크 연결을 확인해주세요.');
-    } finally {
-      _setLoading(false);
-    }
   }
 
   // ── Google 로그인 ─────────────────────────────────────────────────
@@ -236,54 +220,19 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              // ── 구분선 ──
+              const SizedBox(height: 28),
+              // ── 약관 동의 안내 (소셜 로그인으로 가입·로그인 시 간주) ──
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Expanded(child: Container(height: 1, color: _kBorder)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        '또는 이메일로',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                    Expanded(child: Container(height: 1, color: _kBorder)),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  '계속하면 이용약관 및 개인정보처리방침에\n동의하는 것으로 간주됩니다.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.5,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              // ── 로그인 폼 ──
-              _LoginForm(onSubmit: _signIn, loading: _loading),
-              const SizedBox(height: 24),
-              // ── 회원가입 링크 ──
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '계정이 없으신가요?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textTertiary,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push(AppConstants.routeSignUp),
-                    child: Text(
-                      '회원가입',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: AppTheme.primaryLight,
-                      ),
-                    ),
-                  ),
-                ],
               ),
               const SizedBox(height: 24),
             ],
@@ -397,188 +346,6 @@ class _SocialButton extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── 로그인 폼 ────────────────────────────────────────────────────────────────
-class _LoginForm extends StatefulWidget {
-  final Future<void> Function(String email, String password) onSubmit;
-  final bool loading;
-  const _LoginForm({required this.onSubmit, required this.loading});
-
-  @override
-  State<_LoginForm> createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<_LoginForm> {
-  final _emailCtrl = TextEditingController();
-  final _pwCtrl = TextEditingController();
-  bool _obscure = true;
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _pwCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          _Field(
-            controller: _emailCtrl,
-            hint: '이메일',
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 12),
-          _Field(
-            controller: _pwCtrl,
-            hint: '비밀번호',
-            obscure: _obscure,
-            suffix: IconButton(
-              onPressed: () => setState(() => _obscure = !_obscure),
-              icon: Icon(
-                _obscure ? Icons.visibility_off : Icons.visibility,
-                color: AppTheme.textTertiary,
-                size: 20,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _SubmitButton(
-            label: '로그인',
-            loading: widget.loading,
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              widget.onSubmit(_emailCtrl.text.trim(), _pwCtrl.text);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 공용 위젯 ────────────────────────────────────────────────────────────────
-class _Field extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final bool obscure;
-  final TextInputType? keyboardType;
-  final Widget? suffix;
-
-  const _Field({
-    required this.controller,
-    required this.hint,
-    this.obscure = false,
-    this.keyboardType,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: Colors.white,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(fontSize: 16, color: AppTheme.textTertiary),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: _kAuthControlFill,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kAuthControlBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: _kAuthControlBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppTheme.primaryLight, width: 1.4),
-        ),
-      ),
-    );
-  }
-}
-
-class _SubmitButton extends StatelessWidget {
-  final String label;
-  final bool loading;
-  final VoidCallback onTap;
-
-  const _SubmitButton({
-    required this.label,
-    required this.loading,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = loading;
-
-    return Semantics(
-      button: true,
-      label: label,
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: GestureDetector(
-          onTap: isDisabled ? null : onTap,
-          behavior: HitTestBehavior.opaque,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            decoration: AppTheme.smoothBox(
-              gradient: isDisabled
-                  ? LinearGradient(
-                      colors: [
-                        AppTheme.primaryLight.withValues(alpha: 0.2),
-                        AppTheme.accent.withValues(alpha: 0.2),
-                      ],
-                    )
-                  : context.appReadingGradient,
-              radius: 10,
-            ),
-            child: Center(
-              child: loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: isDisabled
-                            ? Colors.white.withValues(alpha: 0.4)
-                            : Colors.white,
-                      ),
-                    ),
-            ),
           ),
         ),
       ),

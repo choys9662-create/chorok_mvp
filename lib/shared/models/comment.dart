@@ -4,6 +4,7 @@ class Comment {
   final String sentenceId;
   final String userId;
   final String username; // display_name 우선, 없으면 username
+  final String? handle; // @아이디 (동명이인 구분용)
   final String content;
   final int likeCount;
   final bool likedByMe;
@@ -14,6 +15,7 @@ class Comment {
     required this.sentenceId,
     required this.userId,
     required this.username,
+    this.handle,
     required this.content,
     required this.likeCount,
     required this.likedByMe,
@@ -25,6 +27,7 @@ class Comment {
     sentenceId: sentenceId,
     userId: userId,
     username: username,
+    handle: handle,
     content: content,
     likeCount: likeCount ?? this.likeCount,
     likedByMe: likedByMe ?? this.likedByMe,

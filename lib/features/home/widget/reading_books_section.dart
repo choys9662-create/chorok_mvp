@@ -285,16 +285,57 @@ class InsightChip extends StatelessWidget {
   }
 }
 
-class ReadingBookCard extends StatefulWidget {
+class ReadingBookCard extends ConsumerStatefulWidget {
   final Book book;
   const ReadingBookCard({super.key, required this.book});
 
   @override
-  State<ReadingBookCard> createState() => ReadingBookCardState();
+  ConsumerState<ReadingBookCard> createState() => ReadingBookCardState();
 }
 
-class ReadingBookCardState extends State<ReadingBookCard> {
+class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
   bool _isPressed = false;
+
+  /// 길게 눌러 서재에서 제거 (확인 후). book_detail_sheet의 삭제 플로우와 동일.
+  Future<void> _confirmDelete() async {
+    HapticFeedback.mediumImpact();
+    final book = widget.book;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('서재에서 제거'),
+        content: Text(
+          '\'${book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('제거'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    ref.read(libraryProvider.notifier).deleteBook(book.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${book.title}을(를) 서재에서 제거했어요',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppTheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +346,7 @@ class ReadingBookCardState extends State<ReadingBookCard> {
       onTap: () {
         context.push(AppConstants.routeBookDetail, extra: b.id);
       },
+      onLongPress: _confirmDelete,
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);

@@ -25,7 +25,9 @@ class OverlapSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -63,12 +65,16 @@ class OverlapSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
           child: Column(
             children: [
               for (int i = 0; i < items.length; i++)
                 Padding(
-                  padding: EdgeInsets.only(bottom: i < items.length - 1 ? 10 : 0),
+                  padding: EdgeInsets.only(
+                    bottom: i < items.length - 1 ? 10 : 0,
+                  ),
                   child: OverlapCard(overlap: items[i]),
                 ),
             ],
@@ -88,13 +94,18 @@ class OverlapCard extends StatelessWidget {
     context.push(
       AppConstants.routeSentenceDetail,
       extra: SentenceDetailExtra(
-        sentenceContent: overlap.neighborContent,
+        sentenceContent: overlap.mergedContent,
         bookTitle: overlap.bookTitle,
         bookAuthor: overlap.bookAuthor,
         collectorUsername: overlap.neighborName,
+        collectorUserHandle: overlap.neighborHandle,
         collectorUserId: overlap.neighborUserId,
         collectorThought: overlap.neighborThought,
         sentenceId: overlap.neighborSentenceId,
+        overlapCommonPhrase: overlap.commonPhrase,
+        overlapHighlight: overlap.mergedHighlight,
+        bookId: overlap.bookId,
+        globalBookId: overlap.globalBookId,
       ),
     );
   }

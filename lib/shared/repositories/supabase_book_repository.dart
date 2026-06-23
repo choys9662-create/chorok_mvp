@@ -134,6 +134,10 @@ class SupabaseBookRepository {
       if (description != null && description.isNotEmpty) {
         row['description'] = description;
       }
+      final genre = book.genre?.trim();
+      if (genre != null && genre.isNotEmpty) {
+        row['category'] = genre;
+      }
       final gbRow = await _client
           .from('global_books')
           .upsert(row, onConflict: 'isbn13')
