@@ -175,7 +175,7 @@ class _OverlapThoughtCard extends StatelessWidget {
         key: ValueKey('overlap-thought-card-$username'),
         onTap: () {
           HapticFeedback.selectionClick();
-          _showRecordedSentence(
+          showRecordedSentenceDetails(
             context,
             anchorText: anchorText,
             recordedText: recordedText,
@@ -307,7 +307,7 @@ class _OverlapThoughtCard extends StatelessWidget {
   }
 }
 
-void _showRecordedSentence(
+void showRecordedSentenceDetails(
   BuildContext context, {
   required String anchorText,
   required String recordedText,

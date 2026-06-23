@@ -435,6 +435,8 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               ),
             ),
 
+          _DiscussedPassagesSection(book: book),
+
           _FollowingHighlightsSection(book: book),
 
           _PopularThoughtsSection(book: book),
@@ -1033,6 +1035,407 @@ class _StatBadge extends StatelessWidget {
 
 BookDetailSocialQuery _socialQueryFor(Book book) =>
     (title: book.title, author: book.author, isbn: book.isbn);
+
+class _DiscussedPassagesSection extends ConsumerWidget {
+  final Book book;
+
+  const _DiscussedPassagesSection({required this.book});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(bookDetailSocialProvider(_socialQueryFor(book)));
+    return async.when(
+      loading: () => SliverToBoxAdapter(
+        child: _SocialSectionShell(
+          title: '사람들이 멈춘 문장',
+          child: const _SocialSkeletonRow(),
+        ),
+      ),
+      error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+      data: (data) {
+        final passages = data.discussedPassages;
+        if (passages.isEmpty) {
+          return const SliverToBoxAdapter(child: SizedBox.shrink());
+        }
+        return SliverToBoxAdapter(
+          child: _SocialSectionShell(
+            title: '사람들이 멈춘 문장',
+            trailing: '${passages.length}곳',
+            child: SizedBox(
+              height: 214,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: passages.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) => _DiscussedPassageCard(
+                  passage: passages[index],
+                  prominent: index == 0,
+                  onTap: () =>
+                      _showDiscussedPassageSheet(context, passages[index]),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DiscussedPassageCard extends StatelessWidget {
+  final BookDiscussedPassage passage;
+  final bool prominent;
+  final VoidCallback onTap;
+
+  const _DiscussedPassageCard({
+    required this.passage,
+    required this.prominent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = passage.previewThoughts.isEmpty
+        ? null
+        : passage.previewThoughts.first;
+    return Semantics(
+      button: true,
+      label: '${passage.readerCount}명이 생각을 남긴 문장 자세히 보기',
+      child: GestureDetector(
+        key: ValueKey('discussed-passage-card-${passage.id}'),
+        onTap: onTap,
+        child: Container(
+          width: prominent ? 286 : 258,
+          padding: const EdgeInsets.all(14),
+          decoration: AppTheme.smoothBox(
+            color: prominent
+                ? _detailAccent.withValues(alpha: 0.08)
+                : _detailCard,
+            radius: 10,
+            side: BorderSide(
+              color: prominent
+                  ? _detailAccent.withValues(alpha: 0.45)
+                  : _detailMuted.withValues(alpha: 0.20),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const _PassageClusterMark(),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      '${passage.readerCount}명이 이 부분에 생각을 남겼어요',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: _detailAccent.withValues(alpha: 0.88),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '“${passage.representativeText}”',
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.captionLarge.copyWith(
+                  color: _detailText.withValues(alpha: 0.92),
+                  height: 1.55,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (preview != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 7,
+                  ),
+                  decoration: AppTheme.smoothBox(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    radius: 8,
+                    side: BorderSide.none,
+                  ),
+                  child: Text(
+                    preview.thought,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.captionSmall.copyWith(
+                      color: _detailText.withValues(alpha: 0.70),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              Row(
+                children: [
+                  if (passage.pageNumber != null)
+                    Text(
+                      'p. ${passage.pageNumber}',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: _detailMuted,
+                      ),
+                    ),
+                  const Spacer(),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 14,
+                    color: _detailMuted.withValues(alpha: 0.72),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PassageClusterMark extends StatelessWidget {
+  const _PassageClusterMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 18,
+      height: 9,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 2,
+            child: _PassageDot(color: _detailMuted.withValues(alpha: 0.52)),
+          ),
+          Positioned(
+            left: 6,
+            top: 0,
+            child: _PassageDot(
+              color: AppTheme.primaryLight.withValues(alpha: 0.48),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 2,
+            child: _PassageDot(color: _detailAccent.withValues(alpha: 0.88)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PassageDot extends StatelessWidget {
+  final Color color;
+
+  const _PassageDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+void _showDiscussedPassageSheet(
+  BuildContext context,
+  BookDiscussedPassage passage,
+) {
+  HapticFeedback.selectionClick();
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _DiscussedPassageSheet(passage: passage),
+  );
+}
+
+class _DiscussedPassageSheet extends StatelessWidget {
+  final BookDiscussedPassage passage;
+
+  const _DiscussedPassageSheet({required this.passage});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return FractionallySizedBox(
+      heightFactor: 0.86,
+      child: Container(
+        decoration: ShapeDecoration(
+          color: context.appSurface,
+          shape: SmoothRectangleBorder(
+            smoothness: 0.6,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ChorokSheetHandle(),
+                    const SizedBox(height: 20),
+                    Text(
+                      '이 대목에 남겨진 생각',
+                      style: AppTheme.headingSmall.copyWith(
+                        color: _detailAccent,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(15),
+                      decoration: AppTheme.smoothBox(
+                        color: _detailAccent.withValues(alpha: 0.08),
+                        radius: 10,
+                        side: BorderSide(
+                          color: _detailAccent.withValues(alpha: 0.30),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '“${passage.representativeText}”',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: context.appTextPrimary.withValues(
+                                  alpha: 0.90,
+                                ),
+                                height: 1.65,
+                              ),
+                            ),
+                          ),
+                          if (passage.pageNumber != null) ...[
+                            const SizedBox(width: 10),
+                            Text(
+                              'p. ${passage.pageNumber}',
+                              style: AppTheme.captionSmall.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${passage.readerCount}명의 독자가 이 부분에 머물렀어요',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 24),
+                  itemCount: passage.members.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) =>
+                      _PassageThoughtCard(thought: passage.members[index]),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PassageThoughtCard extends StatelessWidget {
+  final BookSocialThought thought;
+
+  const _PassageThoughtCard({required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 10,
+        side: BorderSide(color: context.appBorderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      thought.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextPrimary,
+                      ),
+                    ),
+                    if (thought.username?.trim().isNotEmpty == true &&
+                        thought.username != thought.displayName)
+                      Text(
+                        '@${thought.username}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.captionSmall.copyWith(
+                          color: context.appTextTertiary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (thought.pageNumber != null)
+                Text(
+                  'p. ${thought.pageNumber}',
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            thought.sentence,
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextSecondary,
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            thought.thought,
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appTextPrimary.withValues(alpha: 0.88),
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _PopularThoughtsSection extends ConsumerWidget {
   final Book book;
@@ -1639,8 +2042,9 @@ class _BookThoughtListCard extends StatelessWidget {
                     children: [
                       Text(
                         thought.displayName,
-                        style:
-                            AppTheme.captionLarge.copyWith(color: _detailText),
+                        style: AppTheme.captionLarge.copyWith(
+                          color: _detailText,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

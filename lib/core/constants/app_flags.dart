@@ -1,15 +1,17 @@
 /// 앱 실행 모드 — `--dart-define=APP_MODE=design|test` 로 주입.
 ///
-/// 기본값은 `test` 이다. 테스트 앱에서 실수로 `USE_MOCK=true` 가 섞여도
-/// design 모드가 아니면 mock 데이터를 켜지 않는다.
+/// 기본값은 `test` 이다.
 const String kAppMode = String.fromEnvironment('APP_MODE', defaultValue: 'test');
 
 /// 빌드 타임 플래그 — `--dart-define`으로 주입
 ///
 /// 디자인 앱(d1414): `APP_MODE=design` + `USE_MOCK=true`
 /// 테스트 앱(chorok-real): `APP_MODE=test` + `USE_MOCK=false`
+///
+/// 기존 디자인 디버그 실행 명령은 `USE_MOCK=true`만 전달하므로 두 방식 모두
+/// 디자인 모드로 인정한다. 디자인 모드에서는 인증을 우회하고 mock 데이터를 쓴다.
 const bool kUseMock =
-    kAppMode == 'design' &&
+    kAppMode == 'design' ||
     bool.fromEnvironment('USE_MOCK', defaultValue: false);
 
 /// 데이터 소스 플래그 — true면 모든 플랫폼(모바일 포함)이 책·문장·세션을

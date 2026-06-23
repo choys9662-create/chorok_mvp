@@ -109,5 +109,8 @@ void main() {
     expect(find.text('친구1'), findsOneWidget);
     expect(find.text('친구2'), findsOneWidget);
     expect(find.text('친구7'), findsNothing);
+    expect(find.text('읽고 있는 이웃'), findsNothing);
+    expect(find.text('이명이 초록숲'), findsNothing);
+    expect(find.text('00:20:25'), findsNothing);
   });
 }

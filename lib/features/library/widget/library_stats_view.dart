@@ -12,7 +12,7 @@ import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
 
-final _genreReadingTimesProvider =
+final genreReadingTimesProvider =
     FutureProvider.autoDispose<List<({String label, double hours})>>((
       ref,
     ) async {
@@ -126,25 +126,30 @@ class LibraryStatsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final timesAsync = userId != null
         ? ref.watch(_genreReadingTimesByUserProvider(userId!))
-        : ref.watch(_genreReadingTimesProvider);
-    final items = timesAsync.valueOrNull ?? const [];
+        : ref.watch(genreReadingTimesProvider);
     if (embedded) {
+      final items = timesAsync.valueOrNull ?? const [];
       return BookTreemapWidget(items: items, height: 260);
     }
 
-    final treemapHeight = fullScreen
-        ? (MediaQuery.sizeOf(context).height * 0.58).clamp(420.0, 620.0)
-        : 260.0;
-    final treemapWidth = fullScreen
-        ? MediaQuery.sizeOf(context).width - AppTheme.screenPadding * 2
-        : null;
+    if (fullScreen) {
+      return timesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) =>
+            const _GenreReadingTimesEmpty(message: '독서 취향을 불러오지 못했어요'),
+        data: (items) => _GenreReadingTimesList(
+          items: items,
+          scrollController: scrollController,
+        ),
+      );
+    }
+
+    final items = timesAsync.valueOrNull ?? const [];
 
     return ListView(
       controller: scrollController,
-      shrinkWrap: !fullScreen,
-      physics: fullScreen
-          ? const BouncingScrollPhysics()
-          : const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 16, bottom: 40),
       children: [
         const Padding(
@@ -159,13 +164,9 @@ class LibraryStatsView extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: BookTreemapWidget(
-            items: items,
-            height: treemapHeight,
-            width: treemapWidth,
-          ),
+          child: BookTreemapWidget(items: items, height: 260),
         ),
-        if (!fullScreen && kUseMock) ...[
+        if (kUseMock) ...[
           const SizedBox(height: AppTheme.spaceXL),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
@@ -182,4 +183,150 @@ class LibraryStatsView extends ConsumerWidget {
       ],
     );
   }
+}
+
+class _GenreReadingTimesList extends StatelessWidget {
+  final List<({String label, double hours})> items;
+  final ScrollController? scrollController;
+
+  const _GenreReadingTimesList({
+    required this.items,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const _GenreReadingTimesEmpty(message: '아직 독서 기록이 없어요');
+    }
+
+    final sorted = [...items]..sort((a, b) => b.hours.compareTo(a.hours));
+    final totalMinutes = sorted.fold<int>(
+      0,
+      (sum, item) => sum + (item.hours * 60).round(),
+    );
+
+    return ListView.separated(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        0,
+        AppTheme.screenPadding,
+        MediaQuery.paddingOf(context).bottom + 32,
+      ),
+      itemCount: sorted.length + 1,
+      separatorBuilder: (_, index) =>
+          index == 0 ? const SizedBox(height: 16) : const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Text(
+            '읽은 시간 기준',
+            style: AppTheme.captionSmall.copyWith(
+              color: context.appTextTertiary,
+            ),
+          );
+        }
+
+        final item = sorted[index - 1];
+        final minutes = (item.hours * 60).round();
+        final percent = totalMinutes == 0 ? 0.0 : minutes / totalMinutes * 100;
+        return _GenreReadingTimeRow(
+          rank: index,
+          label: item.label,
+          minutes: minutes,
+          percent: percent,
+        );
+      },
+    );
+  }
+}
+
+class _GenreReadingTimeRow extends StatelessWidget {
+  final int rank;
+  final String label;
+  final int minutes;
+  final double percent;
+
+  const _GenreReadingTimeRow({
+    required this.rank,
+    required this.label,
+    required this.minutes,
+    required this.percent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        radius: 10,
+        side: BorderSide(color: context.appBorderSubtle),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Text(
+              '$rank',
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatGenreMinutes(minutes),
+                style: AppTheme.bodySmall.copyWith(
+                  color: context.appTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '${percent.toStringAsFixed(1)}%',
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenreReadingTimesEmpty extends StatelessWidget {
+  final String message;
+
+  const _GenreReadingTimesEmpty({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message,
+        style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+      ),
+    );
+  }
+}
+
+String _formatGenreMinutes(int totalMinutes) {
+  final hours = totalMinutes ~/ 60;
+  final minutes = totalMinutes % 60;
+  if (hours == 0) return '$minutes분';
+  if (minutes == 0) return '$hours시간';
+  return '$hours시간 $minutes분';
 }

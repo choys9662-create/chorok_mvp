@@ -144,7 +144,7 @@ lib/
 ```
 
 **스택 규칙:**
-- 상태 관리: Riverpod (`@riverpod` 어노테이션 방식)
+- 상태 관리: Riverpod — 수동 선언 방식 (`NotifierProvider`/`AsyncNotifierProvider`/`Provider`를 직접 작성). `@riverpod` 코드젠은 쓰지 않는다 (`.g.dart` 없음, build_runner 불필요). `riverpod_annotation`이 pubspec에 있지만 미사용 — 신규 프로바이더도 수동 선언으로 통일한다.
 - 라우팅: GoRouter — 라우트 정의는 `core/router/app_router.dart`
 - 백엔드: Supabase (원격) + sqflite (로컬 캐시)
 - 환경변수: `.env` 파일, `flutter_dotenv`로 로드
@@ -208,6 +208,13 @@ flutter run -d 00008120-0011549E3640C01E
 1. **Apple 로그인 + 무료 개인 팀 조합 불가.** `Runner.entitlements`에 `com.apple.developer.applesignin`이 있으면 기기 설치 시 `0xe8008001` 오류(코드 서명 검증 실패). 무료 팀(VQ45VLJ87Y, choys9662@gmail.com)으로는 Sign in with Apple entitlement를 프로비저닝 못 함. 현재 `Runner.entitlements`는 의도적으로 비워 둔 상태 — 유료 Apple Developer Program 가입 전까지 건드리지 않는다.
 
 2. **`path_provider_foundation` 2.6.0 시뮬레이터 크래시.** 2.6.0부터 objective_c native-assets 방식으로 전환됐는데, Flutter 3.41 + iOS 시뮬레이터에서 `SdkRoot` 미전달로 `dlopen` 실패 → 앱이 흰 화면으로 죽음. `pubspec.yaml`의 `dependency_overrides: path_provider_foundation: 2.5.1`로 고정 중 — 2.6.x로 올리지 않는다.
+
+**검증 명령** (커밋·푸시 전):
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter analyze )
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter test )   # test/ 가 lib/ 구조(core·features·shared) 미러링
+```
 
 ---
 

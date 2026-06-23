@@ -9,6 +9,8 @@ class Comment {
   final int likeCount;
   final bool likedByMe;
   final DateTime createdAt;
+  final String? parentCommentId; // 답글이면 부모 댓글 id, 최상위면 null
+  final List<Comment> replies; // 1단계 답글 (최상위 댓글에만 채워짐)
 
   const Comment({
     required this.id,
@@ -20,17 +22,22 @@ class Comment {
     required this.likeCount,
     required this.likedByMe,
     required this.createdAt,
+    this.parentCommentId,
+    this.replies = const [],
   });
 
-  Comment copyWith({int? likeCount, bool? likedByMe}) => Comment(
-    id: id,
-    sentenceId: sentenceId,
-    userId: userId,
-    username: username,
-    handle: handle,
-    content: content,
-    likeCount: likeCount ?? this.likeCount,
-    likedByMe: likedByMe ?? this.likedByMe,
-    createdAt: createdAt,
-  );
+  Comment copyWith({int? likeCount, bool? likedByMe, List<Comment>? replies}) =>
+      Comment(
+        id: id,
+        sentenceId: sentenceId,
+        userId: userId,
+        username: username,
+        handle: handle,
+        content: content,
+        likeCount: likeCount ?? this.likeCount,
+        likedByMe: likedByMe ?? this.likedByMe,
+        createdAt: createdAt,
+        parentCommentId: parentCommentId,
+        replies: replies ?? this.replies,
+      );
 }

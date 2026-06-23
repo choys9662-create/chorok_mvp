@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/follow_repository.dart';
@@ -25,7 +26,9 @@ enum _SearchTab { book, author, user }
 // ─── 검색 화면 ───────────────────────────────────────────────────────────────
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  final Book? replacingBook;
+
+  const SearchScreen({super.key, this.replacingBook});
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -42,6 +45,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final replacingBook = widget.replacingBook;
+      if (replacingBook != null) {
+        _controller.text = replacingBook.title;
+        ref
+            .read(bookSearchProvider.notifier)
+            .search(replacingBook.title, type: BookSearchType.title);
+      }
       _focusNode.requestFocus();
     });
   }
@@ -122,6 +132,40 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _onBookAdd(AladinBook book) async {
     HapticFeedback.selectionClick();
+
+    final replacingBook = widget.replacingBook;
+    if (replacingBook != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('책 버전 변경'),
+          content: Text(
+            '\'${replacingBook.title}\'을(를)\n\'${book.title}\' 버전으로 변경할까요?\n\n독서 진행과 기록은 유지됩니다.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('변경'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      await ref
+          .read(libraryProvider.notifier)
+          .replaceBookVersion(
+            replacingBook.id,
+            book.toBook(replacingBook.status),
+          );
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      context.pop(book.title);
+      return;
+    }
 
     // 이미 서재에 있으면 삭제
     final lib = ref.read(libraryProvider);

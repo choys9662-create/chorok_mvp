@@ -55,6 +55,28 @@ class BookSocialThought {
   }
 }
 
+class BookDiscussedPassage {
+  final String id;
+  final String representativeText;
+  final int? pageNumber;
+  final int thoughtCount;
+  final int readerCount;
+  final List<BookSocialThought> previewThoughts;
+  final List<BookSocialThought> members;
+  final DateTime recentActivityAt;
+
+  const BookDiscussedPassage({
+    required this.id,
+    required this.representativeText,
+    required this.pageNumber,
+    required this.thoughtCount,
+    required this.readerCount,
+    required this.previewThoughts,
+    required this.members,
+    required this.recentActivityAt,
+  });
+}
+
 class BookDetailSocialMeta {
   final String? globalBookId;
   final int readerCount;
@@ -91,6 +113,7 @@ class BookReviewSummary {
 
 class BookDetailSocialData {
   final BookDetailSocialMeta meta;
+  final List<BookDiscussedPassage> discussedPassages;
   final List<BookSocialThought> popularThoughts;
   final List<BookSocialThought> followingThoughts;
   final List<BookSocialThought> recentSentenceThoughts;
@@ -98,6 +121,7 @@ class BookDetailSocialData {
 
   const BookDetailSocialData({
     required this.meta,
+    this.discussedPassages = const [],
     required this.popularThoughts,
     required this.followingThoughts,
     required this.recentSentenceThoughts,
@@ -162,6 +186,7 @@ class BookDetailSocialRepository {
       final following =
           thoughts.where((thought) => thought.isFollowing).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final discussedPassages = buildDiscussedPassages(thoughts);
 
       final globalBookId = globalBook?['id'] as String?;
       return BookDetailSocialData(
@@ -172,6 +197,7 @@ class BookDetailSocialRepository {
               (globalBook?['sentence_count'] as num?)?.toInt() ??
               sentenceRows.length,
         ),
+        discussedPassages: discussedPassages,
         popularThoughts: popular.take(5).toList(),
         followingThoughts: following.take(8).toList(),
         recentSentenceThoughts: recent.take(24).toList(),
@@ -350,6 +376,21 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       sourceType: BookSocialThoughtSource.sentence,
     ),
     BookSocialThought(
+      sentenceId: 'mock_popular_2_neighbor',
+      userId: 'mock_junseok',
+      displayName: '준석',
+      username: 'junseok',
+      avatarUrl: null,
+      sentence: '그 웃음의 끝에 그녀는 생각한다. 산다는 것은 이상한 일이라고.',
+      thought: '웃음 뒤에 남는 생각이라 더 조용하고 쓸쓸하게 읽혔어요.',
+      pageNumber: 202,
+      likeCount: 19,
+      commentCount: 2,
+      createdAt: now.subtract(const Duration(hours: 8)),
+      isFollowing: true,
+      sourceType: BookSocialThoughtSource.sentence,
+    ),
+    BookSocialThought(
       sentenceId: 'mock_popular_3',
       userId: 'mock_ondo',
       displayName: '온도',
@@ -362,6 +403,21 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       commentCount: 3,
       createdAt: now.subtract(const Duration(days: 1)),
       isFollowing: true,
+      sourceType: BookSocialThoughtSource.sentence,
+    ),
+    BookSocialThought(
+      sentenceId: 'mock_popular_1_neighbor',
+      userId: 'mock_sora',
+      displayName: '소라',
+      username: 'sora',
+      avatarUrl: null,
+      sentence: '아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다. 그저 평범하다고 여겼다.',
+      thought: '평범하다는 판단이 얼마나 일방적일 수 있는지 멈춰 보게 됐어요.',
+      pageNumber: 9,
+      likeCount: 31,
+      commentCount: 3,
+      createdAt: now.subtract(const Duration(hours: 3)),
+      isFollowing: false,
       sourceType: BookSocialThoughtSource.sentence,
     ),
     BookSocialThought(
@@ -379,6 +435,21 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       isFollowing: false,
       sourceType: BookSocialThoughtSource.sentence,
     ),
+    BookSocialThought(
+      sentenceId: 'mock_recent_1_neighbor',
+      userId: 'mock_haru',
+      displayName: '하루',
+      username: 'haru',
+      avatarUrl: null,
+      sentence: '그녀는 빠르지도 느리지도 힘있지도 가냘프지도 않은 걸음걸이로 걸었다.',
+      thought: '특징을 지우는 묘사가 오히려 한 사람의 윤곽을 또렷하게 만들었어요.',
+      pageNumber: 52,
+      likeCount: 11,
+      commentCount: 1,
+      createdAt: now.subtract(const Duration(days: 3)),
+      isFollowing: false,
+      sourceType: BookSocialThoughtSource.sentence,
+    ),
   ];
   return BookDetailSocialData(
     meta: const BookDetailSocialMeta(
@@ -386,6 +457,7 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       readerCount: 128,
       sentenceCount: 36,
     ),
+    discussedPassages: buildDiscussedPassages(base),
     popularThoughts: [...base]
       ..sort((a, b) => b.likeCount.compareTo(a.likeCount)),
     followingThoughts: base.where((thought) => thought.isFollowing).toList(),
@@ -404,4 +476,187 @@ BookDetailSocialData _mockBookDetailSocialData(BookDetailSocialQuery query) {
       ),
     ],
   );
+}
+
+String normalizeSentence(String text) {
+  return text
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^가-힣ㄱ-ㅎㅏ-ㅣa-z0-9\s]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+List<BookDiscussedPassage> buildDiscussedPassages(
+  List<BookSocialThought> thoughts,
+) {
+  final candidates = thoughts.where((thought) {
+    if (thought.thought.trim().isEmpty) return false;
+    return _compactSentence(thought.sentence).length >= 8;
+  }).toList();
+  if (candidates.length < 2) return const [];
+
+  final parent = List<int>.generate(candidates.length, (index) => index);
+
+  int find(int index) {
+    var root = index;
+    while (parent[root] != root) {
+      root = parent[root];
+    }
+    while (parent[index] != index) {
+      final next = parent[index];
+      parent[index] = root;
+      index = next;
+    }
+    return root;
+  }
+
+  void union(int first, int second) {
+    final firstRoot = find(first);
+    final secondRoot = find(second);
+    if (firstRoot != secondRoot) parent[secondRoot] = firstRoot;
+  }
+
+  for (var first = 0; first < candidates.length; first++) {
+    for (var second = first + 1; second < candidates.length; second++) {
+      if (_isSamePassage(
+        candidates[first].sentence,
+        candidates[second].sentence,
+      )) {
+        union(first, second);
+      }
+    }
+  }
+
+  final groupedIndices = <int, List<int>>{};
+  for (var index = 0; index < candidates.length; index++) {
+    groupedIndices.putIfAbsent(find(index), () => []).add(index);
+  }
+
+  final passages = <BookDiscussedPassage>[];
+  for (final indices in groupedIndices.values) {
+    if (indices.length < 2) continue;
+    final members = indices.map((index) => candidates[index]).toList();
+    final readerIds = members
+        .map((thought) => thought.userId?.trim())
+        .whereType<String>()
+        .where((userId) => userId.isNotEmpty)
+        .toSet();
+    if (readerIds.length < 2) continue;
+
+    final representative = _representativeThought(members);
+    final previewThoughts = [...members]..sort(_compareThoughtPriority);
+    final recentActivityAt = members
+        .map((thought) => thought.createdAt)
+        .reduce((current, next) => next.isAfter(current) ? next : current);
+    final memberIds = members.map((thought) => thought.sentenceId).toList()
+      ..sort();
+
+    passages.add(
+      BookDiscussedPassage(
+        id: 'passage_${memberIds.join('_')}',
+        representativeText: representative.sentence,
+        pageNumber: representative.pageNumber,
+        thoughtCount: members.length,
+        readerCount: readerIds.length,
+        previewThoughts: previewThoughts.take(2).toList(),
+        members: previewThoughts,
+        recentActivityAt: recentActivityAt,
+      ),
+    );
+  }
+
+  passages.sort((first, second) {
+    final thoughtCompare = second.thoughtCount.compareTo(first.thoughtCount);
+    if (thoughtCompare != 0) return thoughtCompare;
+    final readerCompare = second.readerCount.compareTo(first.readerCount);
+    if (readerCompare != 0) return readerCompare;
+    return second.recentActivityAt.compareTo(first.recentActivityAt);
+  });
+  return passages.take(5).toList();
+}
+
+String _compactSentence(String text) {
+  return normalizeSentence(text).replaceAll(' ', '');
+}
+
+bool _isSamePassage(String first, String second) {
+  final normalizedFirst = _compactSentence(first);
+  final normalizedSecond = _compactSentence(second);
+  if (normalizedFirst.length < 8 || normalizedSecond.length < 8) return false;
+  if (normalizedFirst == normalizedSecond) return true;
+  if (normalizedFirst.contains(normalizedSecond) ||
+      normalizedSecond.contains(normalizedFirst)) {
+    return true;
+  }
+
+  final commonLength = _longestCommonSubstringLength(
+    normalizedFirst,
+    normalizedSecond,
+  );
+  final shorterLength = normalizedFirst.length <= normalizedSecond.length
+      ? normalizedFirst.length
+      : normalizedSecond.length;
+  return commonLength >= 10 || commonLength / shorterLength >= 0.7;
+}
+
+int _longestCommonSubstringLength(String first, String second) {
+  if (first.isEmpty || second.isEmpty) return 0;
+  final shorter = first.length <= second.length ? first : second;
+  final longer = first.length <= second.length ? second : first;
+  var previous = List<int>.filled(shorter.length + 1, 0);
+  var current = List<int>.filled(shorter.length + 1, 0);
+  var longest = 0;
+
+  for (var longerIndex = 1; longerIndex <= longer.length; longerIndex++) {
+    for (var shorterIndex = 1; shorterIndex <= shorter.length; shorterIndex++) {
+      if (shorter[shorterIndex - 1] == longer[longerIndex - 1]) {
+        current[shorterIndex] = previous[shorterIndex - 1] + 1;
+        if (current[shorterIndex] > longest) {
+          longest = current[shorterIndex];
+        }
+      } else {
+        current[shorterIndex] = 0;
+      }
+    }
+    final swap = previous;
+    previous = current;
+    current = swap..fillRange(0, swap.length, 0);
+  }
+  return longest;
+}
+
+BookSocialThought _representativeThought(List<BookSocialThought> members) {
+  final sentenceCounts = <String, int>{};
+  for (final member in members) {
+    final normalized = normalizeSentence(member.sentence);
+    sentenceCounts[normalized] = (sentenceCounts[normalized] ?? 0) + 1;
+  }
+
+  final ranked = [...members]
+    ..sort((first, second) {
+      final countCompare =
+          (sentenceCounts[normalizeSentence(second.sentence)] ?? 0).compareTo(
+            sentenceCounts[normalizeSentence(first.sentence)] ?? 0,
+          );
+      if (countCompare != 0) return countCompare;
+      final priorityCompare = _compareThoughtPriority(first, second);
+      if (priorityCompare != 0) return priorityCompare;
+      return _readabilityPenalty(
+        first.sentence,
+      ).compareTo(_readabilityPenalty(second.sentence));
+    });
+  return ranked.first;
+}
+
+int _compareThoughtPriority(BookSocialThought first, BookSocialThought second) {
+  final likeCompare = second.likeCount.compareTo(first.likeCount);
+  if (likeCompare != 0) return likeCompare;
+  return second.createdAt.compareTo(first.createdAt);
+}
+
+int _readabilityPenalty(String sentence) {
+  final length = sentence.trim().length;
+  if (length < 16) return 2;
+  if (length > 180) return 1;
+  return 0;
 }

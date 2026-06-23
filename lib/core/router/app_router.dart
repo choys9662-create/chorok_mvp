@@ -85,8 +85,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = session != null;
       final loc = state.matchedLocation;
       final isPublic =
-          loc == AppConstants.routeAuth ||
-          loc == AppConstants.routeOnboarding;
+          loc == AppConstants.routeAuth || loc == AppConstants.routeOnboarding;
       if (!isLoggedIn && !isPublic) return AppConstants.routeAuth;
       if (isLoggedIn && loc == AppConstants.routeAuth) {
         return AppConstants.routeHome;
@@ -140,7 +139,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // 책 검색 (알라딘 API)
       GoRoute(
         path: AppConstants.routeSearch,
-        builder: (context, state) => const SearchScreen(),
+        builder: (context, state) =>
+            SearchScreen(replacingBook: state.extra as Book?),
       ),
 
       // 책 상세 — 쉘 밖에서 전체 화면으로 표시

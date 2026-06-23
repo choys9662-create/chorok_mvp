@@ -10,11 +10,14 @@ class CommentRepository {
 
   String? get _me => _c.auth.currentUser?.id;
 
+  /// 문장의 최상위 댓글을 최신순으로 반환. 각 댓글의 `replies`에는 1단계 답글이
+  /// 작성 시간 오름차순(오래된 답글이 위)으로 담긴다.
   Future<List<Comment>> fetchComments(String sentenceId) async {
     final rows = await _c
         .from('sentence_comments')
         .select(
           'id, sentence_id, user_id, content, like_count, created_at, '
+          'parent_comment_id, '
           'profiles!sentence_comments_user_id_fkey(username, display_name)',
         )
         .eq('sentence_id', sentenceId)
@@ -35,7 +38,7 @@ class CommentRepository {
           .toSet();
     }
 
-    return list.map((r) {
+    Comment toComment(Map<String, dynamic> r, List<Comment> replies) {
       final p = r['profiles'] as Map<String, dynamic>?;
       final name = (p?['display_name'] as String?)?.trim();
       return Comment(
@@ -50,11 +53,32 @@ class CommentRepository {
         likeCount: (r['like_count'] as num?)?.toInt() ?? 0,
         likedByMe: liked.contains(r['id']),
         createdAt: DateTime.parse(r['created_at'] as String),
+        parentCommentId: r['parent_comment_id'] as String?,
+        replies: replies,
       );
-    }).toList();
+    }
+
+    // 답글을 부모 id로 그룹핑 (오름차순: 쿼리는 내림차순이므로 뒤집는다)
+    final repliesByParent = <String, List<Comment>>{};
+    for (final r in list) {
+      final pid = r['parent_comment_id'] as String?;
+      if (pid != null) {
+        (repliesByParent[pid] ??= []).insert(0, toComment(r, const []));
+      }
+    }
+
+    return list
+        .where((r) => r['parent_comment_id'] == null)
+        .map((r) => toComment(r, repliesByParent[r['id']] ?? const []))
+        .toList();
   }
 
-  Future<Comment> addComment(String sentenceId, String content) async {
+  /// 댓글 또는 답글 작성. [parentCommentId]가 있으면 1단계 답글로 저장된다.
+  Future<Comment> addComment(
+    String sentenceId,
+    String content, {
+    String? parentCommentId,
+  }) async {
     final me = _me;
     if (me == null) {
       throw StateError('not signed in');
@@ -65,6 +89,7 @@ class CommentRepository {
           'sentence_id': sentenceId,
           'user_id': me,
           'content': content,
+          'parent_comment_id': ?parentCommentId,
         })
         .select('id, created_at')
         .single();
@@ -77,6 +102,7 @@ class CommentRepository {
       likeCount: 0,
       likedByMe: false,
       createdAt: DateTime.parse(row['created_at'] as String),
+      parentCommentId: parentCommentId,
     );
   }
 
@@ -86,9 +112,10 @@ class CommentRepository {
   Future<void> likeComment(String id) async {
     final me = _me;
     if (me == null) return;
-    await _c
-        .from('sentence_comment_likes')
-        .insert({'comment_id': id, 'user_id': me});
+    await _c.from('sentence_comment_likes').insert({
+      'comment_id': id,
+      'user_id': me,
+    });
   }
 
   Future<void> unlikeComment(String id) async {

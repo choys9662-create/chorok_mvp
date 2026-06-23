@@ -248,6 +248,43 @@ class LibraryNotifier extends Notifier<List<Book>> {
     }
   }
 
+  /// 기존 독서 기록과 내부 ID는 유지하고 선택한 판본의 서지 정보만 교체한다.
+  Future<void> replaceBookVersion(String bookId, Book version) async {
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+
+    final old = state[idx];
+    final totalPages = version.totalPages > 0
+        ? version.totalPages
+        : old.totalPages;
+    final currentPage = totalPages > 0
+        ? old.currentPage.clamp(0, totalPages)
+        : old.currentPage;
+    final updated = Book(
+      id: old.id,
+      title: version.title,
+      author: version.author,
+      coverUrl: version.coverUrl,
+      isbn: version.isbn,
+      status: old.status,
+      totalPages: totalPages,
+      currentPage: currentPage,
+      totalReadingHours: old.totalReadingHours,
+      savedSentences: old.savedSentences,
+      completedAt: old.completedAt,
+      genre: version.genre ?? old.genre,
+      description: version.description ?? old.description,
+    );
+
+    state = [...state]..[idx] = updated;
+    if (kUseMock) return;
+    if (kUseRemoteDb) {
+      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    } else {
+      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
+    }
+  }
+
   /// 서재 화면에서 직접 문장 추가
   Future<void> addSentence(
     String bookId,

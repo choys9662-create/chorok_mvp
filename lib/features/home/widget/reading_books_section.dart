@@ -296,7 +296,28 @@ class ReadingBookCard extends ConsumerStatefulWidget {
 class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
   bool _isPressed = false;
 
-  /// 길게 눌러 서재에서 제거 (확인 후). book_detail_sheet의 삭제 플로우와 동일.
+  Future<void> _changeVersion() async {
+    HapticFeedback.selectionClick();
+    final changedTitle = await context.push<String>(
+      AppConstants.routeSearch,
+      extra: widget.book,
+    );
+    if (changedTitle == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$changedTitle 버전으로 변경했어요',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: AppTheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      ),
+    );
+  }
+
+  /// 서재에서 제거 (확인 후). book_detail_sheet의 삭제 플로우와 동일.
   Future<void> _confirmDelete() async {
     HapticFeedback.mediumImpact();
     final book = widget.book;
@@ -346,7 +367,6 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
       onTap: () {
         context.push(AppConstants.routeBookDetail, extra: b.id);
       },
-      onLongPress: _confirmDelete,
       onTapDown: (_) {
         HapticFeedback.selectionClick();
         setState(() => _isPressed = true);
@@ -431,6 +451,64 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
                   ],
                 ),
               ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: PopupMenuButton<_BookCardAction>(
+                  tooltip: '책 편집',
+                  padding: EdgeInsets.zero,
+                  icon: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.52),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.more_horiz_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _BookCardAction.changeVersion:
+                        _changeVersion();
+                        return;
+                      case _BookCardAction.delete:
+                        _confirmDelete();
+                        return;
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: _BookCardAction.changeVersion,
+                      child: Row(
+                        children: [
+                          Icon(Icons.swap_horiz_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('다른 버전으로 변경'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: _BookCardAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: Colors.red,
+                          ),
+                          SizedBox(width: 10),
+                          Text('책 삭제', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -438,6 +516,8 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
     );
   }
 }
+
+enum _BookCardAction { changeVersion, delete }
 
 /// 책 추가용 플레이스홀더 카드 (목록 끝의 "+").
 class AddBookCard extends StatelessWidget {

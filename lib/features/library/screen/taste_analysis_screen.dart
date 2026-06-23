@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../widget/library_stats_view.dart';
 
 class TasteAnalysisScreen extends StatelessWidget {
   final String? userId;
@@ -52,7 +53,7 @@ class TasteAnalysisScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 18),
                   Text(
-                    '독서 분석',
+                    '독서 취향',
                     style: AppTheme.headingLarge.copyWith(
                       color: context.appTextPrimary,
                       fontWeight: FontWeight.w400,
@@ -62,7 +63,7 @@ class TasteAnalysisScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const Expanded(child: SizedBox.shrink()),
+            Expanded(child: LibraryStatsView(fullScreen: true, userId: userId)),
           ],
         ),
       ),

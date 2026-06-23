@@ -62,6 +62,8 @@ class _ReaderThought {
   final DateTime createdAt;
   final int empathyCount; // 내 좋아요를 제외한 수 (표시 = empathyCount + isLiked)
   bool isLiked;
+  final List<_ReaderThought> replies; // 1단계 답글 (최상위 생각에만 채워짐)
+  final String? recordedSentence; // 겹문장 기록 카드가 실제로 저장한 전체 문장
 
   _ReaderThought({
     this.id,
@@ -72,7 +74,9 @@ class _ReaderThought {
     required this.createdAt,
     this.empathyCount = 0,
     this.isLiked = false,
-  });
+    List<_ReaderThought>? replies,
+    this.recordedSentence,
+  }) : replies = replies ?? [];
 }
 
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────
@@ -134,6 +138,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   final _myThoughtController = TextEditingController();
   final _focusNode = FocusNode();
   bool _isSubmitting = false;
+  _ReaderThought? _replyingTo; // 답글 대상 (null이면 최상위 댓글 작성)
 
   @override
   void initState() {
@@ -175,6 +180,20 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                 createdAt: c.createdAt,
                 empathyCount: c.likeCount - (c.likedByMe ? 1 : 0),
                 isLiked: c.likedByMe,
+                replies: c.replies
+                    .map(
+                      (r) => _ReaderThought(
+                        id: r.id,
+                        userId: r.userId,
+                        username: r.username,
+                        handle: r.handle,
+                        thought: r.content,
+                        createdAt: r.createdAt,
+                        empathyCount: r.likeCount - (r.likedByMe ? 1 : 0),
+                        isLiked: r.likedByMe,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           );
@@ -184,26 +203,42 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     }
   }
 
+  /// 특정 생각에 답글 모드 진입 — 입력 바로 포커스 이동.
+  void _startReply(_ReaderThought target) {
+    HapticFeedback.selectionClick();
+    setState(() => _replyingTo = target);
+    _focusNode.requestFocus();
+  }
+
+  void _cancelReply() {
+    setState(() => _replyingTo = null);
+    _focusNode.unfocus();
+  }
+
   void _submitThought() {
     final text = _myThoughtController.text.trim();
     if (text.isEmpty) return;
 
     HapticFeedback.mediumImpact();
     final sid = widget.data.sentenceId;
+    final parent = _replyingTo;
 
     // mock 또는 sentenceId 부재: 기존 로컬 동작 유지
     if (kUseMock || sid == null) {
       setState(() {
-        _thoughts.insert(
-          0,
-          _ReaderThought(
-            username: '나',
-            thought: text,
-            createdAt: DateTime.now(),
-            empathyCount: 0,
-          ),
+        final created = _ReaderThought(
+          username: '나',
+          thought: text,
+          createdAt: DateTime.now(),
+          empathyCount: 0,
         );
+        if (parent != null) {
+          parent.replies.add(created); // 답글은 부모 아래 시간순(끝)에 추가
+        } else {
+          _thoughts.insert(0, created);
+        }
         _myThoughtController.clear();
+        _replyingTo = null;
       });
       _focusNode.unfocus();
       return;
@@ -214,41 +249,47 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     _focusNode.unfocus();
     ref
         .read(commentRepositoryProvider)
-        .addComment(sid, text)
+        .addComment(sid, text, parentCommentId: parent?.id)
         .then((c) {
           if (!mounted) return;
           setState(() {
-            _thoughts.insert(
-              0,
-              _ReaderThought(
-                id: c.id,
-                username: '나',
-                thought: c.content,
-                createdAt: c.createdAt,
-                empathyCount: 0,
-                isLiked: false,
-              ),
+            final created = _ReaderThought(
+              id: c.id,
+              username: '나',
+              thought: c.content,
+              createdAt: c.createdAt,
+              empathyCount: 0,
+              isLiked: false,
             );
+            if (parent != null) {
+              parent.replies.add(created);
+            } else {
+              _thoughts.insert(0, created);
+            }
             _myThoughtController.clear();
             _isSubmitting = false;
+            _replyingTo = null;
           });
         })
         .catchError((_) {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('생각을 남기지 못했어요. 다시 시도해주세요'),
+            SnackBar(
+              content: Text(
+                parent != null
+                    ? '답글을 남기지 못했어요. 다시 시도해주세요'
+                    : '생각을 남기지 못했어요. 다시 시도해주세요',
+              ),
               behavior: SnackBarBehavior.floating,
             ),
           );
         });
   }
 
-  /// 댓글 좋아요 토글 (실데이터는 낙관적 + 실패 시 롤백).
-  void _toggleThoughtLike(int index) {
+  /// 댓글·답글 좋아요 토글 (실데이터는 낙관적 + 실패 시 롤백).
+  void _toggleThoughtLike(_ReaderThought t) {
     HapticFeedback.selectionClick();
-    final t = _thoughts[index];
     if (kUseMock || t.id == null) {
       setState(() => t.isLiked = !t.isLiked);
       return;
@@ -368,6 +409,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
             handle: match.username,
             thought: match.thought!.trim(),
             createdAt: match.createdAt,
+            recordedSentence: match.content,
           ),
         )
         .toList();
@@ -388,6 +430,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
           handle: d.collectorUserHandle,
           thought: collectorThought,
           createdAt: DateTime.now(),
+          recordedSentence: d.sentenceContent,
         ),
       );
     }
@@ -643,15 +686,34 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                         final recordThoughtCount = d.isOverlapGroup
                             ? visibleThoughts.length - _thoughts.length
                             : 0;
-                        final commentIndex = index - recordThoughtCount;
+                        // 겹문장 합성 카드(recordThoughts)는 댓글 row가 아니라
+                        // 좋아요·답글이 없다. 실제 댓글에만 상호작용을 붙인다.
+                        final isRealComment = index >= recordThoughtCount;
+                        final t = visibleThoughts[index];
+                        final isRecordedThought =
+                            !isRealComment &&
+                            t.recordedSentence?.trim().isNotEmpty == true;
                         return _ThoughtCard(
-                          thought: visibleThoughts[index],
+                          thought: t,
                           formatTime: time_fmt.formatRelative,
-                          onToggleLike: commentIndex >= 0
-                              ? () => _toggleThoughtLike(commentIndex)
+                          onToggleLike: isRealComment
+                              ? () => _toggleThoughtLike(t)
                               : null,
-                          onOpenProfile: () =>
-                              _openReaderProfile(visibleThoughts[index]),
+                          onReply: isRealComment ? () => _startReply(t) : null,
+                          onToggleReplyLike: _toggleThoughtLike,
+                          onOpenProfile: isRecordedThought
+                              ? null
+                              : () => _openReaderProfile(t),
+                          onOpenRecordedSentence: isRecordedThought
+                              ? () => showRecordedSentenceDetails(
+                                  context,
+                                  anchorText: d.overlapCommonPhrase!,
+                                  recordedText: t.recordedSentence!,
+                                  username: t.username,
+                                  thought: t.thought,
+                                )
+                              : null,
+                          onOpenReplyProfile: _openReaderProfile,
                         );
                       },
                     ),
@@ -672,70 +734,111 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
               bottomPad + 10,
             ),
             decoration: BoxDecoration(color: context.appBg),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: AppTheme.smoothBox(
-                      color: context.appCard,
-                      radius: 10,
-                      side: BorderSide.none,
-                    ),
-                    child: TextField(
-                      controller: _myThoughtController,
-                      focusNode: _focusNode,
-                      style: AppTheme.bodySmall.copyWith(
-                        color: context.appTextPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: '이 문장에 대한 나의 생각...',
-                        hintStyle: AppTheme.bodySmall.copyWith(
-                          color: context.appTextTertiary,
+                // ── 답글 모드 배너 ──────────────────────────
+                if (_replyingTo != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.reply_rounded,
+                          size: 15,
+                          color: context.appPrimaryAccent,
                         ),
-                        isCollapsed: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _submitThought(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Semantics(
-                  label: '생각 남기기',
-                  button: true,
-                  child: GestureDetector(
-                    onTap: _submitThought,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: AppTheme.smoothBox(
-                        gradient: context.appReadingGradient,
-                        radius: 10,
-                      ),
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.arrow_upward_rounded,
-                              size: 20,
-                              color: Colors.white,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${_replyingTo!.username}님에게 답글 남기는 중',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextSecondary,
                             ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _cancelReply,
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: context.appTextTertiary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: AppTheme.smoothBox(
+                          color: context.appCard,
+                          radius: 10,
+                          side: BorderSide.none,
+                        ),
+                        child: TextField(
+                          controller: _myThoughtController,
+                          focusNode: _focusNode,
+                          style: AppTheme.bodySmall.copyWith(
+                            color: context.appTextPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: _replyingTo != null
+                                ? '${_replyingTo!.username}님에게 답글...'
+                                : '이 문장에 대한 나의 생각...',
+                            hintStyle: AppTheme.bodySmall.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                            isCollapsed: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                          ),
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _submitThought(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Semantics(
+                      label: '생각 남기기',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: _submitThought,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: AppTheme.smoothBox(
+                            gradient: context.appReadingGradient,
+                            radius: 10,
+                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.arrow_upward_rounded,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -794,22 +897,34 @@ class _ThoughtCard extends StatelessWidget {
   final _ReaderThought thought;
   final String Function(DateTime) formatTime;
   final VoidCallback? onToggleLike;
-  final VoidCallback onOpenProfile;
+  final VoidCallback? onReply;
+  final void Function(_ReaderThought) onToggleReplyLike;
+  final void Function(_ReaderThought) onOpenReplyProfile;
+  final VoidCallback? onOpenProfile;
+  final VoidCallback? onOpenRecordedSentence;
 
   const _ThoughtCard({
     required this.thought,
     required this.formatTime,
     required this.onToggleLike,
+    required this.onReply,
+    required this.onToggleReplyLike,
+    required this.onOpenReplyProfile,
     required this.onOpenProfile,
+    required this.onOpenRecordedSentence,
   });
 
   @override
   Widget build(BuildContext context) {
     final t = thought;
-    final tappable = t.userId != null && t.userId!.isNotEmpty;
+    final profileTappable =
+        onOpenProfile != null && t.userId != null && t.userId!.isNotEmpty;
 
     return GestureDetector(
-      onTap: tappable ? onOpenProfile : null,
+      key: onOpenRecordedSentence == null
+          ? null
+          : ValueKey('recorded-thought-card-${t.username}'),
+      onTap: onOpenRecordedSentence,
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
@@ -821,108 +936,231 @@ class _ThoughtCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── 유저 정보 + 시간 ────────────────────────────
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: context.appPrimaryAccent.withValues(
-                    alpha: 0.12,
-                  ),
-                  child: Text(
-                    t.username[0].toUpperCase(),
-                    style: AppTheme.captionSmall.copyWith(
-                      color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w400,
+            // ── 유저 정보 + 생각 ───────────────────────────
+            GestureDetector(
+              onTap: profileTappable ? onOpenProfile : null,
+              behavior: HitTestBehavior.opaque,
+              child: _ThoughtContent(
+                thought: t,
+                formatTime: formatTime,
+                avatarRadius: 14,
+                showChevron: profileTappable || onOpenRecordedSentence != null,
+              ),
+            ),
+
+            // ── 액션 행: 좋아요 + 답글 ───────────────────────
+            if (onToggleLike != null || onReply != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (onToggleLike != null)
+                    _LikeToggle(thought: t, onTap: onToggleLike!),
+                  if (onToggleLike != null && onReply != null)
+                    const SizedBox(width: 18),
+                  if (onReply != null)
+                    GestureDetector(
+                      onTap: onReply,
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 15,
+                            color: context.appTextTertiary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '답글',
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+
+            // ── 답글 목록 (1단계) ────────────────────────────
+            if (t.replies.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12, left: 8),
+                child: Container(
+                  padding: const EdgeInsets.only(left: 12),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: context.appBorder, width: 2),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        t.username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.bodySmall.copyWith(
-                          color: context.appTextPrimary,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      if (t.handle != null &&
-                          t.handle!.isNotEmpty &&
-                          t.handle != t.username)
-                        Text(
-                          '@${t.handle}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appTextTertiary,
+                      for (final r in t.replies)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: r == t.replies.first ? 0 : 14,
+                          ),
+                          child: GestureDetector(
+                            onTap: (r.userId != null && r.userId!.isNotEmpty)
+                                ? () => onOpenReplyProfile(r)
+                                : null,
+                            behavior: HitTestBehavior.opaque,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _ThoughtContent(
+                                  thought: r,
+                                  formatTime: formatTime,
+                                  avatarRadius: 11,
+                                  showChevron:
+                                      r.userId != null && r.userId!.isNotEmpty,
+                                ),
+                                if (r.id != null) ...[
+                                  const SizedBox(height: 8),
+                                  _LikeToggle(
+                                    thought: r,
+                                    onTap: () => onToggleReplyLike(r),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
                     ],
                   ),
                 ),
-                if (tappable)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: context.appTextTertiary,
-                    ),
-                  ),
-                Text(
-                  formatTime(t.createdAt),
-                  style: AppTheme.captionSmall.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ── 생각 내용 ──────────────────────────────────
-            Text(
-              t.thought,
-              style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextPrimary,
-                height: 1.6,
               ),
-            ),
-            if (onToggleLike != null) ...[
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: onToggleLike,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      t.isLiked
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      size: 16,
-                      color: t.isLiked
-                          ? AppTheme.empathyColor
-                          : context.appTextTertiary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${t.empathyCount + (t.isLiked ? 1 : 0)}',
-                      style: AppTheme.captionLarge.copyWith(
-                        color: t.isLiked
-                            ? AppTheme.empathyColor
-                            : context.appTextTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 생각/답글의 헤더(아바타·이름·시간) + 본문 텍스트. 카드와 답글에서 공용.
+class _ThoughtContent extends StatelessWidget {
+  final _ReaderThought thought;
+  final String Function(DateTime) formatTime;
+  final double avatarRadius;
+  final bool showChevron;
+
+  const _ThoughtContent({
+    required this.thought,
+    required this.formatTime,
+    required this.avatarRadius,
+    required this.showChevron,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = thought;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: avatarRadius,
+              backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.12),
+              child: Text(
+                t.username[0].toUpperCase(),
+                style: AppTheme.captionSmall.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  if (t.handle != null &&
+                      t.handle!.isNotEmpty &&
+                      t.handle != t.username)
+                    Text(
+                      '@${t.handle}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (showChevron)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: context.appTextTertiary,
+                ),
+              ),
+            Text(
+              formatTime(t.createdAt),
+              style: AppTheme.captionSmall.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          t.thought,
+          style: AppTheme.bodyMedium.copyWith(
+            color: context.appTextPrimary,
+            height: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 공감(좋아요) 토글 버튼 — 하트 + 카운트.
+class _LikeToggle extends StatelessWidget {
+  final _ReaderThought thought;
+  final VoidCallback onTap;
+
+  const _LikeToggle({required this.thought, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = thought;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            t.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            size: 16,
+            color: t.isLiked ? AppTheme.empathyColor : context.appTextTertiary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${t.empathyCount + (t.isLiked ? 1 : 0)}',
+            style: AppTheme.captionLarge.copyWith(
+              color: t.isLiked
+                  ? AppTheme.empathyColor
+                  : context.appTextTertiary,
+            ),
+          ),
+        ],
       ),
     );
   }

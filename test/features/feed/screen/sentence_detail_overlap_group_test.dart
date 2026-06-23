@@ -118,5 +118,16 @@ void main() {
 
     expect(find.text('저는 전문성이 겹치는 장면으로 읽었어요.'), findsWidgets);
     expect(find.text('이 생각은 표시되면 안 됩니다.'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('recorded-thought-card-유저 2')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('유저 2님이 기록한 문장'), findsOneWidget);
+    expect(
+      find.textContaining('나는 산업디자이너다. 나는 시각디자이너다. 나는 기획자다.'),
+      findsWidgets,
+    );
+    expect(find.text('유저 2님의 생각'), findsOneWidget);
+    expect(find.text('직함보다 역할의 연결이 중요하다고 생각해요.'), findsWidgets);
   });
 }

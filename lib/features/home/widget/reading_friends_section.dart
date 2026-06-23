@@ -30,7 +30,8 @@ class ReadingFriendsSection extends ConsumerWidget {
         final visibleFriends = d.mutuals.take(3).toList();
         final friendCount = kUseMock ? visibleFriends.length : d.mutualCount;
         final nearbyCount = kUseMock ? 10 : d.nearbyCount;
-        if (visibleFriends.isEmpty && nearbyCount <= 0) {
+        final showNeighbors = kUseMock && nearbyCount > 0;
+        if (visibleFriends.isEmpty && !showNeighbors) {
           return const SizedBox.shrink();
         }
         return Column(
@@ -41,7 +42,7 @@ class ReadingFriendsSection extends ConsumerWidget {
               const SizedBox(height: 12),
               _LiveReadersCard(mutuals: visibleFriends),
             ],
-            if (nearbyCount > 0) ...[
+            if (showNeighbors) ...[
               const SizedBox(height: 30),
               _Header(title: '읽고 있는 이웃', count: nearbyCount, showChevron: true),
               const SizedBox(height: 12),
