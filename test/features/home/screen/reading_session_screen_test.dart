@@ -46,7 +46,11 @@ class _FakeLibraryNotifier extends LibraryNotifier {
 
 class _FakePresenceRepository implements ReadingPresenceRepository {
   @override
-  Future<void> start() async {}
+  Future<void> start({
+    String? bookTitle,
+    String? bookAuthor,
+    String? bookCoverUrl,
+  }) async {}
 
   @override
   Future<void> heartbeat() async {}
@@ -55,7 +59,9 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
   Future<void> end() async {}
 
   @override
-  Future<Set<String>> activeUserIds(List<String> candidateIds) async {
+  Future<Map<String, ReadingPresenceInfo>> activeReaders(
+    List<String> candidateIds,
+  ) async {
     return const {};
   }
 
@@ -93,8 +99,12 @@ Widget _buildScreen() {
         _FakePresenceRepository(),
       ),
       sessionFireflyProvider.overrideWith(
-        (ref) async =>
-            (mutualCount: 0, nearbyCount: 0, mutuals: <UserProfile>[]),
+        (ref) async => (
+          mutualCount: 0,
+          nearbyCount: 0,
+          mutuals: <UserProfile>[],
+          books: const <String, ReadingPresenceInfo>{},
+        ),
       ),
       readingStreakProvider.overrideWith((ref) async => 0),
     ],

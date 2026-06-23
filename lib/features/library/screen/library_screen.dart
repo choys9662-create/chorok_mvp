@@ -48,7 +48,10 @@ final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
       final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
       final title = book?['title'] as String? ?? '알 수 없는 책';
       return (
-        date: dateStr != null ? DateTime.parse(dateStr) : DateTime.now(),
+        // UTC로 저장된 시각을 로컬 날짜로 변환해야 캘린더 날짜가 맞는다.
+        date: dateStr != null
+            ? DateTime.parse(dateStr).toLocal()
+            : DateTime.now(),
         bookTitle: title,
         bookAuthor: book?['author'] as String? ?? '',
         minutes: (secs / 60).round(),

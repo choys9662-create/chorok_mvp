@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -101,6 +102,40 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   UiVisibility _uiState = UiVisibility.hidden;
   Timer? _uiHideTimer;
   bool _goalReachedNotified = false;
+
+  // 화면 밝기 절전 — 5초 무터치 시 어둑하게, 터치하면 사용자 밝기로 복원.
+  // UI 가시성(_uiState)과 독립적으로, 모든 포인터 입력이 _brightenScreen()을 깨운다.
+  static const _brightnessIdle = Duration(seconds: 5);
+  static const _dimScale = 0.35; // 사용자 밝기 대비 어둑한 정도
+  Timer? _brightnessIdleTimer;
+  double? _baseBrightness; // 세션 진입 시점의 사용자 밝기
+  bool _dimmed = false;
+
+  Future<void> _brightenScreen() async {
+    _brightnessIdleTimer?.cancel();
+    _brightnessIdleTimer = Timer(_brightnessIdle, _dimScreen);
+    if (!_dimmed) return;
+    _dimmed = false;
+    try {
+      await ScreenBrightness().resetApplicationScreenBrightness();
+    } catch (_) {
+      // 시뮬레이터·웹 등 밝기 제어 미지원 환경은 조용히 무시.
+    }
+  }
+
+  Future<void> _dimScreen() async {
+    if (!mounted || _dimmed) return;
+    final base = _baseBrightness;
+    if (base == null) return;
+    _dimmed = true;
+    try {
+      await ScreenBrightness().setApplicationScreenBrightness(
+        (base * _dimScale).clamp(0.05, 1.0),
+      );
+    } catch (_) {
+      _dimmed = false;
+    }
+  }
 
   // 실시간 '읽고 있는 친구' presence — 세션 화면이 살아있는 동안만 행 유지.
   // dispose에서 안전하게 쓰도록 repository 참조를 캡처해 둔다.
@@ -551,11 +586,24 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       WakelockPlus.enable();
 
+      // 진입 시점의 사용자 밝기를 기준값으로 잡고 무터치 절전 타이머 시작.
+      ScreenBrightness().setAnimate(true).catchError((_) {});
+      ScreenBrightness().system.then((b) {
+        if (!mounted) return;
+        _baseBrightness = b;
+        _brightenScreen();
+      }).catchError((_) {});
+
       // 세션 시작 — 실시간 presence 등록 + 주기적 heartbeat (TTL 90s의 절반 주기).
       if (!kUseMock) {
         final presence = ref.read(readingPresenceRepositoryProvider);
         _presence = presence;
-        presence.start();
+        final sessionBook = _readSessionBook();
+        presence.start(
+          bookTitle: sessionBook.title.isNotEmpty ? sessionBook.title : null,
+          bookAuthor: sessionBook.author.isNotEmpty ? sessionBook.author : null,
+          bookCoverUrl: sessionBook.coverUrl,
+        );
         _presenceHeartbeat = Timer.periodic(
           const Duration(seconds: 45),
           (_) => presence.heartbeat(),
@@ -598,6 +646,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
       ref.read(timerProvider.notifier).syncFromWallClock();
       WakelockPlus.enable();
+      // 백그라운드 동안 OS가 app 밝기 오버라이드를 해제하므로 복귀 시 다시 건다.
+      _dimmed = false;
+      _brightenScreen();
     } else {
       // 타이머가 실제로 돌고 있을 때 앱을 벗어난 경우만 이탈로 기록.
       // 앱 내 기능(OCR/녹음/문장작성)은 타이머를 pause하므로 제외된다.
@@ -615,6 +666,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _presence?.end();
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
+    _brightnessIdleTimer?.cancel();
+    ScreenBrightness().resetApplicationScreenBrightness().catchError((_) {});
     _pulseCtrl.dispose();
     _moveCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -865,11 +918,15 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           backgroundColor: Colors.black,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              // ① 배경
-              const _SessionBackground(),
+          // 모든 포인터 입력에서 밝기를 복원(소비하지 않고 통과). 무터치 5초 후 어둑.
+          body: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) => _brightenScreen(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // ① 배경
+                const _SessionBackground(),
 
               // ② 라이브 포레스트 반딧불 배경 — 실시간 독자 수 반영
               Builder(
@@ -987,7 +1044,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   onConfirm: _confirmStopFlow,
                   onCancel: _cancelStopFlow,
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -4460,6 +4518,9 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
   Widget build(BuildContext context) {
     final fireflyAsync = ref.watch(sessionFireflyProvider);
     final mutuals = fireflyAsync.valueOrNull?.mutuals ?? const [];
+    final books =
+        fireflyAsync.valueOrNull?.books ??
+        const <String, ReadingPresenceInfo>{};
     final timer = ref.watch(timerProvider);
 
     return Container(
@@ -4530,8 +4591,8 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                     controller: _pageCtrl,
                     onPageChanged: (i) => setState(() => _tab = i),
                     children: [
-                      _PeopleTab(mutuals: mutuals),
-                      _BooksTab(mutuals: mutuals),
+                      _PeopleTab(mutuals: mutuals, readers: books),
+                      _BooksTab(mutuals: mutuals, books: books),
                     ],
                   ),
           ),
@@ -4612,8 +4673,9 @@ class _TabBtn extends StatelessWidget {
 // ─── 사람들 탭 ─────────────────────────────────────────────────────────────
 class _PeopleTab extends StatelessWidget {
   final List<UserProfile> mutuals;
+  final Map<String, ReadingPresenceInfo> readers;
 
-  const _PeopleTab({required this.mutuals});
+  const _PeopleTab({required this.mutuals, required this.readers});
 
   @override
   Widget build(BuildContext context) {
@@ -4624,7 +4686,13 @@ class _PeopleTab extends StatelessWidget {
         final user = mutuals[i];
         final isFirst = i == 0;
         final liked = _seededLiked(user.username);
-        final time = _seededTimer(user.username);
+        // 세션 시작 시각이 있으면 실제 경과 시간. 없으면(목업) 시드값 폴백.
+        final startedAt = readers[user.id]?.startedAt;
+        final time = startedAt != null
+            ? _formatStoppedTime(
+                DateTime.now().difference(startedAt).inSeconds.clamp(0, 359999),
+              )
+            : _seededTimer(user.username);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -4693,8 +4761,9 @@ class _PeopleTab extends StatelessWidget {
 // ─── 책 탭 ────────────────────────────────────────────────────────────────
 class _BooksTab extends StatelessWidget {
   final List<UserProfile> mutuals;
+  final Map<String, ReadingPresenceInfo> books;
 
-  const _BooksTab({required this.mutuals});
+  const _BooksTab({required this.mutuals, required this.books});
 
   @override
   Widget build(BuildContext context) {
@@ -4704,7 +4773,12 @@ class _BooksTab extends StatelessWidget {
       itemBuilder: (context, i) {
         final user = mutuals[i];
         final isFirst = i == 0;
-        final book = _seededBook(user.username);
+        // 세션 시작 시 기록된 실제 책. 없으면(구버전 presence·목업) 시드값으로 폴백.
+        final presenceBook = books[user.id];
+        final book = (presenceBook?.hasTitle ?? false)
+            ? (title: presenceBook!.title!, author: presenceBook.author ?? '')
+            : _seededBook(user.username);
+        final coverUrl = presenceBook?.coverUrl;
         final bookmarked = _seededLiked(user.username);
 
         return Padding(
@@ -4767,23 +4841,13 @@ class _BooksTab extends StatelessWidget {
                       : Colors.white.withValues(alpha: 0.25),
                 ),
                 const SizedBox(width: 10),
-                // 표지 자리 — 실데이터 연동 전 placeholder
-                Container(
+                // 실제 책 표지. URL이 없으면 BookCover가 그라데이션 폴백을 그린다.
+                BookCover(
+                  coverUrl: coverUrl,
+                  gradientIndex: book.title.hashCode.abs(),
                   width: 44,
                   height: 60,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: _kGreen.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: _kGreen.withValues(alpha: 0.18),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    size: 20,
-                    color: _kGreen.withValues(alpha: 0.30),
-                  ),
+                  radius: 10,
                 ),
               ],
             ),

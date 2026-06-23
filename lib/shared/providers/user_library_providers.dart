@@ -35,7 +35,10 @@ final userReadingLogsProvider = FutureProvider.family<List<ReadingLog>, String>(
     final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
     final title = book?['title'] as String? ?? '알 수 없는 책';
     return (
-      date: dateStr != null ? DateTime.parse(dateStr) : DateTime.now(),
+      // UTC로 저장된 시각을 로컬 날짜로 변환해야 캘린더 날짜가 맞는다.
+      date: dateStr != null
+          ? DateTime.parse(dateStr).toLocal()
+          : DateTime.now(),
       bookTitle: title,
       bookAuthor: book?['author'] as String? ?? '',
       minutes: (secs / 60).round(),
@@ -86,7 +89,7 @@ final userReadingStreakProvider = FutureProvider.family<int, String>((
   for (final row in rows as List) {
     final dt = DateTime.tryParse(
       (row as Map<String, dynamic>)['ended_at'] as String? ?? '',
-    );
+    )?.toLocal();
     if (dt != null) days.add(DateTime(dt.year, dt.month, dt.day));
   }
   if (days.isEmpty) return 0;

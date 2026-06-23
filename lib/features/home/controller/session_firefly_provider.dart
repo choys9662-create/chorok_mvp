@@ -21,7 +21,12 @@ const _kMockMutuals = [
 
 final sessionFireflyProvider =
     FutureProvider<
-      ({int mutualCount, int nearbyCount, List<UserProfile> mutuals})
+      ({
+        int mutualCount,
+        int nearbyCount,
+        List<UserProfile> mutuals,
+        Map<String, ReadingPresenceInfo> books,
+      })
     >((ref) async {
       ref.watch(followMutationVersionProvider);
 
@@ -35,7 +40,12 @@ final sessionFireflyProvider =
               ),
             )
             .toList();
-        return (mutualCount: mutuals.length, nearbyCount: 15, mutuals: mutuals);
+        return (
+          mutualCount: mutuals.length,
+          nearbyCount: 15,
+          mutuals: mutuals,
+          books: const <String, ReadingPresenceInfo>{},
+        );
       }
 
       // 세션 중 친구가 새로 읽기 시작하거나 끝내면 반영되도록 30초 주기 재조회
@@ -51,15 +61,17 @@ final sessionFireflyProvider =
           .read(followRepositoryProvider)
           .getMutualFollows();
       // "읽고 있는 친구" = 지금 세션을 실행 중인 맞팔만. presence가 없으면 제외.
-      final activeIds = await presence.activeUserIds(
+      // 각 친구가 지금 읽고 있는 책 정보도 함께 받아온다.
+      final books = await presence.activeReaders(
         mutuals.map((m) => m.id).toList(),
       );
-      final active = mutuals.where((m) => activeIds.contains(m.id)).toList();
+      final active = mutuals.where((m) => books.containsKey(m.id)).toList();
       // "읽고 있는 주변" = 전체에서 지금 읽는 중인 독자 수(맞팔 무관).
       final counts = await presence.liveCounts();
       return (
         mutualCount: active.length,
         nearbyCount: counts.active,
         mutuals: active,
+        books: books,
       );
     });

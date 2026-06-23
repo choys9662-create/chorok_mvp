@@ -16,7 +16,12 @@ class ReadingPresenceRepository {
   String? get _meId => _client.auth.currentUser?.id;
 
   /// 세션 시작 — presence 행 생성(있으면 갱신).
-  Future<void> start() async {
+  /// 지금 읽기 시작한 책 정보를 함께 기록해 친구들의 라이브 시트에 노출한다.
+  Future<void> start({
+    String? bookTitle,
+    String? bookAuthor,
+    String? bookCoverUrl,
+  }) async {
     final me = _meId;
     if (me == null) return;
     final nowIso = DateTime.now().toUtc().toIso8601String();
@@ -24,6 +29,9 @@ class ReadingPresenceRepository {
       'user_id': me,
       'started_at': nowIso,
       'last_heartbeat_at': nowIso,
+      'book_title': bookTitle,
+      'book_author': bookAuthor,
+      'book_cover_url': bookCoverUrl,
     }, onConflict: 'user_id');
   }
 
@@ -58,8 +66,11 @@ class ReadingPresenceRepository {
     );
   }
 
-  /// [candidateIds] 중 지금 세션을 실행 중(heartbeat가 TTL 이내)인 유저 id만 반환.
-  Future<Set<String>> activeUserIds(List<String> candidateIds) async {
+  /// [candidateIds] 중 지금 세션을 실행 중(heartbeat가 TTL 이내)인 유저를
+  /// user_id → 읽고 있는 책·세션 시작 시각으로 반환. 책 정보가 없으면 필드가 null.
+  Future<Map<String, ReadingPresenceInfo>> activeReaders(
+    List<String> candidateIds,
+  ) async {
     if (candidateIds.isEmpty) return const {};
     final cutoff = DateTime.now()
         .toUtc()
@@ -67,13 +78,38 @@ class ReadingPresenceRepository {
         .toIso8601String();
     final rows = await _client
         .from('reading_presence')
-        .select('user_id')
+        .select('user_id, started_at, book_title, book_author, book_cover_url')
         .inFilter('user_id', candidateIds)
         .gte('last_heartbeat_at', cutoff);
-    return (rows as List)
-        .map((r) => (r as Map<String, dynamic>)['user_id'] as String)
-        .toSet();
+    return {
+      for (final r in (rows as List).cast<Map<String, dynamic>>())
+        r['user_id'] as String: ReadingPresenceInfo(
+          title: r['book_title'] as String?,
+          author: r['book_author'] as String?,
+          coverUrl: r['book_cover_url'] as String?,
+          startedAt: DateTime.tryParse(
+            r['started_at'] as String? ?? '',
+          )?.toLocal(),
+        ),
+    };
   }
+}
+
+/// presence 행에 기록된 '지금 읽고 있는 책'과 세션 시작 시각.
+class ReadingPresenceInfo {
+  final String? title;
+  final String? author;
+  final String? coverUrl;
+  final DateTime? startedAt;
+
+  const ReadingPresenceInfo({
+    this.title,
+    this.author,
+    this.coverUrl,
+    this.startedAt,
+  });
+
+  bool get hasTitle => title != null && title!.isNotEmpty;
 }
 
 final readingPresenceRepositoryProvider = Provider<ReadingPresenceRepository>((

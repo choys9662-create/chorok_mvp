@@ -41,7 +41,7 @@ Future<int> _readingStreakFromSupabase() async {
   for (final row in rows as List) {
     final dt = DateTime.tryParse(
       (row as Map<String, dynamic>)['ended_at'] as String? ?? '',
-    );
+    )?.toLocal();
     if (dt != null) {
       days.add(DateTime(dt.year, dt.month, dt.day));
     }

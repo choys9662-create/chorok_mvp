@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:chorok_app/core/theme/app_theme.dart';
 import 'package:chorok_app/features/home/controller/session_firefly_provider.dart';
+import 'package:chorok_app/shared/repositories/reading_presence_repository.dart';
 import 'package:chorok_app/features/home/widget/reading_books_section.dart';
 import 'package:chorok_app/features/home/widget/reading_friends_section.dart';
 import 'package:chorok_app/shared/models/reading_session.dart';
@@ -96,6 +97,7 @@ void main() {
               mutualCount: mutuals.length,
               nearbyCount: 15,
               mutuals: mutuals,
+              books: const <String, ReadingPresenceInfo>{},
             ),
           ),
         ],
