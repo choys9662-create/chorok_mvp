@@ -920,6 +920,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     final gradientIndex =
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
     final coverColors = AppTheme.coverGradients[gradientIndex];
+    final showBackButton = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: context.appBg,
@@ -956,32 +957,33 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                   padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 28),
                   child: Column(
                     children: [
-                      // 뒤로가기
-                      Row(
-                        children: [
-                          Semantics(
-                            button: true,
-                            label: '뒤로가기',
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                Navigator.of(context).pop();
-                              },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: context.appTextSecondary,
-                                  size: 20,
+                      if (showBackButton) ...[
+                        Row(
+                          children: [
+                            Semantics(
+                              button: true,
+                              label: '뒤로가기',
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  Navigator.of(context).pop();
+                                },
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: context.appTextSecondary,
+                                    size: 20,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
                       // 책 표지
                       Container(

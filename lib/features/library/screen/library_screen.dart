@@ -19,6 +19,7 @@ import '../../../shared/widgets/forest_accent_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../home/widget/overlap_section.dart';
+import '../../search/util/book_info_navigation.dart';
 import '../controller/choseo_list_controller.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../widget/library_stats_view.dart';
@@ -910,7 +911,7 @@ class _ReadingNowRow extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticFeedback.selectionClick();
-          context.push(AppConstants.routeBookDetail, extra: book.id);
+          pushBookInfo(context, book);
         },
         child: Row(
           children: [
@@ -2036,7 +2037,7 @@ class _MonthlyAchievementCard extends ConsumerWidget {
 class _BookCard extends StatelessWidget {
   final Book book;
 
-  /// 내 서재 여부. false면 상세 화면 이동/이어읽기 비활성(읽기 전용).
+  /// 내 서재 여부. false면 이어읽기 같은 소유자 전용 동작만 비활성한다.
   final bool isOwner;
 
   const _BookCard({required this.book, this.isOwner = true});
@@ -2046,12 +2047,10 @@ class _BookCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = book.status == ReadingStatus.completed;
     return GestureDetector(
-      onTap: isOwner
-          ? () {
-              HapticFeedback.selectionClick();
-              context.push(AppConstants.routeBookDetail, extra: book.id);
-            }
-          : null,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        pushBookInfo(context, book);
+      },
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
@@ -2344,7 +2343,7 @@ class _EmptyShelf extends StatelessWidget {
 class _BookListTile extends StatelessWidget {
   final Book book;
 
-  /// 내 서재 여부. false면 상세 화면 이동/이어읽기 비활성(읽기 전용).
+  /// 내 서재 여부. false면 이어읽기 같은 소유자 전용 동작만 비활성한다.
   final bool isOwner;
 
   const _BookListTile({required this.book, this.isOwner = true});
@@ -2359,12 +2358,10 @@ class _BookListTile extends StatelessWidget {
       label: '${book.title}, ${book.author}',
       button: true,
       child: GestureDetector(
-        onTap: isOwner
-            ? () {
-                HapticFeedback.selectionClick();
-                context.push(AppConstants.routeBookDetail, extra: book.id);
-              }
-            : null,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          pushBookInfo(context, book);
+        },
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: AppTheme.smoothBox(

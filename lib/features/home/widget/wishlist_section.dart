@@ -10,6 +10,8 @@ import '../../../shared/widgets/chorok_section_header.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import '../../../shared/models/session_goal.dart';
 
+import '../../search/util/book_info_navigation.dart';
+
 class WishlistSection extends ConsumerWidget {
   const WishlistSection({super.key});
 
@@ -86,7 +88,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
 
     return GestureDetector(
       onTap: () {
-        context.push(AppConstants.routeBookDetail, extra: b.id);
+        pushBookInfo(context, b);
       },
       onTapDown: (_) {
         HapticFeedback.selectionClick();

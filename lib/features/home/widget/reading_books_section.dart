@@ -10,6 +10,7 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 
+import '../../search/util/book_info_navigation.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
@@ -365,7 +366,7 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
 
     return GestureDetector(
       onTap: () {
-        context.push(AppConstants.routeBookDetail, extra: b.id);
+        pushBookInfo(context, b);
       },
       onTapDown: (_) {
         HapticFeedback.selectionClick();

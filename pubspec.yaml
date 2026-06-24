@@ -68,6 +68,7 @@ dependencies:
   image: ^4.8.0
   web: ^1.1.1
   palette_generator: ^0.3.3+7
+  screen_brightness: ^2.1.11
 
 dev_dependencies:
   flutter_test:

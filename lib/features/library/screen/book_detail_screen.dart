@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
+import '../../../core/services/ocr_service.dart';
+import '../../../core/services/stt_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/feed/screen/sentence_detail_screen.dart';
 import '../../../features/library/controller/book_detail_social_provider.dart';
@@ -227,7 +230,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
     );
   }
 
-  void _showAddSentenceSheet(Book book) {
+  void _showAddSentenceSheet(Book book, {String initialText = ''}) {
     final query = _sentenceQuery(book);
     showModalBottomSheet(
       context: context,
@@ -235,6 +238,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AddSentenceSheet(
         bookId: book.id,
+        initialText: initialText,
         onSaved: () {
           if (!kUseMock) {
             ref.invalidate(_bookChoseoProvider(query));
@@ -247,6 +251,111 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         },
       ),
     );
+  }
+
+  void _showSentenceMethodSheet(Book book) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _SentenceMethodSheet(
+        onWrite: () {
+          Navigator.pop(sheetContext);
+          _showAddSentenceSheet(book);
+        },
+        onCamera: () {
+          Navigator.pop(sheetContext);
+          _openOcrSentenceSheet(book, ImageSource.camera);
+        },
+        onGallery: () {
+          Navigator.pop(sheetContext);
+          _openOcrSentenceSheet(book, ImageSource.gallery);
+        },
+        onMic: () {
+          Navigator.pop(sheetContext);
+          _openVoiceSentenceSheet(book);
+        },
+      ),
+    );
+  }
+
+  Future<void> _openOcrSentenceSheet(Book book, ImageSource source) async {
+    OcrResult result;
+    try {
+      if (source == ImageSource.camera) {
+        result = await ref.read(ocrServiceProvider).extractTextFromCamera();
+      } else {
+        final picked = await ImagePicker().pickImage(source: source);
+        if (picked == null) return;
+        final bytes = await picked.readAsBytes();
+        result = await ref.read(ocrServiceProvider).extractTextFromBytes(bytes);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '이미지를 읽지 못했어요'));
+      return;
+    }
+
+    if (!mounted) return;
+    switch (result) {
+      case OcrSuccess(text: final text):
+        _showAddSentenceSheet(book, initialText: text);
+      case OcrNoText():
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(chorokSnackBar(context, '텍스트를 인식하지 못했어요'));
+      case OcrError(message: final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          chorokSnackBar(context, message.isEmpty ? 'OCR 처리에 실패했어요' : message),
+        );
+      case OcrCancelled():
+        break;
+    }
+  }
+
+  Future<void> _openVoiceSentenceSheet(Book book) async {
+    final stt = ref.read(sttServiceProvider);
+    final initialized = await stt.initialize();
+    if (!mounted) return;
+    if (!initialized) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '마이크를 사용할 수 없습니다'));
+      return;
+    }
+
+    var recognizedText = '';
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _VoiceCaptureSheet(
+        onStart: (onText) => stt.listen(
+          listenFor: const Duration(seconds: 30),
+          onResult: (text) {
+            recognizedText = text;
+            onText(text);
+          },
+        ),
+        onStop: () async {
+          await stt.stop();
+          if (sheetContext.mounted) Navigator.pop(sheetContext);
+        },
+      ),
+    );
+
+    await stt.stop();
+    if (!mounted) return;
+    final text = recognizedText.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '인식된 문장이 없어요'));
+      return;
+    }
+    _showAddSentenceSheet(book, initialText: text);
   }
 
   void _showEditThoughtSheet(_Sentence sentence, Book book) {
@@ -358,7 +467,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
       backgroundColor: Colors.black,
       bottomNavigationBar: _ContinueReadingBar(
         onContinue: () => _startSession(book),
-        onAddSentence: () => _showAddSentenceSheet(book),
+        onAddSentence: () => _showSentenceMethodSheet(book),
       ),
       body: CustomScrollView(
         slivers: [
@@ -419,7 +528,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
               child: isLoadingSentences
                   ? const _SentenceLoadingState()
                   : _SentenceEmptyState(
-                      onAdd: () => _showAddSentenceSheet(book),
+                      onAdd: () => _showSentenceMethodSheet(book),
                       hasError: hasSentenceError,
                     ),
             )
@@ -536,6 +645,237 @@ class _ContinueReadingBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SentenceMethodSheet extends StatelessWidget {
+  final VoidCallback onWrite;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
+  final VoidCallback onMic;
+
+  const _SentenceMethodSheet({
+    required this.onWrite,
+    required this.onCamera,
+    required this.onGallery,
+    required this.onMic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      decoration: ShapeDecoration(
+        color: const Color(0xFF080808),
+        shape: SmoothRectangleBorder(
+          smoothness: 0.6,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 24),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ChorokSheetHandle(),
+            const SizedBox(height: 18),
+            Text(
+              '문장 기록',
+              style: const TextStyle(
+                color: _detailText,
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
+                fontFamily: AppTheme.fontFamily,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _SentenceMethodTile(
+                    icon: Icons.text_fields_rounded,
+                    label: '직접적기',
+                    onTap: onWrite,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SentenceMethodTile(
+                    icon: Icons.camera_alt_outlined,
+                    label: '사진찍기',
+                    onTap: onCamera,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _SentenceMethodTile(
+                    icon: Icons.image_outlined,
+                    label: '불러오기',
+                    onTap: onGallery,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SentenceMethodTile(
+                    icon: Icons.graphic_eq_rounded,
+                    label: '음성인식',
+                    onTap: onMic,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SentenceMethodTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SentenceMethodTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 88,
+          decoration: ShapeDecoration(
+            color: const Color(0xFF141414),
+            shape: SmoothRectangleBorder(
+              smoothness: 0.6,
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppTheme.primaryLight, size: 26),
+              const SizedBox(height: 9),
+              Text(
+                label,
+                style: AppTheme.bodySmall.copyWith(
+                  color: _detailText,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VoiceCaptureSheet extends StatefulWidget {
+  final Future<void> Function(ValueChanged<String> onText) onStart;
+  final Future<void> Function() onStop;
+
+  const _VoiceCaptureSheet({required this.onStart, required this.onStop});
+
+  @override
+  State<_VoiceCaptureSheet> createState() => _VoiceCaptureSheetState();
+}
+
+class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
+  String _recognizedText = '';
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_started) return;
+      _started = true;
+      await widget.onStart((text) {
+        if (mounted) setState(() => _recognizedText = text);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final displayText = _recognizedText.trim().isEmpty
+        ? '말하면 여기에 문장이 나타나요'
+        : _recognizedText;
+
+    return Container(
+      decoration: ShapeDecoration(
+        color: const Color(0xFF080808),
+        shape: SmoothRectangleBorder(
+          smoothness: 0.6,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, bottom + 24),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ChorokSheetHandle(),
+            const SizedBox(height: 24),
+            const Icon(
+              Icons.graphic_eq_rounded,
+              color: AppTheme.primaryLight,
+              size: 34,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              displayText,
+              textAlign: TextAlign.center,
+              style: AppTheme.bodyMedium.copyWith(
+                color: _recognizedText.trim().isEmpty
+                    ? _detailMuted
+                    : _detailText,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton(
+                onPressed: widget.onStop,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.primaryLight,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('중지'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2757,9 +3097,14 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
 
 class _AddSentenceSheet extends ConsumerStatefulWidget {
   final String bookId;
+  final String initialText;
   final VoidCallback onSaved;
 
-  const _AddSentenceSheet({required this.bookId, required this.onSaved});
+  const _AddSentenceSheet({
+    required this.bookId,
+    this.initialText = '',
+    required this.onSaved,
+  });
 
   @override
   ConsumerState<_AddSentenceSheet> createState() => _AddSentenceSheetState();
@@ -2780,10 +3125,16 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(
-      const Duration(milliseconds: 100),
-      _contentFocus.requestFocus,
-    );
+    _contentCtrl.text = widget.initialText;
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted) return;
+      _contentFocus.requestFocus();
+      if (_contentCtrl.text.isNotEmpty) {
+        _contentCtrl.selection = TextSelection.collapsed(
+          offset: _contentCtrl.text.length,
+        );
+      }
+    });
   }
 
   @override
