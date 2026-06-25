@@ -61,34 +61,48 @@ Deno.serve(async (req: Request) => {
       return json({ error: "image_too_large" }, 413);
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType, data: imageBase64 } },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "ARRAY",
-              items: { type: "STRING" },
-            },
-          },
-        }),
+    const requestInit: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
-    );
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+          ],
+        }],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+          },
+        },
+      }),
+    };
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+    // Gemini는 부하 시 503/500을 간헐적으로 뱉는다. 단발 호출이면 그대로 502로
+    // 노출되므로 일시 5xx만 짧은 백오프로 재시도해 흡수한다. 429(쿼터)는 재시도 안 함.
+    let response = await fetch(url, requestInit);
+    for (let attempt = 1; attempt <= 2 && !response.ok; attempt++) {
+      if (![500, 502, 503, 504].includes(response.status)) break;
+      console.error("gemini_retry", attempt, response.status);
+      await new Promise((r) => setTimeout(r, 400 * attempt));
+      response = await fetch(url, requestInit);
+    }
 
     if (!response.ok) {
+      console.error(
+        "gemini_request_failed",
+        response.status,
+        (await response.text()).slice(0, 500),
+      );
       const status = response.status === 429 ? 429 : 502;
       return json({ error: "gemini_request_failed" }, status);
     }

@@ -7,16 +7,23 @@ import '../../../core/theme/app_theme.dart';
 ///
 /// 합치기는 저장 전 클라이언트 합성이라 추가 비용/네트워크가 없다.
 /// 결과로 최종 블록 목록(`List<String>`)을 pop 한다. 각 블록이 곧 저장 1행.
+/// 추가 촬영 1회의 OCR 결과. null이면 취소/실패(시트는 그대로 유지).
+typedef OcrCapture = ({String text, List<String>? sentences});
+
 class SentenceOrganizerSheet extends StatefulWidget {
   final String rawText;
 
   /// AI가 이미 문장 단위로 끊어 준 경우. 있으면 규칙 분리 대신 그대로 사용한다.
   final List<String>? sentences;
 
+  /// 다음 페이지를 추가로 촬영해 문장을 이어 붙일 때 호출. null이면 버튼을 숨긴다.
+  final Future<OcrCapture?> Function()? onCapture;
+
   const SentenceOrganizerSheet({
     super.key,
     required this.rawText,
     this.sentences,
+    this.onCapture,
   });
 
   @override
@@ -43,14 +50,17 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     return result;
   }
 
+  static List<String> _blocksFrom(String text, List<String>? sentences) =>
+      (sentences != null && sentences.isNotEmpty)
+      ? List.of(sentences)
+      : _split(text);
+
   // AI가 끊어 준 문장이 있으면 그대로, 없으면 규칙 분리로 폴백.
-  late final List<String> _initial =
-      (widget.sentences != null && widget.sentences!.isNotEmpty)
-      ? List.of(widget.sentences!)
-      : _split(widget.rawText);
+  late List<String> _initial = _blocksFrom(widget.rawText, widget.sentences);
   late List<String> _blocks = List.of(_initial);
   final Set<int> _selected = <int>{};
   int _justMergedCount = 0;
+  bool _capturing = false;
 
   static const _red = Color(0xFFE5484D);
 
@@ -88,6 +98,27 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     setState(() {
       _blocks = List.of(_initial);
       _selected.clear();
+      _justMergedCount = 0;
+    });
+  }
+
+  // 다음 페이지를 촬영해 인식된 문장을 목록 끝에 이어 붙인다. 끝에 더하므로
+  // 기존 인덱스가 안 밀려 선택·합치기 상태가 유지된다. _reset 기준선도 함께 늘린다.
+  Future<void> _addCapture() async {
+    if (_capturing || widget.onCapture == null) return;
+    setState(() => _capturing = true);
+    OcrCapture? capture;
+    try {
+      capture = await widget.onCapture!();
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+    }
+    if (!mounted || capture == null) return;
+    final added = _blocksFrom(capture.text, capture.sentences);
+    if (added.isEmpty) return;
+    setState(() {
+      _initial = [..._initial, ...added];
+      _blocks = [..._blocks, ...added];
       _justMergedCount = 0;
     });
   }
@@ -164,6 +195,15 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                     tooltip: '되돌리기',
                     onTap: _blocks.length == _initial.length ? null : _reset,
                   ),
+                  if (widget.onCapture != null) ...[
+                    const SizedBox(width: 12),
+                    _CircleAction(
+                      icon: Icons.add_a_photo_outlined,
+                      color: context.appPrimaryAccent,
+                      tooltip: '다음 페이지 추가 촬영',
+                      onTap: _capturing ? null : _addCapture,
+                    ),
+                  ],
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MergeButton(

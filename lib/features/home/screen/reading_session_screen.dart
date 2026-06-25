@@ -125,6 +125,17 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   Future<void> _dimScreen() async {
     if (!mounted || _dimmed) return;
+    // 반딧불이만 보이는 몰입 화면(UI 완전 숨김)일 때만 절전한다. 시계·버튼이 보이는
+    // 상태(revealed/social/actions)에선 어둑하게 하지 않는다. 카메라·시트가 위에 떠
+    // 있거나(최상단 아님) STT 녹음 중이면, UI가 숨김으로 돌아가 있어도 제외한다.
+    // 제외 시 어둑하게 하지 않고 idle 주기로 폴링만 한다(조건이 맞으면 그때 절전).
+    final isIdleReadingScreen = _uiState == UiVisibility.hidden &&
+        (ModalRoute.of(context)?.isCurrent ?? true) &&
+        !_isRecording;
+    if (!isIdleReadingScreen) {
+      _brightnessIdleTimer = Timer(_brightnessIdle, _dimScreen);
+      return;
+    }
     final base = _baseBrightness;
     if (base == null) return;
     _dimmed = true;
@@ -426,11 +437,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     );
   }
 
-  Future<void> _openOcr() async {
-    ref.read(timerProvider.notifier).pause();
-    _uiHideTimer?.cancel();
-
-    final result = await Navigator.of(context).push<OcrResult>(
+  Future<OcrResult?> _pushOcrCapture() {
+    return Navigator.of(context).push<OcrResult>(
       PageRouteBuilder(
         pageBuilder: (_, animation, _) => const _OcrCaptureScreen(),
         transitionDuration: const Duration(milliseconds: 260),
@@ -441,6 +449,32 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         ),
       ),
     );
+  }
+
+  // 정리 시트에서 "추가 촬영"을 누르면 호출. 다음 페이지를 찍어 인식된 문장을
+  // 반환하고, 실패/빈 결과면 스낵으로 알린 뒤 null(시트는 그대로 유지).
+  Future<OcrCapture?> _captureSentences() async {
+    final result = await _pushOcrCapture();
+    if (!mounted) return null;
+    switch (result ?? const OcrCancelled()) {
+      case OcrSuccess(text: final text, sentences: final sentences):
+        return (text: text, sentences: sentences);
+      case OcrNoText():
+        _showOcrSnack('텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.');
+        return null;
+      case OcrError(message: final message):
+        _showOcrSnack(message);
+        return null;
+      case OcrCancelled():
+        return null;
+    }
+  }
+
+  Future<void> _openOcr() async {
+    ref.read(timerProvider.notifier).pause();
+    _uiHideTimer?.cancel();
+
+    final result = await _pushOcrCapture();
     if (!mounted) return;
     _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
     _handleOcrResult(
@@ -693,8 +727,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       barrierLabel: '문장 정리 닫기',
       barrierColor: Colors.black.withValues(alpha: 0.4),
       transitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (_, _, _) =>
-          SentenceOrganizerSheet(rawText: text, sentences: sentences),
+      pageBuilder: (_, _, _) => SentenceOrganizerSheet(
+        rawText: text,
+        sentences: sentences,
+        onCapture: _captureSentences,
+      ),
       transitionBuilder: (_, animation, _, child) {
         final curved = CurvedAnimation(
           parent: animation,
