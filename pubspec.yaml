@@ -13,7 +13,6 @@ dependencies:
 
   # 상태 관리
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # 라우팅
   go_router: ^14.6.2
@@ -61,7 +60,6 @@ dependencies:
   # 소셜 로그인 + 딥링크
   sign_in_with_apple: ^6.1.4
   google_sign_in: ^6.2.2
-  app_links: ^6.3.2
   crypto: ^3.0.6
   cached_network_image: ^3.4.1
   camera: ^0.12.0+1

@@ -12,6 +12,7 @@ import '../../../shared/models/book_memo.dart';
 import '../../../shared/models/isar/isar_book_reflection.dart';
 import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
@@ -1053,6 +1054,15 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
             ),
           ),
 
+          // ── 이어 읽기 (서재에 있는 책만) ──────────────────────────────
+          if (libraryBook != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: _ContinueReadingButton(book: libraryBook),
+              ),
+            ),
+
           // ── 서재 추가 버튼 ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
@@ -1156,6 +1166,55 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
 }
 
 // ─── 서재 추가 CTA 버튼 ────────────────────────────────────────────────────────
+
+class _ContinueReadingButton extends StatelessWidget {
+  final Book book;
+  const _ContinueReadingButton({required this.book});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        context.push(
+          AppConstants.routeSession,
+          extra: SessionExtra(
+            bookId: book.id,
+            bookTitle: book.title,
+            bookAuthor: book.author,
+            coverUrl: book.coverUrl,
+            startPage: book.currentPage,
+            totalPages: book.totalPages,
+          ),
+        );
+      },
+      child: Container(
+        height: 50,
+        decoration: AppTheme.smoothBox(
+          gradient: AppTheme.greenGradient,
+          radius: AppTheme.radiusMD,
+          side: BorderSide.none,
+        ),
+        alignment: Alignment.center,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.play_arrow_rounded, size: 20, color: AppTheme.darkBg),
+            SizedBox(width: 6),
+            Text(
+              '이어 읽기',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: AppTheme.darkBg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AddToLibraryButton extends StatefulWidget {
   final bool isInLibrary;

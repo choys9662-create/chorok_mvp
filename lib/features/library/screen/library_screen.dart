@@ -39,28 +39,10 @@ typedef _CalendarDaySummary = ({ReadingLog representative, int bookCount});
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
   if (kUseRemoteDb) {
-    final client = Supabase.instance.client;
-    final userId = client.auth.currentUser?.id;
+    // 원격 조회·매핑은 userReadingLogsProvider 하나로 통일. 내 서재는 내 userId.
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return const [];
-    final rows = await _fetchSupabaseReadingLogs(client, userId);
-    return rows.map<ReadingLog>((r) {
-      final book = r['books'] as Map<String, dynamic>?;
-      final secs = (r['duration_seconds'] as num?)?.toInt() ?? 0;
-      final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
-      final title = book?['title'] as String? ?? '알 수 없는 책';
-      return (
-        // UTC로 저장된 시각을 로컬 날짜로 변환해야 캘린더 날짜가 맞는다.
-        date: dateStr != null
-            ? DateTime.parse(dateStr).toLocal()
-            : DateTime.now(),
-        bookTitle: title,
-        bookAuthor: book?['author'] as String? ?? '',
-        minutes: (secs / 60).round(),
-        pages: (r['pages_read'] as num?)?.toInt() ?? 0,
-        coverUrl: book?['cover_url'] as String?,
-        gradientIndex: title.hashCode.abs() % AppTheme.coverGradients.length,
-      );
-    }).toList();
+    return ref.watch(userReadingLogsProvider(userId).future);
   }
   final repo = ref.read(bookRepositoryProvider);
   if (repo == null) return const [];
@@ -81,29 +63,6 @@ final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
       )
       .toList();
 });
-
-Future<List<dynamic>> _fetchSupabaseReadingLogs(
-  SupabaseClient client,
-  String userId,
-) async {
-  try {
-    return await client
-        .from('reading_sessions')
-        .select(
-          'ended_at, started_at, duration_seconds, pages_read, books(title, author, cover_url)',
-        )
-        .eq('user_id', userId)
-        .order('ended_at', ascending: false);
-  } catch (_) {
-    return await client
-        .from('reading_sessions')
-        .select(
-          'ended_at, started_at, duration_seconds, books(title, author, cover_url)',
-        )
-        .eq('user_id', userId)
-        .order('ended_at', ascending: false);
-  }
-}
 
 // ─── 뷰 모드 / 정렬 옵션 ──────────────────────────────────────────────────
 enum _LibraryViewMode { grid, list }
