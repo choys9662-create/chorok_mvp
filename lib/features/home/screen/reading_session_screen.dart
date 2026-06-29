@@ -106,7 +106,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   // 화면 밝기 절전 — 5초 무터치 시 어둑하게, 터치하면 사용자 밝기로 복원.
   // UI 가시성(_uiState)과 독립적으로, 모든 포인터 입력이 _brightenScreen()을 깨운다.
   static const _brightnessIdle = Duration(seconds: 5);
-  static const _dimScale = 0.35; // 사용자 밝기 대비 어둑한 정도
+  static const _dimScale = 0.20; // 사용자 밝기 대비 어둑한 정도
   Timer? _brightnessIdleTimer;
   double? _baseBrightness; // 세션 진입 시점의 사용자 밝기
   bool _dimmed = false;
@@ -129,7 +129,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     // 상태(revealed/social/actions)에선 어둑하게 하지 않는다. 카메라·시트가 위에 떠
     // 있거나(최상단 아님) STT 녹음 중이면, UI가 숨김으로 돌아가 있어도 제외한다.
     // 제외 시 어둑하게 하지 않고 idle 주기로 폴링만 한다(조건이 맞으면 그때 절전).
-    final isIdleReadingScreen = _uiState == UiVisibility.hidden &&
+    final isIdleReadingScreen =
+        _uiState == UiVisibility.hidden &&
         (ModalRoute.of(context)?.isCurrent ?? true) &&
         !_isRecording;
     if (!isIdleReadingScreen) {
@@ -622,11 +623,13 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
       // 진입 시점의 사용자 밝기를 기준값으로 잡고 무터치 절전 타이머 시작.
       ScreenBrightness().setAnimate(true).catchError((_) {});
-      ScreenBrightness().system.then((b) {
-        if (!mounted) return;
-        _baseBrightness = b;
-        _brightenScreen();
-      }).catchError((_) {});
+      ScreenBrightness().system
+          .then((b) {
+            if (!mounted) return;
+            _baseBrightness = b;
+            _brightenScreen();
+          })
+          .catchError((_) {});
 
       // 세션 시작 — 실시간 presence 등록 + 주기적 heartbeat (TTL 90s의 절반 주기).
       if (!kUseMock) {
@@ -965,122 +968,124 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 // ① 배경
                 const _SessionBackground(),
 
-              // ② 라이브 포레스트 반딧불 배경 — 실시간 독자 수 반영
-              Builder(
-                builder: (context) {
-                  final counts =
-                      ref.watch(liveReaderCountsProvider).valueOrNull ??
-                      LiveReaderCounts.fallback;
-                  return LiveForestWidget(
-                    activeCount: counts.active,
-                    todayCount: counts.today,
-                    weekCount: counts.week,
-                  );
-                },
-              ),
-
-              // ③ 반딧불이 + 독자 오브 + 중심 오브
-              AnimatedBuilder(
-                animation: Listenable.merge([_pulseAnim, _moveCtrl]),
-                builder: (_, _) => Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _NamedReaderOrbs(
-                      mutuals: mutuals,
-                      time: _moveCtrl.value,
-                      showNames: _uiState == UiVisibility.social,
-                    ),
-                    Center(
-                      child: _GlowOrb(
-                        scale: _pulseAnim.value,
-                        isPaused: timer.isPaused,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ③ 화면 터치 감지 (상태 전환)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: _onScreenTap,
-                ),
-              ),
-
-              // ④ Revealed (Frame 52) — 자물쇠 + 큰 타이머 + + 버튼 + 책정보
-              _SessionLayer(
-                visible: _uiState == UiVisibility.revealed,
-                child: _RevealedView(
-                  timer: timer,
-                  bookTitle: book.title,
-                  bookAuthor: book.author,
-                  sessionStartedAt: _sessionStartedAt,
-                  streakDays: ref.watch(readingStreakProvider).valueOrNull ?? 0,
-                  sentenceCount:
-                      _preExistingSentences.length + _collectedSentences.length,
-                  onLockLongPress: _beginStopFlow,
-                  onPlusTap: _onPlusTap,
-                  onSentencesTap: _openSentencesSheet,
-                ),
-              ),
-
-              // ⑤ Social — 이름 표시 + 함께 읽는 독자 CTA
-              _SessionLayer(
-                visible: _uiState == UiVisibility.social,
-                child: _SocialView(
-                  timer: timer,
-                  readersCount: readersCount,
-                  onReadersTap: _openReadersSheet,
-                ),
-              ),
-
-              // ⑥ Actions (Frame 54) — pill 타이머 + 2x2 액션 그리드
-              _SessionLayer(
-                visible: _uiState == UiVisibility.actions,
-                child: _ActionsView(
-                  timer: timer,
-                  bookTitle: book.title,
-                  bookAuthor: book.author,
-                  isRecording: _isRecording,
-                  onWrite: () => _openChosuSheet(),
-                  onCamera: _openOcr,
-                  onGallery: _openGalleryOcr,
-                  onMic: _toggleRecording,
-                ),
-              ),
-
-              // ⑤ 녹음 오버레이
-              if (_isRecording)
-                _RecordingOverlay(
-                  recognizedText: _recognizedText,
-                  onStop: _toggleRecording,
-                ),
-
-              // ⑥ 화두 오버레이
-              if (_showTopic)
-                _TodaysTopicOverlay(
-                  bookTitle: book.title,
-                  bookAuthor: book.author,
-                  coverUrl: book.coverUrl,
-                  accentColor: _sessionEntryAccent(
-                    ref.watch(coverColorProvider(book.coverUrl)).valueOrNull,
-                  ),
-                  onStart: () {
-                    _dismissTopicAndStart();
+                // ② 라이브 포레스트 반딧불 배경 — 실시간 독자 수 반영
+                Builder(
+                  builder: (context) {
+                    final counts =
+                        ref.watch(liveReaderCountsProvider).valueOrNull ??
+                        LiveReaderCounts.fallback;
+                    return LiveForestWidget(
+                      activeCount: counts.active,
+                      todayCount: counts.today,
+                      weekCount: counts.week,
+                    );
                   },
                 ),
 
-              // ⑦ 페이지 입력 오버레이
-              if (_showPageInput)
-                _PageInputOverlay(
-                  timeText: _formatStoppedTime(_stoppedSeconds),
-                  sessionStartedAt: _sessionStartedAt,
-                  initialPage: book.startPage,
-                  totalPages: book.totalPages,
-                  onConfirm: _confirmStopFlow,
-                  onCancel: _cancelStopFlow,
+                // ③ 반딧불이 + 독자 오브 + 중심 오브
+                AnimatedBuilder(
+                  animation: Listenable.merge([_pulseAnim, _moveCtrl]),
+                  builder: (_, _) => Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _NamedReaderOrbs(
+                        mutuals: mutuals,
+                        time: _moveCtrl.value,
+                        showNames: _uiState == UiVisibility.social,
+                      ),
+                      Center(
+                        child: _GlowOrb(
+                          scale: _pulseAnim.value,
+                          isPaused: timer.isPaused,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+
+                // ③ 화면 터치 감지 (상태 전환)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: _onScreenTap,
+                  ),
+                ),
+
+                // ④ Revealed (Frame 52) — 자물쇠 + 큰 타이머 + + 버튼 + 책정보
+                _SessionLayer(
+                  visible: _uiState == UiVisibility.revealed,
+                  child: _RevealedView(
+                    timer: timer,
+                    bookTitle: book.title,
+                    bookAuthor: book.author,
+                    sessionStartedAt: _sessionStartedAt,
+                    streakDays:
+                        ref.watch(readingStreakProvider).valueOrNull ?? 0,
+                    sentenceCount:
+                        _preExistingSentences.length +
+                        _collectedSentences.length,
+                    onLockLongPress: _beginStopFlow,
+                    onPlusTap: _onPlusTap,
+                    onSentencesTap: _openSentencesSheet,
+                  ),
+                ),
+
+                // ⑤ Social — 이름 표시 + 함께 읽는 독자 CTA
+                _SessionLayer(
+                  visible: _uiState == UiVisibility.social,
+                  child: _SocialView(
+                    timer: timer,
+                    readersCount: readersCount,
+                    onReadersTap: _openReadersSheet,
+                  ),
+                ),
+
+                // ⑥ Actions (Frame 54) — pill 타이머 + 2x2 액션 그리드
+                _SessionLayer(
+                  visible: _uiState == UiVisibility.actions,
+                  child: _ActionsView(
+                    timer: timer,
+                    bookTitle: book.title,
+                    bookAuthor: book.author,
+                    isRecording: _isRecording,
+                    onWrite: () => _openChosuSheet(),
+                    onCamera: _openOcr,
+                    onGallery: _openGalleryOcr,
+                    onMic: _toggleRecording,
+                  ),
+                ),
+
+                // ⑤ 녹음 오버레이
+                if (_isRecording)
+                  _RecordingOverlay(
+                    recognizedText: _recognizedText,
+                    onStop: _toggleRecording,
+                  ),
+
+                // ⑥ 화두 오버레이
+                if (_showTopic)
+                  _TodaysTopicOverlay(
+                    bookTitle: book.title,
+                    bookAuthor: book.author,
+                    coverUrl: book.coverUrl,
+                    accentColor: _sessionEntryAccent(
+                      ref.watch(coverColorProvider(book.coverUrl)).valueOrNull,
+                    ),
+                    onStart: () {
+                      _dismissTopicAndStart();
+                    },
+                  ),
+
+                // ⑦ 페이지 입력 오버레이
+                if (_showPageInput)
+                  _PageInputOverlay(
+                    timeText: _formatStoppedTime(_stoppedSeconds),
+                    sessionStartedAt: _sessionStartedAt,
+                    initialPage: book.startPage,
+                    totalPages: book.totalPages,
+                    onConfirm: _confirmStopFlow,
+                    onCancel: _cancelStopFlow,
+                  ),
               ],
             ),
           ),

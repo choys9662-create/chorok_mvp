@@ -3,33 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_flags.dart';
 import '../../core/services/db_service.dart';
-import '../models/isar/isar_book.dart';
 import '../models/reading_session.dart';
-import '../repositories/book_repository.dart';
 import '../repositories/supabase_book_repository.dart';
-
-/// USE_MOCK=true (--dart-define) → 목업 데이터 (디자인 작업용)
-/// 기본값 false:
-///   - kUseRemoteDb=true → 모든 플랫폼이 Supabase (SupabaseBookRepository)
-///   - kUseRemoteDb=false → 모바일/데스크톱은 SQLite (BookRepository)
-
-Book _fromIsarBook(IsarBook b) => Book(
-  id: b.bookId,
-  title: b.title,
-  author: b.author,
-  isbn: b.isbn,
-  coverUrl: b.coverUrl,
-  currentPage: b.currentPage,
-  totalPages: b.totalPages,
-  status: switch (b.status) {
-    IsarReadingStatus.reading => ReadingStatus.reading,
-    IsarReadingStatus.completed => ReadingStatus.completed,
-    IsarReadingStatus.wantToRead => ReadingStatus.wantToRead,
-  },
-  completedAt: b.completedAt,
-  genre: b.genre,
-  description: b.description,
-);
 
 class LibraryNotifier extends Notifier<List<Book>> {
   @override
@@ -48,23 +23,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
     _isLoading = true;
     debugPrint('LibraryProvider: Starting _loadFromDb');
     try {
-      final List<Book> loaded;
-      if (kUseRemoteDb) {
-        final repo = ref.read(supabaseBookRepositoryProvider);
-        loaded = await repo.getAllBooks();
-      } else {
-        final repo = ref.read(bookRepositoryProvider);
-        if (repo == null) {
-          _isLoading = false;
-          return;
-        }
-        final rows = await repo.getAllBooks();
-        final totalSecsMap = await repo.getBookTotalSecondsByBookId();
-        loaded = rows.map((b) {
-          final secs = totalSecsMap[b.bookId] ?? 0;
-          return _fromIsarBook(b).copyWith(totalReadingHours: secs / 3600.0);
-        }).toList();
-      }
+      final repo = ref.read(supabaseBookRepositoryProvider);
+      final loaded = await repo.getAllBooks();
 
       // _loadFromDb 대기 중 addBook으로 추가된 책 보존
       final extra = state
@@ -87,12 +47,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
     if (isDuplicate) return false;
     state = [...state, book];
     if (kUseMock) return true;
-    if (kUseRemoteDb) {
-      // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
-      ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
-    } else {
-      ref.read(bookRepositoryProvider)?.saveFromBook(book);
-    }
+    // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
+    ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
     return true;
   }
 
@@ -135,11 +91,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
-    }
+    ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   /// 완독 취소 — status를 reading으로 되돌리고 completedAt 초기화
@@ -170,11 +122,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
-    }
+    await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   /// 명시적으로 완독 처리
@@ -194,11 +142,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
     state = [...state]..[idx] = updated;
 
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
-    }
+    await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   /// 책의 총 페이지 수 갱신.
@@ -214,38 +158,19 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final clampedCurrent = old.currentPage > totalPages
         ? totalPages
         : old.currentPage;
-    final updated = Book(
-      id: old.id,
-      title: old.title,
-      author: old.author,
-      isbn: old.isbn,
-      coverUrl: old.coverUrl,
-      currentPage: clampedCurrent,
+    final updated = old.copyWith(
       totalPages: totalPages,
-      status: old.status,
-      totalReadingHours: old.totalReadingHours,
-      savedSentences: old.savedSentences,
-      completedAt: old.completedAt,
-      genre: old.genre,
-      description: old.description,
+      currentPage: clampedCurrent,
     );
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      ref.read(bookRepositoryProvider)?.saveFromBook(updated);
-    }
+    ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   void deleteBook(String bookId) {
     state = state.where((b) => b.id != bookId).toList();
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      ref.read(supabaseBookRepositoryProvider).deleteByBookId(bookId);
-    } else {
-      ref.read(bookRepositoryProvider)?.deleteByBookId(bookId);
-    }
+    ref.read(supabaseBookRepositoryProvider).deleteByBookId(bookId);
   }
 
   /// 기존 독서 기록과 내부 ID는 유지하고 선택한 판본의 서지 정보만 교체한다.
@@ -278,11 +203,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
     state = [...state]..[idx] = updated;
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      await ref.read(bookRepositoryProvider)?.saveFromBook(updated);
-    }
+    await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   /// 서재 화면에서 직접 문장 추가
@@ -300,40 +221,19 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final old = state[idx];
     final trimmed = content.trim();
 
-    if (kUseMock) {
-      final updated = old.copyWith(
-        savedSentences: [...old.savedSentences, trimmed],
-      );
-      state = [...state]..[idx] = updated;
-      return;
-    }
-
-    if (kUseRemoteDb) {
-      await ref
-          .read(dbServiceProvider)
-          .saveSentenceStandalone(
-            bookId: bookId,
-            content: trimmed,
-            thought: thought,
-            pageNumber: pageNumber,
-          );
-      final updated = old.copyWith(
-        savedSentences: [...old.savedSentences, trimmed],
-      );
-      state = [...state]..[idx] = updated;
-      await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
-    } else {
-      await ref
-          .read(bookRepositoryProvider)
-          ?.saveChoseo(
-            bookId: bookId,
-            bookTitle: old.title,
-            bookAuthor: old.author,
-            content: trimmed,
-            myThought: thought,
-            pageNumber: pageNumber,
-          );
-    }
+    await ref
+        .read(dbServiceProvider)
+        .saveSentenceStandalone(
+          bookId: bookId,
+          content: trimmed,
+          thought: thought,
+          pageNumber: pageNumber,
+        );
+    final updated = old.copyWith(
+      savedSentences: [...old.savedSentences, trimmed],
+    );
+    state = [...state]..[idx] = updated;
+    await ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
   Future<void> updateSentenceThought({
@@ -341,15 +241,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
     String? thought,
   }) async {
     if (kUseMock) return;
-    if (kUseRemoteDb) {
-      await ref
-          .read(dbServiceProvider)
-          .updateSentenceThought(sentenceId, thought);
-    } else {
-      await ref
-          .read(bookRepositoryProvider)
-          ?.updateChoseoThought(sentenceId, thought);
-    }
+    await ref
+        .read(dbServiceProvider)
+        .updateSentenceThought(sentenceId, thought);
   }
 
   bool containsIsbn(String? isbn13) {
@@ -369,55 +263,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
     required int durationSeconds,
     required DateTime sessionDate,
   }) async {
-    if (kUseRemoteDb) {
-      await _addManualReadingLogToSupabase(
-        bookId: bookId,
-        startPage: startPage,
-        endPage: endPage,
-        durationSeconds: durationSeconds,
-        sessionDate: sessionDate,
-      );
-      return;
-    }
-
-    final repo = ref.read(bookRepositoryProvider);
-    if (repo == null) return;
-
-    final result = await repo.addManualSession(
-      bookId: bookId,
-      startPage: startPage,
-      endPage: endPage,
-      durationSeconds: durationSeconds,
-      sessionDate: sessionDate,
-    );
-
-    if (result.book != null) {
-      final idx = state.indexWhere((b) => b.id == bookId);
-      if (idx >= 0) {
-        final b = state[idx];
-        final updated = b.copyWith(
-          currentPage: result.book!.currentPage,
-          status: result.book!.status == IsarReadingStatus.completed
-              ? ReadingStatus.completed
-              : ReadingStatus.reading,
-          completedAt: result.book!.completedAt,
-          totalReadingHours: b.totalReadingHours + durationSeconds / 3600.0,
-        );
-        state = [...state]..[idx] = updated;
-      }
-    }
-  }
-
-  Future<void> _addManualReadingLogToSupabase({
-    required String bookId,
-    required int startPage,
-    required int endPage,
-    required int durationSeconds,
-    required DateTime sessionDate,
-  }) async {
     final pagesRead = (endPage - startPage).clamp(0, 999999);
     final idx = state.indexWhere((b) => b.id == bookId);
-    Book? updatedBook;
 
     if (idx >= 0) {
       final old = state[idx];
@@ -436,7 +283,7 @@ class LibraryNotifier extends Notifier<List<Book>> {
         newStatus = ReadingStatus.reading;
       }
 
-      updatedBook = old.copyWith(
+      final updatedBook = old.copyWith(
         currentPage: newCurrentPage,
         status: newStatus,
         completedAt: completedAt,

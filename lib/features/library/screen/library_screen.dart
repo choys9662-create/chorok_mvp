@@ -38,30 +38,10 @@ typedef _CalendarDaySummary = ({ReadingLog representative, int bookCount});
 
 final readingLogsProvider = FutureProvider<List<ReadingLog>>((ref) async {
   if (kUseMock) return const [];
-  if (kUseRemoteDb) {
-    // 원격 조회·매핑은 userReadingLogsProvider 하나로 통일. 내 서재는 내 userId.
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return const [];
-    return ref.watch(userReadingLogsProvider(userId).future);
-  }
-  final repo = ref.read(bookRepositoryProvider);
-  if (repo == null) return const [];
-  final rows = await repo.getAllReadingLogs();
-  return rows
-      .map<ReadingLog>(
-        (r) => (
-          date: DateTime.parse(r['started_at'] as String),
-          bookTitle: r['book_title'] as String,
-          bookAuthor: r['book_author'] as String,
-          minutes: ((r['duration_seconds'] as num?)?.toInt() ?? 0) ~/ 60,
-          pages: (r['pages_read'] as num?)?.toInt() ?? 0,
-          coverUrl: r['cover_url'] as String?,
-          gradientIndex:
-              (r['book_title'] as String).hashCode.abs() %
-              AppTheme.coverGradients.length,
-        ),
-      )
-      .toList();
+  // 원격 조회·매핑은 userReadingLogsProvider 하나로 통일. 내 서재는 내 userId.
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return const [];
+  return ref.watch(userReadingLogsProvider(userId).future);
 });
 
 // ─── 뷰 모드 / 정렬 옵션 ──────────────────────────────────────────────────

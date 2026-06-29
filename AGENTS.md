@@ -1,4 +1,4 @@
-# AGENTS.md
+# CLAUDE.md
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
@@ -78,86 +78,153 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## 6. Product Knowledge
+## 6. 제품 지식 (Product Knowledge)
 
-**Do not read the wiki unless the user asks for it.** Most coding decisions should be made from the inline product decisions below.
+**wiki는 묻지 않는 한 읽지 않는다.** 아래 인라인 결정사항으로 대부분의 코딩 판단이 가능하다.
+wiki를 읽어야 하는 경우는 사용자가 명시적으로 요청하거나, 인라인에 없는 스펙이 필요할 때뿐이다.
 
-Read `/Users/joyongseong/Documents/dev/Obsidian Vault/` only when:
-- The user explicitly asks to check the wiki, planning docs, or product spec.
-- The code and this file do not contain enough product detail to implement correctly.
-- The task is ideation/planning rather than app implementation.
+**확정된 설계 결정 — 코드 판단 기준:**
 
-When a code change creates or changes a durable product/design decision, ask whether the wiki should be updated. Do not update the wiki during ordinary coding work unless requested.
+| 결정 | 내용 |
+|------|------|
+| 하단 탭 | 홈 / 검색 / **세션 orb(가운데)** / 피드 / 서재 — 2026-06-10 확정. 분석은 별도 탭 아님(서재 통계 뷰로 흡수) |
+| 검색 위치 | 하단 탭 2번. 우상단 앱바에는 알림만 (검색 아이콘 제거됨) |
+| 분석 위치 | 서재의 통계 뷰(`_viewIndex==1`)로 간소화. 전체 `AnalyticsScreen`은 홈 카드·서재에서 드릴다운(push)으로만 유지 |
+| 하지 말 것 | SNS 공유, 챌린지 — 기능 추가 제안 금지 |
+| UX 원칙 | 선택지를 주지 않고 알고리즘이 정보를 제시 (착수 마찰 최소화) |
+| 피드 매칭 | 기본 95% 취향 일치. 사용자가 80%까지 조정 가능 |
+| 소셜 단위 | 초서 블록이 좋아요·댓글의 기본 단위 |
+| 핵심 타겟 | 종인이 — 읽으려고는 하지만 실천 못 하는 사람. UX 결정 기준 |
 
-**Confirmed decisions for code work:**
-
-| Decision | Content |
-|---|---|
-| Bottom tabs | Home / CHOLOCK(book) / Forest / Social / MY. Do not change order or composition. |
-| Library location | Library belongs inside the MY tab. It is not a separate tab. |
-| Do not add | SNS sharing, challenges. Do not suggest these as features. |
-| UX principle | The app presents information algorithmically instead of making the user choose up front. Reduce start friction. |
-| Feed matching | Default taste match is 95%. User can adjust down to 80%. |
-| Social unit | A choso block is the base unit for likes and comments. |
-| Target user | Jongin: someone who wants to read but struggles to actually start. Use this as a UX decision baseline. |
-
-**Wiki references only when explicitly needed:**
+**wiki가 필요한 경우 (사용자 요청 시에만):**
 
 ```
-Screen specs        -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/화면-UI-설계.md
-Forest system       -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/숲-시스템-상세.md
-Decision background -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/팀-논의-설계결정.md
-Target user         -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/타겟-사용자-페르소나.md
-Competitors         -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/경쟁사-분석.md
-Business model      -> /Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/비즈니스-모델.md
+화면 전체 스펙   → wiki/analyses/화면-UI-설계.md
+숲 시스템 상세   → wiki/analyses/숲-시스템-상세.md
+설계 결정 배경   → wiki/analyses/팀-논의-설계결정.md
+타겟 유저 상세   → wiki/analyses/타겟-사용자-페르소나.md
+경쟁사 분석      → wiki/analyses/경쟁사-분석.md
+BM 구조         → wiki/analyses/비즈니스-모델.md
+경로: /Users/joyongseong/Documents/dev/Obsidian Vault/
 ```
 
 ---
 
-## 7. Project Architecture
+## 7. 프로젝트 아키텍처
 
-Flutter commands must run from `/Users/joyongseong/Documents/dev/chorok_app`, where `pubspec.yaml` lives.
+**폴더 구조:**
 
 ```
 lib/
 ├── core/
-│   ├── constants/
-│   ├── services/
-│   ├── theme/
-│   └── router/
-├── features/
-│   ├── home/
-│   ├── library/
-│   ├── timer/
-│   ├── forest/
-│   ├── feed/
-│   ├── explore/
-│   ├── auth/
-│   ├── onboarding/
-│   ├── search/
-│   ├── settings/
-│   ├── analytics/
-│   └── achievements/
+│   ├── constants/     # 앱 전역 상수, 피처 플래그
+│   ├── services/      # db_service, ocr_service, stt_service
+│   ├── theme/         # 앱 테마
+│   └── router/        # GoRouter 설정
+├── features/          # 기능별 화면 (피처 단위로 분리)
+│   ├── home/          # 홈 탭
+│   ├── library/       # CHOLOCK(책) 탭 — 초서 목록, 독서 기록
+│   ├── timer/         # CHO_LOCK 독서 세션 — 핵심 기능
+│   ├── forest/        # 숲 탭 — 면적·나이테·뿌리 얽힘
+│   ├── feed/          # 소셜 탭 — 이웃 초서 피드, 겹문장 알림
+│   ├── explore/       # 탐험 탭
+│   ├── auth/          # 인증
+│   ├── onboarding/    # 온보딩
+│   ├── search/        # 검색·바코드 스캐너
+│   ├── settings/      # MY 탭 — 서재 포함
+│   ├── analytics/     # 통계·히트맵
+│   ├── achievements/  # 스트릭·뱃지
+│   └── profile/       # 유저 프로필
 └── shared/
-    ├── models/
-    ├── providers/
-    ├── repositories/
-    ├── widgets/
-    └── utils/
+    ├── models/        # 데이터 모델 (Book, SentenceRecord, ReadingSession 등)
+    ├── providers/     # Riverpod 프로바이더
+    ├── repositories/  # Supabase + sqflite 리포지토리
+    ├── widgets/       # 공통 위젯
+    └── utils/         # 유틸 함수
 ```
 
-Stack rules:
-- State management: Riverpod with `@riverpod` annotations.
-- Routing: GoRouter. Route definitions live in `lib/core/router/app_router.dart`.
-- Backend: Supabase remote data plus sqflite local cache.
-- Environment variables: `.env` loaded by `flutter_dotenv`.
-- Fonts: Pretendard by default, Chosun Gulim for brand text.
+**스택 규칙:**
+- 상태 관리: Riverpod — 수동 선언 방식 (`NotifierProvider`/`AsyncNotifierProvider`/`Provider`를 직접 작성). `@riverpod` 코드젠은 쓰지 않는다 (`.g.dart` 없음, build_runner 불필요). `riverpod_annotation`이 pubspec에 있지만 미사용 — 신규 프로바이더도 수동 선언으로 통일한다.
+- 라우팅: GoRouter — 라우트 정의는 `core/router/app_router.dart`
+- 백엔드: Supabase (원격) + sqflite (로컬 캐시)
+- 환경변수: `.env` 파일, `flutter_dotenv`로 로드
+- 폰트: Pretendard (기본), 조선굴림체 (브랜드용)
 
-Common commands:
+---
+
+## 8. 실행 환경 — 시뮬레이터·빌드
+
+**`flutter` 명령은 반드시 `chorok_app/`에서 실행한다.** `pubspec.yaml`이 이 디렉토리에 있기 때문이다.
+
+상위 폴더(`dev/`)에서 세션이 열려 있을 때:
+
+```bash
+cd /Users/joyongseong/Documents/dev/chorok_app && flutter run
+```
+
+또는 (작업 디렉토리를 유지하면서):
+
+```bash
+flutter run --suppress-analytics 2>&1   # ❌ dev/ 에서 실행하면 pubspec.yaml not found
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run )   # ✅
+```
+
+iOS 시뮬레이터 실행:
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d "iPhone" )
+```
+
+**실기기(아이폰) 실행 — 개발 중 폰 테스트의 기본 방법.** 시뮬레이터는 구글 로그인이 안 되므로, 폰에서 실제로 써보려면 아이폰을 케이블로 연결해 직접 돌린다. git push·웹배포 불필요 — 핫 리로드(`r`)로 즉시 반영되고 운영 Supabase에 붙어 실데이터가 그대로 보인다.
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d <아이폰-id> )  # id: flutter devices
+# 코드 수정 후 터미널:  r = 핫 리로드 ,  R = 핫 리스타트
+```
+
+최초 1회: 아이폰 USB 연결 → "이 컴퓨터 신뢰" → 설정에서 개발자 모드 ON → Xcode 로 `ios/Runner.xcworkspace` 열어 Signing & Capabilities 에서 Team(본인 Apple ID) 지정(Bundle ID `com.chorok.chorokApp` 유지). 무료 개인 팀은 앱이 7일마다 만료되며 `flutter run` 한 번이면 재서명됨.
+
+웹 실행 (목업 모드):
+
+```bash
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --dart-define=USE_MOCK=true )
+```
+
+VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일을 사용하면 작업 디렉토리 무관하게 실행 가능.
+
+**디바이스 ID (고정값):**
+- 실기기(아이폰): `00008120-0011549E3640C01E`
+- 디자인 앱 시뮬레이터 "New Chorok iPhone": `C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0`
+
+```bash
+# 디자인 앱 (시뮬레이터, 목업)
+flutter run -d C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0 --dart-define=USE_MOCK=true
+# 실기기 (실데이터)
+flutter run -d 00008120-0011549E3640C01E
+```
+
+**⚠️ iOS 서명 gotcha:**
+
+1. **Apple 로그인 + 무료 개인 팀 조합 불가.** `Runner.entitlements`에 `com.apple.developer.applesignin`이 있으면 기기 설치 시 `0xe8008001` 오류(코드 서명 검증 실패). 무료 팀(VQ45VLJ87Y, choys9662@gmail.com)으로는 Sign in with Apple entitlement를 프로비저닝 못 함. 현재 `Runner.entitlements`는 의도적으로 비워 둔 상태 — 유료 Apple Developer Program 가입 전까지 건드리지 않는다.
+
+2. **`path_provider_foundation` 2.6.0 시뮬레이터 크래시.** 2.6.0부터 objective_c native-assets 방식으로 전환됐는데, Flutter 3.41 + iOS 시뮬레이터에서 `SdkRoot` 미전달로 `dlopen` 실패 → 앱이 흰 화면으로 죽음. `pubspec.yaml`의 `dependency_overrides: path_provider_foundation: 2.5.1`로 고정 중 — 2.6.x로 올리지 않는다.
+
+**검증 명령** (커밋·푸시 전):
 
 ```bash
 ( cd /Users/joyongseong/Documents/dev/chorok_app && flutter analyze )
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter test )
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run )
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --dart-define=USE_MOCK=true )
+( cd /Users/joyongseong/Documents/dev/chorok_app && flutter test )   # test/ 가 lib/ 구조(core·features·shared) 미러링
 ```
+
+---
+
+## 9. Git · 배포 · 롤백 · 테스트 데이터 워크플로
+
+**개발 루프:** 변경 확인은 git push 가 아니라 **실기기 `flutter run` + 핫 리로드**로 한다(§8). 웹 배포는 이제 "링크 공유 / 최종 교차확인"용이지 개발 루프가 아니다.
+
+**브랜치 → 배포:**
+- 기본: `main`에 직접 커밋·푸시 (빠른 개발 루프). 기능이 크거나 롤백 안전망이 필요할 때만 `feat/...` 브랜치.
+- `main` 머지 시 GitHub Actions 가 자동 배포: 디자인앱(`chorok-d1414`, `USE_MOCK=true`) + 실앱(`chorok-real`, 실데이터). 정의: `.github/workflows/deploy-design.yml`, `deploy-prod.yml`.
+- **롤백:** 배포 후 문제 시 `git revert <머지커밋>` → `main` 재배포. git 이력에 다 남아 있다.
+
+**테스트 데이터 (출시 전):** dev/prod DB 는 아직 분리 안 함(단일 운영 Supabase). 개발 테스트는 **전용 테스트 구글 계정**으로만 로그인해 데이터를 식별 가능하게 둔다. 유저 간 상호작용 테스트는 계정 2~3개(아이폰=계정A 실로그인 + 웹 `chorok-real`=계정B). 쌓인 테스트 데이터는 `supabase/scripts/purge_test_user.sql`로 이메일 기준 일괄 삭제(모든 user 테이블이 `auth.users` cascade). dev/prod Supabase 분리는 실유저 생기기 직전에(`.env.dev`/`.env.prod` + `--dart-define=ENV`).

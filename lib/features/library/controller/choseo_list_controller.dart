@@ -117,32 +117,29 @@ class ChoseoListNotifier extends Notifier<ChoseoListState> {
   }
 
   Future<void> load() async {
-    if (kUseRemoteDb && !kUseMock) {
-      try {
-        final rows = await ref.read(dbServiceProvider).fetchMySentences();
-        final items = rows.map((r) {
-          final book = r['books'] as Map<String, dynamic>?;
-          return IsarChoseo(
-            choseoId: r['id'] as String,
-            bookId: r['book_id'] as String? ?? '',
-            bookTitle: book?['title'] as String? ?? '',
-            bookAuthor: book?['author'] as String? ?? '',
-            content: r['content'] as String,
-            myThought: r['thought'] as String?,
-            pageNumber: r['page_number'] as int?,
-            createdAt: DateTime.parse(r['created_at'] as String),
-          );
-        }).toList();
-        state = state.copyWith(items: items, isLoading: false);
-      } catch (_) {
-        state = state.copyWith(items: const [], isLoading: false);
-      }
+    if (kUseMock) {
+      state = state.copyWith(items: _kMockChoseo, isLoading: false);
       return;
     }
-    final repo = ref.read(bookRepositoryProvider);
-    final rows = await repo?.getAllChoseo() ?? [];
-    final items = (kUseMock && rows.isEmpty) ? _kMockChoseo : rows;
-    state = state.copyWith(items: items, isLoading: false);
+    try {
+      final rows = await ref.read(dbServiceProvider).fetchMySentences();
+      final items = rows.map((r) {
+        final book = r['books'] as Map<String, dynamic>?;
+        return IsarChoseo(
+          choseoId: r['id'] as String,
+          bookId: r['book_id'] as String? ?? '',
+          bookTitle: book?['title'] as String? ?? '',
+          bookAuthor: book?['author'] as String? ?? '',
+          content: r['content'] as String,
+          myThought: r['thought'] as String?,
+          pageNumber: r['page_number'] as int?,
+          createdAt: DateTime.parse(r['created_at'] as String),
+        );
+      }).toList();
+      state = state.copyWith(items: items, isLoading: false);
+    } catch (_) {
+      state = state.copyWith(items: const [], isLoading: false);
+    }
   }
 
   void search(String query) {

@@ -6,7 +6,6 @@ import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
-import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/utils/book_genre.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
@@ -20,14 +19,9 @@ final genreReadingTimesProvider =
         return _buildGenreReadingTimesFromBooks(ref.watch(libraryProvider));
       }
 
-      if (kUseRemoteDb) {
-        final userId = Supabase.instance.client.auth.currentUser?.id;
-        if (userId == null) return const [];
-        return _loadGenreReadingTimesFromSupabase(userId);
-      }
-      final repo = ref.watch(bookRepositoryProvider);
-      if (repo == null) return const [];
-      return repo.getGenreReadingTimes();
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return const [];
+      return _loadGenreReadingTimesFromSupabase(userId);
     });
 
 /// 다른 사용자(팔로우한 사람)의 장르별 독서시간 — 항상 Supabase.

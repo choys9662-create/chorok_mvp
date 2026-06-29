@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../widget/home_stat_cards.dart';
 import '../widget/reading_books_section.dart';
 import '../widget/reading_friends_section.dart';
+import '../widget/friends_read_today_section.dart';
 import '../widget/overlap_section.dart';
 import '../widget/home_app_bar.dart';
 
@@ -48,6 +49,8 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: ReadingBooksSection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 30)),
                   const SliverToBoxAdapter(child: ReadingFriendsSection()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
+                  const SliverToBoxAdapter(child: FriendsReadTodaySection()),
                   const SliverToBoxAdapter(child: SizedBox(height: 30)),
                   const SliverToBoxAdapter(child: OverlapSection()),
                   SliverPadding(

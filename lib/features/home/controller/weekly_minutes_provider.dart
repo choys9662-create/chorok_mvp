@@ -2,17 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_flags.dart';
-import '../../../shared/repositories/book_repository.dart';
 import '../widget/home_helpers.dart';
 
 final weeklyMinutesProvider = FutureProvider.autoDispose<List<int>>((
   ref,
 ) async {
   if (kUseMock) return kWeeklyMinutes;
-  if (kUseRemoteDb) return _loadWeeklyMinutesFromSupabase();
-  final repo = ref.watch(bookRepositoryProvider);
-  if (repo == null) return List.filled(7, 0);
-  return repo.getWeeklyMinutes();
+  return _loadWeeklyMinutesFromSupabase();
 });
 
 Future<List<int>> _loadWeeklyMinutesFromSupabase() async {
