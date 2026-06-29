@@ -1016,8 +1016,6 @@ class _CoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.coverGradientByIndex(title.codeUnitAt(0));
-
     return Container(
       width: 72,
       height: 104,
@@ -1025,7 +1023,10 @@ class _CoverImage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: colors,
+          colors: [
+            context.appPrimaryAccent,
+            context.appAccentColor,
+          ],
         ),
         radius: AppTheme.radiusSM,
       ),

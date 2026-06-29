@@ -925,241 +925,258 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
 
     return Scaffold(
       backgroundColor: context.appBg,
-      body: CustomScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        slivers: [
-          // ── 히어로 섹션 ──────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Stack(
-              children: [
-                // 표지 컬러 대기권 그라디언트
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: topPad + 320,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          coverColors[0].withValues(alpha: 0.45),
-                          coverColors[0].withValues(alpha: 0.12),
-                          context.appBg.withValues(alpha: 0),
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              coverColors[0].withValues(alpha: 0.45),
+              coverColors[0].withValues(alpha: 0.12),
+              context.appBg,
+              context.appBg,
+            ],
+            stops: const [0.0, 0.16, 0.34, 1.0],
+          ),
+        ),
+        child: CustomScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            // ── 히어로 섹션 ──────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Stack(
+                children: [
+                  // 표지 컬러 대기권 그라디언트
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: topPad + 320,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            coverColors[0].withValues(alpha: 0.45),
+                            coverColors[0].withValues(alpha: 0.12),
+                            context.appBg.withValues(alpha: 0),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                Padding(
-                  padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 28),
-                  child: Column(
-                    children: [
-                      if (showBackButton) ...[
-                        Row(
-                          children: [
-                            Semantics(
-                              button: true,
-                              label: '뒤로가기',
-                              child: GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  Navigator.of(context).pop();
-                                },
-                                child: Container(
-                                  width: 44,
-                                  height: 44,
-                                  alignment: Alignment.center,
-                                  child: Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: context.appTextSecondary,
-                                    size: 20,
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 28),
+                    child: Column(
+                      children: [
+                        if (showBackButton) ...[
+                          Row(
+                            children: [
+                              Semantics(
+                                button: true,
+                                label: '뒤로가기',
+                                child: GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    alignment: Alignment.center,
+                                    child: Icon(
+                                      Icons.arrow_back_ios_new_rounded,
+                                      color: context.appTextSecondary,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
+                        // 책 표지
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: coverColors[1].withValues(alpha: 0.35),
+                                blurRadius: 36,
+                                offset: const Offset(0, 14),
+                                spreadRadius: -4,
+                              ),
+                            ],
+                          ),
+                          child: BookCover(
+                            coverUrl: book.coverUrl,
+                            gradientIndex: gradientIndex,
+                            width: 128,
+                            height: 184,
+                            radius: 10,
+                          ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
+
+                        // 제목
+                        Text(
+                          book.title,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w400,
+                            color: context.appTextPrimary,
+                            height: 1.35,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+
+                        // 저자
+                        Text(
+                          book.author,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: context.appTextSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+
+                        // 출판사 · 장르
+                        Text(
+                          [
+                            book.publisher,
+                            if (book.genre != null) book.genre!,
+                          ].join(' · '),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appTextTertiary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
-
-                      // 책 표지
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: coverColors[1].withValues(alpha: 0.35),
-                              blurRadius: 36,
-                              offset: const Offset(0, 14),
-                              spreadRadius: -4,
-                            ),
-                          ],
-                        ),
-                        child: BookCover(
-                          coverUrl: book.coverUrl,
-                          gradientIndex: gradientIndex,
-                          width: 128,
-                          height: 184,
-                          radius: 10,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // 제목
-                      Text(
-                        book.title,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w400,
-                          color: context.appTextPrimary,
-                          height: 1.35,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-
-                      // 저자
-                      Text(
-                        book.author,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: context.appTextSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-
-                      // 출판사 · 장르
-                      Text(
-                        [
-                          book.publisher,
-                          if (book.genre != null) book.genre!,
-                        ].join(' · '),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.appTextTertiary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    ),
                   ),
+                ],
+              ),
+            ),
+
+            // ── 이어 읽기 (서재에 있는 책만) ──────────────────────────────
+            if (libraryBook != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: _ContinueReadingButton(book: libraryBook),
                 ),
-              ],
-            ),
-          ),
-
-          // ── 이어 읽기 (서재에 있는 책만) ──────────────────────────────
-          if (libraryBook != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: _ContinueReadingButton(book: libraryBook),
               ),
-            ),
 
-          // ── 서재 추가 버튼 ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: _AddToLibraryButton(
-                isInLibrary: isInLibrary,
-                onTap: _onAddTap,
-              ),
-            ),
-          ),
-
-          if (isbn.isNotEmpty)
+            // ── 서재 추가 버튼 ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                child: _CommunityOverview(isbn: isbn),
-              ),
-            ),
-
-          if (isbn.isNotEmpty) _PopularBookThoughtsSection(book: book),
-
-          // ── 책 소개 ───────────────────────────────────────────────────
-          if (book.description != null && book.description!.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '책 소개',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextTertiary,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () =>
-                          setState(() => _descExpanded = !_descExpanded),
-                      child: Text(
-                        book.description!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: context.appTextSecondary,
-                          height: 1.7,
-                        ),
-                        maxLines: _descExpanded ? null : 4,
-                        overflow: _descExpanded ? null : TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (!_descExpanded && book.description!.length > 120)
-                      GestureDetector(
-                        onTap: () => setState(() => _descExpanded = true),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            '더 보기',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                child: _AddToLibraryButton(
+                  isInLibrary: isInLibrary,
+                  onTap: _onAddTap,
                 ),
               ),
             ),
 
-          _PersonalRecordsSection(
-            book: book,
-            libraryBook: libraryBook,
-            globalBookId: isbn.isEmpty
-                ? null
-                : ref
-                      .watch(_bookInfoCommunityProvider(isbn))
-                      .maybeWhen(
-                        data: (data) => data.globalBookId,
-                        orElse: () => null,
+            if (isbn.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  child: _CommunityOverview(isbn: isbn),
+                ),
+              ),
+
+            if (isbn.isNotEmpty) _PopularBookThoughtsSection(book: book),
+
+            // ── 책 소개 ───────────────────────────────────────────────────
+            if (book.description != null && book.description!.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '책 소개',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: context.appTextTertiary,
+                          letterSpacing: 0.4,
+                        ),
                       ),
-          ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _descExpanded = !_descExpanded),
+                        child: Text(
+                          book.description!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appTextSecondary,
+                            height: 1.7,
+                          ),
+                          maxLines: _descExpanded ? null : 4,
+                          overflow: _descExpanded
+                              ? null
+                              : TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!_descExpanded && book.description!.length > 120)
+                        GestureDetector(
+                          onTap: () => setState(() => _descExpanded = true),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '더 보기',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: context.appPrimaryAccent,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
 
-          if (isbn.isNotEmpty) _FollowingThoughtsSection(isbn: isbn),
+            _PersonalRecordsSection(
+              book: book,
+              libraryBook: libraryBook,
+              globalBookId: isbn.isEmpty
+                  ? null
+                  : ref
+                        .watch(_bookInfoCommunityProvider(isbn))
+                        .maybeWhen(
+                          data: (data) => data.globalBookId,
+                          orElse: () => null,
+                        ),
+            ),
 
-          if (isbn.isNotEmpty) _ReviewsSection(isbn: isbn),
+            if (isbn.isNotEmpty) _FollowingThoughtsSection(isbn: isbn),
 
-          if (isbn.isNotEmpty) _CommentsSection(isbn: isbn),
+            if (isbn.isNotEmpty) _ReviewsSection(isbn: isbn),
 
-          // ── 독자들의 문장 콘텐츠 ─────────────────────────────────────
-          if (isbn.isNotEmpty) _SentencesSection(isbn: isbn),
+            if (isbn.isNotEmpty) _CommentsSection(isbn: isbn),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
-        ],
+            // ── 독자들의 문장 콘텐츠 ─────────────────────────────────────
+            if (isbn.isNotEmpty) _SentencesSection(isbn: isbn),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
+        ),
       ),
     );
   }

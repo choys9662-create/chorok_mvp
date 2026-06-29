@@ -66,11 +66,11 @@ final sessionFireflyProvider =
         mutuals.map((m) => m.id).toList(),
       );
       final active = mutuals.where((m) => books.containsKey(m.id)).toList();
-      // "읽고 있는 주변" = 전체에서 지금 읽는 중인 독자 수(맞팔 무관).
-      final counts = await presence.liveCounts();
+      // "이웃" = 내 현재 위치 기준 반경 500m 안에서 지금 읽는 중인 독자.
+      final nearbyCount = await presence.nearbyReaderCount();
       return (
         mutualCount: active.length,
-        nearbyCount: counts.active,
+        nearbyCount: nearbyCount,
         mutuals: active,
         books: books,
       );

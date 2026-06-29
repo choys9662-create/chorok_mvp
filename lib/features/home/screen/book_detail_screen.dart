@@ -591,8 +591,6 @@ class _HeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradColors = AppTheme.coverGradientByIndex(book.gradientIndex);
-
     return Stack(
       children: [
         // ── 배경 글로우 ──────────────────────────────────────
@@ -605,7 +603,7 @@ class _HeroSection extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 colors: [
-                  gradColors[0].withValues(alpha: 0.25),
+                  context.appPrimaryAccent.withValues(alpha: 0.25),
                   context.appBg.withValues(alpha: 0.0),
                 ],
                 radius: 0.7,
@@ -646,7 +644,7 @@ class _HeroSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   boxShadow: [
                     BoxShadow(
-                      color: gradColors[0].withValues(alpha: 0.3),
+                      color: context.appPrimaryAccent.withValues(alpha: 0.3),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
                     ),

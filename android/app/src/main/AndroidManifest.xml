@@ -9,6 +9,9 @@
     <!-- 네트워크 (Supabase / 알라딘 API) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- 위치 권한 (라이브 포레스트 주변 이웃 수) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:label="초록"
         android:name="${applicationName}"

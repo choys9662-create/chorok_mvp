@@ -83,7 +83,6 @@ class WishlistBookCardState extends State<WishlistBookCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final b = widget.book;
-    final gradColors = AppTheme.coverGradientFor(b.title);
     const daysText = '위시리스트';
 
     return GestureDetector(
@@ -122,7 +121,10 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: gradColors,
+                    colors: [
+                      context.appPrimaryAccent,
+                      context.appAccentColor,
+                    ],
                   ),
                 ),
                 child: Stack(

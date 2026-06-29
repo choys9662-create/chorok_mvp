@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/providers/library_provider.dart';
+import '../../timer/controller/timer_controller.dart';
+import '../controller/weekly_minutes_provider.dart';
+import 'home_helpers.dart';
 
-class HomeAppBar extends StatelessWidget {
+class HomeAppBar extends ConsumerWidget {
   const HomeAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final todayIndex = (now.weekday - 1).clamp(0, 6);
+    final timer = ref.watch(timerProvider);
+    final weekly =
+        ref.watch(weeklyMinutesProvider).valueOrNull ??
+        (kUseMock ? kWeeklyMinutes : List.filled(7, 0));
+    final dbTodayMin = weekly.length > todayIndex ? weekly[todayIndex] : 0;
+    final message = dailyHomeMessage(
+      now: now,
+      weeklyMinutes: weekly,
+      todayMinutes: dbTodayMin + timer.seconds ~/ 60,
+      books: ref.watch(libraryProvider),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 34, 20, 8),
       child: Row(
@@ -16,10 +36,10 @@ class HomeAppBar extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              '오늘도 같이 읽어요',
+              message,
               style: AppTheme.headingLarge.copyWith(
                 color: context.appTextSecondary,
-                fontSize: 28,
+                fontSize: 18,
                 letterSpacing: 0,
               ),
               maxLines: 1,

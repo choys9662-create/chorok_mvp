@@ -24,7 +24,7 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
-const _detailAccent = Color(0xFF8DBDFF);
+const _detailAccent = AppTheme.primaryLight;
 const _detailCard = Color(0xFF141414);
 const _detailText = Color(0xFFEDEDED);
 const _detailMuted = Color(0xFF8D928D);
@@ -898,7 +898,6 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradientIndex =
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
-    final coverColors = AppTheme.coverGradients[gradientIndex];
     final topPad = MediaQuery.of(context).padding.top;
     final meta = book.title.contains('채식주의자')
         ? '${book.author} | 창비 | 2022'
@@ -932,7 +931,7 @@ class _HeroSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: coverColors[1].withValues(alpha: 0.28),
+                      color: _detailAccent.withValues(alpha: 0.28),
                       blurRadius: 36,
                       offset: const Offset(0, 18),
                       spreadRadius: -8,

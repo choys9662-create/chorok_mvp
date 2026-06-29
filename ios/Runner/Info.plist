@@ -14,6 +14,10 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>프로필 사진을 선택하고 책 페이지 이미지를 불러오기 위해 사진 보관함을 사용합니다.</string>
 
+	<!-- 위치 권한 (라이브 포레스트 주변 이웃 수) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>독서 중 주변에서 함께 읽는 이웃 수를 표시하기 위해 현재 위치를 사용합니다.</string>
+
 	<!-- 음성 인식 권한 (STT) -->
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>음성을 텍스트로 변환하여 문장을 빠르게 기록하기 위해 음성 인식 기능을 사용합니다.</string>

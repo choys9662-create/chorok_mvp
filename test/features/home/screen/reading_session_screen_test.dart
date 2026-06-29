@@ -16,6 +16,10 @@ import 'package:chorok_app/shared/repositories/book_repository.dart';
 import 'package:chorok_app/shared/repositories/reading_presence_repository.dart';
 
 class _FakeDbService extends DbService {
+  final List<Map<String, dynamic>> promptCandidates;
+
+  _FakeDbService({this.promptCandidates = const []});
+
   @override
   Future<List<Map<String, dynamic>>> fetchMySentencesForBook(
     String bookId, {
@@ -32,6 +36,14 @@ class _FakeDbService extends DbService {
         'page_number': null,
       },
     ];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchSessionPromptCandidates({
+    String? bookId,
+    String? isbn13,
+  }) async {
+    return promptCandidates;
   }
 }
 
@@ -50,6 +62,8 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
     String? bookTitle,
     String? bookAuthor,
     String? bookCoverUrl,
+    double? latitude,
+    double? longitude,
   }) async {}
 
   @override
@@ -69,9 +83,12 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
   Future<({int active, int today, int week})> liveCounts() async {
     return (active: 0, today: 0, week: 0);
   }
+
+  @override
+  Future<int> nearbyReaderCount({int radiusMeters = 500}) async => 0;
 }
 
-Widget _buildScreen() {
+Widget _buildScreen({List<Map<String, dynamic>> promptCandidates = const []}) {
   const selectedBook = Book(
     id: 'guns-germs-steel',
     title: '총균쇠',
@@ -91,7 +108,9 @@ Widget _buildScreen() {
 
   return ProviderScope(
     overrides: [
-      dbServiceProvider.overrideWithValue(_FakeDbService()),
+      dbServiceProvider.overrideWithValue(
+        _FakeDbService(promptCandidates: promptCandidates),
+      ),
       libraryProvider.overrideWith(
         () => _FakeLibraryNotifier([firstReadingBook, selectedBook]),
       ),
@@ -148,13 +167,44 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pump();
 
+    final button = find.byKey(const ValueKey('session-entry-question-button'));
+    final buttonSize = tester.getSize(button);
+    final textSize = tester.getSize(
+      find.descendant(of: button, matching: find.byType(Text)),
+    );
+
+    expect(buttonSize.width, closeTo(textSize.width + 32.2, 0.1));
+    expect(buttonSize.width, lessThanOrEqualTo(402 - 80));
+  });
+
+  testWidgets('긴 세션 시작 질문은 잘리지 않고 박스 높이를 늘린다', (tester) async {
+    tester.view.physicalSize = const Size(320, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _buildScreen(
+        promptCandidates: const [
+          {
+            'content': '우리 어머니는 이를 밤이 지난 후에도 오래 기억했다.',
+            'thought': '',
+            'like_count': 10,
+          },
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
     final buttonSize = tester.getSize(
       find.byKey(const ValueKey('session-entry-question-button')),
     );
-    final textSize = tester.getSize(find.text('이 책은 어떤 질문을 남길까요?'));
 
-    expect(buttonSize.width, closeTo(textSize.width + 32.2, 0.1));
-    expect(buttonSize.width, lessThan(402 - 80));
+    expect(find.textContaining('왜 이 문장이 남았을까요?'), findsOneWidget);
+    expect(buttonSize.width, lessThanOrEqualTo(320 - 80));
+    expect(buttonSize.height, greaterThan(50));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('세션 시작 시 선택한 책 메타를 타이머에 저장한다', (tester) async {
@@ -166,7 +216,9 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pump();
 
-    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
     await tester.pump();
 
     final container = ProviderScope.containerOf(
@@ -192,7 +244,9 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pump();
 
-    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
     await tester.pump();
 
     final container = ProviderScope.containerOf(
@@ -213,7 +267,9 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
     await tester.pump(const Duration(milliseconds: 600));
 
     await tester.tapAt(const Offset(196, 426));
@@ -244,7 +300,9 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pump();
 
-    await tester.tap(find.text('이 책은 어떤 질문을 남길까요?'));
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
     await tester.pump(const Duration(milliseconds: 600));
 
     await tester.tapAt(const Offset(196, 426));

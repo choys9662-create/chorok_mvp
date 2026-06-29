@@ -34,10 +34,12 @@ import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 
 const _recapBg = Color(0xFF000000);
-const _recapActionBg = Color(0xFF080808);
-const _recapLine = Color(0xFF252525);
-const _recapBlue = Color(0xFF9CC8FF);
-const _recapBlueMuted = Color(0xFF86ACE0);
+const _recapActionBg = Color(0xFF111411);
+const _recapBlue = AppTheme.primaryLight;
+const _recapBlueMuted = AppTheme.accent;
+const _recapCard = Color(0xFF141914);
+const _recapText = Color(0xFFF1F7EE);
+const _recapMuted = Color(0xFF7B8779);
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
@@ -250,8 +252,11 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     return (endPage - widget.data.startPage).clamp(0, 999999);
   }
 
+  /// 5분 미만 독서는 기록하지 않는다 (실수로 켰다 끈 세션 컷).
+  static const _minRecordSeconds = 5 * 60;
+
   Future<void> _autoSaveSession() async {
-    if (widget.data.seconds <= 0) return;
+    if (widget.data.seconds < _minRecordSeconds) return;
     final repo = ref.read(bookRepositoryProvider);
     final bookId = widget.data.bookId;
     final endPage = widget.data.endPage;
@@ -380,27 +385,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
             bottom: false,
             child: Column(
               children: [
-                SizedBox(
-                  height: 57,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: Text('세션 요약', style: _labelStyle(fontSize: 12)),
-                    ),
-                  ),
-                ),
-                const _SummaryDivider(),
-
-                // ─── 스크롤 콘텐츠 ────────────────────────────────
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
+                    padding: const EdgeInsets.fromLTRB(16, 26, 16, 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 책 정보 행
                         _SummaryBookHeader(
                           bookTitle: widget.data.bookTitle,
                           bookAuthor: widget.data.bookAuthor,
@@ -408,13 +399,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           publishedYear: widget.data.publishedYear,
                           coverUrl: widget.data.coverUrl,
                         ),
-                        const _SummaryDivider(),
+                        const SizedBox(height: 20),
                         _SummaryRow(
                           icon: Icons.schedule_rounded,
                           label: '독서 시간',
                           child: Text(_clockText, style: _valueStyle()),
                         ),
-                        const _SummaryDivider(),
                         _SummaryRow(
                           icon: Icons.adjust_rounded,
                           label: '집중도',
@@ -423,7 +413,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             style: _valueStyle(),
                           ),
                         ),
-                        const _SummaryDivider(),
                         _SummaryRow(
                           icon: Icons.pie_chart_rounded,
                           label: '진행도',
@@ -431,10 +420,9 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             current: _currentPage,
                             total: widget.data.totalPages,
                             percentOverride: widget.data.progressPercent,
-                            color: _recapBlue,
+                            color: _recapText,
                           ),
                         ),
-                        const _SummaryDivider(),
                         _SummaryRow(
                           icon: Icons.format_quote_rounded,
                           label: '초서 기록',
@@ -443,7 +431,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             recordCount: widget.data.sentences
                                 .where((s) => s.thought.isNotEmpty)
                                 .length,
-                            color: _recapBlue,
+                            color: _recapText,
                             isExpanded: _isChoseoExpanded,
                             onToggle: () {
                               HapticFeedback.selectionClick();
@@ -459,28 +447,25 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           bookTitle: widget.data.bookTitle,
                           bookAuthor: widget.data.bookAuthor,
                         ),
-                        const _SummaryDivider(),
                         _SummaryRow(
                           icon: Icons.thumb_up_alt_rounded,
-                          label: '한줄평',
+                          label: '세션평가',
                           child: Text(
                             _oneLineText,
                             textAlign: TextAlign.right,
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: _valueStyle().copyWith(
-                              fontSize: 22,
-                              height: 1.15,
+                              fontSize: 18,
+                              height: 1.1,
                             ),
                           ),
                         ),
-                        const _SummaryDivider(),
                         _SummaryRow(
                           icon: Icons.radio_button_checked_rounded,
                           label: '함께 읽은',
                           child: _CompanionsValue(companions: companions),
                         ),
-                        const _SummaryDivider(),
 
                         if (_showNextBookSuggestion) ...[
                           const SizedBox(height: 20),
@@ -527,7 +512,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 }
 
 // 세션 요약 — 큰 숫자 값 스타일 (독서시간/집중도/진행도/초서기록/한줄평 공용)
-TextStyle _valueStyle({Color color = _recapBlue, double fontSize = 36}) =>
+TextStyle _valueStyle({Color color = _recapText, double fontSize = 28}) =>
     TextStyle(
       fontFamily: AppTheme.fontFamily,
       fontSize: fontSize,
@@ -541,7 +526,7 @@ TextStyle _labelStyle({double fontSize = 10}) => TextStyle(
   fontFamily: AppTheme.fontFamily,
   fontSize: fontSize,
   fontWeight: FontWeight.w400,
-  color: _recapBlueMuted,
+  color: _recapMuted,
   height: 1.25,
   letterSpacing: 0,
 );
@@ -570,66 +555,44 @@ class _SummaryBookHeader extends StatelessWidget {
       if (publishedYear != null && publishedYear!.isNotEmpty) publishedYear!,
     ].join(' | ');
 
-    return SizedBox(
-      height: 175,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            BookCover(
-              coverUrl: coverUrl,
-              gradientIndex:
-                  bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
-              width: 88,
-              height: 135,
-              radius: 4,
-            ),
-            const SizedBox(width: 40),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    bookTitle,
-                    textAlign: TextAlign.left,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w400,
-                      color: _recapBlue,
-                      height: 1.25,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    meta,
-                    textAlign: TextAlign.left,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _labelStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('6번째 세션 요약', style: _labelStyle(fontSize: 12)),
+        const SizedBox(height: 12),
+        BookCover(
+          coverUrl: coverUrl,
+          gradientIndex:
+              bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
+          width: 80,
+          height: 122,
+          radius: 6,
         ),
-      ),
+        const SizedBox(height: 14),
+        Text(
+          bookTitle,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontFamily: AppTheme.fontFamily,
+            fontSize: 17,
+            fontWeight: FontWeight.w400,
+            color: _recapText,
+            height: 1.25,
+            letterSpacing: 0,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          meta,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: _labelStyle(fontSize: 12),
+        ),
+      ],
     );
-  }
-}
-
-// ─── 세션 요약: 구분선 ───────────────────────────────────────────────
-class _SummaryDivider extends StatelessWidget {
-  const _SummaryDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 1, color: _recapLine);
   }
 }
 
@@ -647,30 +610,29 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 80,
+    return Container(
+      height: 68,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: _recapCard,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: 120,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            width: 94,
+            child: Row(
               children: [
-                Icon(icon, size: 19, color: _recapBlue),
-                const SizedBox(height: 5),
-                Text(label, style: _labelStyle()),
+                Icon(icon, size: 16, color: _recapMuted),
+                const SizedBox(width: 8),
+                Text(label, style: _labelStyle(fontSize: 12)),
               ],
             ),
           ),
           Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: child,
-              ),
-            ),
+            child: Align(alignment: Alignment.centerRight, child: child),
           ),
         ],
       ),
@@ -705,7 +667,7 @@ class _ProgressValue extends StatelessWidget {
             '$current / $total',
             style: _labelStyle(
               fontSize: 10,
-            ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.86)),
+            ).copyWith(color: _recapMuted.withValues(alpha: 0.86)),
           ),
           const SizedBox(width: 9),
         ],
@@ -733,37 +695,15 @@ class _ChoseoValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget pillNum(String label, int value) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: _recapBlue.withValues(alpha: 0.7)),
-            ),
-            child: Text(
-              label,
-              style: _labelStyle(
-                fontSize: 11,
-              ).copyWith(color: _recapBlueMuted.withValues(alpha: 0.95)),
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text('$value', style: _valueStyle(color: color)),
-        ],
-      );
-    }
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        pillNum('문장', sentenceCount),
-        const SizedBox(width: 11),
-        pillNum('기록', recordCount),
-        const SizedBox(width: 1),
+        Text(
+          '문장 $sentenceCount | 생각 $recordCount',
+          style: _labelStyle(fontSize: 11),
+        ),
+        const SizedBox(width: 10),
+        Text('$sentenceCount개', style: _valueStyle(color: color)),
         Semantics(
           button: true,
           label: isExpanded ? '내 초서 기록 접기' : '내 초서 기록 펼치기',
@@ -1250,7 +1190,9 @@ class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: _labelStyle(fontSize: 11).copyWith(
-                                  color: _recapBlueMuted.withValues(alpha: 0.64),
+                                  color: _recapBlueMuted.withValues(
+                                    alpha: 0.64,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1833,7 +1775,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
         '${_resonanceCount(entry.content)}명의 독자가 이 문장에 밑줄을 그었어요',
       ),
       _SentenceTag.rare => (
-        const Color(0xFF7B9EFF),
+        AppTheme.accent,
         Icons.explore_rounded,
         '이 문장을 발견한 독자는 아직 ${_rareCount(entry.content)}명뿐이에요',
       ),
@@ -1957,9 +1899,9 @@ class _RecapActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 84,
+      height: 74,
       color: _recapActionBg,
-      padding: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.only(top: 18),
       alignment: Alignment.topCenter,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1974,7 +1916,7 @@ class _RecapActions extends StatelessWidget {
               unawaited(onShare());
             },
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           // 홈
           _RecapActionButton(
             width: 70,
@@ -1985,7 +1927,7 @@ class _RecapActions extends StatelessWidget {
               context.go(AppConstants.routeHome);
             },
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           // 서재
           _RecapActionButton(
             width: 84,
@@ -2020,16 +1962,15 @@ class _RecapActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = filled ? _recapActionBg : Colors.white;
+    const fg = Colors.black;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: width,
         height: 32,
         decoration: BoxDecoration(
-          color: filled ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.88)),
+          color: filled ? AppTheme.primaryLight : _recapText,
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

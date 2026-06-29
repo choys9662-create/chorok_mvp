@@ -21,6 +21,8 @@ class ReadingPresenceRepository {
     String? bookTitle,
     String? bookAuthor,
     String? bookCoverUrl,
+    double? latitude,
+    double? longitude,
   }) async {
     final me = _meId;
     if (me == null) return;
@@ -32,6 +34,8 @@ class ReadingPresenceRepository {
       'book_title': bookTitle,
       'book_author': bookAuthor,
       'book_cover_url': bookCoverUrl,
+      'location_lat': latitude,
+      'location_lng': longitude,
     }, onConflict: 'user_id');
   }
 
@@ -64,6 +68,14 @@ class ReadingPresenceRepository {
       today: (row['today_count'] as num?)?.toInt() ?? 0,
       week: (row['week_count'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  Future<int> nearbyReaderCount({int radiusMeters = 500}) async {
+    final res = await _client.rpc(
+      'nearby_reader_count',
+      params: {'radius_meters': radiusMeters},
+    );
+    return (res as num?)?.toInt() ?? 0;
   }
 
   /// [candidateIds] 중 지금 세션을 실행 중(heartbeat가 TTL 이내)인 유저를

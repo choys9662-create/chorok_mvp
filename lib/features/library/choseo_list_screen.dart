@@ -359,7 +359,6 @@ class _BookGroupState extends State<_BookGroup> {
   @override
   Widget build(BuildContext context) {
     final author = widget.items.first.bookAuthor;
-    final colors = AppTheme.coverGradientFor(widget.title);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -393,7 +392,10 @@ class _BookGroupState extends State<_BookGroup> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: colors,
+                          colors: [
+                            context.appPrimaryAccent,
+                            context.appAccentColor,
+                          ],
                         ),
                         shape: SmoothRectangleBorder(
                           smoothness: 0.6,
@@ -543,8 +545,6 @@ class _ChoseoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppTheme.coverGradientFor(item.bookTitle);
-
     return Container(
       decoration: ShapeDecoration(
         color: context.appCard,
@@ -570,7 +570,10 @@ class _ChoseoCard extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: colors,
+                        colors: [
+                          context.appPrimaryAccent,
+                          context.appAccentColor,
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),

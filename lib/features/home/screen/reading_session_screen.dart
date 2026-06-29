@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
@@ -22,16 +23,15 @@ import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../core/services/stt_service.dart';
-import '../../../shared/providers/cover_color_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/reading_presence_repository.dart';
+import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/widgets/book_cover.dart';
-import '../../forest/controller/live_forest_provider.dart';
-import '../../forest/widget/live_forest_widget.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
+import '../widget/home_helpers.dart';
 import '../widget/sentence_organizer_sheet.dart';
 import 'ocr_capture_crop.dart';
 import 'ocr_web_camera_stub.dart'
@@ -73,11 +73,68 @@ class ReadingSessionScreen extends ConsumerStatefulWidget {
 
 enum UiVisibility { hidden, revealed, social, actions }
 
+typedef _SessionPromptQuery = ({String? bookId, String? isbn});
+
+final _sessionPromptSeedsProvider = FutureProvider.autoDispose
+    .family<List<SessionPromptSeed>, _SessionPromptQuery>((ref, query) async {
+      try {
+        final rows = await ref
+            .read(dbServiceProvider)
+            .fetchSessionPromptCandidates(
+              bookId: query.bookId,
+              isbn13: query.isbn,
+            );
+        final grouped = <String, _PromptSeedAccumulator>{};
+        for (final row in rows) {
+          final sentence = (row['content'] as String?)?.trim() ?? '';
+          if (sentence.length < 8) continue;
+          final key = SentenceNormalizer.normalize(sentence);
+          if (key.isEmpty) continue;
+          final thought = (row['thought'] as String?)?.trim() ?? '';
+          final likeCount = (row['like_count'] as num?)?.toInt() ?? 0;
+          grouped
+              .putIfAbsent(key, () => _PromptSeedAccumulator(sentence))
+              .add(thought: thought, likeCount: likeCount);
+        }
+        final seeds = grouped.values.map((entry) => entry.toSeed()).toList()
+          ..sort((a, b) => b.weight.compareTo(a.weight));
+        return seeds.take(5).toList();
+      } catch (_) {
+        return const <SessionPromptSeed>[];
+      }
+    });
+
+class _PromptSeedAccumulator {
+  final String sentence;
+  String thought = '';
+  int count = 0;
+  int likes = 0;
+
+  _PromptSeedAccumulator(this.sentence);
+
+  void add({required String thought, required int likeCount}) {
+    count += 1;
+    likes += likeCount;
+    if (this.thought.isEmpty && thought.isNotEmpty) {
+      this.thought = thought;
+    }
+  }
+
+  SessionPromptSeed toSeed() {
+    return SessionPromptSeed(
+      sentence: sentence,
+      thought: thought,
+      weight: count * 10 + likes + (thought.isNotEmpty ? 5 : 0),
+    );
+  }
+}
+
 class _SessionBookMeta {
   final String? id;
   final String title;
   final String author;
   final String? coverUrl;
+  final String? isbn;
   final int startPage;
   final int totalPages;
 
@@ -86,6 +143,7 @@ class _SessionBookMeta {
     required this.title,
     required this.author,
     required this.coverUrl,
+    required this.isbn,
     required this.startPage,
     required this.totalPages,
   });
@@ -103,9 +161,10 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   Timer? _uiHideTimer;
   bool _goalReachedNotified = false;
 
-  // 화면 밝기 절전 — 5초 무터치 시 어둑하게, 터치하면 사용자 밝기로 복원.
+  // 화면 밝기 절전 — 10초 무터치 시 어둑하게, 터치하면 사용자 밝기로 복원.
   // UI 가시성(_uiState)과 독립적으로, 모든 포인터 입력이 _brightenScreen()을 깨운다.
-  static const _brightnessIdle = Duration(seconds: 5);
+  static const _idleRevealDuration = Duration(seconds: 10);
+  static const _brightnessIdle = _idleRevealDuration;
   static const _dimScale = 0.20; // 사용자 밝기 대비 어둑한 정도
   Timer? _brightnessIdleTimer;
   double? _baseBrightness; // 세션 진입 시점의 사용자 밝기
@@ -114,10 +173,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   Future<void> _brightenScreen() async {
     _brightnessIdleTimer?.cancel();
     _brightnessIdleTimer = Timer(_brightnessIdle, _dimScreen);
-    if (!_dimmed) return;
     _dimmed = false;
     try {
-      await ScreenBrightness().resetApplicationScreenBrightness();
+      final base = _baseBrightness;
+      if (base == null) {
+        await ScreenBrightness().resetApplicationScreenBrightness();
+        return;
+      }
+      await ScreenBrightness().setApplicationScreenBrightness(base);
     } catch (_) {
       // 시뮬레이터·웹 등 밝기 제어 미지원 환경은 조용히 무시.
     }
@@ -169,10 +232,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
       switch (_uiState) {
         case UiVisibility.actions:
-          _setUi(
-            UiVisibility.revealed,
-            autoHideAfter: const Duration(seconds: 6),
-          );
+          _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
         case UiVisibility.revealed:
           _setUi(UiVisibility.hidden);
         case UiVisibility.social:
@@ -186,25 +246,19 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   void _onScreenTap() {
     switch (_uiState) {
       case UiVisibility.hidden:
-        _setUi(
-          UiVisibility.revealed,
-          autoHideAfter: const Duration(seconds: 6),
-        );
+        _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
       case UiVisibility.revealed:
-        _setUi(UiVisibility.social, autoHideAfter: const Duration(seconds: 8));
+        _setUi(UiVisibility.social, autoHideAfter: _idleRevealDuration);
       case UiVisibility.social:
         _setUi(UiVisibility.hidden);
       case UiVisibility.actions:
-        _setUi(
-          UiVisibility.revealed,
-          autoHideAfter: const Duration(seconds: 6),
-        );
+        _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
     }
   }
 
   void _onPlusTap() {
     HapticFeedback.selectionClick();
-    _setUi(UiVisibility.actions, autoHideAfter: const Duration(seconds: 8));
+    _setUi(UiVisibility.actions, autoHideAfter: _idleRevealDuration);
   }
 
   void _openSentencesSheet() {
@@ -235,10 +289,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         bookAuthor: book.author,
       ),
     ).then(
-      (_) => _setUi(
-        UiVisibility.revealed,
-        autoHideAfter: const Duration(seconds: 6),
-      ),
+      (_) => _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration),
     );
   }
 
@@ -353,6 +404,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             ? widget.bookAuthor
             : libraryBook?.author ?? '',
         coverUrl: widget.coverUrl ?? libraryBook?.coverUrl,
+        isbn: libraryBook?.isbn,
         startPage: widget.startPage > 0
             ? widget.startPage
             : libraryBook?.currentPage ?? widget.startPage,
@@ -376,6 +428,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             ? activeSession.bookAuthor
             : libraryBook?.author ?? '',
         coverUrl: activeSession.coverUrl ?? libraryBook?.coverUrl,
+        isbn: libraryBook?.isbn,
         startPage: activeSession.startPage > 0
             ? activeSession.startPage
             : libraryBook?.currentPage ?? activeSession.startPage,
@@ -391,6 +444,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         title: widget.bookTitle,
         author: widget.bookAuthor,
         coverUrl: widget.coverUrl,
+        isbn: null,
         startPage: widget.startPage,
         totalPages: widget.totalPages,
       );
@@ -401,6 +455,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       title: '',
       author: '',
       coverUrl: null,
+      isbn: null,
       startPage: 0,
       totalPages: 0,
     );
@@ -477,7 +532,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     final result = await _pushOcrCapture();
     if (!mounted) return;
-    _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
+    _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
     _handleOcrResult(
       result ?? const OcrCancelled(),
       noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.',
@@ -508,10 +563,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       if (!mounted) return;
       if (picked == null) {
         ref.read(timerProvider.notifier).resume();
-        _setUi(
-          UiVisibility.revealed,
-          autoHideAfter: const Duration(seconds: 6),
-        );
+        _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
         return;
       }
       final bytes = await picked.readAsBytes();
@@ -520,7 +572,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
           .read(ocrServiceProvider)
           .extractTextFromBytes(bytes);
       if (!mounted) return;
-      _setUi(UiVisibility.revealed, autoHideAfter: const Duration(seconds: 6));
+      _setUi(UiVisibility.revealed, autoHideAfter: _idleRevealDuration);
       _handleOcrResult(
         result,
         noTextMessage: '텍스트를 인식하지 못했어요. 더 또렷한 이미지로 다시 시도해 보세요.',
@@ -636,11 +688,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         final presence = ref.read(readingPresenceRepositoryProvider);
         _presence = presence;
         final sessionBook = _readSessionBook();
-        presence.start(
-          bookTitle: sessionBook.title.isNotEmpty ? sessionBook.title : null,
-          bookAuthor: sessionBook.author.isNotEmpty ? sessionBook.author : null,
-          bookCoverUrl: sessionBook.coverUrl,
-        );
+        _startPresence(presence, sessionBook);
         _presenceHeartbeat = Timer.periodic(
           const Duration(seconds: 45),
           (_) => presence.heartbeat(),
@@ -670,6 +718,47 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
     });
   }
+
+  Future<void> _startPresence(
+    ReadingPresenceRepository presence,
+    _SessionBookMeta sessionBook,
+  ) async {
+    try {
+      final position = await _currentPositionOrNull();
+      await presence.start(
+        bookTitle: sessionBook.title.isNotEmpty ? sessionBook.title : null,
+        bookAuthor: sessionBook.author.isNotEmpty ? sessionBook.author : null,
+        bookCoverUrl: sessionBook.coverUrl,
+        latitude: position == null ? null : _coarseCoord(position.latitude),
+        longitude: position == null ? null : _coarseCoord(position.longitude),
+      );
+      if (mounted) ref.invalidate(sessionFireflyProvider);
+    } catch (_) {}
+  }
+
+  Future<Position?> _currentPositionOrNull() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return null;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      return Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  double _coarseCoord(double value) => (value * 1000).roundToDouble() / 1000;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -924,6 +1013,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         _stoppedBook ?? _lockResolvedSessionBook(timer: timer, books: books);
     final firefly = ref.watch(sessionFireflyProvider).valueOrNull;
     final mutuals = firefly?.mutuals ?? const [];
+    final nearbyCount = firefly?.nearbyCount ?? 0;
+    final neighborCount = math.max(0, nearbyCount);
     // 함께 읽는 독자 CTA — 시트(_PeopleTab)·오브와 동일하게 '지금 읽는 맞팔' 수.
     // nearbyCount(전체 active, 본인 포함)를 더하면 시트 목록과 안 맞아서 제외.
     final readersCount = firefly?.mutualCount ?? 0;
@@ -968,21 +1059,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                 // ① 배경
                 const _SessionBackground(),
 
-                // ② 라이브 포레스트 반딧불 배경 — 실시간 독자 수 반영
-                Builder(
-                  builder: (context) {
-                    final counts =
-                        ref.watch(liveReaderCountsProvider).valueOrNull ??
-                        LiveReaderCounts.fallback;
-                    return LiveForestWidget(
-                      activeCount: counts.active,
-                      todayCount: counts.today,
-                      weekCount: counts.week,
-                    );
-                  },
-                ),
-
-                // ③ 반딧불이 + 독자 오브 + 중심 오브
+                // ② 실제 독자 오브 + 중심 오브
                 AnimatedBuilder(
                   animation: Listenable.merge([_pulseAnim, _moveCtrl]),
                   builder: (_, _) => Stack(
@@ -990,6 +1067,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     children: [
                       _NamedReaderOrbs(
                         mutuals: mutuals,
+                        neighborCount: neighborCount,
                         time: _moveCtrl.value,
                         showNames: _uiState == UiVisibility.social,
                       ),
@@ -1068,9 +1146,19 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     bookTitle: book.title,
                     bookAuthor: book.author,
                     coverUrl: book.coverUrl,
-                    accentColor: _sessionEntryAccent(
-                      ref.watch(coverColorProvider(book.coverUrl)).valueOrNull,
-                    ),
+                    currentPage: book.startPage,
+                    totalPages: book.totalPages,
+                    promptSeeds:
+                        ref
+                            .watch(
+                              _sessionPromptSeedsProvider((
+                                bookId: book.id,
+                                isbn: book.isbn,
+                              )),
+                            )
+                            .valueOrNull ??
+                        const <SessionPromptSeed>[],
+                    accentColor: _kGreen,
                     onStart: () {
                       _dismissTopicAndStart();
                     },
@@ -1133,93 +1221,141 @@ class _PillTimerOnly extends StatelessWidget {
 // ─── 이름 있는 독자 오브 레이어 ──────────────────────────────────────────
 class _NamedReaderOrbs extends StatelessWidget {
   final List<UserProfile> mutuals;
+  final int neighborCount;
   final double time;
   final bool showNames;
 
   const _NamedReaderOrbs({
     required this.mutuals,
+    required this.neighborCount,
     required this.time,
     this.showNames = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (mutuals.isEmpty) return const SizedBox.shrink();
+    if (mutuals.isEmpty && neighborCount == 0) return const SizedBox.shrink();
     final size = MediaQuery.of(context).size;
     final tp = time * 2 * math.pi;
 
     final widgets = <Widget>[];
+    final neighborLimit = math.min(neighborCount, 12);
+    for (int i = 0; i < neighborLimit; i++) {
+      _addOrb(
+        widgets: widgets,
+        size: size,
+        tp: tp,
+        seed: Object.hash('neighbor', i).abs(),
+        radiusBase: 4.0,
+        radiusRange: 8.0,
+        label: '이웃',
+        labelColor: const Color(0xFF9A9F9A).withValues(alpha: 0.62),
+        orbColor: const Color(0xFF8A8F8A),
+        orbAlpha: 0.35,
+      );
+    }
+
     for (int i = 0; i < mutuals.length; i++) {
       final user = mutuals[i];
-      final seed = user.username.hashCode.abs();
-      final rng = math.Random(seed);
-
-      double nx = 0.5, ny = 0.5;
-      for (int attempt = 0; attempt < 12; attempt++) {
-        nx = 0.05 + rng.nextDouble() * 0.90;
-        ny = 0.12 + rng.nextDouble() * 0.76; // 최소 12% — drift + orbR 여유 확보
-        final ddx = (nx - 0.5) / 0.22;
-        final ddy = (ny - 0.5) / 0.12;
-        if (ddx * ddx + ddy * ddy > 1.0) break;
-      }
-
-      final driftAmp = 5.0 + rng.nextDouble() * 8.0;
-      final phX = rng.nextDouble() * 2 * math.pi;
-      final phY = rng.nextDouble() * 2 * math.pi;
-      final orbR = 4.0 + rng.nextDouble() * 26.0;
-
-      final cx = nx * size.width;
-      final cy = ny * size.height;
-      final dx = driftAmp * math.sin(tp + phX);
-      final dy = driftAmp * math.cos(tp + phY);
-
-      final top = (cy + dy - orbR).clamp(0.0, size.height - orbR * 2);
-      final left = cx + dx - orbR;
-
-      widgets.add(
-        Positioned(
-          left: left,
-          top: top,
-          child: _SingleNamedOrb(radius: orbR),
-        ),
-      );
-
-      // 이름 레이블 — social 상태일 때만 페이드인
-      widgets.add(
-        Positioned(
-          left: cx + dx - 36,
-          top: top + orbR * 2 + 5,
-          width: 72,
-          child: AnimatedOpacity(
-            opacity: showNames ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOut,
-            child: Text(
-              user.displayName,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: _kGreen.withValues(alpha: 0.90),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                letterSpacing: 0.2,
-                fontFamily: _kFont,
-              ),
-            ),
-          ),
-        ),
+      _addOrb(
+        widgets: widgets,
+        size: size,
+        tp: tp,
+        seed: user.username.hashCode.abs(),
+        radiusBase: 4.0,
+        radiusRange: 26.0,
+        label: user.displayName,
+        labelColor: _kGreen.withValues(alpha: 0.90),
+        orbColor: _kGreen,
+        orbAlpha: 1.0,
       );
     }
 
     return Stack(fit: StackFit.expand, children: widgets);
   }
+
+  void _addOrb({
+    required List<Widget> widgets,
+    required Size size,
+    required double tp,
+    required int seed,
+    required double radiusBase,
+    required double radiusRange,
+    required String label,
+    required Color labelColor,
+    required Color orbColor,
+    required double orbAlpha,
+  }) {
+    final rng = math.Random(seed);
+
+    double nx = 0.5, ny = 0.5;
+    for (int attempt = 0; attempt < 12; attempt++) {
+      nx = 0.05 + rng.nextDouble() * 0.90;
+      ny = 0.12 + rng.nextDouble() * 0.76; // 최소 12% — drift + orbR 여유 확보
+      final ddx = (nx - 0.5) / 0.22;
+      final ddy = (ny - 0.5) / 0.12;
+      if (ddx * ddx + ddy * ddy > 1.0) break;
+    }
+
+    final driftAmp = 5.0 + rng.nextDouble() * 8.0;
+    final phX = rng.nextDouble() * 2 * math.pi;
+    final phY = rng.nextDouble() * 2 * math.pi;
+    final orbR = radiusBase + rng.nextDouble() * radiusRange;
+
+    final cx = nx * size.width;
+    final cy = ny * size.height;
+    final dx = driftAmp * math.sin(tp + phX);
+    final dy = driftAmp * math.cos(tp + phY);
+
+    final top = (cy + dy - orbR).clamp(0.0, size.height - orbR * 2);
+    final left = cx + dx - orbR;
+
+    widgets.add(
+      Positioned(
+        left: left,
+        top: top,
+        child: _SingleNamedOrb(radius: orbR, color: orbColor, alpha: orbAlpha),
+      ),
+    );
+
+    widgets.add(
+      Positioned(
+        left: cx + dx - 36,
+        top: top + orbR * 2 + 5,
+        width: 72,
+        child: AnimatedOpacity(
+          opacity: showNames ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: labelColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0,
+              fontFamily: _kFont,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _SingleNamedOrb extends StatelessWidget {
   final double radius;
+  final Color color;
+  final double alpha;
 
-  const _SingleNamedOrb({required this.radius});
+  const _SingleNamedOrb({
+    required this.radius,
+    this.color = _kGreen,
+    this.alpha = 1.0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1227,14 +1363,23 @@ class _SingleNamedOrb extends StatelessWidget {
     return SizedBox(
       width: d,
       height: d,
-      child: CustomPaint(painter: _OrbRingPainter(radius: radius)),
+      child: CustomPaint(
+        painter: _OrbRingPainter(radius: radius, color: color, alpha: alpha),
+      ),
     );
   }
 }
 
 class _OrbRingPainter extends CustomPainter {
   final double radius;
-  const _OrbRingPainter({required this.radius});
+  final Color color;
+  final double alpha;
+
+  const _OrbRingPainter({
+    required this.radius,
+    this.color = _kGreen,
+    this.alpha = 1.0,
+  });
 
   static const _darkGreen = Color(0xFF1A3B1A);
 
@@ -1243,20 +1388,33 @@ class _OrbRingPainter extends CustomPainter {
     final c = Offset(size.width / 2, size.height / 2);
 
     if (radius < 5) {
-      canvas.drawCircle(c, radius, Paint()..color = _kGreen);
+      canvas.drawCircle(
+        c,
+        radius,
+        Paint()..color = color.withValues(alpha: alpha),
+      );
       return;
     }
 
-    // 어두운 녹색 채움 (외곽)
-    canvas.drawCircle(c, radius, Paint()..color = _darkGreen);
+    final outerColor = color == _kGreen ? _darkGreen : color;
+    canvas.drawCircle(
+      c,
+      radius,
+      Paint()..color = outerColor.withValues(alpha: alpha),
+    );
 
     // 밝은 녹색 중심
     final centerR = radius >= 18 ? radius * 0.40 : radius * 0.45;
-    canvas.drawCircle(c, centerR, Paint()..color = _kGreen);
+    canvas.drawCircle(
+      c,
+      centerR,
+      Paint()..color = color.withValues(alpha: alpha),
+    );
   }
 
   @override
-  bool shouldRepaint(_OrbRingPainter old) => old.radius != radius;
+  bool shouldRepaint(_OrbRingPainter old) =>
+      old.radius != radius || old.color != color || old.alpha != alpha;
 }
 
 // ─── 배경 (순수 블랙) ──────────────────────────────────────────────────────
@@ -2576,6 +2734,9 @@ class _TodaysTopicOverlay extends StatefulWidget {
   final String bookTitle;
   final String bookAuthor;
   final String? coverUrl;
+  final int currentPage;
+  final int totalPages;
+  final List<SessionPromptSeed> promptSeeds;
   final Color accentColor;
   final VoidCallback onStart;
 
@@ -2583,6 +2744,9 @@ class _TodaysTopicOverlay extends StatefulWidget {
     required this.bookTitle,
     required this.bookAuthor,
     this.coverUrl,
+    required this.currentPage,
+    required this.totalPages,
+    required this.promptSeeds,
     required this.accentColor,
     required this.onStart,
   });
@@ -2704,8 +2868,12 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                                 ),
                                 const SizedBox(height: 34),
                                 _SessionEntryQuestionButton(
-                                  label: _sessionEntryQuestion(
-                                    widget.bookTitle,
+                                  label: sessionEntryPrompt(
+                                    bookTitle: widget.bookTitle,
+                                    currentPage: widget.currentPage,
+                                    totalPages: widget.totalPages,
+                                    now: DateTime.now(),
+                                    seeds: widget.promptSeeds,
                                   ),
                                   accentColor: widget.accentColor,
                                 ),
@@ -2730,13 +2898,6 @@ String _sessionEntryBookMeta(String author) {
   final trimmed = author.trim();
   if (trimmed.isEmpty) return '2022';
   return '$trimmed | 2022';
-}
-
-String _sessionEntryQuestion(String bookTitle) {
-  if (bookTitle.contains('채식주의자')) {
-    return '영혜는 왜 채식을 결심했을까요?';
-  }
-  return '이 책은 어떤 질문을 남길까요?';
 }
 
 class _SessionEntryBadge extends StatelessWidget {
@@ -2795,8 +2956,7 @@ class _SessionEntryQuestionButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: TextStyle(
           color: accentColor,
           fontSize: 16,
@@ -2868,17 +3028,6 @@ class _SessionEntryFireflies extends StatelessWidget {
       },
     );
   }
-}
-
-Color _sessionEntryAccent(Color? source) {
-  if (source == null) return const Color(0xFF8DBBFF);
-  final hsl = HSLColor.fromColor(source);
-  final lightness = hsl.lightness.clamp(0.62, 0.78);
-  final saturation = hsl.saturation.clamp(0.35, 0.85);
-  return hsl
-      .withLightness(lightness.toDouble())
-      .withSaturation(saturation.toDouble())
-      .toColor();
 }
 
 // ─── 세션 UI 레이어 — 부드러운 페이드인/아웃 ─────────────────────────────────
@@ -4913,7 +5062,9 @@ class _SheetOrb extends StatelessWidget {
     return SizedBox(
       width: r * 2,
       height: r * 2,
-      child: CustomPaint(painter: _OrbRingPainter(radius: r)),
+      child: CustomPaint(
+        painter: _OrbRingPainter(radius: r, color: _kGreen, alpha: 1),
+      ),
     );
   }
 }

@@ -582,6 +582,38 @@ class DbService {
     return List<Map<String, dynamic>>.from(res);
   }
 
+  /// 세션 진입 화두 생성용 후보.
+  ///
+  /// ISBN이 있으면 전체 독자의 같은 책 문장 뷰를 우선 보고, 없으면 현재 책 id로
+  /// 저장된 문장을 본다. 호출부가 문장 중복/생각 유무로 다시 랭킹한다.
+  Future<List<Map<String, dynamic>>> fetchSessionPromptCandidates({
+    String? bookId,
+    String? isbn13,
+  }) async {
+    final isbn = isbn13?.trim();
+    if (isbn != null && isbn.isNotEmpty) {
+      final rows = await supabase
+          .from('global_book_sentences')
+          .select('content, thought, like_count, created_at')
+          .eq('isbn13', isbn)
+          .order('like_count', ascending: false)
+          .order('created_at', ascending: false)
+          .limit(60);
+      final list = List<Map<String, dynamic>>.from(rows);
+      if (list.isNotEmpty) return list;
+    }
+
+    final id = bookId?.trim();
+    if (id == null || id.isEmpty || !_uuidLike.hasMatch(id)) return const [];
+    final rows = await supabase
+        .from('sentences')
+        .select('content, thought, created_at')
+        .eq('book_id', id)
+        .order('created_at', ascending: false)
+        .limit(80);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   /// 겹문장(나 ∩ 팔로잉, 같은 책) 판정용 후보 문장.
   ///
   /// exact-match 서버 쿼리(findOverlappingSentences)와 달리 부분 일치까지

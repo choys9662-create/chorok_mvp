@@ -563,6 +563,17 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                           ),
                           child: _SentenceHeroText(data: d),
                         ),
+
+                        // 수집자 본인 생각 — 문장과 함께 노출 (겹문장 그룹은
+                        // 아래 목록에서 따로 보여주므로 여기선 제외).
+                        if (!d.isOverlapGroup &&
+                            (collectorThought?.isNotEmpty ?? false)) ...[
+                          const SizedBox(height: 12),
+                          _CollectorThought(
+                            username: d.collectorUsername ?? '독자',
+                            thought: collectorThought!,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -841,6 +852,57 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 문장을 수집한 사람 본인의 생각. 히어로 문장 바로 아래에 함께 노출된다.
+class _CollectorThought extends StatelessWidget {
+  final String username;
+  final String thought;
+
+  const _CollectorThought({required this.username, required this.thought});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
+      decoration: AppTheme.smoothBox(
+        color: context.appPrimaryAccent.withValues(alpha: 0.06),
+        radius: 10,
+        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.edit_note_rounded,
+                size: 18,
+                color: context.appPrimaryAccent,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$username의 생각',
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            thought,
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextPrimary,
+              height: 1.6,
             ),
           ),
         ],

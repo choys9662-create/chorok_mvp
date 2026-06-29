@@ -15,56 +15,20 @@ class ForestLockLayer extends ConsumerStatefulWidget {
   ConsumerState<ForestLockLayer> createState() => _ForestLockLayerState();
 }
 
-class _ForestLockLayerState extends ConsumerState<ForestLockLayer>
-    with WidgetsBindingObserver {
+class _ForestLockLayerState extends ConsumerState<ForestLockLayer> {
   bool _showAttack = false;
-  EscapeAttackTrigger _attackTrigger = EscapeAttackTrigger.escapeAttempt;
-  DateTime? _backgroundedAt;
-  int? _absentSeconds;
   bool _restoringDetox = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _restoreDetoxIfNeeded(),
     );
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final timer = ref.read(timerProvider);
-    if (state == AppLifecycleState.paused && timer.isRunning) {
-      _backgroundedAt = DateTime.now();
-    } else if (state == AppLifecycleState.resumed) {
-      final backgroundedAt = _backgroundedAt;
-      if (backgroundedAt != null) {
-        final seconds = DateTime.now().difference(backgroundedAt).inSeconds;
-        _backgroundedAt = null;
-        if (seconds >= 5) {
-          setState(() {
-            _absentSeconds = seconds;
-            _attackTrigger = EscapeAttackTrigger.backgroundReturn;
-            _showAttack = true;
-          });
-        }
-      }
-    }
-  }
-
   void _onEscapeAttempt() {
-    setState(() {
-      _absentSeconds = null;
-      _attackTrigger = EscapeAttackTrigger.escapeAttempt;
-      _showAttack = true;
-    });
+    setState(() => _showAttack = true);
   }
 
   void _dismissAttack() {
@@ -102,11 +66,7 @@ class _ForestLockLayerState extends ConsumerState<ForestLockLayer>
           widget.child,
           if (_showAttack)
             Positioned.fill(
-              child: EscapeAttackOverlay(
-                trigger: _attackTrigger,
-                absentSeconds: _absentSeconds,
-                onDismiss: _dismissAttack,
-              ),
+              child: EscapeAttackOverlay(onDismiss: _dismissAttack),
             ),
         ],
       ),
