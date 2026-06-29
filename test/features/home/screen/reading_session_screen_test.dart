@@ -88,7 +88,10 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
   Future<int> nearbyReaderCount({int radiusMeters = 500}) async => 0;
 }
 
-Widget _buildScreen({List<Map<String, dynamic>> promptCandidates = const []}) {
+Widget _buildScreen({
+  List<Map<String, dynamic>> promptCandidates = const [],
+  List<Override> overrides = const [],
+}) {
   const selectedBook = Book(
     id: 'guns-germs-steel',
     title: '총균쇠',
@@ -125,7 +128,9 @@ Widget _buildScreen({List<Map<String, dynamic>> promptCandidates = const []}) {
           books: const <String, ReadingPresenceInfo>{},
         ),
       ),
+      mutualFollowProvider.overrideWith((ref) async => const <UserProfile>[]),
       readingStreakProvider.overrideWith((ref) async => 0),
+      ...overrides,
     ],
     child: MaterialApp(
       theme: AppTheme.light,
@@ -231,6 +236,45 @@ void main() {
     expect(timer.session?.bookTitle, '총균쇠');
     expect(timer.session?.startPage, 42);
     expect(find.textContaining('앱 내 집중 모드로 시작했어요'), findsOneWidget);
+  });
+
+  testWidgets('라이브 포레스트는 지금 같이 읽는(active) 맞팔만 반딧불로 띄운다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const mago = UserProfile(id: 'friend-1', username: 'mago', displayName: '마고');
+    const idle = UserProfile(id: 'friend-2', username: 'idle', displayName: '안읽는친구');
+
+    await tester.pumpWidget(
+      _buildScreen(
+        overrides: [
+          // mago만 active(지금 읽는 중), idle은 맞팔이지만 presence 없음.
+          sessionFireflyProvider.overrideWith(
+            (ref) async => (
+              mutualCount: 1,
+              nearbyCount: 0,
+              mutuals: const [mago],
+              books: const <String, ReadingPresenceInfo>{},
+            ),
+          ),
+          mutualFollowProvider.overrideWith((ref) async => const [mago, idle]),
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('마고'), findsOneWidget);
+    expect(find.text('안읽는친구'), findsNothing); // active 아닌 맞팔은 안 뜬다
   });
 
   testWidgets('iOS Screen Time 권한이 거절되면 디톡스 세션을 시작하지 않는다', (tester) async {

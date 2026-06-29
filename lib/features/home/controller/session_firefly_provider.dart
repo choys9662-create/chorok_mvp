@@ -67,7 +67,12 @@ final sessionFireflyProvider =
       );
       final active = mutuals.where((m) => books.containsKey(m.id)).toList();
       // "이웃" = 내 현재 위치 기준 반경 500m 안에서 지금 읽는 중인 독자.
-      final nearbyCount = await presence.nearbyReaderCount();
+      var nearbyCount = 0;
+      try {
+        nearbyCount = await presence.nearbyReaderCount();
+      } catch (_) {
+        // ponytail: nearby is optional; do not hide live mutual friends if the RPC is unavailable.
+      }
       return (
         mutualCount: active.length,
         nearbyCount: nearbyCount,
@@ -75,3 +80,21 @@ final sessionFireflyProvider =
         books: books,
       );
     });
+
+final mutualFollowProvider = FutureProvider<List<UserProfile>>((ref) async {
+  ref.watch(followMutationVersionProvider);
+
+  if (kUseMock) {
+    return _kMockMutuals
+        .map(
+          (m) => UserProfile(
+            id: m.username,
+            username: m.username,
+            displayName: m.displayName,
+          ),
+        )
+        .toList();
+  }
+
+  return ref.read(followRepositoryProvider).getMutualFollows();
+});

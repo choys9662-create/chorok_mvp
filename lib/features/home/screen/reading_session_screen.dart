@@ -175,12 +175,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     _brightnessIdleTimer = Timer(_brightnessIdle, _dimScreen);
     _dimmed = false;
     try {
-      final base = _baseBrightness;
-      if (base == null) {
-        await ScreenBrightness().resetApplicationScreenBrightness();
-        return;
-      }
-      await ScreenBrightness().setApplicationScreenBrightness(base);
+      // 터치하면 앱 밝기 오버라이드를 풀어 휴대폰 원래(시스템) 밝기로 되돌린다.
+      await ScreenBrightness().resetApplicationScreenBrightness();
     } catch (_) {
       // 시뮬레이터·웹 등 밝기 제어 미지원 환경은 조용히 무시.
     }
@@ -661,7 +657,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
     _moveCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 40),
+      duration: const Duration(seconds: 120),
     )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1012,6 +1008,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final book =
         _stoppedBook ?? _lockResolvedSessionBook(timer: timer, books: books);
     final firefly = ref.watch(sessionFireflyProvider).valueOrNull;
+    // 오브로 흩뿌리는 친구 = '지금 같이 읽는 맞팔'만. 전체 맞팔(mutualFollowProvider)을
+    // 뿌리면 안 읽는 친구가 반딧불로 떠서 CTA 수("함께 읽는 N명")·시트와 안 맞는다.
     final mutuals = firefly?.mutuals ?? const [];
     final nearbyCount = firefly?.nearbyCount ?? 0;
     final neighborCount = math.max(0, nearbyCount);
@@ -1288,27 +1286,31 @@ class _NamedReaderOrbs extends StatelessWidget {
   }) {
     final rng = math.Random(seed);
 
-    double nx = 0.5, ny = 0.5;
-    for (int attempt = 0; attempt < 12; attempt++) {
-      nx = 0.05 + rng.nextDouble() * 0.90;
-      ny = 0.12 + rng.nextDouble() * 0.76; // 최소 12% — drift + orbR 여유 확보
-      final ddx = (nx - 0.5) / 0.22;
-      final ddy = (ny - 0.5) / 0.12;
-      if (ddx * ddx + ddy * ddy > 1.0) break;
-    }
-
-    final driftAmp = 5.0 + rng.nextDouble() * 8.0;
-    final phX = rng.nextDouble() * 2 * math.pi;
-    final phY = rng.nextDouble() * 2 * math.pi;
     final orbR = radiusBase + rng.nextDouble() * radiusRange;
 
+    // 서로 다른 정수 주파수 사인의 합 → 궤도처럼 안 보이고 무작위하게 떠돈다.
+    // 정수 주파수라 40초 루프 이음새(1→0)에서 위치가 안 튄다.
+    // span: 가장자리 여백만 남기고(위 타이머·아래 CTA 침범 방지) 전 영역을 훑는다.
+    double wander(int axisSalt, double span) {
+      final r = math.Random(seed ^ axisSalt);
+      double sum = 0, ampTotal = 0;
+      for (int h = 0; h < 3; h++) {
+        final freq = 1 + r.nextInt(4); // 1~4
+        final amp = 1.0 / (h + 1); // 1, 0.5, 0.33 — 저주파가 큰 흐름을 만든다
+        final ph = r.nextDouble() * 2 * math.pi;
+        sum += amp * math.sin(tp * freq + ph);
+        ampTotal += amp;
+      }
+      return 0.5 + span * (sum / ampTotal);
+    }
+
+    final nx = wander(0x9e3779b9, 0.45);
+    final ny = wander(0x85ebca6b, 0.40);
     final cx = nx * size.width;
     final cy = ny * size.height;
-    final dx = driftAmp * math.sin(tp + phX);
-    final dy = driftAmp * math.cos(tp + phY);
 
-    final top = (cy + dy - orbR).clamp(0.0, size.height - orbR * 2);
-    final left = cx + dx - orbR;
+    final top = (cy - orbR).clamp(0.0, size.height - orbR * 2);
+    final left = cx - orbR;
 
     widgets.add(
       Positioned(
@@ -1320,7 +1322,7 @@ class _NamedReaderOrbs extends StatelessWidget {
 
     widgets.add(
       Positioned(
-        left: cx + dx - 36,
+        left: cx - 36,
         top: top + orbR * 2 + 5,
         width: 72,
         child: AnimatedOpacity(
