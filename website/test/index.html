@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>독서 유형 테스트 — 나는 어떤 독서가일까?</title>
+    <meta
+      name="description"
+      content="16개 질문으로 알아보는 나의 독서 유형. 나는 문장을 모으는 사람일까, 생각을 쌓는 사람일까?"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="독서 유형 테스트 — 나는 어떤 독서가일까?" />
+    <meta
+      property="og:description"
+      content="1분 만에 알아보는 나의 독서 유형. 16가지 유형 중 당신은?"
+    />
+    <meta property="og:image" content="./og/default.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./test.css" />
+    <script src="./types.js"></script>
+    <script defer src="./test.js"></script>
+  </head>
+  <body>
+    <main class="quiz-shell" id="app">
+      <!-- 인트로 -->
+      <section class="view view-intro" data-view="intro">
+        <p class="eyebrow">READING TYPE TEST</p>
+        <h1>나는 어떤<br />독서가일까?</h1>
+        <p class="intro-sub">
+          16개의 질문으로 알아보는 나의 독서 유형.<br />
+          약 1분이면 충분해요.
+        </p>
+        <button class="primary-btn" id="startBtn" type="button">시작하기</button>
+        <p class="intro-note">16가지 유형 · 회원가입 없음</p>
+      </section>
+
+      <!-- 질문 -->
+      <section class="view view-quiz hidden" data-view="quiz">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="q-count" id="qCount">1 / 16</p>
+        <h2 class="q-text" id="qText"></h2>
+        <div class="q-options">
+          <button class="option-btn" id="optA" type="button"></button>
+          <button class="option-btn" id="optB" type="button"></button>
+        </div>
+        <button class="back-btn" id="backBtn" type="button">← 이전</button>
+      </section>
+
+      <!-- 결과 -->
+      <section class="view view-result hidden" data-view="result">
+        <p class="eyebrow">MY READING TYPE</p>
+        <p class="result-code" id="resultCode"></p>
+        <h2 class="result-name" id="resultName"></h2>
+        <p class="result-tagline" id="resultTagline"></p>
+        <p class="result-desc" id="resultDesc"></p>
+
+        <div class="axis-bars" id="axisBars"></div>
+
+        <div class="result-block">
+          <h3>이 유형에게 잘 맞는 독서법</h3>
+          <ol id="resultTips"></ol>
+        </div>
+
+        <div class="result-block mate-block">
+          <h3>나와 잘 맞는 독서메이트</h3>
+          <p id="resultMate"></p>
+        </div>
+
+        <div class="result-actions">
+          <button class="primary-btn" id="shareBtn" type="button">
+            결과 공유하기
+          </button>
+          <button class="ghost-btn" id="retryBtn" type="button">
+            다시 하기
+          </button>
+        </div>
+
+        <a class="cta-card" id="ctaLink" href="https://instagram.com/" target="_blank" rel="noopener">
+          <p class="cta-kicker">🌱 곧 만나요</p>
+          <strong>문장을 모으는 독서 앱, 초록</strong>
+          <span>방해 없는 독서 시간과 겹치는 문장의 발견. 출시 소식 받아보기 →</span>
+        </a>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
