@@ -44,6 +44,8 @@ class _FeedActivityLoader {
       _sentenceBatches(me, followingIds),
       _sessionCompletes(me, followingIds),
       _bookCompletes(me, followingIds),
+      _wantToReadEvents(me, followingIds),
+      _readingStartEvents(me, followingIds),
     ]);
 
     final activities = results.expand((e) => e).toList()
@@ -62,6 +64,8 @@ class _FeedActivityLoader {
         final type = switch (data['event_type']) {
           'sentence_batch' => FeedActivityType.sentenceBatch,
           'session_complete' => FeedActivityType.sessionComplete,
+          'want_to_read' => FeedActivityType.wantToRead,
+          'reading_start' => FeedActivityType.readingStart,
           _ => FeedActivityType.bookComplete,
         };
         final sentences = (data['sentences'] as List? ?? const [])
@@ -345,6 +349,110 @@ class _FeedActivityLoader {
       return const [];
     }
   }
+  // ── 읽고 싶은 책 추가 ────────────────────────────────────────────────────────
+  Future<List<FeedActivity>> _wantToReadEvents(
+    String me,
+    Set<String>? followingIds,
+  ) async {
+    try {
+      var query = client
+          .from('books')
+          .select('id, user_id, title, author, cover_url, isbn, created_at')
+          .eq('status', 'wantToRead');
+      if (followingIds != null) {
+        query = query.inFilter('user_id', followingIds.toList());
+      } else {
+        query = query.neq('user_id', me);
+      }
+      final rows =
+          await query.order('created_at', ascending: false).limit(30) as List;
+      if (rows.isEmpty) return const [];
+
+      final userIds = rows
+          .map((r) => (r as Map<String, dynamic>)['user_id'] as String?)
+          .whereType<String>()
+          .toSet();
+      final profiles = await _profiles(userIds);
+
+      return rows.map((r) {
+        final m = r as Map<String, dynamic>;
+        final profile = profiles[m['user_id']];
+        final occurredAt =
+            DateTime.tryParse(m['created_at'] as String? ?? '') ??
+            DateTime.now();
+        return FeedActivity(
+          id: 'wr_${m['id']}',
+          type: FeedActivityType.wantToRead,
+          username: profile?.name ?? '독자',
+          handle: profile?.handle,
+          avatarUrl: profile?.avatarUrl,
+          isFriend: followingIds != null,
+          bookTitle: m['title'] as String? ?? '알 수 없는 책',
+          bookAuthor: m['author'] as String? ?? '',
+          coverUrl: m['cover_url'] as String?,
+          isbn13: m['isbn'] as String?,
+          occurredAt: occurredAt,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('feed activity: want-to-read events failed: $e');
+      return const [];
+    }
+  }
+
+  // ── 읽기 시작 ────────────────────────────────────────────────────────────
+  Future<List<FeedActivity>> _readingStartEvents(
+    String me,
+    Set<String>? followingIds,
+  ) async {
+    try {
+      var query = client
+          .from('books')
+          .select(
+            'id, user_id, title, author, cover_url, isbn, reading_started_at',
+          )
+          .not('reading_started_at', 'is', null);
+      if (followingIds != null) {
+        query = query.inFilter('user_id', followingIds.toList());
+      } else {
+        query = query.neq('user_id', me);
+      }
+      final rows =
+          await query.order('reading_started_at', ascending: false).limit(30)
+              as List;
+      if (rows.isEmpty) return const [];
+
+      final userIds = rows
+          .map((r) => (r as Map<String, dynamic>)['user_id'] as String?)
+          .whereType<String>()
+          .toSet();
+      final profiles = await _profiles(userIds);
+
+      return rows.map((r) {
+        final m = r as Map<String, dynamic>;
+        final profile = profiles[m['user_id']];
+        final occurredAt =
+            DateTime.tryParse(m['reading_started_at'] as String? ?? '') ??
+            DateTime.now();
+        return FeedActivity(
+          id: 'rs_${m['id']}',
+          type: FeedActivityType.readingStart,
+          username: profile?.name ?? '독자',
+          handle: profile?.handle,
+          avatarUrl: profile?.avatarUrl,
+          isFriend: followingIds != null,
+          bookTitle: m['title'] as String? ?? '알 수 없는 책',
+          bookAuthor: m['author'] as String? ?? '',
+          coverUrl: m['cover_url'] as String?,
+          isbn13: m['isbn'] as String?,
+          occurredAt: occurredAt,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('feed activity: reading start events failed: $e');
+      return const [];
+    }
+  }
 }
 
 // ─── 목업 데이터 ──────────────────────────────────────────────────────────────
@@ -454,6 +562,29 @@ List<FeedActivity> _mockActivities() {
           'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
       occurredAt: now.subtract(const Duration(hours: 6)),
       progressPercent: 100,
+    ),
+    FeedActivity(
+      id: 'm7',
+      type: FeedActivityType.readingStart,
+      username: '해진짱짱',
+      handle: 'haejin_jjang',
+      isFriend: true,
+      bookTitle: '아몬드',
+      bookAuthor: '손원평',
+      coverUrl:
+          'https://image.aladin.co.kr/product/31893/32/cover500/k212833749_2.jpg',
+      occurredAt: now.subtract(const Duration(hours: 8)),
+    ),
+    FeedActivity(
+      id: 'm8',
+      type: FeedActivityType.wantToRead,
+      username: 'leafy_reader',
+      isFriend: false,
+      bookTitle: '소년이 온다',
+      bookAuthor: '한강',
+      coverUrl:
+          'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+      occurredAt: now.subtract(const Duration(hours: 10)),
     ),
   ];
 }

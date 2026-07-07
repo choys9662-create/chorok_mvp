@@ -17,7 +17,15 @@ import '../model/feed_activity.dart';
 import 'sentence_detail_screen.dart';
 
 List<BoxShadow>? _feedCardShadow(BuildContext context) {
-  if (Theme.of(context).brightness == Brightness.dark) return null;
+  if (Theme.of(context).brightness == Brightness.dark) {
+    return [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.28),
+        blurRadius: 14,
+        offset: const Offset(0, 8),
+      ),
+    ];
+  }
   return [
     BoxShadow(
       color: Colors.black.withValues(alpha: 0.08),
@@ -38,6 +46,10 @@ class FeedScreen extends ConsumerStatefulWidget {
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   FeedScope _scope = FeedScope.friends;
   bool _isRefreshing = false;
+  static const Color _feedBg = Colors.black;
+  static const Color _feedCard = Color(0xFF111512);
+  static const Color _feedInset = Color(0xFF171B18);
+  static const Color _feedBorder = Color(0xFF3C443D);
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
@@ -56,20 +68,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     setState(() => _scope = scope);
   }
 
-  /// 오늘(자정 이후) 문장을 기록한 친구 수.
-  int _recordersToday(List<FeedActivity> activities) {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final names = <String>{};
-    for (final a in activities) {
-      if (a.type == FeedActivityType.sentenceBatch &&
-          a.occurredAt.isAfter(todayStart)) {
-        names.add(a.username);
-      }
-    }
-    return names.length;
-  }
-
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(feedActivityProvider(_scope));
@@ -86,10 +84,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         !isLoading &&
         !async.hasError &&
         overlaps.isNotEmpty;
-    final recordersToday = _recordersToday(activities);
 
     return Scaffold(
-      backgroundColor: context.appBg,
+      backgroundColor: _feedBg,
       body: Column(
         children: [
           SizedBox(height: topPad + 8),
@@ -166,21 +163,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         ),
                       ),
                     ],
-                    // ── 친구의 초서 섹션 ──────────────────────
                     if (activities.isNotEmpty) ...[
-                      if (_scope == FeedScope.friends)
-                        SliverToBoxAdapter(
-                          child: _SectionHeader(
-                            title: '친구의 초서',
-                            subtitle: recordersToday > 0
-                                ? '오늘 $recordersToday명이 문장을 기록했어요'
-                                : null,
-                          ),
-                        ),
                       SliverPadding(
                         padding: EdgeInsets.fromLTRB(
                           16,
-                          _scope == FeedScope.friends ? 0 : 12,
+                          showOverlapSection ? 0 : 12,
                           16,
                           24,
                         ),
@@ -229,14 +216,9 @@ class _ScopeToggle extends StatelessWidget {
           width: double.infinity,
           height: 48,
           child: Center(
-            child: Container(
+            child: SizedBox(
               width: 132,
               height: 36,
-              padding: const EdgeInsets.all(3),
-              decoration: AppTheme.smoothPill(
-                color: context.appCard,
-                side: BorderSide(color: context.appBorderSubtle),
-              ),
               child: Row(
                 children: [
                   Expanded(
@@ -309,21 +291,20 @@ class _ScopeTab extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(horizontal: 3),
         alignment: Alignment.center,
         decoration: AppTheme.smoothPill(
-          color: selected
-              ? context.appPrimaryAccent.withValues(alpha: 0.14)
-              : Colors.transparent,
+          color: selected ? const Color(0xFF1A1E1A) : const Color(0xFF0B0E0B),
           side: selected
-              ? BorderSide(color: context.appPrimaryAccent, width: 1)
-              : BorderSide.none,
+              ? BorderSide(color: Colors.white.withValues(alpha: 0.86))
+              : BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Text(
           label,
           style: AppTheme.bodySmall.copyWith(
             color: selected
-                ? context.appPrimaryAccent
-                : context.appTextTertiary,
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.white.withValues(alpha: 0.24),
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -341,12 +322,12 @@ class _ActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: AppTheme.radiusLG,
-        side: BorderSide(color: context.appBorderSubtle),
+        color: _FeedScreenState._feedCard,
+        radius: 8,
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.04)),
         shadows: _feedCardShadow(context),
       ),
-      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -361,25 +342,17 @@ class _ActivityCard extends StatelessWidget {
     switch (activity.type) {
       case FeedActivityType.sentenceBatch:
         return [
-          const SizedBox(height: 12),
+          const SizedBox(height: 13),
           _SentenceBatchBody(activity: activity),
         ];
       case FeedActivityType.sessionComplete:
-        return [
-          const SizedBox(height: 14),
-          _MetricRow(
-            icon: Icons.schedule_rounded,
-            value: activity.formattedDuration,
-          ),
-        ];
+        return const [];
       case FeedActivityType.bookComplete:
-        return [
-          const SizedBox(height: 14),
-          _MetricRow(
-            icon: Icons.check_circle_outline_rounded,
-            value: '${activity.progressPercent}%',
-          ),
-        ];
+        return const [];
+      case FeedActivityType.wantToRead:
+        return const [];
+      case FeedActivityType.readingStart:
+        return const [];
     }
   }
 }
@@ -457,6 +430,8 @@ class _OverlapNotificationCard extends StatelessWidget {
         overlapHighlight: overlap.mergedHighlight,
         bookId: overlap.bookId,
         globalBookId: overlap.globalBookId,
+        coverUrl: overlap.coverUrl,
+        isbn13: overlap.isbn13,
       ),
     );
   }
@@ -662,9 +637,21 @@ class _ActivityHeader extends StatelessWidget {
               Text(
                 time_fmt.formatRelative(a.occurredAt),
                 style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
+                  color: Colors.white.withValues(alpha: 0.36),
                 ),
               ),
+              if (a.type == FeedActivityType.sessionComplete ||
+                  a.type == FeedActivityType.bookComplete) ...[
+                const SizedBox(height: 30),
+                _MetricRow(
+                  icon: a.type == FeedActivityType.sessionComplete
+                      ? Icons.schedule_rounded
+                      : Icons.check_circle_outline_rounded,
+                  value: a.type == FeedActivityType.sessionComplete
+                      ? a.formattedDuration
+                      : '${a.progressPercent}%',
+                ),
+              ],
             ],
           ),
         ),
@@ -689,7 +676,7 @@ class _ActivityHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.captionLarge.copyWith(
-                          color: context.appTextSecondary,
+                          color: Colors.white.withValues(alpha: 0.82),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -703,7 +690,7 @@ class _ActivityHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.captionSmall.copyWith(
-                          color: context.appTextTertiary,
+                          color: Colors.white.withValues(alpha: 0.46),
                         ),
                       ),
                     ),
@@ -715,9 +702,9 @@ class _ActivityHeader extends StatelessWidget {
                   gradientIndex:
                       a.bookTitle.hashCode.abs() %
                       AppTheme.coverGradients.length,
-                  width: 38,
-                  height: 50,
-                  radius: 8,
+                  width: 53,
+                  height: 87,
+                  radius: 4,
                 ),
               ],
             ),
@@ -743,15 +730,15 @@ class _ActivityHeader extends StatelessWidget {
 
   Widget _titleText(BuildContext context, FeedActivity a) {
     final base = AppTheme.bodySmall.copyWith(
-      color: context.appTextSecondary,
+      color: Colors.white.withValues(alpha: 0.48),
       height: 1.35,
     );
     final name = base.copyWith(
-      color: context.appTextPrimary,
+      color: Colors.white.withValues(alpha: 0.72),
       fontWeight: FontWeight.w400,
     );
     final accent = base.copyWith(
-      color: context.appPrimaryAccent,
+      color: Colors.white.withValues(alpha: 0.72),
       fontWeight: FontWeight.w400,
     );
 
@@ -770,6 +757,12 @@ class _ActivityHeader extends StatelessWidget {
       case FeedActivityType.bookComplete:
         children = [const TextSpan(text: '님이 도서를 완독했어요')];
         break;
+      case FeedActivityType.wantToRead:
+        children = [const TextSpan(text: '님이 읽고 싶은 책으로 추가했어요')];
+        break;
+      case FeedActivityType.readingStart:
+        children = [const TextSpan(text: '님이 책을 읽기 시작했어요')];
+        break;
     }
 
     final showHandle =
@@ -784,7 +777,7 @@ class _ActivityHeader extends StatelessWidget {
           if (showHandle)
             TextSpan(
               text: ' @${a.handle}',
-              style: base.copyWith(color: context.appTextTertiary),
+              style: base.copyWith(color: Colors.white.withValues(alpha: 0.34)),
             ),
           ...children,
         ],
@@ -802,7 +795,7 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
     return CircleAvatar(
-      radius: 18,
+      radius: 14,
       backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.14),
       backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty)
           ? NetworkImage(avatarUrl!)
@@ -830,13 +823,19 @@ class _MetricRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 22, color: context.appTextSecondary),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: AppTheme.headingMedium.copyWith(
-            color: context.appTextPrimary,
-            fontWeight: FontWeight.w400,
+        Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.45)),
+        const SizedBox(width: 4),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTheme.headingMedium.copyWith(
+                color: Colors.white.withValues(alpha: 0.62),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
           ),
         ),
       ],
@@ -869,6 +868,8 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
         collectorUserHandle: widget.activity.handle,
         collectorThought: s.thought,
         sentenceId: s.id,
+        coverUrl: widget.activity.coverUrl,
+        isbn13: widget.activity.isbn13,
       ),
     );
   }
@@ -912,7 +913,7 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
                 child: Text(
                   _expanded ? '접기' : '$hiddenCount개 더보기',
                   style: AppTheme.captionLarge.copyWith(
-                    color: context.appTextTertiary,
+                    color: Colors.white.withValues(alpha: 0.36),
                   ),
                 ),
               ),
@@ -942,9 +943,9 @@ class _SentencePreview extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: AppTheme.smoothBox(
-              color: context.appCardElevated,
-              radius: AppTheme.radiusMD,
-              side: BorderSide(color: context.appBorderSubtle),
+              color: _FeedScreenState._feedInset,
+              radius: 6,
+              side: const BorderSide(color: _FeedScreenState._feedBorder),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,7 +956,7 @@ class _SentencePreview extends StatelessWidget {
                     child: Text(
                       '${s.pageNumber}',
                       style: AppTheme.captionSmall.copyWith(
-                        color: context.appTextTertiary,
+                        color: Colors.white.withValues(alpha: 0.32),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -966,7 +967,7 @@ class _SentencePreview extends StatelessWidget {
                   child: Text(
                     s.content,
                     style: AppTheme.bodySmall.copyWith(
-                      color: context.appTextPrimary,
+                      color: Colors.white.withValues(alpha: 0.66),
                       height: 1.55,
                     ),
                   ),
@@ -981,19 +982,19 @@ class _SentencePreview extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: ShapeDecoration(
-                color: context.appPrimaryAccent.withValues(alpha: 0.06),
+                color: _FeedScreenState._feedInset,
                 shape: SmoothRectangleBorder(
                   smoothness: 0.6,
                   side: BorderSide(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.55),
+                    color: context.appPrimaryAccent.withValues(alpha: 0.24),
                   ),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
               child: Text(
                 s.thought!,
                 style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextPrimary,
+                  color: context.appPrimaryAccent,
                   height: 1.55,
                 ),
                 maxLines: 3,

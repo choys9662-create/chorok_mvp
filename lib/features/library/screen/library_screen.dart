@@ -256,6 +256,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           onAddBook: () => ctx.push(AppConstants.routeSearch),
           onOpenStatus: (status) {
             HapticFeedback.selectionClick();
+            if (_isOwner && status == ReadingStatus.completed) {
+              ctx.push(AppConstants.routeCompletedBooks);
+              return;
+            }
             _showShelfSheetFor(ctx, status: status);
           },
           onOpenSentences: () {
@@ -619,6 +623,380 @@ class _OverlapSheet extends StatelessWidget {
   }
 }
 
+class CompletedBooksScreen extends ConsumerStatefulWidget {
+  const CompletedBooksScreen({super.key});
+
+  @override
+  ConsumerState<CompletedBooksScreen> createState() =>
+      _CompletedBooksScreenState();
+}
+
+class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
+  _LibraryViewMode _viewMode = _LibraryViewMode.list;
+
+  @override
+  Widget build(BuildContext context) {
+    final books =
+        ref
+            .watch(libraryProvider)
+            .where((book) => book.status == ReadingStatus.completed)
+            .toList()
+          ..sort((a, b) {
+            final aDate =
+                a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bDate =
+                b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return bDate.compareTo(aDate);
+          });
+
+    return Scaffold(
+      backgroundColor: context.appBg,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+                child: Row(
+                  children: [
+                    _CompletedIconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      label: '뒤로',
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '완독',
+                      style: AppTheme.headingLarge.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const Spacer(),
+                    const SizedBox(width: 40),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 44, 24, 10),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _CompletedViewSwitch(
+                    mode: _viewMode,
+                    onChanged: (mode) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _viewMode = mode);
+                    },
+                  ),
+                ),
+              ),
+            ),
+            if (books.isEmpty)
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: _CompletedEmpty(),
+              )
+            else if (_viewMode == _LibraryViewMode.list)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                sliver: SliverList.separated(
+                  itemCount: books.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (_, index) => _CompletedListRow(
+                    book: books[index],
+                    muted: index % 3 == 2,
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 112),
+                sliver: SliverGrid.builder(
+                  itemCount: books.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 0.44,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 30,
+                  ),
+                  itemBuilder: (_, index) =>
+                      _CompletedGridTile(book: books[index]),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedIconButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CompletedIconButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: context.appTextSecondary, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedViewSwitch extends StatelessWidget {
+  final _LibraryViewMode mode;
+  final ValueChanged<_LibraryViewMode> onChanged;
+
+  const _CompletedViewSwitch({required this.mode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.all(2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '날짜순',
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appTextSecondary,
+              height: 1,
+            ),
+          ),
+          const SizedBox(width: 8),
+          _ViewSwitchButton(
+            icon: Icons.view_module_rounded,
+            selected: mode == _LibraryViewMode.grid,
+            onTap: () => onChanged(_LibraryViewMode.grid),
+          ),
+          _ViewSwitchButton(
+            icon: Icons.view_list_rounded,
+            selected: mode == _LibraryViewMode.list,
+            onTap: () => onChanged(_LibraryViewMode.list),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewSwitchButton extends StatelessWidget {
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ViewSwitchButton({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 30,
+        height: 24,
+        child: Icon(
+          icon,
+          size: 22,
+          color: selected
+              ? context.appTextPrimary
+              : context.appTextTertiary.withValues(alpha: 0.7),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedListRow extends StatelessWidget {
+  final Book book;
+  final bool muted;
+
+  const _CompletedListRow({required this.book, required this.muted});
+
+  @override
+  Widget build(BuildContext context) {
+    final checkColor = muted
+        ? context.appTextTertiary.withValues(alpha: 0.65)
+        : context.appPrimaryAccent;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        pushBookInfo(context, book);
+      },
+      child: Container(
+        height: 88,
+        padding: const EdgeInsets.fromLTRB(10, 10, 18, 10),
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 8),
+        child: Row(
+          children: [
+            BookCover(
+              coverUrl: book.coverUrl,
+              gradientIndex: book.title.hashCode.abs(),
+              width: 50,
+              height: 68,
+              radius: 5,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: context.appTextPrimary,
+                      fontSize: 16,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    book.author,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appTextSecondary,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _shortDate(book.completedAt),
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextTertiary,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: checkColor,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                size: 17,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedGridTile extends StatelessWidget {
+  final Book book;
+
+  const _CompletedGridTile({required this.book});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        pushBookInfo(context, book);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 0.68,
+            child: BookCover(
+              coverUrl: book.coverUrl,
+              gradientIndex: book.title.hashCode.abs(),
+              radius: 5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            book.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.bodyMedium.copyWith(
+              color: context.appTextPrimary,
+              fontSize: 15,
+              height: 1.18,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            book.author,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appTextSecondary,
+              height: 1.2,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompletedEmpty extends StatelessWidget {
+  const _CompletedEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        '아직 완독한 책이 없어요',
+        style: AppTheme.bodyMedium.copyWith(color: context.appTextSecondary),
+      ),
+    );
+  }
+}
+
+String _shortDate(DateTime? date) {
+  if (date == null) return '';
+  final yy = (date.year % 100).toString().padLeft(2, '0');
+  final mm = date.month.toString().padLeft(2, '0');
+  final dd = date.day.toString().padLeft(2, '0');
+  return '$yy.$mm.$dd';
+}
+
 class _WatchaLibraryOverview extends StatelessWidget {
   final List<Book> books;
   final List<ReadingLog> logs;
@@ -668,7 +1046,12 @@ class _WatchaLibraryOverview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ReadingNowCard(books: books, isOwner: isOwner, onAddBook: onAddBook),
+        _ReadingNowCard(
+          books: books,
+          isOwner: isOwner,
+          onAddBook: onAddBook,
+          onOpenAll: () => onOpenStatus(ReadingStatus.reading),
+        ),
         const SizedBox(height: 16),
         _StatTilesRow(
           reading: reading,
@@ -729,11 +1112,13 @@ class _ReadingNowCard extends StatelessWidget {
   final List<Book> books;
   final bool isOwner;
   final VoidCallback onAddBook;
+  final VoidCallback onOpenAll;
 
   const _ReadingNowCard({
     required this.books,
     required this.isOwner,
     required this.onAddBook,
+    required this.onOpenAll,
   });
 
   @override
@@ -741,6 +1126,7 @@ class _ReadingNowCard extends StatelessWidget {
     final reading = books
         .where((b) => b.status == ReadingStatus.reading)
         .toList();
+    final visible = reading.take(3).toList();
     return _SectionBand(
       title: '읽고 있는 책',
       child: ForestAccentCard(
@@ -750,7 +1136,7 @@ class _ReadingNowCard extends StatelessWidget {
             ? _ReadingNowEmpty(isOwner: isOwner, onAddBook: onAddBook)
             : Column(
                 children: [
-                  for (var i = 0; i < reading.length; i++) ...[
+                  for (var i = 0; i < visible.length; i++) ...[
                     DecoratedBox(
                       decoration: AppTheme.smoothBox(
                         color: context.appCard,
@@ -758,10 +1144,32 @@ class _ReadingNowCard extends StatelessWidget {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(10),
-                        child: _ReadingNowRow(book: reading[i]),
+                        child: _ReadingNowRow(book: visible[i]),
                       ),
                     ),
-                    if (i != reading.length - 1) const SizedBox(height: 7),
+                    if (i != visible.length - 1) const SizedBox(height: 7),
+                  ],
+                  if (reading.length > visible.length) ...[
+                    const SizedBox(height: 7),
+                    Semantics(
+                      button: true,
+                      label: '읽고 있는 책 전체보기',
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onOpenAll,
+                        child: SizedBox(
+                          height: 40,
+                          child: Center(
+                            child: Text(
+                              '전체보기',
+                              style: AppTheme.bodyLarge.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

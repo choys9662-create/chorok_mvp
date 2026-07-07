@@ -8,9 +8,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/services/db_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/book_memo.dart';
-import '../../../shared/models/isar/isar_book_reflection.dart';
-import '../../../shared/models/isar/isar_choseo.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/models/user_profile.dart';
@@ -20,12 +17,13 @@ import '../../../shared/repositories/memo_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import '../../feed/screen/sentence_detail_screen.dart';
 import '../model/aladin_book.dart';
 import '../util/add_book_flow.dart';
 import '../widget/add_to_library_sheet.dart';
 
-// ─── 커뮤니티 문장 모델 ──────────────────────────────────────────────────────
+// ─── 모델 ────────────────────────────────────────────────────────────────────
 
 class _BookSentence {
   final String id;
@@ -55,169 +53,66 @@ class _BookSentence {
 
 class _BookComment {
   final String id;
+  final String sentenceId;
   final String? userId;
   final String content;
   final String username;
-  final String? handle;
   final String? avatarUrl;
   final DateTime createdAt;
-  final String? sentenceContent;
   final int likeCount;
-  final bool isFollowing;
 
   const _BookComment({
     required this.id,
+    required this.sentenceId,
     this.userId,
     required this.content,
     required this.username,
-    this.handle,
     this.avatarUrl,
-    required this.createdAt,
-    this.sentenceContent,
-    this.likeCount = 0,
-    this.isFollowing = false,
-  });
-}
-
-class _BookReview {
-  final String id;
-  final String? userId;
-  final String username;
-  final String? handle;
-  final String? avatarUrl;
-  final int starRating;
-  final String? memorableLine;
-  final String? legacy;
-  final DateTime createdAt;
-  final bool isFollowing;
-
-  const _BookReview({
-    required this.id,
-    this.userId,
-    required this.username,
-    this.handle,
-    this.avatarUrl,
-    required this.starRating,
-    this.memorableLine,
-    this.legacy,
-    required this.createdAt,
-    this.isFollowing = false,
-  });
-}
-
-enum _BookSocialThoughtType { sentence, review, comment }
-
-class _BookSocialThought {
-  final _BookSocialThoughtType type;
-  final String id;
-  final String? userId;
-  final String username;
-  final String? handle;
-  final String? avatarUrl;
-  final String content;
-  final String? anchor;
-  final DateTime createdAt;
-  final int likeCount;
-  final int? rating;
-
-  const _BookSocialThought({
-    required this.type,
-    required this.id,
-    required this.userId,
-    required this.username,
-    this.handle,
-    this.avatarUrl,
-    required this.content,
-    this.anchor,
     required this.createdAt,
     this.likeCount = 0,
-    this.rating,
   });
 }
 
 class _BookCommunityData {
   final String? globalBookId;
-  final int readerCount;
-  final int sentenceCount;
-  final int followingReaderCount;
   final List<_BookSentence> sentences;
   final List<_BookComment> comments;
-  final List<_BookReview> reviews;
-  final List<_BookSocialThought> followingThoughts;
 
   const _BookCommunityData({
     required this.globalBookId,
-    required this.readerCount,
-    required this.sentenceCount,
-    required this.followingReaderCount,
     required this.sentences,
     required this.comments,
-    required this.reviews,
-    required this.followingThoughts,
   });
 
-  double? get averageRating {
-    if (reviews.isEmpty) return null;
-    final total = reviews.fold<int>(
-      0,
-      (sum, review) => sum + review.starRating,
-    );
-    return total / reviews.length;
+  List<_BookComment> repliesFor(String sentenceId) {
+    return comments.where((c) => c.sentenceId == sentenceId).toList()
+      ..sort((a, b) => b.likeCount.compareTo(a.likeCount));
+  }
+
+  /// 인기순 — 좋아요 많은 문장부터.
+  List<_BookSentence> get popular {
+    return [...sentences]..sort((a, b) {
+      final likeCompare = b.likeCount.compareTo(a.likeCount);
+      if (likeCompare != 0) return likeCompare;
+      return b.savedAt.compareTo(a.savedAt);
+    });
+  }
+
+  /// 팔로우한 친구의 문장 — 최신순.
+  List<_BookSentence> get friends {
+    return sentences.where((s) => s.isFollowing).toList()
+      ..sort((a, b) => b.savedAt.compareTo(a.savedAt));
   }
 }
 
-class _PersonalSentence {
-  final String id;
-  final String content;
-  final String? thought;
-  final int? pageNumber;
-  final DateTime createdAt;
+typedef _BookStats = ({
+  int totalCompleted,
+  int friendCompleted,
+  int? avgCompletionPct,
+  int? avgSessions,
+});
 
-  const _PersonalSentence({
-    required this.id,
-    required this.content,
-    this.thought,
-    this.pageNumber,
-    required this.createdAt,
-  });
-}
-
-class _PersonalReview {
-  final String id;
-  final int starRating;
-  final String? memorableLine;
-  final String? legacy;
-  final DateTime createdAt;
-
-  const _PersonalReview({
-    required this.id,
-    required this.starRating,
-    this.memorableLine,
-    this.legacy,
-    required this.createdAt,
-  });
-}
-
-class _PersonalRecordData {
-  final List<_PersonalSentence> sentences;
-  final List<BookMemo> memos;
-  final List<_PersonalReview> reviews;
-
-  const _PersonalRecordData({
-    required this.sentences,
-    required this.memos,
-    required this.reviews,
-  });
-
-  static const empty = _PersonalRecordData(
-    sentences: [],
-    memos: [],
-    reviews: [],
-  );
-
-  bool get hasRecords =>
-      sentences.isNotEmpty || memos.isNotEmpty || reviews.isNotEmpty;
-}
+typedef _MyRecordCounts = ({int sentences, int thoughts});
 
 typedef _PersonalRecordQuery = ({
   String? bookId,
@@ -227,7 +122,7 @@ typedef _PersonalRecordQuery = ({
   String? globalBookId,
 });
 
-// ─── Provider: isbn13 기준 커뮤니티 데이터 조회 ───────────────────────────────
+// ─── Provider: 커뮤니티 문장·댓글 ────────────────────────────────────────────
 
 final _bookInfoCommunityProvider =
     FutureProvider.family<_BookCommunityData, String>((ref, isbn13) async {
@@ -235,26 +130,21 @@ final _bookInfoCommunityProvider =
 
       final client = Supabase.instance.client;
 
-      Map<String, dynamic>? globalBook;
+      String? globalBookId;
       try {
         final row = await client
             .from('global_books')
-            .select('id, reader_count, sentence_count')
+            .select('id')
             .eq('isbn13', isbn13)
             .maybeSingle();
-        globalBook = row;
-      } catch (_) {
-        globalBook = null;
-      }
+        globalBookId = row?['id'] as String?;
+      } catch (_) {}
 
       final followingIds = await _fetchAcceptedFollowingIds(client);
       final sentenceRows = await _fetchGlobalBookSentences(client, isbn13);
 
-      final withThought = <_BookSentence>[];
-      final withoutThought = <_BookSentence>[];
-
-      for (final row in sentenceRows) {
-        final sentence = _BookSentence(
+      final sentences = sentenceRows.map((row) {
+        return _BookSentence(
           id: row['sentence_id'] as String,
           userId: row['user_id'] as String?,
           content: row['content'] as String,
@@ -266,314 +156,230 @@ final _bookInfoCommunityProvider =
           likeCount: (row['like_count'] as num?)?.toInt() ?? 0,
           isFollowing: followingIds.contains(row['user_id'] as String?),
         );
-        if (sentence.thought != null && sentence.thought!.isNotEmpty) {
-          withThought.add(sentence);
-        } else {
-          withoutThought.add(sentence);
-        }
-      }
+      }).toList();
 
-      final sentences = [...withThought, ...withoutThought];
-      final comments = <_BookComment>[
-        for (final sentence in sentences)
-          if (sentence.thought != null && sentence.thought!.trim().isNotEmpty)
-            _BookComment(
-              id: 'thought_${sentence.id}',
-              userId: sentence.userId,
-              content: sentence.thought!.trim(),
-              username: sentence.username,
-              handle: sentence.handle,
-              avatarUrl: sentence.avatarUrl,
-              createdAt: sentence.savedAt,
-              sentenceContent: sentence.content,
-              likeCount: sentence.likeCount,
-              isFollowing: sentence.isFollowing,
-            ),
-        ...await _fetchSentenceComments(
-          client,
-          sentences.map((sentence) => sentence.id).toList(),
-          followingIds,
-        ),
-      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      final globalBookId = globalBook?['id'] as String?;
-      final reviews = globalBookId == null
-          ? const <_BookReview>[]
-          : await _fetchBookReviews(client, globalBookId, followingIds);
-
-      final followingThoughts = _buildFollowingThoughts(
-        sentences: sentences,
-        comments: comments,
-        reviews: reviews,
+      final comments = await _fetchSentenceComments(
+        client,
+        sentences.map((s) => s.id).toList(),
       );
 
       return _BookCommunityData(
         globalBookId: globalBookId,
-        readerCount: (globalBook?['reader_count'] as num?)?.toInt() ?? 0,
-        sentenceCount:
-            (globalBook?['sentence_count'] as num?)?.toInt() ??
-            sentences.length,
-        followingReaderCount: _followingReaderCount(
-          followingIds,
-          sentences: sentences,
-          comments: comments,
-          reviews: reviews,
-        ),
         sentences: sentences,
         comments: comments,
-        reviews: reviews,
-        followingThoughts: followingThoughts,
       );
     });
 
 _BookCommunityData _mockBookCommunityData(String isbn13) {
   final now = DateTime.now();
+  const firstLine = '아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.';
+
   final sentences = [
     _BookSentence(
       id: 'mock_sentence_${isbn13}_1',
-      userId: 'mock_following_yuna',
-      content: '사람은 어떤 문장 앞에서 오래 멈출 때, 자기 마음의 모양을 조금 더 알게 된다.',
-      thought: '이 책을 읽는 동안 계속 밑줄을 긋게 된 문장. 조용한 위로보다 정확한 진단에 가까웠다.',
-      username: '유나',
-      handle: 'yuna',
+      userId: 'mock_reader_skull',
+      content: firstLine,
+      thought:
+          '"특별한 사람이라고 생각한 적이 없었다"는 무심한 단언이지만, 문장 첫머리의 "아내가 채식을 '
+          '시작하기 전까지"가 모든 걸 뒤집는다. 평범함에 대한 진술이 아니라, 그 평범함이 끝났다는 '
+          '예고이기 때문이다. 화자는 아내를 무난함으로만 규정해왔고, 그래서 그녀의 변화를 끝내 '
+          '이해하지 못할 인물임을 첫 문장이 미리 드러낸다. 안온한 일상이 곧 깨질 것이라는 불길함이 '
+          '담담한 어조 아래 깔려 있다.',
+      username: '해골맨',
+      handle: 'skullman',
       savedAt: now.subtract(const Duration(hours: 3)),
-      likeCount: 18,
-      isFollowing: true,
+      likeCount: 356,
     ),
     _BookSentence(
       id: 'mock_sentence_${isbn13}_2',
-      userId: 'mock_reader_mago',
-      content: '좋은 책은 답을 주기보다 내가 오래 피하던 질문을 다시 내 앞에 놓는다.',
-      thought: '읽고 나서 바로 덮기 어려웠다. 다음 장으로 넘어가기 전에 내 생활을 먼저 돌아보게 했다.',
-      username: '마고',
-      handle: 'mago',
-      savedAt: now.subtract(const Duration(days: 1, hours: 2)),
-      likeCount: 11,
-    ),
-    _BookSentence(
-      id: 'mock_sentence_${isbn13}_3',
-      userId: 'mock_following_ondo',
-      content: '우리가 끝내 이해하지 못한 마음도, 어떤 문장 안에서는 잠시 같은 자리에 앉는다.',
-      thought: '같은 장면을 보고도 서로 다른 곳에서 멈춘다는 게 좋았다.',
-      username: '온도',
-      handle: 'ondo',
-      savedAt: now.subtract(const Duration(days: 2)),
-      likeCount: 7,
-      isFollowing: true,
-    ),
-    _BookSentence(
-      id: 'mock_sentence_${isbn13}_4',
-      userId: 'mock_reader_jin',
-      content: '오래된 기억은 사라지는 게 아니라, 말할 수 있는 문장을 기다리고 있었다.',
-      thought: null,
-      username: '진',
-      handle: 'jin',
-      savedAt: now.subtract(const Duration(days: 3)),
+      userId: 'mock_following_yeomchang',
+      content: firstLine,
+      thought: '그러니까 유난떨지 마라 영혜야. 탕수육이 우습냐?',
+      username: '염창맨',
+      handle: 'yeomchang',
+      savedAt: now.subtract(const Duration(days: 1)),
       likeCount: 4,
+      isFollowing: true,
     ),
   ];
 
   final comments = [
-    for (final sentence in sentences)
-      if (sentence.thought?.trim().isNotEmpty == true)
-        _BookComment(
-          id: 'thought_${sentence.id}',
-          userId: sentence.userId,
-          content: sentence.thought!.trim(),
-          username: sentence.username,
-          avatarUrl: sentence.avatarUrl,
-          createdAt: sentence.savedAt,
-          sentenceContent: sentence.content,
-          likeCount: sentence.likeCount,
-          isFollowing: sentence.isFollowing,
-        ),
     _BookComment(
       id: 'mock_comment_${isbn13}_1',
-      userId: 'mock_following_yuna',
-      content: '후반부보다 초반의 문장들이 더 오래 남았어요. 천천히 읽을수록 밀도가 살아나는 책.',
-      username: '유나',
-      handle: 'yuna',
-      createdAt: now.subtract(const Duration(hours: 8)),
-      sentenceContent: sentences[1].content,
-      likeCount: 6,
-      isFollowing: true,
+      sentenceId: sentences[0].id,
+      userId: 'mock_reader_hyejin',
+      content: '정말 대단한 통찰입니다. 덕분에 제 독서가 한층 업그레이드 됐어요! 젠장 해골맨 당신 뭐라고',
+      username: '혜진짱짱',
+      createdAt: now.subtract(const Duration(hours: 1)),
+      likeCount: 15,
     ),
     _BookComment(
       id: 'mock_comment_${isbn13}_2',
-      userId: 'mock_reader_river',
-      content: '문장이 차분한데 감정은 꽤 깊게 들어와요. 읽는 속도를 일부러 늦추게 됐습니다.',
-      username: '리버',
-      handle: 'river',
-      createdAt: now.subtract(const Duration(days: 1, hours: 5)),
-      sentenceContent: sentences[0].content,
-      likeCount: 3,
+      sentenceId: sentences[1].id,
+      userId: 'mock_reader_dungchon',
+      content: '넌 한강에 빠져서 죽어라',
+      username: '둥촌맨',
+      createdAt: now.subtract(const Duration(hours: 20)),
+      likeCount: 15,
     ),
-  ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-  final reviews = [
-    _BookReview(
-      id: 'mock_review_${isbn13}_1',
-      userId: 'mock_following_ondo',
-      username: '온도',
-      handle: 'ondo',
-      starRating: 5,
-      memorableLine: '말할 수 있는 문장을 기다리고 있었다.',
-      legacy: '짧은 문장마다 생각이 남아서, 완독보다 멈춤이 더 많았던 책.',
-      createdAt: now.subtract(const Duration(days: 2, hours: 3)),
-      isFollowing: true,
-    ),
-    _BookReview(
-      id: 'mock_review_${isbn13}_2',
-      userId: 'mock_reader_mago',
-      username: '마고',
-      handle: 'mago',
-      starRating: 4,
-      memorableLine: '자기 마음의 모양을 조금 더 알게 된다.',
-      legacy: '인상적인 문장이 많고, 읽은 뒤에 다른 사람의 밑줄이 궁금해지는 책.',
-      createdAt: now.subtract(const Duration(days: 4)),
+    _BookComment(
+      id: 'mock_comment_${isbn13}_3',
+      sentenceId: sentences[1].id,
+      userId: 'mock_reader_bfree',
+      content: '탕수육은 로보트가 만드는 줄 아냐??',
+      username: '학사모 비프리',
+      createdAt: now.subtract(const Duration(hours: 18)),
+      likeCount: 1,
     ),
   ];
 
-  final followingThoughts = _buildFollowingThoughts(
-    sentences: sentences,
-    comments: comments,
-    reviews: reviews,
-  );
-
   return _BookCommunityData(
     globalBookId: 'mock_global_$isbn13',
-    readerCount: 128,
-    sentenceCount: 36,
-    followingReaderCount: 2,
     sentences: sentences,
     comments: comments,
-    reviews: reviews,
-    followingThoughts: followingThoughts,
   );
 }
 
-// ─── Provider: 내 개인 기록 조회 ────────────────────────────────────────────
+// ─── Provider: 책 통계 (완독·완독률·세션) ───────────────────────────────────
 
-final _bookPersonalRecordsProvider =
-    FutureProvider.family<_PersonalRecordData, _PersonalRecordQuery>((
+// global_books의 역정규화 카운트는 갱신되지 않으므로(전부 0) books/reading_sessions
+// 를 라이브 집계한다. 공개 계정 행은 RLS 정책(books_select_public)으로 조회 가능.
+final _bookStatsProvider = FutureProvider.family<_BookStats, String>((
+  ref,
+  isbn13,
+) async {
+  if (kUseMock) {
+    return (
+      totalCompleted: 1250,
+      friendCompleted: 10,
+      avgCompletionPct: 95,
+      avgSessions: 4,
+    );
+  }
+
+  final client = Supabase.instance.client;
+  List<Map<String, dynamic>> rows;
+  try {
+    // ponytail: 클라이언트 집계 — 책당 독자가 수천 명 규모가 되면 RPC 집계로 전환
+    final res = await client
+        .from('books')
+        .select('id, user_id, status, current_page, total_pages')
+        .eq('isbn', isbn13)
+        .limit(1000);
+    rows = (res as List).cast<Map<String, dynamic>>();
+  } catch (_) {
+    rows = const [];
+  }
+
+  if (rows.isEmpty) {
+    return (
+      totalCompleted: 0,
+      friendCompleted: 0,
+      avgCompletionPct: null,
+      avgSessions: null,
+    );
+  }
+
+  final followingIds = await _fetchAcceptedFollowingIds(client);
+  final completedUserIds = <String>{};
+  final friendCompletedIds = <String>{};
+  final rates = <double>[];
+
+  for (final row in rows) {
+    final completed = row['status'] == 'completed';
+    final userId = row['user_id'] as String?;
+    if (completed && userId != null) {
+      completedUserIds.add(userId);
+      if (followingIds.contains(userId)) friendCompletedIds.add(userId);
+    }
+    final total = (row['total_pages'] as num?)?.toInt() ?? 0;
+    final current = (row['current_page'] as num?)?.toInt() ?? 0;
+    if (completed) {
+      rates.add(1);
+    } else if (total > 0) {
+      rates.add((current / total).clamp(0.0, 1.0));
+    }
+  }
+
+  final avgCompletionPct = rates.isEmpty
+      ? null
+      : (rates.reduce((a, b) => a + b) / rates.length * 100).round();
+
+  int? avgSessions;
+  try {
+    final bookIds = rows
+        .map((r) => r['id'])
+        .whereType<String>()
+        .toList(growable: false);
+    final sessions = await client
+        .from('reading_sessions')
+        .select('user_id')
+        .inFilter('book_id', bookIds)
+        .limit(5000);
+    final list = (sessions as List).cast<Map<String, dynamic>>();
+    final readers = list.map((s) => s['user_id']).whereType<String>().toSet();
+    if (readers.isNotEmpty) avgSessions = (list.length / readers.length).round();
+  } catch (_) {}
+
+  return (
+    totalCompleted: completedUserIds.length,
+    friendCompleted: friendCompletedIds.length,
+    avgCompletionPct: avgCompletionPct,
+    avgSessions: avgSessions,
+  );
+});
+
+// ─── Provider: 나의 문장·생각 개수 ──────────────────────────────────────────
+
+final _myRecordCountsProvider =
+    FutureProvider.family<_MyRecordCounts, _PersonalRecordQuery>((
       ref,
       query,
     ) async {
-      if (kUseMock) return _PersonalRecordData.empty;
+      if (kUseMock) return (sentences: 30, thoughts: 5);
 
       if (kUseRemoteDb) {
-        final sentences = await _fetchMyWebSentences(ref, query);
-        final memos = await _fetchMyWebMemos(ref, query);
-        final review = await _fetchMyWebReview(
-          Supabase.instance.client,
-          query.globalBookId,
-        );
-        return _PersonalRecordData(
-          sentences: sentences,
-          memos: memos,
-          reviews: review == null ? const [] : [review],
-        );
+        var sentenceCount = 0;
+        var thoughtCount = 0;
+        try {
+          final rows = await ref
+              .read(dbServiceProvider)
+              .fetchMySentencesForBook(
+                query.bookId ?? query.isbn ?? query.title,
+                title: query.title,
+                author: query.author,
+                isbn: query.isbn,
+              );
+          sentenceCount = rows.length;
+          thoughtCount = rows
+              .where((r) => (r['thought'] as String?)?.trim().isNotEmpty == true)
+              .length;
+        } catch (_) {}
+        try {
+          if (query.globalBookId != null || query.bookId != null) {
+            final memos = await ref
+                .read(memoRepositoryProvider)
+                .fetchMemos(
+                  globalBookId: query.globalBookId,
+                  bookId: query.bookId,
+                );
+            thoughtCount += memos.length;
+          }
+        } catch (_) {}
+        return (sentences: sentenceCount, thoughts: thoughtCount);
       }
 
       final bookId = query.bookId;
       final repo = ref.read(bookRepositoryProvider);
-      if (bookId == null || repo == null) return _PersonalRecordData.empty;
-
+      if (bookId == null || repo == null) return (sentences: 0, thoughts: 0);
       final choseo = await repo.getChoseoByBook(bookId);
-      final reflections = await repo.getReflectionsForBook(bookId);
-      return _PersonalRecordData(
-        sentences: choseo.map(_personalSentenceFromChoseo).toList(),
-        memos: const [],
-        reviews: reflections.map(_personalReviewFromReflection).toList(),
-      );
+      final thoughts = choseo
+          .where((c) => c.myThought?.trim().isNotEmpty == true)
+          .length;
+      return (sentences: choseo.length, thoughts: thoughts);
     });
 
-Future<List<_PersonalSentence>> _fetchMyWebSentences(
-  Ref ref,
-  _PersonalRecordQuery query,
-) async {
-  try {
-    final rows = await ref
-        .read(dbServiceProvider)
-        .fetchMySentencesForBook(
-          query.bookId ?? query.isbn ?? query.title,
-          title: query.title,
-          author: query.author,
-          isbn: query.isbn,
-        );
-    return rows.map((row) {
-      return _PersonalSentence(
-        id: row['id'] as String,
-        content: row['content'] as String,
-        thought: row['thought'] as String?,
-        pageNumber: (row['page_number'] as num?)?.toInt(),
-        createdAt: _parseDate(row['created_at']),
-      );
-    }).toList();
-  } catch (_) {
-    return const [];
-  }
-}
-
-Future<List<BookMemo>> _fetchMyWebMemos(
-  Ref ref,
-  _PersonalRecordQuery query,
-) async {
-  if (query.globalBookId == null && query.bookId == null) return const [];
-  try {
-    return ref
-        .read(memoRepositoryProvider)
-        .fetchMemos(globalBookId: query.globalBookId, bookId: query.bookId);
-  } catch (_) {
-    return const [];
-  }
-}
-
-Future<_PersonalReview?> _fetchMyWebReview(
-  SupabaseClient client,
-  String? globalBookId,
-) async {
-  final userId = client.auth.currentUser?.id;
-  if (userId == null || globalBookId == null) return null;
-  try {
-    final row = await client
-        .from('book_reviews')
-        .select('id, star_rating, memorable_line, legacy, created_at')
-        .eq('user_id', userId)
-        .eq('global_book_id', globalBookId)
-        .maybeSingle();
-    if (row == null) return null;
-    return _PersonalReview(
-      id: row['id'] as String,
-      starRating: (row['star_rating'] as num?)?.toInt() ?? 0,
-      memorableLine: row['memorable_line'] as String?,
-      legacy: row['legacy'] as String?,
-      createdAt: _parseDate(row['created_at']),
-    );
-  } catch (_) {
-    return null;
-  }
-}
-
-_PersonalSentence _personalSentenceFromChoseo(IsarChoseo choseo) {
-  return _PersonalSentence(
-    id: choseo.choseoId,
-    content: choseo.content,
-    thought: choseo.myThought,
-    pageNumber: choseo.pageNumber,
-    createdAt: choseo.createdAt,
-  );
-}
-
-_PersonalReview _personalReviewFromReflection(IsarBookReflection reflection) {
-  return _PersonalReview(
-    id: reflection.reflectionId,
-    starRating: reflection.starRating,
-    memorableLine: reflection.memorableLine,
-    legacy: reflection.legacy,
-    createdAt: reflection.createdAt,
-  );
-}
+// ─── 공용 fetch/유틸 ─────────────────────────────────────────────────────────
 
 Future<Set<String>> _fetchAcceptedFollowingIds(SupabaseClient client) async {
   final userId = client.auth.currentUser?.id;
@@ -616,7 +422,6 @@ Future<List<Map<String, dynamic>>> _fetchGlobalBookSentences(
 Future<List<_BookComment>> _fetchSentenceComments(
   SupabaseClient client,
   List<String> sentenceIds,
-  Set<String> followingIds,
 ) async {
   if (sentenceIds.isEmpty) return const [];
   try {
@@ -632,142 +437,20 @@ Future<List<_BookComment>> _fetchSentenceComments(
 
     return (rows as List).cast<Map<String, dynamic>>().map((row) {
       final profile = row['profiles'] as Map<String, dynamic>?;
-      final userId = row['user_id'] as String? ?? profile?['id'] as String?;
       return _BookComment(
         id: row['id'] as String,
-        userId: userId,
+        sentenceId: row['sentence_id'] as String,
+        userId: row['user_id'] as String? ?? profile?['id'] as String?,
         content: row['content'] as String,
         username: _displayName(profile),
-        handle: _handle(profile),
         avatarUrl: profile?['avatar_url'] as String?,
         createdAt: _parseDate(row['created_at']),
         likeCount: (row['like_count'] as num?)?.toInt() ?? 0,
-        isFollowing: userId != null && followingIds.contains(userId),
       );
     }).toList();
   } catch (_) {
     return const [];
   }
-}
-
-Future<List<_BookReview>> _fetchBookReviews(
-  SupabaseClient client,
-  String globalBookId,
-  Set<String> followingIds,
-) async {
-  try {
-    final rows = await client
-        .from('book_reviews')
-        .select(
-          'id, user_id, star_rating, memorable_line, legacy, created_at, '
-          'profiles!book_reviews_user_id_fkey(id, username, display_name, avatar_url)',
-        )
-        .eq('global_book_id', globalBookId)
-        .order('created_at', ascending: false)
-        .limit(30);
-
-    return (rows as List).cast<Map<String, dynamic>>().map((row) {
-      final profile = row['profiles'] as Map<String, dynamic>?;
-      final userId = row['user_id'] as String? ?? profile?['id'] as String?;
-      return _BookReview(
-        id: row['id'] as String,
-        userId: userId,
-        username: _displayName(profile),
-        handle: _handle(profile),
-        avatarUrl: profile?['avatar_url'] as String?,
-        starRating: (row['star_rating'] as num?)?.toInt() ?? 0,
-        memorableLine: row['memorable_line'] as String?,
-        legacy: row['legacy'] as String?,
-        createdAt: _parseDate(row['created_at']),
-        isFollowing: userId != null && followingIds.contains(userId),
-      );
-    }).toList();
-  } catch (_) {
-    return const [];
-  }
-}
-
-List<_BookSocialThought> _buildFollowingThoughts({
-  required List<_BookSentence> sentences,
-  required List<_BookComment> comments,
-  required List<_BookReview> reviews,
-}) {
-  final items = <_BookSocialThought>[
-    for (final sentence in sentences)
-      if (sentence.isFollowing && sentence.thought?.trim().isNotEmpty == true)
-        _BookSocialThought(
-          type: _BookSocialThoughtType.sentence,
-          id: sentence.id,
-          userId: sentence.userId,
-          username: sentence.username,
-          handle: sentence.handle,
-          avatarUrl: sentence.avatarUrl,
-          content: sentence.thought!.trim(),
-          anchor: sentence.content,
-          createdAt: sentence.savedAt,
-          likeCount: sentence.likeCount,
-        ),
-    for (final review in reviews)
-      if (review.isFollowing &&
-          ((review.legacy?.trim().isNotEmpty == true) ||
-              (review.memorableLine?.trim().isNotEmpty == true)))
-        _BookSocialThought(
-          type: _BookSocialThoughtType.review,
-          id: review.id,
-          userId: review.userId,
-          username: review.username,
-          handle: review.handle,
-          avatarUrl: review.avatarUrl,
-          content: review.legacy?.trim().isNotEmpty == true
-              ? review.legacy!.trim()
-              : review.memorableLine!.trim(),
-          anchor:
-              review.legacy?.trim().isNotEmpty == true &&
-                  review.memorableLine?.trim().isNotEmpty == true
-              ? review.memorableLine!.trim()
-              : null,
-          createdAt: review.createdAt,
-          rating: review.starRating,
-        ),
-    for (final comment in comments)
-      if (comment.isFollowing &&
-          !comment.id.startsWith('thought_') &&
-          comment.content.trim().isNotEmpty)
-        _BookSocialThought(
-          type: _BookSocialThoughtType.comment,
-          id: comment.id,
-          userId: comment.userId,
-          username: comment.username,
-          handle: comment.handle,
-          avatarUrl: comment.avatarUrl,
-          content: comment.content.trim(),
-          anchor: comment.sentenceContent,
-          createdAt: comment.createdAt,
-          likeCount: comment.likeCount,
-        ),
-  ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-  return items;
-}
-
-int _followingReaderCount(
-  Set<String> followingIds, {
-  required List<_BookSentence> sentences,
-  required List<_BookComment> comments,
-  required List<_BookReview> reviews,
-}) {
-  final ids = <String>{
-    for (final sentence in sentences)
-      if (sentence.userId != null && followingIds.contains(sentence.userId))
-        sentence.userId!,
-    for (final comment in comments)
-      if (comment.userId != null && followingIds.contains(comment.userId))
-        comment.userId!,
-    for (final review in reviews)
-      if (review.userId != null && followingIds.contains(review.userId))
-        review.userId!,
-  };
-  return ids.length;
 }
 
 String _displayName(Map<String, dynamic>? row) {
@@ -785,15 +468,6 @@ String? _handle(Map<String, dynamic>? row) {
 
 DateTime _parseDate(Object? value) {
   return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
-}
-
-String _relativeDate(DateTime dt) {
-  final diff = DateTime.now().difference(dt);
-  if (diff.inDays >= 365) return '${diff.inDays ~/ 365}년 전';
-  if (diff.inDays >= 30) return '${diff.inDays ~/ 30}달 전';
-  if (diff.inDays >= 1) return '${diff.inDays}일 전';
-  if (diff.inHours >= 1) return '${diff.inHours}시간 전';
-  return '방금';
 }
 
 void _openBookInfoProfile(
@@ -815,31 +489,40 @@ void _openBookInfoProfile(
   );
 }
 
-class _FollowingBadge extends StatelessWidget {
-  const _FollowingBadge();
+// ─── 저자·옮긴이 파싱 ────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: AppTheme.smoothBox(
-        color: context.appPrimaryAccent.withValues(alpha: 0.12),
-        radius: 8,
-        side: BorderSide.none,
-      ),
-      child: Text(
-        '팔로잉',
-        style: TextStyle(
-          fontSize: 10,
-          color: context.appPrimaryAccent,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-    );
+typedef BookContributor = ({String name, String role});
+
+/// 알라딘 원본 저자 문자열("한강 (지은이), 데버라 스미스 (옮긴이)")을
+/// 저자·옮긴이 행 목록으로 파싱한다. 역할 표기가 없으면 저자로 간주.
+List<BookContributor> parseBookContributors(AladinBook book) {
+  final raw = book.rawAuthor?.trim().isNotEmpty == true
+      ? book.rawAuthor!
+      : book.author;
+  final result = <BookContributor>[];
+  for (final part in raw.split(',')) {
+    final match = RegExp(r'^(.*?)(?:\s*\(([^)]*)\))?$').firstMatch(part.trim());
+    if (match == null) continue;
+    final name = (match.group(1) ?? '').trim();
+    if (name.isEmpty) continue;
+    final roleRaw = (match.group(2) ?? '').trim();
+    final String role;
+    if (roleRaw.contains('옮긴') || roleRaw.contains('역자')) {
+      role = '옮긴이';
+    } else if (roleRaw.isEmpty ||
+        roleRaw.contains('지은') ||
+        roleRaw.contains('저')) {
+      role = '저자';
+    } else {
+      role = roleRaw;
+    }
+    result.add((name: name, role: role));
   }
+  if (result.isEmpty) result.add((name: book.author, role: '저자'));
+  return result;
 }
 
-// ─── 책 정보 화면 ─────────────────────────────────────────────────────────────
+// ─── 책 정보 화면 ────────────────────────────────────────────────────────────
 
 class BookInfoScreen extends ConsumerStatefulWidget {
   final AladinBook book;
@@ -920,269 +603,206 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
 
     final gradientIndex =
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
-    final coverColors = AppTheme.coverGradients[gradientIndex];
     final showBackButton = Navigator.of(context).canPop();
+
+    final globalBookId = isbn.isEmpty
+        ? null
+        : ref
+              .watch(_bookInfoCommunityProvider(isbn))
+              .maybeWhen(data: (data) => data.globalBookId, orElse: () => null);
 
     return Scaffold(
       backgroundColor: context.appBg,
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              coverColors[0].withValues(alpha: 0.45),
-              coverColors[0].withValues(alpha: 0.12),
-              context.appBg,
-              context.appBg,
-            ],
-            stops: const [0.0, 0.16, 0.34, 1.0],
-          ),
-        ),
-        child: CustomScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          slivers: [
-            // ── 히어로 섹션 ──────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Stack(
+      body: CustomScrollView(
+        slivers: [
+          // ── 히어로: 뒤로가기 + 표지 + 제목 + 저자 ─────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 24),
+              child: Column(
                 children: [
-                  // 표지 컬러 대기권 그라디언트
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: topPad + 320,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            coverColors[0].withValues(alpha: 0.45),
-                            coverColors[0].withValues(alpha: 0.12),
-                            context.appBg.withValues(alpha: 0),
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 28),
-                    child: Column(
+                  if (showBackButton) ...[
+                    Row(
                       children: [
-                        if (showBackButton) ...[
-                          Row(
-                            children: [
-                              Semantics(
-                                button: true,
-                                label: '뒤로가기',
-                                child: GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Container(
-                                    width: 44,
-                                    height: 44,
-                                    alignment: Alignment.center,
-                                    child: Icon(
-                                      Icons.arrow_back_ios_new_rounded,
-                                      color: context.appTextSecondary,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-
-                        // 책 표지
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: coverColors[1].withValues(alpha: 0.35),
-                                blurRadius: 36,
-                                offset: const Offset(0, 14),
-                                spreadRadius: -4,
-                              ),
-                            ],
-                          ),
-                          child: BookCover(
-                            coverUrl: book.coverUrl,
-                            gradientIndex: gradientIndex,
-                            width: 128,
-                            height: 184,
-                            radius: 10,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // 제목
-                        Text(
-                          book.title,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
-                            color: context.appTextPrimary,
-                            height: 1.35,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-
-                        // 저자
-                        Text(
-                          book.author,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: context.appTextSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-
-                        // 출판사 · 장르
-                        Text(
-                          [
-                            book.publisher,
-                            if (book.genre != null) book.genre!,
-                          ].join(' · '),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appTextTertiary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── 이어 읽기 (서재에 있는 책만) ──────────────────────────────
-            if (libraryBook != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: _ContinueReadingButton(book: libraryBook),
-                ),
-              ),
-
-            // ── 서재 추가 버튼 ────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                child: _AddToLibraryButton(
-                  isInLibrary: isInLibrary,
-                  onTap: _onAddTap,
-                ),
-              ),
-            ),
-
-            if (isbn.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                  child: _CommunityOverview(isbn: isbn),
-                ),
-              ),
-
-            if (isbn.isNotEmpty) _PopularBookThoughtsSection(book: book),
-
-            // ── 책 소개 ───────────────────────────────────────────────────
-            if (book.description != null && book.description!.isNotEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '책 소개',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appTextTertiary,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () =>
-                            setState(() => _descExpanded = !_descExpanded),
-                        child: Text(
-                          book.description!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appTextSecondary,
-                            height: 1.7,
-                          ),
-                          maxLines: _descExpanded ? null : 4,
-                          overflow: _descExpanded
-                              ? null
-                              : TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (!_descExpanded && book.description!.length > 120)
-                        GestureDetector(
-                          onTap: () => setState(() => _descExpanded = true),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              '더 보기',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.appPrimaryAccent,
-                                fontWeight: FontWeight.w400,
+                        Semantics(
+                          button: true,
+                          label: '뒤로가기',
+                          child: GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: context.appTextSecondary,
+                                size: 20,
                               ),
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  BookCover(
+                    coverUrl: book.coverUrl,
+                    gradientIndex: gradientIndex,
+                    width: 132,
+                    height: 192,
+                    radius: 12,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    book.title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: context.appTextPrimary,
+                      height: 1.35,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    book.author,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.appTextSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── 이어 읽기 (서재에 있는 책만) ───────────────────────────────
+          if (libraryBook != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: _ContinueReadingButton(book: libraryBook),
+              ),
+            ),
+
+          // ── 서재에 있는 책 / 서재에 추가 ───────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: _AddToLibraryButton(
+                isInLibrary: isInLibrary,
+                onTap: _onAddTap,
+              ),
+            ),
+          ),
+
+          // ── 통계 4종 ──────────────────────────────────────────────────
+          if (isbn.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: _BookStatsRow(isbn: isbn),
+              ),
+            ),
+
+          // ── 책 소개 ───────────────────────────────────────────────────
+          if (book.description != null && book.description!.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: GestureDetector(
+                  onTap: () => setState(() => _descExpanded = !_descExpanded),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: AppTheme.smoothBox(
+                      color: context.appCard,
+                      side: BorderSide.none,
+                    ),
+                    child: Text(
+                      book.description!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appTextSecondary,
+                        height: 1.7,
+                      ),
+                      maxLines: _descExpanded ? null : 4,
+                      overflow: _descExpanded ? null : TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ),
-
-            _PersonalRecordsSection(
-              book: book,
-              libraryBook: libraryBook,
-              globalBookId: isbn.isEmpty
-                  ? null
-                  : ref
-                        .watch(_bookInfoCommunityProvider(isbn))
-                        .maybeWhen(
-                          data: (data) => data.globalBookId,
-                          orElse: () => null,
-                        ),
             ),
 
-            if (isbn.isNotEmpty) _FollowingThoughtsSection(isbn: isbn),
+          // ── 저자·옮긴이 ───────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Column(
+                children: [
+                  for (final contributor in parseBookContributors(book))
+                    _ContributorRow(contributor: contributor),
+                ],
+              ),
+            ),
+          ),
 
-            if (isbn.isNotEmpty) _ReviewsSection(isbn: isbn),
+          // ── 나의 문장·생각 ────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: _MyRecordsSection(
+                book: book,
+                libraryBook: libraryBook,
+                globalBookId: globalBookId,
+              ),
+            ),
+          ),
 
-            if (isbn.isNotEmpty) _CommentsSection(isbn: isbn),
+          // ── 인기있는 문장·생각 ────────────────────────────────────────
+          if (isbn.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: _CommunityThoughtsSection(
+                  title: '인기있는 문장·생각',
+                  book: book,
+                  isbn: isbn,
+                  friendsOnly: false,
+                ),
+              ),
+            ),
 
-            // ── 독자들의 문장 콘텐츠 ─────────────────────────────────────
-            if (isbn.isNotEmpty) _SentencesSection(isbn: isbn),
+          // ── 친구의 문장·생각 ──────────────────────────────────────────
+          if (isbn.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: _CommunityThoughtsSection(
+                  title: '친구의 문장·생각',
+                  book: book,
+                  isbn: isbn,
+                  friendsOnly: true,
+                ),
+              ),
+            ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 80)),
-          ],
-        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
       ),
     );
   }
 }
 
-// ─── 서재 추가 CTA 버튼 ────────────────────────────────────────────────────────
+// ─── CTA 버튼 ────────────────────────────────────────────────────────────────
 
 class _ContinueReadingButton extends StatelessWidget {
   final Book book;
@@ -1205,28 +825,31 @@ class _ContinueReadingButton extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        height: 50,
-        decoration: AppTheme.smoothBox(
-          gradient: AppTheme.greenGradient,
-          radius: AppTheme.radiusMD,
-          side: BorderSide.none,
-        ),
-        alignment: Alignment.center,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.play_arrow_rounded, size: 20, color: AppTheme.darkBg),
-            SizedBox(width: 6),
-            Text(
-              '이어 읽기',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.darkBg,
+      child: Center(
+        child: Container(
+          width: 232,
+          height: 30,
+          decoration: AppTheme.smoothBox(
+            gradient: AppTheme.greenGradient,
+            radius: AppTheme.radiusMD,
+            side: BorderSide.none,
+          ),
+          alignment: Alignment.center,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.play_arrow_rounded, size: 16, color: AppTheme.darkBg),
+              SizedBox(width: 4),
+              Text(
+                '이어 읽기',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.darkBg,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1250,49 +873,54 @@ class _AddToLibraryButtonState extends State<_AddToLibraryButton> {
   Widget build(BuildContext context) {
     final isIn = widget.isInLibrary;
 
-    return Semantics(
-      button: true,
-      label: isIn ? '서재에서 삭제' : '서재에 추가',
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onTap();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: _pressed ? 0.97 : 1.0,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+    return Center(
+      child: Semantics(
+        button: true,
+        label: isIn ? '서재에서 삭제' : '서재에 추가',
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) {
+            setState(() => _pressed = false);
+            widget.onTap();
+          },
+          onTapCancel: () => setState(() => _pressed = false),
+          child: AnimatedScale(
+            scale: _pressed ? 0.97 : 1.0,
+            duration: const Duration(milliseconds: 120),
             curve: Curves.easeOutCubic,
-            height: 50,
-            decoration: AppTheme.smoothBox(
-              gradient: isIn ? null : AppTheme.greenGradient,
-              color: isIn ? context.appCardElevated : null,
-              radius: AppTheme.radiusMD,
-              side: BorderSide.none,
-            ),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isIn ? Icons.check_rounded : Icons.add_rounded,
-                  size: 18,
-                  color: isIn ? context.appPrimaryAccent : AppTheme.darkBg,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isIn ? '서재에 있어요' : '서재에 추가',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: isIn ? context.appPrimaryAccent : AppTheme.darkBg,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              width: 232,
+              height: 30,
+              decoration: AppTheme.smoothBox(
+                gradient: isIn ? null : AppTheme.greenGradient,
+                color: isIn ? Colors.transparent : null,
+                radius: AppTheme.radiusMD,
+                side: isIn
+                    ? BorderSide(color: context.appPillBorderActive)
+                    : BorderSide.none,
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isIn ? Icons.check_rounded : Icons.add_rounded,
+                    size: 15,
+                    color: isIn ? context.appTextPrimary : AppTheme.darkBg,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    isIn ? '서재에 있는 책' : '서재에 추가',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: isIn ? context.appTextPrimary : AppTheme.darkBg,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1301,18 +929,230 @@ class _AddToLibraryButtonState extends State<_AddToLibraryButton> {
   }
 }
 
-// ─── 내 개인 기록 섹션 ───────────────────────────────────────────────────────
+// ─── 통계 4종 ────────────────────────────────────────────────────────────────
 
-class _PersonalRecordsSection extends ConsumerWidget {
+class _BookStatsRow extends ConsumerWidget {
+  final String isbn;
+
+  const _BookStatsRow({required this.isbn});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(_bookStatsProvider(isbn));
+
+    return state.when(
+      loading: () => Row(
+        children: [
+          for (var i = 0; i < 4; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            const Expanded(
+              child: ChorokShimmer(width: double.infinity, height: 68),
+            ),
+          ],
+        ],
+      ),
+      error: (_, _) => _cells(context, null),
+      data: (stats) => _cells(context, stats),
+    );
+  }
+
+  Widget _cells(BuildContext context, _BookStats? stats) {
+    return Row(
+      children: [
+        _StatCell(label: '전체 완독', value: '${stats?.totalCompleted ?? '-'}'),
+        const SizedBox(width: 8),
+        _StatCell(label: '친구 완독', value: '${stats?.friendCompleted ?? '-'}'),
+        const SizedBox(width: 8),
+        _StatCell(
+          label: '평균 완독률',
+          value: stats?.avgCompletionPct == null
+              ? '-'
+              : '${stats!.avgCompletionPct}%',
+        ),
+        const SizedBox(width: 8),
+        _StatCell(label: '평균 세션', value: '${stats?.avgSessions ?? '-'}'),
+      ],
+    );
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatCell({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          side: BorderSide.none,
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: context.appTextTertiary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: context.appTextPrimary,
+                height: 1.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 저자·옮긴이 행 ──────────────────────────────────────────────────────────
+
+class _ContributorRow extends StatelessWidget {
+  final BookContributor contributor;
+
+  const _ContributorRow({required this.contributor});
+
+  @override
+  Widget build(BuildContext context) {
+    // ponytail: 저자 상세 화면이 아직 없어 탐색만 표시 — 작가 페이지 생기면 onTap 연결
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: AppTheme.smoothBox(
+        color: context.appCard,
+        side: BorderSide.none,
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: context.appCardElevated,
+            child: Text(
+              contributor.name.isNotEmpty ? contributor.name[0] : '?',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: context.appPrimaryAccent,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  contributor.name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: context.appTextPrimary,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  contributor.role,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: context.appTextTertiary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── 섹션 헤더 ───────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onSeeAll;
+
+  const _SectionHeader({required this.title, this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: context.appTextPrimary,
+          ),
+        ),
+        const Spacer(),
+        if (onSeeAll != null)
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onSeeAll!();
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Text(
+                  '모두 보기',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: context.appTextTertiary,
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─── 나의 문장·생각 ──────────────────────────────────────────────────────────
+
+class _MyRecordsSection extends ConsumerWidget {
   final AladinBook book;
   final Book? libraryBook;
   final String? globalBookId;
 
-  const _PersonalRecordsSection({
+  const _MyRecordsSection({
     required this.book,
     required this.libraryBook,
     required this.globalBookId,
   });
+
+  void _openChoseoList(BuildContext context) {
+    HapticFeedback.selectionClick();
+    context.push(AppConstants.routeChoseoList);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1323,600 +1163,278 @@ class _PersonalRecordsSection extends ConsumerWidget {
       isbn: book.isbn13,
       globalBookId: globalBookId,
     );
-    final state = ref.watch(_bookPersonalRecordsProvider(query));
+    final state = ref.watch(_myRecordCountsProvider(query));
 
-    return state.when(
-      loading: () => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: _SectionSkeleton(title: '내 기록'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: '나의 문장·생각',
+          onSeeAll: () => _openChoseoList(context),
+        ),
+        const SizedBox(height: 12),
+        state.when(
+          loading: () => const Row(
+            children: [
+              Expanded(child: ChorokShimmer(width: double.infinity, height: 76)),
+              SizedBox(width: 10),
+              Expanded(child: ChorokShimmer(width: double.infinity, height: 76)),
+            ],
+          ),
+          error: (_, _) => _cards(context, (sentences: 0, thoughts: 0)),
+          data: (counts) => _cards(context, counts),
+        ),
+      ],
+    );
+  }
+
+  Widget _cards(BuildContext context, _MyRecordCounts counts) {
+    return Row(
+      children: [
+        Expanded(
+          child: _CountCard(
+            label: '문장',
+            count: counts.sentences,
+            background: Colors.white,
+            foreground: AppTheme.darkBg,
+            onTap: () => _openChoseoList(context),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _CountCard(
+            label: '생각',
+            count: counts.thoughts,
+            background: context.appPrimaryAccent,
+            foreground: AppTheme.darkBg,
+            onTap: () => _openChoseoList(context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CountCard extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+
+  const _CountCard({
+    required this.label,
+    required this.count,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$label $count개 모두 보기',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          height: 76,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: AppTheme.smoothBox(
+            color: background,
+            side: BorderSide(color: context.appPillBorderActive),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: foreground,
+                ),
+              ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                    color: foreground,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      error: (_, _) => SliverToBoxAdapter(
-        child: _SectionError(title: '내 기록', message: '내 기록을 불러오지 못했어요'),
+    );
+  }
+}
+
+// ─── 인기·친구 문장·생각 섹션 ────────────────────────────────────────────────
+
+class _CommunityThoughtsSection extends ConsumerWidget {
+  final String title;
+  final AladinBook book;
+  final String isbn;
+  final bool friendsOnly;
+
+  const _CommunityThoughtsSection({
+    required this.title,
+    required this.book,
+    required this.isbn,
+    required this.friendsOnly,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(_bookInfoCommunityProvider(isbn));
+
+    return state.when(
+      loading: () => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: title),
+          const SizedBox(height: 12),
+          const ChorokShimmer(width: double.infinity, height: 180),
+        ],
+      ),
+      error: (_, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: title),
+          const SizedBox(height: 12),
+          Text(
+            '문장을 불러오지 못했어요',
+            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
+          ),
+        ],
       ),
       data: (data) {
-        if (libraryBook == null && !data.hasRecords) {
-          return SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  _SectionTitle(title: '내 기록'),
-                  SizedBox(height: 12),
-                  _EmptyCommunityState(
-                    icon: Icons.menu_book_outlined,
-                    title: '아직 내 기록이 없어요',
-                    body: '서재에 추가하고 읽으면 진행률과 문장이 여기에 보여요',
-                  ),
-                ],
+        final sentences = friendsOnly ? data.friends : data.popular;
+
+        if (sentences.isEmpty) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SectionHeader(title: title),
+              const SizedBox(height: 12),
+              _EmptyCommunityState(
+                icon: friendsOnly
+                    ? Icons.people_outline_rounded
+                    : Icons.format_quote_rounded,
+                title: friendsOnly ? '친구의 기록이 아직 없어요' : '아직 남겨진 문장이 없어요',
+                body: friendsOnly
+                    ? '이 책을 읽은 독자를 팔로우하면 여기에 보여요'
+                    : '첫 번째로 문장을 남겨보세요',
               ),
-            ),
+            ],
           );
         }
 
-        return SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionTitle(
-                  title: '내 기록',
-                  trailing: libraryBook?.status.label,
-                ),
-                const SizedBox(height: 12),
-                if (libraryBook != null)
-                  _MyProgressCard(
-                    book: libraryBook!,
-                    sentenceCount: data.sentences.length,
-                    memoCount: data.memos.length,
-                    reviewCount: data.reviews.length,
-                  ),
-                if (libraryBook != null &&
-                    (data.hasRecords || data.sentences.isEmpty)) ...[
-                  const SizedBox(height: 10),
-                ],
-                if (data.reviews.isNotEmpty) ...[
-                  _SubsectionLabel(label: '내 평가', count: data.reviews.length),
-                  const SizedBox(height: 8),
-                  ...data.reviews
-                      .take(2)
-                      .map(
-                        (review) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _MyReviewCard(review: review),
-                        ),
-                      ),
-                ],
-                if (data.sentences.isNotEmpty) ...[
-                  _SubsectionLabel(label: '내 문장', count: data.sentences.length),
-                  const SizedBox(height: 8),
-                  ...data.sentences
-                      .take(3)
-                      .map(
-                        (sentence) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _MySentenceCard(sentence: sentence),
-                        ),
-                      ),
-                ],
-                if (data.memos.isNotEmpty) ...[
-                  _SubsectionLabel(label: '개인 메모', count: data.memos.length),
-                  const SizedBox(height: 8),
-                  ...data.memos
-                      .take(3)
-                      .map(
-                        (memo) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _MyMemoCard(memo: memo),
-                        ),
-                      ),
-                ],
-                if (libraryBook != null && !data.hasRecords)
-                  const _EmptyCommunityState(
-                    icon: Icons.edit_note_rounded,
-                    title: '아직 남긴 기록이 없어요',
-                    body: '읽으면서 수집한 문장과 메모가 여기에 쌓여요',
-                  ),
-              ],
+        final top = sentences.first;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader(
+              title: title,
+              onSeeAll: () => _showThoughtsSheet(
+                context,
+                title: title,
+                book: book,
+                sentences: sentences,
+                data: data,
+              ),
             ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _MyProgressCard extends StatelessWidget {
-  final Book book;
-  final int sentenceCount;
-  final int memoCount;
-  final int reviewCount;
-
-  const _MyProgressCard({
-    required this.book,
-    required this.sentenceCount,
-    required this.memoCount,
-    required this.reviewCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = book.readingProgress.clamp(0.0, 1.0).toDouble();
-    final percent = (progress * 100).round();
-    final pageLabel = book.totalPages > 0
-        ? '${book.currentPage}/${book.totalPages}쪽'
-        : book.currentPage > 0
-        ? '${book.currentPage}쪽'
-        : '페이지 기록 없음';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: AppTheme.smoothPill(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.12),
-                ),
-                child: Text(
-                  book.status.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: context.appPrimaryAccent,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                pageLabel,
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: book.totalPages > 0 ? progress : 0,
-              minHeight: 6,
-              backgroundColor: context.appCardElevated,
-              valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                book.totalPages > 0 ? '$percent%' : '진행률 없음',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '문장 $sentenceCount · 메모 $memoCount · 평가 $reviewCount',
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SubsectionLabel extends StatelessWidget {
-  final String label;
-  final int count;
-
-  const _SubsectionLabel({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            color: context.appTextTertiary,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          '$count',
-          style: TextStyle(fontSize: 12, color: context.appPrimaryAccent),
-        ),
-      ],
-    );
-  }
-}
-
-class _MyReviewCard extends StatelessWidget {
-  final _PersonalReview review;
-
-  const _MyReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _RatingStars(rating: review.starRating),
-              const Spacer(),
-              Text(
-                _relativeDate(review.createdAt),
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-          if (review.memorableLine != null &&
-              review.memorableLine!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              '“${review.memorableLine!.trim()}”',
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextPrimary,
-                height: 1.65,
-                fontStyle: FontStyle.italic,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            _SentenceThoughtCard(
+              book: book,
+              sentence: top,
+              replies: data.repliesFor(top.id),
             ),
           ],
-          if (review.legacy != null && review.legacy!.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              review.legacy!.trim(),
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextSecondary,
-                height: 1.65,
-              ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _MySentenceCard extends StatelessWidget {
-  final _PersonalSentence sentence;
-
-  const _MySentenceCard({required this.sentence});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (sentence.pageNumber != null)
-                Text(
-                  'p.${sentence.pageNumber}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.appPrimaryAccent,
-                  ),
-                ),
-              if (sentence.pageNumber != null) const SizedBox(width: 8),
-              Text(
-                _relativeDate(sentence.createdAt),
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            sentence.content,
-            style: TextStyle(
-              fontSize: 12,
-              color: context.appTextPrimary,
-              fontStyle: FontStyle.italic,
-              height: 1.65,
-            ),
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (sentence.thought != null &&
-              sentence.thought!.trim().isNotEmpty) ...[
+void _showThoughtsSheet(
+  BuildContext context, {
+  required String title,
+  required AladinBook book,
+  required List<_BookSentence> sentences,
+  required _BookCommunityData data,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.appBg,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetContext) => FractionallySizedBox(
+      heightFactor: 0.85,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             const SizedBox(height: 10),
-            Text(
-              sentence.thought!.trim(),
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextSecondary,
-                height: 1.65,
+            const ChorokSheetHandle(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: sheetContext.appTextPrimary,
+                ),
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                itemCount: sentences.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (_, index) {
+                  final sentence = sentences[index];
+                  return _SentenceThoughtCard(
+                    book: book,
+                    sentence: sentence,
+                    replies: data.repliesFor(sentence.id),
+                  );
+                },
+              ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MyMemoCard extends StatelessWidget {
-  final BookMemo memo;
-
-  const _MyMemoCard({required this.memo});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _relativeDate(memo.createdAt),
-            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            memo.content,
-            style: TextStyle(
-              fontSize: 12,
-              color: context.appTextPrimary,
-              height: 1.65,
-            ),
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 커뮤니티 요약 ───────────────────────────────────────────────────────────
-
-class _CommunityOverview extends ConsumerWidget {
-  final String isbn;
-
-  const _CommunityOverview({required this.isbn});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => const _CommunityOverviewSkeleton(),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (data) {
-        final average = data.averageRating;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            side: BorderSide.none,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _OverviewMetric(
-                  icon: Icons.people_alt_rounded,
-                  value: data.readerCount > 0 ? '${data.readerCount}' : '-',
-                  label: '읽는 독자',
-                ),
-              ),
-              _OverviewDivider(),
-              Expanded(
-                child: _OverviewMetric(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  value: data.comments.isNotEmpty
-                      ? '${data.comments.length}'
-                      : '-',
-                  label: '코멘트',
-                ),
-              ),
-              _OverviewDivider(),
-              Expanded(
-                child: _OverviewMetric(
-                  icon: Icons.star_rounded,
-                  value: average == null ? '-' : average.toStringAsFixed(1),
-                  label: '평균 별점',
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _CommunityOverviewSkeleton extends StatelessWidget {
-  const _CommunityOverviewSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: const Row(
-        children: [
-          Expanded(child: ChorokShimmer(width: 56, height: 34)),
-          Expanded(child: ChorokShimmer(width: 56, height: 34)),
-          Expanded(child: ChorokShimmer(width: 56, height: 34)),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverviewMetric extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _OverviewMetric({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 18, color: context.appPrimaryAccent),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: context.appTextPrimary,
-            height: 1.1,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w400,
-            color: context.appTextTertiary,
-            height: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OverviewDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 1, height: 42, color: context.appCardElevated);
-  }
-}
-
-// ─── 인기 생각 섹션 ───────────────────────────────────────────────────────
-
-class _PopularBookThoughtsSection extends ConsumerWidget {
-  final AladinBook book;
-
-  const _PopularBookThoughtsSection({required this.book});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isbn = book.isbn13 ?? '';
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: _SectionSkeleton(title: '지금 많이 멈춘 생각'),
         ),
       ),
-      error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-      data: (data) {
-        final thoughts =
-            data.sentences
-                .where(
-                  (sentence) => sentence.thought?.trim().isNotEmpty == true,
-                )
-                .toList()
-              ..sort((a, b) {
-                final likeCompare = b.likeCount.compareTo(a.likeCount);
-                if (likeCompare != 0) return likeCompare;
-                return b.savedAt.compareTo(a.savedAt);
-              });
-        if (thoughts.isEmpty) {
-          return const SliverToBoxAdapter(child: SizedBox.shrink());
-        }
-        return SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 0, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: _SectionTitle(
-                    title: '지금 많이 멈춘 생각',
-                    trailing: data.readerCount > 0
-                        ? '${data.readerCount}명'
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 214,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: thoughts.take(5).length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) {
-                      return _PopularBookThoughtCard(
-                        book: book,
-                        sentence: thoughts[index],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+    ),
+  );
 }
 
-class _PopularBookThoughtCard extends StatelessWidget {
+// ─── 문장·생각 카드 ──────────────────────────────────────────────────────────
+
+class _SentenceThoughtCard extends StatelessWidget {
   final AladinBook book;
   final _BookSentence sentence;
+  final List<_BookComment> replies;
 
-  const _PopularBookThoughtCard({required this.book, required this.sentence});
+  const _SentenceThoughtCard({
+    required this.book,
+    required this.sentence,
+    required this.replies,
+  });
 
   void _openSentence(BuildContext context) {
     HapticFeedback.selectionClick();
@@ -1936,19 +1454,22 @@ class _PopularBookThoughtCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thought = sentence.thought?.trim();
+
     return GestureDetector(
       onTap: () => _openSentence(context),
       child: Container(
-        width: 268,
-        padding: const EdgeInsets.all(15),
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusMD,
-          side: BorderSide(color: context.appPillBorderActive),
+          side: BorderSide.none,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 작성자 + 댓글·공감 수
             Row(
               children: [
                 _Avatar(
@@ -1964,271 +1485,143 @@ class _PopularBookThoughtCard extends StatelessWidget {
                       username: sentence.username,
                       avatarUrl: sentence.avatarUrl,
                     ),
-                    child: _AuthorLabel(
-                      displayName: sentence.username,
-                      handle: sentence.handle,
-                      color: context.appTextSecondary,
+                    child: Text(
+                      sentence.username,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appTextSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                if (sentence.isFollowing) const _FollowingBadge(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              sentence.thought!.trim(),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextPrimary,
-                height: 1.58,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(9),
-              decoration: AppTheme.smoothBox(
-                color: context.appCardElevated.withValues(alpha: 0.72),
-                radius: AppTheme.radiusSM,
-                side: BorderSide.none,
-              ),
-              child: Text(
-                '“${sentence.content}”',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: context.appTextTertiary,
-                  height: 1.45,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
                 Icon(
-                  Icons.favorite_rounded,
+                  Icons.chat_bubble_outline_rounded,
                   size: 13,
-                  color: context.appPrimaryAccent,
+                  color: context.appTextTertiary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${replies.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.appTextTertiary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Icon(
+                  Icons.favorite_border_rounded,
+                  size: 13,
+                  color: context.appTextTertiary,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${sentence.likeCount}',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: context.appTextTertiary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  _relativeDate(sentence.savedAt),
-                  style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: context.appTextTertiary,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+            const SizedBox(height: 12),
 
-// ─── 팔로잉 생각 섹션 ───────────────────────────────────────────────────────
-
-class _FollowingThoughtsSection extends ConsumerWidget {
-  final String isbn;
-
-  const _FollowingThoughtsSection({required this.isbn});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: _SectionSkeleton(title: '팔로잉 생각'),
-        ),
-      ),
-      error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-      data: (data) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SectionTitle(
-                title: '팔로잉 생각',
-                trailing: data.followingReaderCount > 0
-                    ? '${data.followingReaderCount}명'
-                    : null,
+            // 인용 문장
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: AppTheme.smoothBox(
+                color: context.appCardElevated.withValues(alpha: 0.5),
+                radius: AppTheme.radiusMD,
+                side: BorderSide(color: context.appPillBorderActive),
               ),
-              const SizedBox(height: 12),
-              if (data.followingThoughts.isEmpty)
-                const _EmptyCommunityState(
-                  icon: Icons.people_outline_rounded,
-                  title: '팔로잉한 독자의 생각이 아직 없어요',
-                  body: '이 책을 읽은 독자를 팔로우하면 생각이 먼저 보여요',
-                )
-              else
-                SizedBox(
-                  height: 188,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: data.followingThoughts.take(8).length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (_, index) {
-                      final thought = data.followingThoughts[index];
-                      return _FollowingThoughtCard(thought: thought);
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FollowingThoughtCard extends StatelessWidget {
-  final _BookSocialThought thought;
-
-  const _FollowingThoughtCard({required this.thought});
-
-  String get _typeLabel {
-    return switch (thought.type) {
-      _BookSocialThoughtType.sentence => '문장 생각',
-      _BookSocialThoughtType.review => '완독 의견',
-      _BookSocialThoughtType.comment => '코멘트',
-    };
-  }
-
-  void _openProfile(BuildContext context) {
-    final userId = thought.userId;
-    if (userId == null || userId.isEmpty) return;
-    HapticFeedback.selectionClick();
-    context.push(
-      AppConstants.routeUserProfile,
-      extra: UserProfile(
-        id: userId,
-        username: thought.username,
-        displayName: thought.username,
-        avatarUrl: thought.avatarUrl,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: thought.userId != null,
-      label: '${thought.username} 프로필 보기',
-      child: GestureDetector(
-        onTap: () => _openProfile(context),
-        child: Container(
-          width: 258,
-          padding: const EdgeInsets.all(15),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: AppTheme.radiusMD,
-            side: BorderSide(color: context.appPillBorderActive),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Avatar(
-                    username: thought.username,
-                    avatarUrl: thought.avatarUrl,
+                  Icon(
+                    Icons.format_quote_rounded,
+                    size: 16,
+                    color: context.appPrimaryAccent,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _AuthorLabel(
-                      displayName: thought.username,
-                      handle: thought.handle,
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    decoration: AppTheme.smoothBox(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.12),
-                      radius: 8,
-                      side: BorderSide.none,
-                    ),
                     child: Text(
-                      _typeLabel,
+                      sentence.content,
                       style: TextStyle(
-                        fontSize: 10,
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
+                        fontSize: 13,
+                        color: context.appTextPrimary,
+                        height: 1.6,
                       ),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                thought.content,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextPrimary,
-                  height: 1.6,
+            ),
+
+            // 생각
+            if (thought != null && thought.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: AppTheme.smoothBox(
+                  color: context.appCardElevated.withValues(alpha: 0.5),
+                  radius: AppTheme.radiusMD,
+                  side: BorderSide(color: context.appPillBorderActive),
+                ),
+                child: Text(
+                  thought,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.appTextSecondary,
+                    height: 1.65,
+                  ),
+                  maxLines: 8,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (thought.anchor != null && thought.anchor!.isNotEmpty) ...[
-                const Spacer(),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(9),
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCardElevated.withValues(alpha: 0.72),
-                    radius: AppTheme.radiusSM,
-                    side: BorderSide.none,
-                  ),
-                  child: Text(
-                    '“${thought.anchor!}”',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: context.appTextTertiary,
-                      height: 1.45,
-                    ),
-                  ),
-                ),
-              ] else
-                const Spacer(),
+            ],
+
+            // 댓글
+            for (final reply in replies.take(2)) ...[
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  if (thought.rating != null) ...[
-                    _RatingStars(rating: thought.rating!),
-                    const SizedBox(width: 8),
-                  ],
-                  if (thought.likeCount > 0)
-                    Text(
-                      '공감 ${thought.likeCount}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.appTextTertiary,
+                  _Avatar(
+                    username: reply.username,
+                    avatarUrl: reply.avatarUrl,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _openBookInfoProfile(
+                        context,
+                        userId: reply.userId,
+                        username: reply.username,
+                        avatarUrl: reply.avatarUrl,
+                      ),
+                      child: Text(
+                        reply.username,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.appTextSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  const Spacer(),
+                  ),
+                  Icon(
+                    Icons.favorite_border_rounded,
+                    size: 12,
+                    color: context.appTextTertiary,
+                  ),
+                  const SizedBox(width: 4),
                   Text(
-                    _relativeDate(thought.createdAt),
+                    '${reply.likeCount}',
                     style: TextStyle(
                       fontSize: 11,
                       color: context.appTextTertiary,
@@ -2236,392 +1629,29 @@ class _FollowingThoughtCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── 사용자 평가 섹션 ───────────────────────────────────────────────────────
-
-class _ReviewsSection extends ConsumerWidget {
-  final String isbn;
-
-  const _ReviewsSection({required this.isbn});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: _SectionSkeleton(title: '다른 독자 의견'),
-        ),
-      ),
-      error: (_, _) => SliverToBoxAdapter(
-        child: _SectionError(title: '다른 독자 의견', message: '평가를 불러오지 못했어요'),
-      ),
-      data: (data) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SectionTitle(
-                title: '다른 독자 의견',
-                trailing: data.averageRating == null
-                    ? null
-                    : '${data.averageRating!.toStringAsFixed(1)} · ${data.reviews.length}명',
-              ),
-              const SizedBox(height: 12),
-              if (data.reviews.isEmpty)
-                const _EmptyCommunityState(
-                  icon: Icons.star_outline_rounded,
-                  title: '아직 공개 평가가 없어요',
-                  body: '완독 후 남긴 별점과 의견이 여기에 모여요',
-                )
-              else
-                ...data.reviews.map(
-                  (review) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _ReviewCard(review: review),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 28),
+                child: Text(
+                  reply.content,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.appTextTertiary,
+                    height: 1.5,
                   ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final _BookReview review;
-
-  const _ReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _Avatar(username: review.username, avatarUrl: review.avatarUrl),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _openBookInfoProfile(
-                    context,
-                    userId: review.userId,
-                    username: review.username,
-                    avatarUrl: review.avatarUrl,
-                  ),
-                  child: _AuthorLabel(
-                    displayName: review.username,
-                    handle: review.handle,
-                    color: review.userId == null
-                        ? context.appTextTertiary
-                        : context.appTextSecondary,
-                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (review.isFollowing) ...[
-                const SizedBox(width: 8),
-                const _FollowingBadge(),
-              ],
-              const SizedBox(width: 8),
-              _RatingStars(rating: review.starRating),
             ],
-          ),
-          if (review.memorableLine != null &&
-              review.memorableLine!.trim().isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              '“${review.memorableLine!.trim()}”',
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextPrimary,
-                height: 1.65,
-                fontStyle: FontStyle.italic,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
           ],
-          if (review.legacy != null && review.legacy!.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              review.legacy!.trim(),
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appTextSecondary,
-                height: 1.65,
-              ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          const SizedBox(height: 10),
-          Text(
-            _relativeDate(review.createdAt),
-            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 독자 코멘트 섹션 ───────────────────────────────────────────────────────
-
-class _CommentsSection extends ConsumerWidget {
-  final String isbn;
-
-  const _CommentsSection({required this.isbn});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: _SectionSkeleton(title: '독자 코멘트'),
-        ),
-      ),
-      error: (_, _) => SliverToBoxAdapter(
-        child: _SectionError(title: '독자 코멘트', message: '코멘트를 불러오지 못했어요'),
-      ),
-      data: (data) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SectionTitle(
-                title: '독자 코멘트',
-                trailing: data.comments.isEmpty
-                    ? null
-                    : '${data.comments.length}개',
-              ),
-              const SizedBox(height: 12),
-              if (data.comments.isEmpty)
-                const _EmptyCommunityState(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: '아직 코멘트가 없어요',
-                  body: '다른 독자들의 생각과 댓글이 여기에 모여요',
-                )
-              else
-                ...data.comments
-                    .take(12)
-                    .map(
-                      (comment) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CommentCard(comment: comment),
-                      ),
-                    ),
-            ],
-          ),
         ),
       ),
     );
   }
 }
 
-class _CommentCard extends StatelessWidget {
-  final _BookComment comment;
-
-  const _CommentCard({required this.comment});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _Avatar(username: comment.username, avatarUrl: comment.avatarUrl),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _openBookInfoProfile(
-                    context,
-                    userId: comment.userId,
-                    username: comment.username,
-                    avatarUrl: comment.avatarUrl,
-                  ),
-                  child: _AuthorLabel(
-                    displayName: comment.username,
-                    handle: comment.handle,
-                    color: comment.userId == null
-                        ? context.appTextTertiary
-                        : context.appTextSecondary,
-                  ),
-                ),
-              ),
-              if (comment.isFollowing) ...[
-                const SizedBox(width: 8),
-                const _FollowingBadge(),
-              ],
-              const SizedBox(width: 8),
-              Text(
-                _relativeDate(comment.createdAt),
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            comment.content,
-            style: TextStyle(
-              fontSize: 12,
-              color: context.appTextPrimary,
-              height: 1.65,
-            ),
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (comment.sentenceContent != null &&
-              comment.sentenceContent!.trim().isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: AppTheme.smoothBox(
-                color: context.appCardElevated,
-                radius: AppTheme.radiusSM,
-                side: BorderSide.none,
-              ),
-              child: Text(
-                comment.sentenceContent!.trim(),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: context.appTextTertiary,
-                  height: 1.55,
-                  fontStyle: FontStyle.italic,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 공통 커뮤니티 UI ───────────────────────────────────────────────────────
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final String? trailing;
-
-  const _SectionTitle({required this.title, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: context.appTextPrimary,
-          ),
-        ),
-        const Spacer(),
-        if (trailing != null)
-          Text(
-            trailing!,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: context.appTextTertiary,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _SectionSkeleton extends StatelessWidget {
-  final String title;
-
-  const _SectionSkeleton({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionTitle(title: title),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            side: BorderSide.none,
-          ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ChorokShimmer(width: double.infinity, height: 13),
-              SizedBox(height: 8),
-              ChorokShimmer(width: 220, height: 13),
-              SizedBox(height: 14),
-              ChorokShimmer(width: 92, height: 12),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionError extends StatelessWidget {
-  final String title;
-  final String message;
-
-  const _SectionError({required this.title, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionTitle(title: title),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ─── 공통 UI ─────────────────────────────────────────────────────────────────
 
 class _EmptyCommunityState extends StatelessWidget {
   final IconData icon;
@@ -2672,298 +1702,6 @@ class _EmptyCommunityState extends StatelessWidget {
   }
 }
 
-class _RatingStars extends StatelessWidget {
-  final int rating;
-
-  const _RatingStars({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    final safeRating = rating.clamp(0, 5);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        final filled = index < safeRating;
-        return Icon(
-          filled ? Icons.star_rounded : Icons.star_outline_rounded,
-          size: 14,
-          color: filled ? context.appPrimaryAccent : context.appTextTertiary,
-        );
-      }),
-    );
-  }
-}
-
-// ─── 커뮤니티 문장 섹션 ────────────────────────────────────────────────────────
-
-class _SentencesSection extends ConsumerWidget {
-  final String isbn;
-
-  const _SentencesSection({required this.isbn});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_bookInfoCommunityProvider(isbn));
-
-    return state.when(
-      loading: () => SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (_, index) => index == 0
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: _SectionTitle(title: '독자들의 문장'),
-                )
-              : Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: _SentenceShimmer(),
-                ),
-          childCount: 4,
-        ),
-      ),
-      error: (_, _) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Center(
-            child: Text(
-              '문장을 불러오지 못했어요',
-              style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-            ),
-          ),
-        ),
-      ),
-      data: (data) {
-        final sentences = data.sentences;
-        if (sentences.isEmpty) {
-          return SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-              child: Column(
-                children: [
-                  _SectionTitle(title: '독자들의 문장'),
-                  const SizedBox(height: 12),
-                  Icon(
-                    Icons.format_quote_rounded,
-                    size: 40,
-                    color: context.appTextTertiary.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '아직 기록된 문장이 없어요',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: context.appTextSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '첫 번째로 문장을 남겨보세요',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return SliverList(
-          delegate: SliverChildBuilderDelegate((_, i) {
-            if (i == 0) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: _SectionTitle(
-                  title: '독자들의 문장',
-                  trailing: data.sentenceCount > 0
-                      ? '${data.sentenceCount}개'
-                      : null,
-                ),
-              );
-            }
-            final sentence = sentences[i - 1];
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: _SentenceCard(sentence: sentence),
-            );
-          }, childCount: sentences.length + 1),
-        );
-      },
-    );
-  }
-}
-
-// ─── 문장 카드 ────────────────────────────────────────────────────────────────
-
-class _SentenceCard extends StatelessWidget {
-  final _BookSentence sentence;
-
-  const _SentenceCard({required this.sentence});
-
-  String _relativeDate(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inDays >= 365) return '${diff.inDays ~/ 365}년 전';
-    if (diff.inDays >= 30) return '${diff.inDays ~/ 30}달 전';
-    if (diff.inDays >= 1) return '${diff.inDays}일 전';
-    if (diff.inHours >= 1) return '${diff.inHours}시간 전';
-    return '방금';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 문장 본문
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 3,
-                height: 16,
-                margin: const EdgeInsets.only(top: 2, right: 10),
-                decoration: BoxDecoration(
-                  color: context.appPrimaryAccent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  sentence.content,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.appTextPrimary,
-                    fontStyle: FontStyle.italic,
-                    height: 1.7,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // 생각 (있을 때만)
-          if (sentence.thought != null && sentence.thought!.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Divider(
-                color: context.appCardElevated,
-                thickness: 1,
-                height: 1,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                sentence.thought!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextSecondary,
-                  height: 1.65,
-                ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-
-          // 메타 정보
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _Avatar(
-                username: sentence.username,
-                avatarUrl: sentence.avatarUrl,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: GestureDetector(
-                  onTap: () => _openBookInfoProfile(
-                    context,
-                    userId: sentence.userId,
-                    username: sentence.username,
-                    avatarUrl: sentence.avatarUrl,
-                  ),
-                  child: _AuthorLabel(
-                    displayName: sentence.username,
-                    handle: sentence.handle,
-                    color: sentence.userId == null
-                        ? context.appTextTertiary
-                        : context.appTextSecondary,
-                  ),
-                ),
-              ),
-              if (sentence.isFollowing) ...[
-                const SizedBox(width: 8),
-                const _FollowingBadge(),
-              ],
-              const SizedBox(width: 6),
-              Text(
-                '·',
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _relativeDate(sentence.savedAt),
-                style: TextStyle(fontSize: 12, color: context.appTextTertiary),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── 유저 아바타 ──────────────────────────────────────────────────────────────
-
-/// 표시명 + @아이디(핸들)를 함께 보여주는 작성자 라벨. 동명이인 구분용.
-class _AuthorLabel extends StatelessWidget {
-  final String displayName;
-  final String? handle;
-  final Color color;
-
-  const _AuthorLabel({
-    required this.displayName,
-    required this.color,
-    this.handle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final showHandle =
-        handle != null && handle!.isNotEmpty && handle != displayName;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          displayName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        if (showHandle)
-          Text(
-            '@$handle',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10, color: context.appTextTertiary),
-          ),
-      ],
-    );
-  }
-}
-
 class _Avatar extends StatelessWidget {
   final String username;
   final String? avatarUrl;
@@ -2989,39 +1727,6 @@ class _Avatar extends StatelessWidget {
           fontWeight: FontWeight.w400,
           color: context.appPrimaryAccent,
         ),
-      ),
-    );
-  }
-}
-
-// ─── 문장 카드 shimmer ─────────────────────────────────────────────────────────
-
-class _SentenceShimmer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ChorokShimmer(width: double.infinity, height: 13),
-          const SizedBox(height: 6),
-          ChorokShimmer(width: double.infinity, height: 13),
-          const SizedBox(height: 6),
-          ChorokShimmer(width: 160, height: 13),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              ChorokShimmer(width: 20, height: 20, radius: 10),
-              const SizedBox(width: 8),
-              ChorokShimmer(width: 60, height: 11),
-            ],
-          ),
-        ],
       ),
     );
   }

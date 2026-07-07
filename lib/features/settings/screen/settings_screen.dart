@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -157,24 +158,21 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
 
-              _InfoTile(
-                icon: Icons.privacy_tip_outlined,
-                label: '개인정보처리방침',
-                onTap: () => HapticFeedback.selectionClick(),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-              ),
-
-              _InfoTile(
-                icon: Icons.description_outlined,
-                label: '서비스 이용약관',
-                onTap: () => HapticFeedback.selectionClick(),
-                trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-              ),
-
+              // ponytail: 개인정보처리방침·이용약관 문서가 아직 없어 타일 제거.
+              // 문서 URL 확정 시 url_launcher로 여는 _InfoTile을 여기 복원한다.
               _InfoTile(
                 icon: Icons.mail_outline_rounded,
                 label: '문의하기',
-                onTap: () => HapticFeedback.selectionClick(),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  launchUrl(
+                    Uri(
+                      scheme: 'mailto',
+                      path: 'choys9662@gmail.com',
+                      query: 'subject=초록 문의',
+                    ),
+                  );
+                },
                 trailing: const Icon(Icons.chevron_right_rounded, size: 20),
               ),
             ],

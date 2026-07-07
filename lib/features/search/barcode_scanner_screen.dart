@@ -12,11 +12,11 @@ import '../search/util/add_book_flow.dart';
 import '../search/widget/add_to_library_sheet.dart';
 
 // ─── 색상 토큰 ────────────────────────────────────────────────────────────────
-const _kBg = Color(0xFF000000);
-const _kGreen = Color(0xFF00FF00);
-const _kSurface = Color(0xFF111111);
-const _kTextPrimary = Color(0xFFF0FAF4);
-const _kTextSecondary = Color(0xFF6B8C74);
+const _kBg = AppTheme.darkBg;
+const _kGreen = AppTheme.primaryLight;
+const _kSurface = AppTheme.darkCard;
+const _kTextPrimary = AppTheme.textPrimary;
+const _kTextSecondary = AppTheme.textTertiary;
 const _kOverlay = Color(0xCC000000);
 
 // ─── 스캐너 화면 ──────────────────────────────────────────────────────────────

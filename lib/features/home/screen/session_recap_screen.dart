@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -20,7 +21,6 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../feed/controller/feed_provider.dart';
-import '../../feed/screen/sentence_detail_screen.dart';
 import '../../library/screen/library_screen.dart';
 import 'session_score.dart';
 import '../controller/session_firefly_provider.dart';
@@ -34,12 +34,11 @@ import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 
 const _recapBg = Color(0xFF000000);
-const _recapActionBg = Color(0xFF111411);
+const _recapActionBg = AppTheme.darkCard;
 const _recapBlue = AppTheme.primaryLight;
-const _recapBlueMuted = AppTheme.accent;
-const _recapCard = Color(0xFF141914);
-const _recapText = Color(0xFFF1F7EE);
-const _recapMuted = Color(0xFF7B8779);
+const _recapCard = AppTheme.darkCard;
+const _recapText = AppTheme.textPrimary;
+const _recapMuted = AppTheme.textTertiary;
 
 // ─── 리캡 데이터 모델 ─────────────────────────────────────────────────
 class RecapData {
@@ -103,11 +102,6 @@ _SentenceTag _analyzeTag(String sentence) {
   };
 }
 
-int _resonanceCount(String sentence) {
-  final h = sentence.codeUnits.fold(0, (a, b) => a + b);
-  return 100 + (h % 500);
-}
-
 int _rareCount(String sentence) {
   final h = sentence.codeUnits.fold(0, (a, b) => a + b);
   return 1 + (h % 4);
@@ -116,6 +110,72 @@ int _rareCount(String sentence) {
 int _viralCount(String sentence) {
   final h = sentence.codeUnits.fold(0, (a, b) => a + b);
   return 50 + (h % 200);
+}
+
+int _resonancePercent(String sentence) {
+  final h = sentence.codeUnits.fold(0, (a, b) => a + b);
+  return 60 + (h % 35);
+}
+
+CollectedSentence? _featuredSentence(List<CollectedSentence> sentences) {
+  if (!kUseMock) return null;
+  for (final sentence in sentences) {
+    if (_analyzeTag(sentence.content) != _SentenceTag.normal) return sentence;
+  }
+  return sentences.isEmpty ? null : sentences.first;
+}
+
+List<Color> _recapBookGradientColors(String bookTitle) {
+  const palettes = [
+    [Color(0xFFE8F8E8), Color(0xFF8DFF54)],
+    [Color(0xFFE7FFF6), Color(0xFF61DDB2)],
+    [Color(0xFFFFF2DD), Color(0xFFFFB761)],
+    [Color(0xFFFFECEC), Color(0xFFFF8C8C)],
+    [Color(0xFFE9F2FF), Color(0xFF88AEFF)],
+    [Color(0xFFF4EDFF), Color(0xFFB58CFF)],
+    [Color(0xFFEAFDF8), Color(0xFF8CB5FF)],
+    [Color(0xFFFFF6E8), Color(0xFFFFD37A)],
+  ];
+  final h = bookTitle.codeUnits.fold(0, (a, b) => a + b);
+  return palettes[h % palettes.length];
+}
+
+List<Color> _coverGradientFromPixels(ByteData data, int width, int height) {
+  final stepX = (width / 24).ceil().clamp(1, width).toInt();
+  final stepY = (height / 24).ceil().clamp(1, height).toInt();
+  var r = 0;
+  var g = 0;
+  var b = 0;
+  var count = 0;
+
+  for (var y = 0; y < height; y += stepY) {
+    for (var x = 0; x < width; x += stepX) {
+      final i = (y * width + x) * 4;
+      final a = data.getUint8(i + 3);
+      if (a < 128) continue;
+      final pr = data.getUint8(i);
+      final pg = data.getUint8(i + 1);
+      final pb = data.getUint8(i + 2);
+      final luma = pr * 0.299 + pg * 0.587 + pb * 0.114;
+      if (luma < 24 || luma > 232) continue;
+      r += pr;
+      g += pg;
+      b += pb;
+      count++;
+    }
+  }
+
+  if (count == 0) {
+    return const [AppTheme.textPrimary, AppTheme.primaryLight];
+  }
+
+  final base = Color.fromARGB(255, r ~/ count, g ~/ count, b ~/ count);
+  final hsl = HSLColor.fromColor(base);
+  final saturation = (hsl.saturation * 1.25).clamp(0.28, 0.86).toDouble();
+  return [
+    hsl.withSaturation(saturation).withLightness(0.78).toColor(),
+    hsl.withSaturation(saturation).withLightness(0.56).toColor(),
+  ];
 }
 
 // ─── 리캡 스크린 ──────────────────────────────────────────────────────
@@ -135,16 +195,13 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   late final int _score;
   late final String _sessionId;
 
-  // 완독 시 다음 책 제안 노출 상태/애니메이션 (완독 감지 재연결 시 setState로 토글)
-  // ignore: prefer_final_fields
-  bool _showNextBookSuggestion = false;
-  late final AnimationController _suggestCtrl;
-  late final Animation<double> _suggestFade;
-  late final Animation<Offset> _suggestSlide;
+  // 체인 라이트닝 — 완독 후 홈/서재 이탈 시점에 다음 책 팝업 (세션당 1회)
+  bool _chainLightningShown = false;
 
   // 공유 카드 캡처용 키
   final _shareKey = GlobalKey();
   bool _isChoseoExpanded = false;
+  bool _isCompanionsExpanded = false;
 
   // 집중도 (0~100)
   double get _focusPercent => sessionFocusPercent(
@@ -199,16 +256,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _enterCtrl, curve: Curves.easeOutCubic));
 
-    _suggestCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _suggestFade = CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOut);
-    _suggestSlide =
-        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-          CurvedAnimation(parent: _suggestCtrl, curve: Curves.easeOutCubic),
-        );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       _enterCtrl.forward();
@@ -252,14 +299,66 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     return (endPage - widget.data.startPage).clamp(0, 999999);
   }
 
+  /// 종료 슬라이더를 끝까지 밀었으면 완독으로 간주한다 (체인 라이트닝 트리거).
+  bool get _isCompletedRead =>
+      widget.data.totalPages > 0 &&
+      (widget.data.endPage ?? 0) >= widget.data.totalPages;
+
+  ChainLightningQuery get _chainQuery =>
+      (title: widget.data.bookTitle, author: widget.data.bookAuthor);
+
+  /// 홈/서재 이탈 시 — 완독이면 다음 책 추천 팝업을 먼저 띄운다.
+  void _navigateAfterRecap(String route) {
+    HapticFeedback.mediumImpact();
+    if (!_isCompletedRead || _chainLightningShown) {
+      context.go(route);
+      return;
+    }
+    // build에서 프리페치해 둔 추천. 아직 로딩 중이거나 없으면 그냥 이동.
+    final book = ref.read(chainLightningProvider(_chainQuery)).valueOrNull;
+    if (book == null) {
+      context.go(route);
+      return;
+    }
+    _chainLightningShown = true;
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => _ChainLightningDialog(
+        book: book,
+        onRead: () {
+          HapticFeedback.mediumImpact();
+          Navigator.of(dialogCtx).pop();
+          context.go(
+            AppConstants.routeSession,
+            extra: SessionExtra(
+              bookTitle: book.title,
+              bookAuthor: book.author,
+              coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
+            ),
+          );
+        },
+        onLater: () {
+          Navigator.of(dialogCtx).pop();
+          context.go(route);
+        },
+      ),
+    );
+  }
+
   /// 5분 미만 독서는 기록하지 않는다 (실수로 켰다 끈 세션 컷).
   static const _minRecordSeconds = 5 * 60;
 
   Future<void> _autoSaveSession() async {
-    if (widget.data.seconds < _minRecordSeconds) return;
-    final repo = ref.read(bookRepositoryProvider);
     final bookId = widget.data.bookId;
     final endPage = widget.data.endPage;
+    // 페이지 확정(완독 포함)은 세션 길이와 무관하게 반영한다.
+    // 5분 컷은 세션 '기록'만 거른다 — 여기까지 스킵하면 완독한 책이
+    // '읽고 있는 책'·북피커 리스트에 계속 남는다.
+    if (bookId != null && endPage != null) {
+      ref.read(libraryProvider.notifier).updateCurrentPage(bookId, endPage);
+    }
+    if (widget.data.seconds < _minRecordSeconds) return;
+    final repo = ref.read(bookRepositoryProvider);
     final pagesRead = _pagesRead;
     final validSentences = widget.data.sentences
         .where((e) => e.content.isNotEmpty)
@@ -268,7 +367,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
     try {
       if (repo != null) {
         if (bookId != null && endPage != null) {
-          final result = await repo.updateProgress(
+          await repo.updateProgress(
             bookId: bookId,
             newCurrentPage: endPage,
             durationSeconds: widget.data.seconds,
@@ -278,10 +377,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
             exitDurationSeconds: widget.data.exitDurationSeconds,
             existingSessionId: _sessionId,
           );
-          if (result.justCompleted && mounted) {
-            setState(() => _showNextBookSuggestion = true);
-            _suggestCtrl.forward();
-          }
         } else {
           await repo.saveSessionOnly(
             sessionId: _sessionId,
@@ -310,10 +405,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         }
       }
 
-      if (bookId != null && endPage != null) {
-        ref.read(libraryProvider.notifier).updateCurrentPage(bookId, endPage);
-      }
-
       if (bookId != null) {
         unawaited(_uploadToSupabase(bookId, validSentences, pagesRead));
       }
@@ -331,7 +422,6 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   @override
   void dispose() {
     _enterCtrl.dispose();
-    _suggestCtrl.dispose();
     super.dispose();
   }
 
@@ -372,8 +462,17 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
 
   @override
   Widget build(BuildContext context) {
+    // 완독 세션이면 이탈 전에 미리 추천을 받아 둔다 (탭 시점엔 캐시 읽기만).
+    if (_isCompletedRead) {
+      ref.watch(chainLightningProvider(_chainQuery));
+    }
     final firefly = ref.watch(sessionFireflyProvider).valueOrNull;
     final companions = firefly?.mutuals ?? const <UserProfile>[];
+    final companionFriendCount = kUseMock
+        ? 3
+        : firefly?.mutualCount ?? companions.length;
+    final nearbyCount = kUseMock ? 22 : firefly?.nearbyCount ?? 0;
+    final featuredSentence = _featuredSentence(widget.data.sentences);
 
     return Scaffold(
       backgroundColor: _recapBg,
@@ -400,6 +499,21 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           coverUrl: widget.data.coverUrl,
                         ),
                         const SizedBox(height: 20),
+                        if (featuredSentence != null) ...[
+                          _FeaturedSentenceCard(
+                            sentence: featuredSentence,
+                            bookTitle: widget.data.bookTitle,
+                            coverUrl: widget.data.coverUrl,
+                            isExpanded: _isChoseoExpanded,
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _isChoseoExpanded = !_isChoseoExpanded;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         _SummaryRow(
                           icon: Icons.schedule_rounded,
                           label: '독서 시간',
@@ -423,29 +537,17 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             color: _recapText,
                           ),
                         ),
-                        _SummaryRow(
-                          icon: Icons.format_quote_rounded,
-                          label: '초서 기록',
-                          child: _ChoseoValue(
-                            sentenceCount: widget.data.sentences.length,
-                            recordCount: widget.data.sentences
-                                .where((s) => s.thought.isNotEmpty)
-                                .length,
-                            color: _recapText,
-                            isExpanded: _isChoseoExpanded,
-                            onToggle: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _isChoseoExpanded = !_isChoseoExpanded;
-                              });
-                            },
-                          ),
-                        ),
-                        _ChoseoRecordsPanel(
+                        _ChoseoSummarySection(
                           sentences: widget.data.sentences,
                           isExpanded: _isChoseoExpanded,
                           bookTitle: widget.data.bookTitle,
                           bookAuthor: widget.data.bookAuthor,
+                          onToggle: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _isChoseoExpanded = !_isChoseoExpanded;
+                            });
+                          },
                         ),
                         _SummaryRow(
                           icon: Icons.thumb_up_alt_rounded,
@@ -461,22 +563,18 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             ),
                           ),
                         ),
-                        _SummaryRow(
-                          icon: Icons.radio_button_checked_rounded,
-                          label: '함께 읽은',
-                          child: _CompanionsValue(companions: companions),
+                        _CompanionSummarySection(
+                          companions: companions,
+                          friendCount: companionFriendCount,
+                          nearbyCount: nearbyCount,
+                          isExpanded: _isCompanionsExpanded,
+                          onToggle: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _isCompanionsExpanded = !_isCompanionsExpanded;
+                            });
+                          },
                         ),
-
-                        if (_showNextBookSuggestion) ...[
-                          const SizedBox(height: 20),
-                          FadeTransition(
-                            opacity: _suggestFade,
-                            child: SlideTransition(
-                              position: _suggestSlide,
-                              child: const _NextBookSuggestion(),
-                            ),
-                          ),
-                        ],
 
                         // 공유용 영수증 — 화면 밖에서 캡처 전용
                         Offstage(
@@ -501,7 +599,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                 ),
 
                 // ─── 하단 CTA ────────────────────────────────────
-                _RecapActions(onShare: _share),
+                _RecapActions(onShare: _share, onNavigate: _navigateAfterRecap),
               ],
             ),
           ),
@@ -530,6 +628,214 @@ TextStyle _labelStyle({double fontSize = 10}) => TextStyle(
   height: 1.25,
   letterSpacing: 0,
 );
+
+class _FeaturedSentenceCard extends StatefulWidget {
+  final CollectedSentence sentence;
+  final String bookTitle;
+  final String? coverUrl;
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  const _FeaturedSentenceCard({
+    required this.sentence,
+    required this.bookTitle,
+    this.coverUrl,
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  @override
+  State<_FeaturedSentenceCard> createState() => _FeaturedSentenceCardState();
+}
+
+class _FeaturedSentenceCardState extends State<_FeaturedSentenceCard> {
+  List<Color>? _coverColors;
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+  String? _resolvedUrl;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveCoverPalette();
+  }
+
+  @override
+  void didUpdateWidget(_FeaturedSentenceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.coverUrl != widget.coverUrl) {
+      _coverColors = null;
+      _resolvedUrl = null;
+      _resolveCoverPalette();
+    }
+  }
+
+  @override
+  void dispose() {
+    final listener = _listener;
+    if (listener != null) _stream?.removeListener(listener);
+    super.dispose();
+  }
+
+  void _resolveCoverPalette() {
+    final url = widget.coverUrl;
+    if (url == null || url.isEmpty || _resolvedUrl == url) return;
+    _resolvedUrl = url;
+
+    final listener = _listener;
+    if (listener != null) _stream?.removeListener(listener);
+
+    final stream = CachedNetworkImageProvider(
+      url,
+    ).resolve(createLocalImageConfiguration(context));
+    _stream = stream;
+    _listener = ImageStreamListener((info, _) async {
+      final data = await info.image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      if (!mounted || data == null) return;
+      setState(() {
+        _coverColors = _coverGradientFromPixels(
+          data,
+          info.image.width,
+          info.image.height,
+        );
+      });
+    });
+    stream.addListener(_listener!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tag = _analyzeTag(widget.sentence.content);
+    final (String title, String meta) = switch (tag) {
+      _SentenceTag.rare => (
+        '탁월 문장 발견!',
+        '아직 ${_rareCount(widget.sentence.content)}명만 수집',
+      ),
+      _SentenceTag.peak => ('탁월 문장 발견!', '이 책에서 가장 많이 수집'),
+      _SentenceTag.viral => (
+        '탁월 문장 발견!',
+        '${_viralCount(widget.sentence.content)}명이 함께 봄',
+      ),
+      _ => (
+        '탁월 문장 발견!',
+        '독자의 ${_resonancePercent(widget.sentence.content)}%가 수집',
+      ),
+    };
+    final colors = _coverColors ?? _recapBookGradientColors(widget.bookTitle);
+    final hasCover = widget.coverUrl != null && widget.coverUrl!.isNotEmpty;
+
+    return Semantics(
+      button: true,
+      label: widget.isExpanded ? '수집 문장 접기' : '수집 문장 펼치기',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: 70,
+            decoration: AppTheme.smoothBox(
+              radius: 10,
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: colors,
+              ),
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (hasCover)
+                  ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Transform.scale(
+                      scale: 1.22,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.coverUrl!,
+                        fit: BoxFit.cover,
+                        fadeInDuration: const Duration(milliseconds: 160),
+                        errorWidget: (context, url, error) =>
+                            const SizedBox.shrink(),
+                        placeholder: (context, url) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: hasCover
+                          ? [
+                              Colors.white.withValues(alpha: 0.62),
+                              colors.last.withValues(alpha: 0.72),
+                            ]
+                          : colors,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 17,
+                        color: Color(0xFF101510),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF101510),
+                            height: 1.2,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontFamily,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF1D2A1F),
+                          height: 1.2,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      AnimatedRotation(
+                        turns: widget.isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 20,
+                          color: Color(0xFF101510),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // ─── 세션 요약: 책 헤더 ───────────────────────────────────────────────
 class _SummaryBookHeader extends StatelessWidget {
@@ -678,6 +984,83 @@ class _ProgressValue extends StatelessWidget {
 }
 
 // ─── 세션 요약: 초서 기록 값 (문장 10  기록 5) ───────────────────────
+class _ChoseoSummarySection extends StatelessWidget {
+  final List<CollectedSentence> sentences;
+  final bool isExpanded;
+  final String bookTitle;
+  final String bookAuthor;
+  final VoidCallback onToggle;
+
+  const _ChoseoSummarySection({
+    required this.sentences,
+    required this.isExpanded,
+    required this.bookTitle,
+    required this.bookAuthor,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final recordCount = sentences.where((s) => s.thought.isNotEmpty).length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: _recapCard,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 68,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 116,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.format_quote_rounded,
+                          size: 16,
+                          color: _recapMuted,
+                        ),
+                        const SizedBox(width: 8),
+                        Text('초서기록', style: _labelStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: _ChoseoValue(
+                        sentenceCount: sentences.length,
+                        recordCount: recordCount,
+                        color: _recapText,
+                        isExpanded: isExpanded,
+                        onToggle: onToggle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _ChoseoRecordsPanel(
+            sentences: sentences,
+            isExpanded: isExpanded,
+            bookTitle: bookTitle,
+            bookAuthor: bookAuthor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ChoseoValue extends StatelessWidget {
   final int sentenceCount;
   final int recordCount;
@@ -695,38 +1078,42 @@ class _ChoseoValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '문장 $sentenceCount | 생각 $recordCount',
-          style: _labelStyle(fontSize: 11),
-        ),
-        const SizedBox(width: 10),
-        Text('$sentenceCount개', style: _valueStyle(color: color)),
-        Semantics(
-          button: true,
-          label: isExpanded ? '내 초서 기록 접기' : '내 초서 기록 펼치기',
-          child: InkResponse(
-            onTap: onToggle,
-            radius: 18,
-            child: SizedBox(
-              width: 30,
-              height: 30,
-              child: AnimatedRotation(
-                turns: isExpanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 20,
-                  color: color,
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '문장 $sentenceCount | 생각 $recordCount',
+            style: _labelStyle(fontSize: 11),
+          ),
+          const SizedBox(width: 10),
+          Text('$sentenceCount개', style: _valueStyle(color: color)),
+          Semantics(
+            button: true,
+            label: isExpanded ? '내 초서 기록 접기' : '내 초서 기록 펼치기',
+            child: InkResponse(
+              onTap: onToggle,
+              radius: 18,
+              child: SizedBox(
+                width: 30,
+                height: 30,
+                child: AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: color,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -759,7 +1146,7 @@ class _ChoseoRecordsPanel extends ConsumerWidget {
       firstChild: const SizedBox(width: double.infinity),
       secondChild: Container(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         child: sentences.isEmpty
             ? Text(
                 '아직 기록한 문장이 없어요',
@@ -769,14 +1156,6 @@ class _ChoseoRecordsPanel extends ConsumerWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '수집한 문장',
-                    textAlign: TextAlign.center,
-                    style: _labelStyle(
-                      fontSize: 17,
-                    ).copyWith(color: _recapBlue, height: 1.25),
-                  ),
-                  const SizedBox(height: 22),
                   for (int i = 0; i < sentences.length; i++) ...[
                     _ChoseoRecordItem(
                       sentence: sentences[i],
@@ -787,7 +1166,7 @@ class _ChoseoRecordsPanel extends ConsumerWidget {
                       bookTitle: bookTitle,
                       bookAuthor: bookAuthor,
                     ),
-                    if (i < sentences.length - 1) const SizedBox(height: 14),
+                    if (i < sentences.length - 1) const SizedBox(height: 8),
                   ],
                 ],
               ),
@@ -802,7 +1181,7 @@ class _ChoseoRecordsPanel extends ConsumerWidget {
   }
 }
 
-class _ChoseoRecordItem extends StatelessWidget {
+class _ChoseoRecordItem extends StatefulWidget {
   final CollectedSentence sentence;
   final SessionOverlapInsight? overlapInsight;
   final String bookTitle;
@@ -816,443 +1195,270 @@ class _ChoseoRecordItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final insight = overlapInsight;
-    final hasOverlap = insight != null;
+  State<_ChoseoRecordItem> createState() => _ChoseoRecordItemState();
+}
 
-    final card = Container(
-      constraints: const BoxConstraints(minHeight: 96),
-      padding: const EdgeInsets.fromLTRB(20, 18, 22, 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151515),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: hasOverlap ? _recapBlue : Colors.white.withValues(alpha: 0.03),
-          width: hasOverlap ? 1.6 : 1,
+class _ChoseoRecordItemState extends State<_ChoseoRecordItem> {
+  bool _isOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sentence = widget.sentence;
+    final insight = widget.overlapInsight;
+    final hasOverlap = insight != null;
+    final thought = sentence.thought.trim();
+    final hasThought = thought.isNotEmpty;
+    final hasDetails = hasThought || hasOverlap;
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          constraints: const BoxConstraints(minHeight: 68),
+          padding: const EdgeInsets.fromLTRB(20, 17, 22, 17),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B1F1B),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _isOpen
+                  ? Colors.white.withValues(alpha: 0.44)
+                  : Colors.white.withValues(alpha: 0.03),
+              width: _isOpen ? 1.1 : 1,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 34,
+                child: Text(
+                  sentence.pageNumber != null ? '${sentence.pageNumber}' : '',
+                  style: _labelStyle(fontSize: 13).copyWith(
+                    color: _recapMuted.withValues(alpha: 0.82),
+                    height: 1.25,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  sentence.content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: _labelStyle(fontSize: 17).copyWith(
+                    color: Colors.white.withValues(alpha: 0.84),
+                    height: 1.48,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 48,
-            child: Text(
-              sentence.pageNumber != null ? '${sentence.pageNumber}p' : '',
-              style: _labelStyle(fontSize: 13).copyWith(
-                color: hasOverlap
-                    ? _recapBlue.withValues(alpha: 0.82)
-                    : _recapBlueMuted.withValues(alpha: 0.68),
-                height: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              sentence.content,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: _labelStyle(fontSize: 16).copyWith(
-                color: Colors.white.withValues(alpha: 0.66),
-                height: 1.52,
-              ),
-            ),
-          ),
-          if (hasOverlap) ...[
-            const SizedBox(width: 10),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: _recapBlue.withValues(alpha: 0.76),
-              size: 20,
-            ),
-          ],
-        ],
-      ),
+        if (_isOpen) _ChoseoRecordDropdown(thought: thought, insight: insight),
+      ],
     );
 
-    if (!hasOverlap) return card;
+    if (!hasDetails) return body;
 
     return Semantics(
       button: true,
-      label: '같은 문장에 멈춘 독자들의 생각 보기',
+      label: _isOpen ? '문장 기록 접기' : '문장 기록 펼치기',
       child: InkWell(
         onTap: () {
           HapticFeedback.selectionClick();
-          _showOverlapThoughtsSheet(
-            context,
-            insight,
-            bookTitle: bookTitle,
-            bookAuthor: bookAuthor,
-          );
+          setState(() => _isOpen = !_isOpen);
         },
-        borderRadius: BorderRadius.circular(10),
-        child: card,
+        borderRadius: BorderRadius.circular(6),
+        child: body,
       ),
     );
   }
 }
 
-// ─── 세션 후 겹문장 생각 상세 ─────────────────────────────────────────
-void _showOverlapThoughtsSheet(
-  BuildContext context,
-  SessionOverlapInsight insight, {
-  required String bookTitle,
-  required String bookAuthor,
-}) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.72),
-    builder: (sheetContext) => _OverlapThoughtsSheet(
-      rootContext: context,
-      insight: insight,
-      bookTitle: bookTitle,
-      bookAuthor: bookAuthor,
-    ),
-  );
-}
-
-class _OverlapThoughtsSheet extends StatelessWidget {
-  final BuildContext rootContext;
-  final SessionOverlapInsight insight;
-  final String bookTitle;
-  final String bookAuthor;
-
-  const _OverlapThoughtsSheet({
-    required this.rootContext,
-    required this.insight,
-    required this.bookTitle,
-    required this.bookAuthor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final myThought = insight.sentence.thought.trim();
-    return DraggableScrollableSheet(
-      initialChildSize: 0.88,
-      minChildSize: 0.55,
-      maxChildSize: 0.94,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF050805),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 26),
-              children: [
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: _recapBlueMuted.withValues(alpha: 0.34),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '같은 문장, 다른 생각',
-                        style: _valueStyle(
-                          fontSize: 26,
-                        ).copyWith(color: Colors.white, height: 1.15),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                      color: _recapBlueMuted,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                _MyOverlapSentenceCard(
-                  sentence: insight.sentence.content,
-                  thought: myThought,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  '${insight.readerCount}명의 독자가 이 문장에 남긴 생각',
-                  style: _labelStyle(
-                    fontSize: 14,
-                  ).copyWith(color: _recapBlue, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 12),
-                for (final thought in insight.thoughts) ...[
-                  _OverlapThoughtCard(
-                    rootContext: rootContext,
-                    thought: thought,
-                    bookTitle: bookTitle,
-                    bookAuthor: bookAuthor,
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _MyOverlapSentenceCard extends StatelessWidget {
-  final String sentence;
+class _ChoseoRecordDropdown extends StatelessWidget {
   final String thought;
+  final SessionOverlapInsight? insight;
 
-  const _MyOverlapSentenceCard({required this.sentence, required this.thought});
+  const _ChoseoRecordDropdown({required this.thought, required this.insight});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryLight.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppTheme.primaryLight.withValues(alpha: 0.34),
+    final insight = this.insight;
+    final overlapThoughts =
+        insight?.thoughts.take(2).toList() ?? const <OverlapThought>[];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(52, 17, 22, 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161B16),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.045)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (thought.isNotEmpty)
+              Text(
+                thought,
+                style: _labelStyle(
+                  fontSize: 16,
+                ).copyWith(color: _recapBlue, height: 1.5),
+              ),
+            if (insight != null && overlapThoughts.isNotEmpty) ...[
+              if (thought.isNotEmpty) const SizedBox(height: 18),
+              Text(
+                '${insight.readerCount}명의 독자가 이 문장에 남긴 생각',
+                style: _labelStyle(fontSize: 12).copyWith(
+                  color: _recapBlue.withValues(alpha: 0.82),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 10),
+              for (final item in overlapThoughts) ...[
+                Text(
+                  item.thought,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: _labelStyle(fontSize: 13).copyWith(
+                    color: Colors.white.withValues(alpha: 0.72),
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  item.displayNameOrUsername,
+                  style: _labelStyle(fontSize: 11).copyWith(
+                    color: _recapMuted.withValues(alpha: 0.82),
+                    height: 1.2,
+                  ),
+                ),
+                if (item != overlapThoughts.last)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    child: Divider(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.07),
+                    ),
+                  ),
+              ],
+            ],
+          ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '내가 기록한 문장',
-            style: _labelStyle(fontSize: 11).copyWith(
-              color: AppTheme.primaryLight,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            sentence,
-            style: _labelStyle(
-              fontSize: 16,
-            ).copyWith(color: Colors.white, height: 1.48),
-          ),
-          if (thought.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.24),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                thought,
-                style: _labelStyle(fontSize: 13).copyWith(
-                  color: _recapBlueMuted.withValues(alpha: 0.92),
-                  height: 1.45,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
 
-class _OverlapThoughtCard extends ConsumerStatefulWidget {
-  final BuildContext rootContext;
-  final OverlapThought thought;
-  final String bookTitle;
-  final String bookAuthor;
+const _mockCompanionFriends = ['마고', '용성군', '온더그라운드'];
+const _mockNearbyReaders = [
+  '콩콩',
+  '삼성',
+  '엘지전자',
+  '하이닉스남',
+  '아마도스',
+  '가라도스',
+  '붉은가라도스',
+  '익명의 은행나무',
+  '늘푸른대학',
+  '양평동교회',
+  '양화공원',
+  '비온다',
+  '익명의 참나무',
+  '익명의 소나무',
+];
 
-  const _OverlapThoughtCard({
-    required this.rootContext,
-    required this.thought,
-    required this.bookTitle,
-    required this.bookAuthor,
+// ─── 세션 요약: 함께 읽은 사람 ───────────────────────────────────────
+class _CompanionSummarySection extends StatelessWidget {
+  final List<UserProfile> companions;
+  final int friendCount;
+  final int nearbyCount;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  const _CompanionSummarySection({
+    required this.companions,
+    required this.friendCount,
+    required this.nearbyCount,
+    required this.isExpanded,
+    required this.onToggle,
   });
 
   @override
-  ConsumerState<_OverlapThoughtCard> createState() =>
-      _OverlapThoughtCardState();
-}
-
-class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
-  bool _liked = false;
-  bool _isToggling = false;
-
-  int get _visibleEmpathy => widget.thought.empathyCount + (_liked ? 1 : 0);
-
-  Future<void> _toggleLike() async {
-    if (_isToggling) return;
-    HapticFeedback.selectionClick();
-    final next = !_liked;
-    setState(() {
-      _liked = next;
-      _isToggling = true;
-    });
-    try {
-      final db = ref.read(dbServiceProvider);
-      if (next) {
-        await db.likeSentence(widget.thought.sentenceId);
-      } else {
-        await db.unlikeSentence(widget.thought.sentenceId);
-      }
-    } catch (_) {
-      if (mounted) setState(() => _liked = !next);
-    } finally {
-      if (mounted) setState(() => _isToggling = false);
-    }
-  }
-
-  void _openProfile() {
-    final userId = widget.thought.userId;
-    if (userId == null || userId.isEmpty) return;
-    HapticFeedback.selectionClick();
-    Navigator.of(context).pop();
-    widget.rootContext.push(
-      AppConstants.routeUserProfile,
-      extra: UserProfile(
-        id: userId,
-        username: widget.thought.username,
-        displayName: widget.thought.displayNameOrUsername,
-        avatarUrl: widget.thought.avatarUrl,
-      ),
-    );
-  }
-
-  void _openSentenceDetail() {
-    HapticFeedback.selectionClick();
-    Navigator.of(context).pop();
-    widget.rootContext.push(
-      AppConstants.routeSentenceDetail,
-      extra: SentenceDetailExtra(
-        sentenceContent: widget.thought.content,
-        bookTitle: widget.thought.bookTitle ?? widget.bookTitle,
-        bookAuthor: widget.bookAuthor,
-        collectorUsername: widget.thought.displayNameOrUsername,
-        collectorUserHandle: widget.thought.username,
-        collectorThought: widget.thought.thought,
-        sentenceId: widget.thought.sentenceId,
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final friendNames = kUseMock
+        ? _mockCompanionFriends
+        : companions.map((p) => p.displayName).take(3).toList();
+    final nearbyNames = kUseMock
+        ? _mockNearbyReaders
+        : companions.map((p) => p.displayName).skip(3).toList();
+    final totalCount = friendCount + nearbyCount;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.045),
+        color: _recapCard,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: _openProfile,
-                child: _OverlapAvatar(thought: widget.thought),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: _openProfile,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          Semantics(
+            button: true,
+            label: isExpanded ? '함께 읽은 사람 접기' : '함께 읽은 사람 펼치기',
+            child: InkWell(
+              onTap: onToggle,
+              child: SizedBox(
+                height: 68,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              widget.thought.displayNameOrUsername,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _labelStyle(fontSize: 13).copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      SizedBox(
+                        width: 116,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.radio_button_checked_rounded,
+                              size: 16,
+                              color: _recapMuted,
                             ),
-                          ),
-                          if (widget.thought.username.isNotEmpty &&
-                              widget.thought.username !=
-                                  widget.thought.displayNameOrUsername) ...[
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                '@${widget.thought.username}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: _labelStyle(fontSize: 11).copyWith(
-                                  color: _recapBlueMuted.withValues(
-                                    alpha: 0.64,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            const SizedBox(width: 8),
+                            Text('함께 읽은', style: _labelStyle(fontSize: 12)),
                           ],
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        time_fmt.formatDate(widget.thought.createdAt),
-                        style: _labelStyle(fontSize: 10).copyWith(
-                          color: _recapBlueMuted.withValues(alpha: 0.64),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _CompanionValue(
+                            friendCount: friendCount,
+                            nearbyCount: nearbyCount,
+                            totalCount: totalCount,
+                            isExpanded: isExpanded,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              Text(
-                '공감 $_visibleEmpathy',
-                style: _labelStyle(
-                  fontSize: 11,
-                ).copyWith(color: AppTheme.primaryLight),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            widget.thought.thought,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-            style: _labelStyle(
-              fontSize: 14,
-            ).copyWith(color: _recapBlue, height: 1.48),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _OverlapActionButton(
-                icon: _liked
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                label: '공감',
-                isActive: _liked,
-                onTap: _toggleLike,
-              ),
-              const SizedBox(width: 8),
-              if (widget.thought.userId != null &&
-                  widget.thought.userId!.isNotEmpty)
-                _OverlapActionButton(
-                  icon: Icons.person_outline_rounded,
-                  label: '프로필',
-                  onTap: _openProfile,
-                ),
-              const Spacer(),
-              _OverlapActionButton(
-                icon: Icons.notes_rounded,
-                label: '문장 보기',
-                onTap: _openSentenceDetail,
-              ),
-            ],
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: _CompanionNamesPanel(
+              friendNames: friendNames,
+              nearbyNames: nearbyNames,
+            ),
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 180),
+            reverseDuration: const Duration(milliseconds: 140),
+            sizeCurve: Curves.easeOutCubic,
           ),
         ],
       ),
@@ -1260,128 +1466,129 @@ class _OverlapThoughtCardState extends ConsumerState<_OverlapThoughtCard> {
   }
 }
 
-class _OverlapAvatar extends StatelessWidget {
-  final OverlapThought thought;
+class _CompanionValue extends StatelessWidget {
+  final int friendCount;
+  final int nearbyCount;
+  final int totalCount;
+  final bool isExpanded;
 
-  const _OverlapAvatar({required this.thought});
-
-  @override
-  Widget build(BuildContext context) {
-    final avatar = thought.avatarUrl;
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFF101812),
-        border: Border.all(color: _recapBlue.withValues(alpha: 0.18)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: avatar != null && avatar.isNotEmpty
-          ? Image.network(avatar, fit: BoxFit.cover)
-          : Center(
-              child: Text(
-                thought.displayNameOrUsername.characters.first,
-                style: _labelStyle(fontSize: 14).copyWith(color: _recapBlue),
-              ),
-            ),
-    );
-  }
-}
-
-class _OverlapActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _OverlapActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isActive = false,
+  const _CompanionValue({
+    required this.friendCount,
+    required this.nearbyCount,
+    required this.totalCount,
+    required this.isExpanded,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppTheme.primaryLight : _recapBlueMuted;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(7),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: _labelStyle(fontSize: 11).copyWith(color: color),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '친구 $friendCount | 이웃 $nearbyCount',
+            style: _labelStyle(fontSize: 11),
+          ),
+          const SizedBox(width: 10),
+          Text('$totalCount명', style: _valueStyle(color: _recapText)),
+          SizedBox(
+            width: 30,
+            height: 30,
+            child: AnimatedRotation(
+              turns: isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 20,
+                color: _recapText,
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ─── 세션 요약: 함께 읽은 값 (아바타 + 이름) ─────────────────────────
-class _CompanionsValue extends StatelessWidget {
-  final List<UserProfile> companions;
+class _CompanionNamesPanel extends StatelessWidget {
+  final List<String> friendNames;
+  final List<String> nearbyNames;
 
-  const _CompanionsValue({required this.companions});
+  const _CompanionNamesPanel({
+    required this.friendNames,
+    required this.nearbyNames,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final shown = companions.take(2).toList();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (int i = 0; i < shown.length; i++) ...[
-          if (i > 0) const SizedBox(width: 14),
-          _CompanionChip(profile: shown[i]),
+    final left = <String>[];
+    final right = <String>[];
+    for (var i = 0; i < nearbyNames.length; i++) {
+      (i.isEven ? left : right).add(nearbyNames[i]);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 26),
+      child: Column(
+        children: [
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          if (friendNames.isNotEmpty) ...[
+            const SizedBox(height: 28),
+            for (final name in friendNames) ...[
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: _labelStyle(
+                  fontSize: 20,
+                ).copyWith(color: _recapBlue, height: 1.24),
+              ),
+              if (name != friendNames.last) const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 28),
+            Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          ],
+          if (nearbyNames.isNotEmpty) ...[
+            const SizedBox(height: 26),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _CompanionNameColumn(names: left)),
+                const SizedBox(width: 32),
+                Expanded(child: _CompanionNameColumn(names: right)),
+              ],
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
 
-class _CompanionChip extends StatelessWidget {
-  final UserProfile profile;
+class _CompanionNameColumn extends StatelessWidget {
+  final List<String> names;
 
-  const _CompanionChip({required this.profile});
+  const _CompanionNameColumn({required this.names});
 
   @override
   Widget build(BuildContext context) {
-    final avatar = profile.avatarUrl;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Column(
       children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFF1A1A1A),
-            border: Border.all(color: _recapBlue.withValues(alpha: 0.22)),
+        for (final name in names) ...[
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _labelStyle(fontSize: 13).copyWith(
+              color: _recapMuted.withValues(alpha: 0.86),
+              height: 1.25,
+            ),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: avatar != null && avatar.isNotEmpty
-              ? Image.network(avatar, fit: BoxFit.cover)
-              : Center(
-                  child: Text(
-                    profile.displayName.isNotEmpty
-                        ? profile.displayName.characters.first
-                        : '?',
-                    style: _labelStyle(
-                      fontSize: 12,
-                    ).copyWith(color: _recapBlue),
-                  ),
-                ),
-        ),
-        const SizedBox(width: 5),
-        Text(profile.displayName, style: _labelStyle(fontSize: 12)),
+          if (name != names.last) const SizedBox(height: 13),
+        ],
       ],
     );
   }
@@ -1751,7 +1958,11 @@ class _SentencesSection extends StatelessWidget {
         ...sentences.asMap().entries.map(
           (e) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _SentenceAnalysisCard(entry: e.value, index: e.key),
+            child: _SentenceAnalysisCard(
+              entry: e.value,
+              index: e.key,
+              bookTitle: e.value.content,
+            ),
           ),
         ),
       ],
@@ -1762,7 +1973,12 @@ class _SentencesSection extends StatelessWidget {
 class _SentenceAnalysisCard extends StatelessWidget {
   final CollectedSentence entry;
   final int index;
-  const _SentenceAnalysisCard({required this.entry, required this.index});
+  final String bookTitle;
+  const _SentenceAnalysisCard({
+    required this.entry,
+    required this.index,
+    required this.bookTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1770,24 +1986,24 @@ class _SentenceAnalysisCard extends StatelessWidget {
 
     final (Color tagColor, IconData tagIcon, String tagDesc) = switch (tag) {
       _SentenceTag.resonance => (
-        context.appPrimaryAccent,
-        Icons.people_rounded,
-        '${_resonanceCount(entry.content)}명의 독자가 이 문장에 밑줄을 그었어요',
+        _recapText,
+        Icons.auto_awesome_rounded,
+        '독자의 ${_resonancePercent(entry.content)}%가 수집',
       ),
       _SentenceTag.rare => (
-        AppTheme.accent,
+        _recapText,
         Icons.explore_rounded,
-        '이 문장을 발견한 독자는 아직 ${_rareCount(entry.content)}명뿐이에요',
+        '아직 ${_rareCount(entry.content)}명만 발견',
       ),
       _SentenceTag.peak => (
-        const Color(0xFFFB923C),
+        _recapText,
         Icons.menu_book_rounded,
-        '이 책에서 가장 많이 수집된 문장이에요',
+        '이 책에서 가장 많이 수집',
       ),
       _SentenceTag.viral => (
-        const Color(0xFFF87171),
+        _recapText,
         Icons.local_fire_department_rounded,
-        '${_viralCount(entry.content)}명이 이 문장을 공유했어요',
+        '${_viralCount(entry.content)}명이 함께 본 문장',
       ),
       _SentenceTag.normal => (
         context.appTextTertiary,
@@ -1797,9 +2013,22 @@ class _SentenceAnalysisCard extends StatelessWidget {
     };
 
     final isSpecial = tag != _SentenceTag.normal;
+    final bookGradient = _recapBookGradientColors(bookTitle);
+    final specialGradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        bookGradient.first.withValues(alpha: 0.22),
+        bookGradient.last.withValues(alpha: 0.82),
+      ],
+    );
 
     return Container(
-      decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
+      decoration: AppTheme.smoothBox(
+        color: isSpecial ? null : context.appCard,
+        gradient: isSpecial ? specialGradient : null,
+        radius: 10,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1808,7 +2037,9 @@ class _SentenceAnalysisCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: ShapeDecoration(
-              color: tagColor.withValues(alpha: isSpecial ? 0.09 : 0.05),
+              color: isSpecial
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : tagColor.withValues(alpha: 0.05),
               shape: SmoothRectangleBorder(
                 smoothness: 0.6,
                 borderRadius: BorderRadius.only(
@@ -1894,7 +2125,8 @@ class _SentenceAnalysisCard extends StatelessWidget {
 // ─── 하단 액션 버튼 ───────────────────────────────────────────────────
 class _RecapActions extends StatelessWidget {
   final Future<void> Function() onShare;
-  const _RecapActions({required this.onShare});
+  final void Function(String route) onNavigate;
+  const _RecapActions({required this.onShare, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -1922,10 +2154,7 @@ class _RecapActions extends StatelessWidget {
             width: 70,
             icon: Icons.home_rounded,
             label: '홈',
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              context.go(AppConstants.routeHome);
-            },
+            onTap: () => onNavigate(AppConstants.routeHome),
           ),
           const SizedBox(width: 8),
           // 서재
@@ -1933,10 +2162,7 @@ class _RecapActions extends StatelessWidget {
             width: 84,
             icon: Icons.menu_book_rounded,
             label: '서재',
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              context.go(AppConstants.routeLibrary);
-            },
+            onTap: () => onNavigate(AppConstants.routeLibrary),
           ),
         ],
       ),
@@ -2187,121 +2413,151 @@ class _HeroPill extends StatelessWidget {
   }
 }
 
-// ─── 다음 책 제안 (완독 시) ─────────────────────────────────────────────────
-class _NextBookSuggestion extends ConsumerWidget {
-  const _NextBookSuggestion();
+// ─── 체인 라이트닝 — 완독 후 다음 책 추천 팝업 ──────────────────────────────
+class _ChainLightningDialog extends StatelessWidget {
+  final RecommendedBook book;
+  final VoidCallback onRead;
+  final VoidCallback onLater;
+
+  const _ChainLightningDialog({
+    required this.book,
+    required this.onRead,
+    required this.onLater,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final booksAsync = ref.watch(recommendedBooksProvider);
-
-    return booksAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (books) {
-        if (books.isEmpty) return const SizedBox.shrink();
-        final book = books.first;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: AppTheme.smoothBox(
+          color: context.appCard,
+          radius: AppTheme.radiusXL,
+          shadows: [
+            BoxShadow(
+              color: context.appPrimaryAccent.withValues(alpha: 0.08),
+              blurRadius: 40,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: AppTheme.smoothBox(
-                gradient: AppTheme.greenCardGradient,
-                radius: 10,
-                side: BorderSide.none,
+            Text(
+              '다음 책으로 이건 어떠세요?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
+                color: context.appTextPrimary,
+                height: 1.4,
               ),
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BookCover(
-                    coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
-                    gradientIndex: book.gradientIndex,
-                    width: 56,
-                    height: 72,
-                    radius: 10,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // 추천 책
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BookCover(
+                  coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
+                  gradientIndex: book.gradientIndex,
+                  width: 56,
+                  height: 72,
+                  radius: 10,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        book.title,
+                        style: AppTheme.bodyLarge.copyWith(
+                          color: context.appTextPrimary,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        book.author,
+                        style: AppTheme.captionLarge.copyWith(
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        book.reason,
+                        style: AppTheme.captionSmall.copyWith(
+                          color: context.appTextTertiary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '다음엔 이 책 어때요?',
-                          style: AppTheme.captionSmall.copyWith(
-                            color: Colors.white.withValues(alpha: 0.65),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          book.title,
-                          style: AppTheme.bodyLarge.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          book.author,
-                          style: AppTheme.captionLarge.copyWith(
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            context.go(
-                              AppConstants.routeSession,
-                              extra: SessionExtra(
-                                bookTitle: book.title,
-                                bookAuthor: book.author,
-                                coverUrl: book.coverUrl.isEmpty
-                                    ? null
-                                    : book.coverUrl,
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.menu_book_rounded,
-                                  size: 14,
-                                  color: context.appPrimaryAccent,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '바로 읽기',
-                                  style: AppTheme.captionLarge.copyWith(
-                                    color: context.appPrimaryAccent,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // 바로 읽기
+            Semantics(
+              button: true,
+              label: '바로 읽기',
+              child: GestureDetector(
+                onTap: onRead,
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: AppTheme.smoothBox(
+                    gradient: context.appReadingGradient,
+                    radius: AppTheme.radiusMD,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '바로 읽기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: AppTheme.darkBg,
+                      height: 1.4,
                     ),
                   ),
-                ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // 나중에요
+            Semantics(
+              button: true,
+              label: '나중에요',
+              child: GestureDetector(
+                onTap: onLater,
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  alignment: Alignment.center,
+                  child: Text(
+                    '나중에요',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: context.appTextTertiary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }

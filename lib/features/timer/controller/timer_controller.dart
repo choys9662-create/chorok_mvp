@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../shared/models/session_goal.dart';
 
 const _timerSnapshotKey = 'live_forest_timer_snapshot_v1';
+const _checkpointIntervalSeconds = 15;
+// 앱이 죽었다 재실행됐을 때 인정하는 최대 공백. 크게 잡으면(예: 24시간) 크래시·배터리
+// 방전으로 죽어있던 시간 전체가 독서시간으로 둔갑한다 — 마지막 체크포인트 이후만 메운다.
+const _maxResumeGapSeconds = _checkpointIntervalSeconds * 2;
 
 /// 타이머 상태 enum
 enum TimerState { idle, running, paused }
@@ -115,8 +119,11 @@ class TimerNotifier extends Notifier<TimerData> {
   }
 
   void _startTicking() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       state = state.copyWith(seconds: _computeSeconds());
+      if (t.tick % _checkpointIntervalSeconds == 0) {
+        unawaited(persistTimerData(state));
+      }
     });
   }
 
@@ -194,7 +201,10 @@ Future<TimerData> loadPersistedTimerData() async {
     var seconds = json['seconds'] as int? ?? 0;
     final updatedAt = DateTime.tryParse(json['updatedAt'] as String? ?? '');
     if (timerState == TimerState.running && updatedAt != null) {
-      seconds += DateTime.now().difference(updatedAt).inSeconds.clamp(0, 86400);
+      seconds += DateTime.now()
+          .difference(updatedAt)
+          .inSeconds
+          .clamp(0, _maxResumeGapSeconds);
     }
 
     return TimerData(

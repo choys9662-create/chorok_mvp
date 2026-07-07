@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -123,7 +125,7 @@ class LibraryStatsView extends ConsumerWidget {
         : ref.watch(genreReadingTimesProvider);
     if (embedded) {
       final items = timesAsync.valueOrNull ?? const [];
-      return BookTreemapWidget(items: items, height: 260);
+      return _EmbeddedGenreMosaic(items: items);
     }
 
     if (fullScreen) {
@@ -175,6 +177,221 @@ class LibraryStatsView extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _EmbeddedGenreMosaic extends StatelessWidget {
+  static const _gap = 8.0;
+
+  final List<({String label, double hours})> items;
+
+  const _EmbeddedGenreMosaic({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Container(
+        height: 300,
+        alignment: Alignment.center,
+        decoration: AppTheme.smoothBox(color: context.appCard, radius: 8),
+        child: Text(
+          '아직 독서 기록이 없어요',
+          style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+        ),
+      );
+    }
+
+    final sorted = [...items]..sort((a, b) => b.hours.compareTo(a.hours));
+    final totalMinutes = sorted.fold<int>(
+      0,
+      (sum, item) => sum + (item.hours * 60).round(),
+    );
+    // ponytail: 3% 미만 장르는 프리뷰에서 숨김 — 전체 목록은 '자세히 보기'에서
+    const minSharePercent = 3;
+    var visible = sorted
+        .where(
+          (i) =>
+              (i.hours * 60).round() * 100 >= totalMinutes * minSharePercent,
+        )
+        .take(5)
+        .toList();
+    if (visible.isEmpty) visible = [sorted.first];
+
+    // ponytail: sqrt 가중 — 비중을 반영하되 작은 장르가 슬리버로 뭉개지지 않게 완화
+    int weight(({String label, double hours}) i) =>
+        math.max(1, (math.sqrt(i.hours * 60) * 10).round());
+
+    const colors = [
+      Color(0xFF8DFF54),
+      Color(0xFFF0FAF0),
+      Color(0xFFA5B9A7),
+      Color(0xFF808A80),
+      Color(0xFF4F574F),
+    ];
+    const textColors = [
+      Colors.black,
+      Colors.black,
+      Colors.black,
+      Colors.white,
+      Colors.white,
+    ];
+    const percentAlphas = [0.22, 0.22, 0.24, 0.22, 0.28];
+
+    Widget card(int i) => _EmbeddedGenreCard(
+      item: visible[i],
+      totalMinutes: totalMinutes,
+      color: colors[i],
+      textColor: textColors[i],
+      percentColor: Colors.black.withValues(alpha: percentAlphas[i]),
+    );
+
+    Widget row(List<int> idxs) => Row(
+      children: [
+        for (final (j, i) in idxs.indexed) ...[
+          if (j > 0) const SizedBox(width: _gap),
+          Expanded(flex: weight(visible[i]), child: card(i)),
+        ],
+      ],
+    );
+
+    if (visible.length <= 2) {
+      return AspectRatio(
+        aspectRatio: 1.8,
+        child: row([for (var i = 0; i < visible.length; i++) i]),
+      );
+    }
+
+    final topWeight = weight(visible[0]) + weight(visible[1]);
+    final bottomIdxs = [for (var i = 2; i < visible.length; i++) i];
+    final bottomWeight = bottomIdxs.fold<int>(
+      0,
+      (s, i) => s + weight(visible[i]),
+    );
+
+    return AspectRatio(
+      aspectRatio: 1.11,
+      child: Column(
+        children: [
+          Expanded(flex: topWeight, child: row([0, 1])),
+          const SizedBox(height: _gap),
+          // 하단 줄 최소 높이 ~30% 보장 — 폰트가 뭉개지지 않는 하한
+          Expanded(
+            flex: math.max(
+              bottomWeight,
+              ((topWeight + bottomWeight) * 0.3).round(),
+            ),
+            child: row(bottomIdxs),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmbeddedGenreCard extends StatelessWidget {
+  final ({String label, double hours}) item;
+  final int totalMinutes;
+  final Color color;
+  final Color textColor;
+  final Color percentColor;
+
+  const _EmbeddedGenreCard({
+    required this.item,
+    required this.totalMinutes,
+    required this.color,
+    required this.percentColor,
+    this.textColor = Colors.black,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = (item.hours * 60).round();
+    final percent = totalMinutes == 0
+        ? 0
+        : (minutes / totalMinutes * 100).round();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 150;
+        final tight = constraints.maxWidth < 120;
+        // 최소 노출 비중(3%) 카드 기준으로 확정한 크기.
+        // 카드가 그보다 작아지면 FittedBox가 비율 그대로 축소한다.
+        const titleSize = 30.0;
+        const timeSize = 16.0;
+        const percentSize = 30.0;
+
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            tight ? 14 : 20,
+            compact ? 14 : 20,
+            tight ? 12 : 16,
+            compact ? 12 : 16,
+          ),
+          decoration: AppTheme.smoothBox(color: color, radius: 18),
+          // 제목·시간(위) / 퍼센트(아래) 영역 분리 — 텍스트 겹침 원천 차단
+          child: Column(
+            children: [
+              Expanded(
+                flex: 7,
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.topLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: titleSize,
+                            height: 0.95,
+                            letterSpacing: 0,
+                            fontWeight: FontWeight.w400,
+                            color: textColor,
+                          ),
+                        ),
+                        SizedBox(height: compact ? 8 : 12),
+                        Text(
+                          _formatGenreMinutes(minutes),
+                          style: TextStyle(
+                            fontSize: timeSize,
+                            height: 1.0,
+                            letterSpacing: 0,
+                            fontWeight: FontWeight.w400,
+                            color: textColor.withValues(alpha: 0.88),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '$percent%',
+                      style: TextStyle(
+                        fontSize: percentSize,
+                        height: 1.0,
+                        letterSpacing: 0,
+                        fontWeight: FontWeight.w400,
+                        color: percentColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

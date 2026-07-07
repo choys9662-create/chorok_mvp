@@ -36,6 +36,10 @@ class MainScaffold extends ConsumerWidget {
     void onNavTap(int index) {
       HapticFeedback.selectionClick();
       if (index == navigationShell.currentIndex) {
+        // 이미 보고 있는 탭을 다시 누르면 해당 탭에 쌓인 화면(푸시된 페이지·바텀시트 등)을
+        // 전부 닫고 탭의 첫 화면으로 되돌아간다.
+        navigationShell.route.branches[index].navigatorKey.currentState
+            ?.popUntil((route) => route.isFirst);
         scrollCtrls.scrollToTop(index);
       }
       navigationShell.goBranch(

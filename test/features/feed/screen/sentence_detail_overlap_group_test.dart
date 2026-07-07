@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:chorok_app/core/constants/app_constants.dart';
 import 'package:chorok_app/core/services/db_service.dart';
 import 'package:chorok_app/core/theme/app_theme.dart';
 import 'package:chorok_app/features/feed/screen/sentence_detail_screen.dart';
+import 'package:chorok_app/features/search/model/aladin_book.dart';
 import 'package:chorok_app/shared/models/overlap_group.dart';
 
 class _FakeDbService extends DbService {
@@ -76,6 +79,44 @@ class _FakeDbService extends DbService {
 }
 
 void main() {
+  testWidgets('문장 상세 상단 책 정보를 누르면 책 상세로 이동한다', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const SentenceDetailScreen(
+            data: SentenceDetailExtra(
+              sentenceContent: '문장',
+              bookTitle: '디자인의 문장',
+              bookAuthor: '저자',
+              bookId: 'book-1',
+            ),
+          ),
+        ),
+        GoRoute(
+          path: AppConstants.routeBookInfo,
+          builder: (context, state) {
+            final book = state.extra as AladinBook;
+            return Text('book:${book.title}/${book.author}');
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp.router(theme: AppTheme.dark, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('디자인의 문장'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('book:디자인의 문장/저자'), findsOneWidget);
+  });
+
   testWidgets('겹문장 상세에 같은 책의 여러 기록자가 남긴 생각을 함께 표시한다', (tester) async {
     tester.view.physicalSize = const Size(402, 1000);
     tester.view.devicePixelRatio = 1;

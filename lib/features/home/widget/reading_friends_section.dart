@@ -16,19 +16,29 @@ const _sideMargin = AppTheme.screenPadding;
 ///
 /// 데이터: [sessionFireflyProvider] (mutuals + nearbyCount).
 /// 맞팔(친구)이 0명이어도 주변 독자가 있으면 이웃 섹션은 보여준다.
-class ReadingFriendsSection extends ConsumerWidget {
+class ReadingFriendsSection extends ConsumerStatefulWidget {
   const ReadingFriendsSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReadingFriendsSection> createState() =>
+      _ReadingFriendsSectionState();
+}
+
+class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     final async = ref.watch(sessionFireflyProvider);
 
     return async.when(
       loading: () => const _FriendsShimmer(),
       error: (_, _) => const SizedBox.shrink(),
       data: (d) {
-        final visibleFriends = d.mutuals.take(3).toList();
-        final friendCount = kUseMock ? visibleFriends.length : d.mutualCount;
+        final totalFriends = kUseMock ? d.mutuals.length : d.mutualCount;
+        final visibleFriends = _expanded
+            ? d.mutuals
+            : d.mutuals.take(3).toList();
         final nearbyCount = kUseMock ? 10 : d.nearbyCount;
         final showNeighbors = kUseMock && nearbyCount > 0;
         if (visibleFriends.isEmpty && !showNeighbors) {
@@ -38,9 +48,16 @@ class ReadingFriendsSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (visibleFriends.isNotEmpty) ...[
-              _Header(title: '읽고 있는 친구', count: friendCount),
+              _Header(title: '읽고 있는 친구', count: totalFriends),
               const SizedBox(height: 12),
               _LiveReadersCard(mutuals: visibleFriends),
+              if (totalFriends > 3) ...[
+                const SizedBox(height: 7),
+                _ShowAllButton(
+                  expanded: _expanded,
+                  onTap: () => setState(() => _expanded = !_expanded),
+                ),
+              ],
             ],
             if (showNeighbors) ...[
               const SizedBox(height: 30),
@@ -51,6 +68,38 @@ class ReadingFriendsSection extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _ShowAllButton extends StatelessWidget {
+  final bool expanded;
+  final VoidCallback onTap;
+
+  const _ShowAllButton({required this.expanded, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: SizedBox(
+          height: 40,
+          child: Center(
+            child: Text(
+              expanded ? '접기' : '전체보기',
+              style: AppTheme.bodyLarge.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -301,24 +350,20 @@ class _NeighborPreviewCard extends StatelessWidget {
 String _readerName(UserProfile profile, int index) {
   if (!kUseMock) return profile.displayName;
   const names = ['마고', '용성군', '온더그라운드'];
-  return names[_boundedIndex(index, names.length)];
+  if (index < names.length) return names[index];
+  return profile.displayName;
 }
 
 String _readerDuration(UserProfile profile, int index) {
   if (kUseMock) {
     const values = ['00:30:25', '00:20:15', '00:05:45'];
-    return values[_boundedIndex(index, values.length)];
+    if (index < values.length) return values[index];
   }
   final seed = profile.id.hashCode.abs();
   final minutes = 5 + seed % 42;
   final seconds = seed % 60;
   return '00:${minutes.toString().padLeft(2, '0')}:'
       '${seconds.toString().padLeft(2, '0')}';
-}
-
-int _boundedIndex(int index, int length) {
-  if (length <= 0) return 0;
-  return index.clamp(0, length - 1).toInt();
 }
 
 /// 로딩 스켈레톤 — 헤더 자리 + 리스트 카드.

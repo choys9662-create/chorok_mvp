@@ -16,7 +16,7 @@ class TabSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = ['이번 주', '이번 달', '올해'];
+    const tabs = ['주별', '월별', '년별'];
     return SizedBox(
       height: _trackHeight,
       child: Container(

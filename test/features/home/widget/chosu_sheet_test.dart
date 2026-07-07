@@ -9,6 +9,15 @@ Finder _textFieldWithHint(String hint) {
   );
 }
 
+Finder _sentenceField() {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is TextField &&
+        widget.decoration?.hintText == '' &&
+        widget.keyboardType == TextInputType.multiline,
+  );
+}
+
 void main() {
   testWidgets('ChosuSheet separates sentence and thought entry steps', (
     tester,
@@ -23,10 +32,10 @@ void main() {
       ),
     );
 
-    expect(find.text('수집할 문장'), findsOneWidget);
-    expect(find.text('생각 쓰기'), findsOneWidget);
-    expect(find.text('문장만 저장'), findsOneWidget);
-    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    expect(_textFieldWithHint('페이지 입력, p'), findsOneWidget);
+    expect(find.byTooltip('생각 쓰기'), findsOneWidget);
+    expect(find.byTooltip('문장만 저장'), findsOneWidget);
+    final sentenceField = _sentenceField();
     expect(sentenceField, findsOneWidget);
     expect(tester.widget<TextField>(sentenceField).autofocus, isTrue);
 
@@ -35,13 +44,11 @@ void main() {
       '그래서 선이지는 행복을 누릴 만한 자격에서 없어서는 안 되는 그야말로 불가결한 조건인 것 같다.',
     );
     await tester.pump();
-    await tester.tap(find.text('생각 쓰기'));
+    await tester.tap(find.byTooltip('생각 쓰기'));
     await tester.pump(const Duration(milliseconds: 120));
 
-    expect(find.text('문장 수정'), findsOneWidget);
-    expect(find.text('내 생각'), findsOneWidget);
-    expect(find.text('저장하기'), findsOneWidget);
-    expect(_textFieldWithHint('이 문장에서 무엇을 느꼈나요?'), findsOneWidget);
+    expect(find.byTooltip('저장하기'), findsOneWidget);
+    expect(_textFieldWithHint('생각 입력'), findsOneWidget);
   });
 
   testWidgets('ChosuSheet keeps keyboard closed for prefilled OCR text', (
@@ -63,7 +70,7 @@ void main() {
       ),
     );
 
-    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    final sentenceField = _sentenceField();
     expect(sentenceField, findsOneWidget);
     final textField = tester.widget<TextField>(sentenceField);
     expect(textField.autofocus, isFalse);
@@ -91,17 +98,17 @@ void main() {
       ),
     );
 
-    final sentenceField = _textFieldWithHint('마음에 남은 문장을 입력하세요...');
+    final sentenceField = _sentenceField();
     await tester.enterText(sentenceField, '자연선택이라는 하나의 문장');
     await tester.pump();
-    await tester.tap(find.text('생각 쓰기'));
+    await tester.tap(find.byTooltip('생각 쓰기'));
     await tester.pump(const Duration(milliseconds: 120));
 
     tester.view.viewInsets = const FakeViewPadding(bottom: 300);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 220));
 
-    final thoughtField = _textFieldWithHint('이 문장에서 무엇을 느꼈나요?');
+    final thoughtField = _textFieldWithHint('생각 입력');
     expect(thoughtField, findsOneWidget);
     expect(tester.getBottomLeft(thoughtField).dy, lessThanOrEqualTo(844 - 300));
   });

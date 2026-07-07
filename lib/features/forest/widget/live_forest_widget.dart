@@ -132,8 +132,8 @@ class _LiveForestWidgetState extends State<LiveForestWidget> {
       radius,
       [
         Colors.white.withValues(alpha: 1.0), // 코어 중심
-        Colors.white.withValues(alpha: 0.9), // 코어
-        Colors.white.withValues(alpha: 0.30), // 헤일로 시작 (기존 글로우 0.3)
+        Colors.white.withValues(alpha: 0.40), // 첫 번째 글로우
+        Colors.white.withValues(alpha: 0.20), // 두 번째 글로우
         Colors.white.withValues(alpha: 0.0), // 헤일로 가장자리
       ],
       [0.0, 0.10, 0.16, 1.0],

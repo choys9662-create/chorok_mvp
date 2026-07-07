@@ -10,15 +10,15 @@ import '../../shared/models/reading_session.dart';
 import '../../shared/repositories/book_repository.dart';
 import '../../shared/repositories/supabase_book_repository.dart';
 
-// ─── 색상 상수 (요청 스펙: 배경 #000000, 포인트 #00FF00) ─────────────────────
-const _kBg = Color(0xFF000000);
-const _kGreen = Color(0xFF00FF00);
-const _kGreenDim = Color(0xFF00CC6A);
-const _kSurface = Color(0xFF0E0E0E);
+// ─── 색상 상수 ───────────────────────────────────────────────────────────────
+const _kBg = AppTheme.darkBg;
+const _kGreen = AppTheme.primaryLight;
+const _kGreenDim = AppTheme.primaryLight;
+const _kSurface = AppTheme.darkCard;
 const _kBorder = Color(0xFF1A1A1A);
-const _kTextPrimary = Color(0xFFF0FAF4);
-const _kTextSecondary = Color(0xFF6B8C74);
-const _kTextTertiary = Color(0xFF2E4A36);
+const _kTextPrimary = AppTheme.textPrimary;
+const _kTextSecondary = AppTheme.textTertiary;
+const _kTextTertiary = AppTheme.textTertiary;
 
 // ─── 단계 정의 ────────────────────────────────────────────────────────────────
 const _kStepCount = 3;

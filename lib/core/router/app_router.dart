@@ -117,15 +117,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AnalyticsScreen(),
       ),
 
-      // 취향 분석 — 서재 쉘 밖에서 전체 화면으로 표시
-      GoRoute(
-        path: AppConstants.routeTasteAnalysis,
-        builder: (context, state) {
-          final userId = state.extra as String?;
-          return TasteAnalysisScreen(userId: userId);
-        },
-      ),
-
       // 독서 기록 — 서재 쉘 밖에서 전체 화면으로 표시
       GoRoute(
         path: AppConstants.routeReadingHistory,
@@ -315,6 +306,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppConstants.routeLibrary,
                 builder: (context, state) => const LibraryScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'completed',
+                    builder: (context, state) => const CompletedBooksScreen(),
+                  ),
+                  GoRoute(
+                    path: 'taste-analysis',
+                    builder: (context, state) {
+                      final userId = state.extra as String?;
+                      return TasteAnalysisScreen(userId: userId);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

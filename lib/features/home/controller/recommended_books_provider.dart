@@ -218,6 +218,53 @@ Future<List<RecommendedBook>> _recommendFromSimilarReaders() async {
   }
 }
 
+// ── 체인 라이트닝: 완독한 책을 읽은 유저들이 좋아한 책 1권 ──────────────────
+typedef ChainLightningQuery = ({String title, String author});
+
+final chainLightningProvider = FutureProvider.autoDispose
+    .family<RecommendedBook?, ChainLightningQuery>((ref, query) async {
+      if (kUseMock) {
+        return (
+          title: '소년이 온다',
+          author: '한강',
+          reason: '『${query.title}』을(를) 읽은 12명이 좋아한 책',
+          gradientIndex: 2,
+          matchScore: 0.94,
+          coverUrl:
+              'https://image.aladin.co.kr/product/4086/97/cover500/8936434128_2.jpg',
+        );
+      }
+      try {
+        final response = await Supabase.instance.client.rpc(
+          'chain_lightning_recommendations',
+          params: {
+            'p_title': query.title,
+            'p_author': query.author,
+            'limit_count': 1,
+          },
+        );
+        final rows = (response as List).cast<Map<String, dynamic>>();
+        if (rows.isEmpty) return null;
+        final row = rows.first;
+        final title = row['title'] as String? ?? '';
+        if (title.isEmpty) return null;
+        return (
+          title: title,
+          author: row['author'] as String? ?? '',
+          reason: row['reason'] as String? ?? '이 책을 읽은 이웃들이 좋아한 책',
+          gradientIndex: 1,
+          matchScore: ((row['match_score'] as num?)?.toDouble() ?? 0.9).clamp(
+            0.0,
+            1.0,
+          ),
+          coverUrl: row['cover_url'] as String? ?? '',
+        );
+      } catch (_) {
+        // 마이그레이션 미적용 환경 — 팝업을 띄우지 않는다.
+        return null;
+      }
+    });
+
 // ── Provider ───────────────────────────────────────────────────────────────
 final recommendedBooksProvider = FutureProvider.autoDispose<List<RecommendedBook>>((
   ref,

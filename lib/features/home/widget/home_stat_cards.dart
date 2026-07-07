@@ -144,16 +144,18 @@ class _WeekCard extends StatelessWidget {
             const Spacer(),
             Expanded(
               flex: 3,
-              child: Text(
-                _formatKoreanMinutes(weekSeconds ~/ 60),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: AppTheme.captionLarge.copyWith(
-                  color: context.appTextPrimary,
-                  fontSize: 30,
-                  letterSpacing: 0,
-                  height: 1,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  _formatKoreanMinutes(weekSeconds ~/ 60),
+                  maxLines: 1,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextPrimary,
+                    fontSize: 30,
+                    letterSpacing: 0,
+                    height: 1,
+                  ),
                 ),
               ),
             ),
@@ -240,7 +242,7 @@ class _DayDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = achieved
-        ? context.appPrimaryAccent
+        ? Colors.white
         : context.appTextSecondary.withValues(alpha: dim ? 0.18 : 0.50);
     return Container(
       width: 8,

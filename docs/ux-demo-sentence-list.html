@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>초록 — 문장·생각 리스트 시안</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>
+  @font-face {
+    font-family: 'Pretendard';
+    src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
+    font-weight: 45 920;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  button { font: inherit; border: none; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #000000;
+    --card: #111411;
+    --card-elevated: #1B211B;
+    --border: rgba(255,255,255,0.14);
+    --primary: #8DFF54;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B8C2B2;
+    --text-tertiary: #7D8878;
+  }
+
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: #0a0a0a; color: var(--text-primary);
+    font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+    min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 12px 80px;
+    gap: 20px;
+  }
+
+  .picker {
+    display: flex; gap: 6px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px;
+    position: sticky; top: 12px; z-index: 20;
+  }
+  .picker button {
+    padding: 9px 16px; border-radius: 9px;
+    font-size: 13px; color: var(--text-tertiary);
+    letter-spacing: -0.02em;
+  }
+  .picker button.active { background: var(--card-elevated); color: var(--primary); }
+
+  .caption {
+    max-width: 390px; text-align: center;
+    font-size: 12px; color: var(--text-tertiary); line-height: 1.5;
+    padding: 0 12px;
+  }
+
+  .phone {
+    width: 390px; max-width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    overflow: hidden;
+    display: none;
+  }
+  .phone.active { display: block; }
+
+  /* ── header ── */
+  .sheet-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 20px 20px 12px;
+  }
+  .sheet-title { font-size: 16px; letter-spacing: -0.02em; }
+  .sheet-count { font-size: 16px; color: var(--text-tertiary); }
+  .sheet-close {
+    margin-left: auto; width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary); font-size: 18px;
+  }
+
+  .list { padding: 0 20px 24px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── 문장 카드 (시안 1: 컴팩트) ── */
+  .mini-list { gap: 6px; }
+  .mini-card {
+    background: var(--card); border-radius: 10px; padding: 12px 14px;
+    display: flex; gap: 10px;
+  }
+  .mini-cover {
+    width: 20px; height: 27px; border-radius: 3px; flex-shrink: 0;
+    background: linear-gradient(145deg, var(--c1), var(--c2));
+  }
+  .mini-body { flex: 1; min-width: 0; }
+  .mini-sentence { font-size: 13px; line-height: 1.45; color: var(--text-primary); }
+  .mini-thought { margin-top: 5px; font-size: 11px; line-height: 1.4; color: var(--text-secondary); }
+  .mini-meta { margin-top: 7px; font-size: 10px; color: var(--text-tertiary); }
+
+  .cover {
+    width: 34px; height: 46px; border-radius: 4px; flex-shrink: 0;
+    background: linear-gradient(145deg, var(--c1), var(--c2));
+  }
+  .book-title { font-size: 12px; color: var(--text-tertiary); }
+  .thought {
+    margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+    background: var(--card-elevated);
+    font-size: 12px; line-height: 1.4; color: var(--text-secondary);
+    display: flex; gap: 6px;
+  }
+  .thought .icon { flex-shrink: 0; }
+
+  /* ── 시안 2: 세션 단위 묶음 ── */
+  .session-block { background: var(--card); border-radius: 10px; overflow: hidden; }
+  .session-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .session-book { font-size: 13px; color: var(--text-primary); margin-bottom: 3px; }
+  .session-meta { font-size: 10px; color: var(--text-tertiary); }
+  .session-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .session-sentence { font-size: 13px; line-height: 1.5; }
+  .session-sentence .pg { display: block; margin-top: 4px; font-size: 10px; color: var(--text-tertiary); }
+
+  /* ── 시안 3: 책별 섹션 ── */
+  .accordion-item { background: var(--card); border-radius: 10px; overflow: hidden; }
+  .accordion-head {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .accordion-head .chev { font-size: 10px; color: var(--text-tertiary); width: 10px; }
+  .accordion-head .book-title { font-size: 13px; color: var(--text-primary); }
+  .accordion-head .count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
+  .accordion-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .accordion-sentence { font-size: 13px; line-height: 1.5; }
+  .accordion-sentence .pg { display: block; margin-top: 4px; font-size: 10px; color: var(--text-tertiary); }
+  .more-link { font-size: 11px; color: var(--text-tertiary); padding-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="picker">
+  <button class="active" data-target="p1">시안 1</button>
+  <button data-target="p2">시안 2</button>
+  <button data-target="p3">시안 3</button>
+</div>
+
+<!-- ───────────── 시안 1: 순수 타임라인 (확정, 컴팩트) ───────────── -->
+<div class="phone active" id="p1">
+  <div class="sheet-header">
+    <span class="sheet-title">기록한 문장·생각</span>
+    <span class="sheet-count">1,230</span>
+    <span class="sheet-close">✕</span>
+  </div>
+  <div class="list mini-list">
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#1A4D2E; --c2:#00CC6A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"그녀는 이제 스스로 나무라고 생각한다."</div>
+        <div class="mini-thought">💭 사람이길 거부하는 방식이 인상적이다</div>
+        <div class="mini-meta">채식주의자 · 한강 · p.142 · 3시간 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#0D3D2B; --c2:#00A86B"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"역사는 우리를 실망시켰지만, 그래도 상관없다."</div>
+        <div class="mini-meta">파친코 · 이민진 · p.88 · 어제</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#1A4D2E; --c2:#00CC6A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"언니, 내가 물구나무서면 잎이 나온다니까."</div>
+        <div class="mini-meta">채식주의자 · 한강 · p.138 · 어제</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#163B30; --c2:#00BF7A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"거울과 아버지는 혐오스럽다. 인간의 수를 늘리기 때문이다."</div>
+        <div class="mini-thought">💭 거울이 복제의 상징이라는 점이 섬뜩하다</div>
+        <div class="mini-meta">픽션들 · 보르헤스 · p.55 · 2일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#0D3D2B; --c2:#00A86B"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"선자는 눈을 감고 낯선 땅의 냄새를 맡았다."</div>
+        <div class="mini-meta">파친코 · 이민진 · p.34 · 2일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#1A4D2E; --c2:#00CC6A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"거부의 시작이 꿈이라는 건 의지가 아니다."</div>
+        <div class="mini-meta">채식주의자 · 한강 · p.120 · 3일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#163B30; --c2:#00BF7A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"미로는 하나의 도서관이며, 도서관은 하나의 미로다."</div>
+        <div class="mini-meta">픽션들 · 보르헤스 · p.12 · 3일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#0D3D2B; --c2:#00A86B"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"가족을 지키는 일에는 이유가 필요하지 않았다."</div>
+        <div class="mini-meta">파친코 · 이민진 · p.112 · 4일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#1A4D2E; --c2:#00CC6A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"이상하게도 내 몸이, 이 육체가 낯설게 느껴져."</div>
+        <div class="mini-thought">💭 스스로도 설명 못 할 이물감</div>
+        <div class="mini-meta">채식주의자 · 한강 · p.45 · 4일 전</div>
+      </div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-cover" style="--c1:#163B30; --c2:#00BF7A"></div>
+      <div class="mini-body">
+        <div class="mini-sentence">"시간은 갈라지고 또 갈라져, 서로 만나지 않는 미래들을 낳는다."</div>
+        <div class="mini-meta">픽션들 · 보르헤스 · p.88 · 5일 전</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────── 시안 2: 세션 단위 묶음 ───────────── -->
+<div class="phone" id="p2">
+  <div class="sheet-header">
+    <span class="sheet-title">기록한 문장·생각</span>
+    <span class="sheet-count">1,230</span>
+    <span class="sheet-close">✕</span>
+  </div>
+  <div class="list">
+    <div class="session-block">
+      <div class="session-head">
+        <span class="cover" style="width:28px;height:38px;--c1:#1A4D2E;--c2:#00CC6A;border-radius:4px"></span>
+        <div class="session-head-text">
+          <div class="session-book">채식주의자 · 한강</div>
+          <div class="session-meta">6월 28일 독서 · 42분 · 3문장</div>
+        </div>
+      </div>
+      <div class="session-body">
+        <div class="session-sentence">"그녀는 이제 스스로 나무라고 생각한다."<span class="pg">p.142</span></div>
+        <div class="thought"><span class="icon">💭</span><span>사람이길 거부하는 방식이 인상적이다</span></div>
+        <div class="session-sentence">"언니, 내가 물구나무서면 잎이 나온다니까."<span class="pg">p.138</span></div>
+        <div class="session-sentence">"손에서 뿌리가 나오고, 다리 사이에서 꽃이 핀다니까."<span class="pg">p.139</span></div>
+      </div>
+    </div>
+    <div class="session-block">
+      <div class="session-head">
+        <span class="cover" style="width:28px;height:38px;--c1:#0D3D2B;--c2:#00A86B;border-radius:4px"></span>
+        <div class="session-head-text">
+          <div class="session-book">파친코 · 이민진</div>
+          <div class="session-meta">어제 독서 · 25분 · 4문장</div>
+        </div>
+      </div>
+      <div class="session-body">
+        <div class="session-sentence">"역사는 우리를 실망시켰지만, 그래도 상관없다."<span class="pg">p.88</span></div>
+        <div class="session-sentence">"선자는 눈을 감고 낯선 땅의 냄새를 맡았다."<span class="pg">p.34</span></div>
+        <div class="session-sentence">"가족을 지키는 일에는 이유가 필요하지 않았다."<span class="pg">p.112</span></div>
+        <div class="session-sentence">"그들은 이방인으로 살아남는 법을 배워야 했다."<span class="pg">p.201</span></div>
+      </div>
+    </div>
+    <div class="session-block">
+      <div class="session-head">
+        <span class="cover" style="width:28px;height:38px;--c1:#1A4D2E;--c2:#00CC6A;border-radius:4px"></span>
+        <div class="session-head-text">
+          <div class="session-book">채식주의자 · 한강</div>
+          <div class="session-meta">6월 26일 독서 · 51분 · 3문장</div>
+        </div>
+      </div>
+      <div class="session-body">
+        <div class="session-sentence">"거부의 시작이 꿈이라는 건 의지가 아니다."<span class="pg">p.120</span></div>
+        <div class="session-sentence">"이상하게도 내 몸이, 이 육체가 낯설게 느껴져."<span class="pg">p.45</span></div>
+        <div class="session-sentence">"피 냄새가 온몸에 배어 있는 것 같아 견딜 수가 없어."<span class="pg">p.61</span></div>
+      </div>
+    </div>
+    <div class="session-block">
+      <div class="session-head">
+        <span class="cover" style="width:28px;height:38px;--c1:#163B30;--c2:#00BF7A;border-radius:4px"></span>
+        <div class="session-head-text">
+          <div class="session-book">픽션들 · 보르헤스</div>
+          <div class="session-meta">6월 24일 독서 · 33분 · 2문장</div>
+        </div>
+      </div>
+      <div class="session-body">
+        <div class="session-sentence">"거울과 아버지는 혐오스럽다. 인간의 수를 늘리기 때문이다."<span class="pg">p.55</span></div>
+        <div class="thought"><span class="icon">💭</span><span>거울이 복제의 상징이라는 점이 섬뜩하다</span></div>
+        <div class="session-sentence">"미로는 하나의 도서관이며, 도서관은 하나의 미로다."<span class="pg">p.12</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────── 시안 3: 책 단위 묶음 ───────────── -->
+<div class="phone" id="p3">
+  <div class="sheet-header">
+    <span class="sheet-title">기록한 문장·생각</span>
+    <span class="sheet-count">1,230</span>
+    <span class="sheet-close">✕</span>
+  </div>
+  <div class="list">
+    <div class="accordion-item">
+      <div class="accordion-head" style="cursor:default">
+        <span class="cover" style="width:24px;height:33px;--c1:#1A4D2E;--c2:#00CC6A;border-radius:3px"></span>
+        <span class="book-title" style="color:var(--text-primary);font-size:13px">채식주의자 · 한강</span>
+        <span class="count">18문장</span>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-sentence">"그녀는 이제 스스로 나무라고 생각한다."<span class="pg">p.142</span></div>
+        <div class="accordion-sentence">"언니, 내가 물구나무서면 잎이 나온다니까."<span class="pg">p.138</span></div>
+        <div class="accordion-sentence">"거부의 시작이 꿈이라는 건 의지가 아니다."<span class="pg">p.120</span></div>
+        <div class="accordion-sentence">"이상하게도 내 몸이, 이 육체가 낯설게 느껴져."<span class="pg">p.45</span></div>
+        <div class="accordion-sentence">"피 냄새가 온몸에 배어 있는 것 같아 견딜 수가 없어."<span class="pg">p.61</span></div>
+        <div class="accordion-sentence">"나는 나무를 닮고 싶다는 생각을 멈출 수가 없다."<span class="pg">p.150</span></div>
+        <div class="more-link">그 외 12개 더보기 ›</div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-head" style="cursor:default">
+        <span class="cover" style="width:24px;height:33px;--c1:#0D3D2B;--c2:#00A86B;border-radius:3px"></span>
+        <span class="book-title" style="color:var(--text-primary);font-size:13px">파친코 · 이민진</span>
+        <span class="count">7문장</span>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-sentence">"역사는 우리를 실망시켰지만, 그래도 상관없다."<span class="pg">p.88</span></div>
+        <div class="accordion-sentence">"선자는 눈을 감고 낯선 땅의 냄새를 맡았다."<span class="pg">p.34</span></div>
+        <div class="accordion-sentence">"가족을 지키는 일에는 이유가 필요하지 않았다."<span class="pg">p.112</span></div>
+        <div class="accordion-sentence">"그들은 이방인으로 살아남는 법을 배워야 했다."<span class="pg">p.201</span></div>
+        <div class="more-link">그 외 3개 더보기 ›</div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-head" style="cursor:default">
+        <span class="cover" style="width:24px;height:33px;--c1:#163B30;--c2:#00BF7A;border-radius:3px"></span>
+        <span class="book-title" style="color:var(--text-primary);font-size:13px">픽션들 · 보르헤스</span>
+        <span class="count">52문장</span>
+      </div>
+      <div class="accordion-body">
+        <div class="accordion-sentence">"거울과 아버지는 혐오스럽다. 인간의 수를 늘리기 때문이다."<span class="pg">p.55</span></div>
+        <div class="accordion-sentence">"미로는 하나의 도서관이며, 도서관은 하나의 미로다."<span class="pg">p.12</span></div>
+        <div class="accordion-sentence">"시간은 갈라지고 또 갈라져, 서로 만나지 않는 미래들을 낳는다."<span class="pg">p.88</span></div>
+        <div class="accordion-sentence">"글을 쓴다는 것은 이미 존재하는 책을 발견하는 일에 가깝다."<span class="pg">p.130</span></div>
+        <div class="accordion-sentence">"무한한 것 앞에서 인간의 언어는 초라해진다."<span class="pg">p.201</span></div>
+        <div class="more-link">그 외 47개 더보기 ›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="caption" id="caption-text">
+  시안 1 — 초서한 문장 카드가 하나씩 시간순으로 나열. wiki/analyses/문장·생각-리스트-UI.md 확정안.
+</div>
+
+<script>
+  const captions = {
+    p1: '시안 1 — 초서한 문장 카드가 하나씩 시간순으로 나열. wiki/analyses/문장·생각-리스트-UI.md 확정안.',
+    p2: '시안 2 — 초서한 문장들이 독서 세션 단위로 묶여서 나열. 같은 책도 읽은 날이 다르면 별도 블록으로 분리됨. "세션" 용어는 노출하지 않고 "OO월 OO일 독서"로 표기.',
+    p3: '시안 3 — 초서한 문장들이 책으로 묶여서 나열. 세션 구분 없이 그 책에서 기록한 모든 문장을 한 섹션에 모음.'
+  };
+
+  document.querySelectorAll('.picker button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.picker button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.phone').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.target;
+      document.getElementById(target).classList.add('active');
+      document.getElementById('caption-text').textContent = captions[target];
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -15,6 +15,18 @@ void main() {
       expect(frame.right, lessThanOrEqualTo(390));
       expect(frame.bottom, lessThanOrEqualTo(844));
     });
+
+    test('matches the tall upper paper frame used by OCR capture', () {
+      final frame = quoteGuideFrameRect(
+        const Size(402, 874),
+        const EdgeInsets.only(top: 47, bottom: 34),
+      );
+
+      expect(frame.left, closeTo(36, 0.001));
+      expect(frame.top, closeTo(130, 0.001));
+      expect(frame.width, closeTo(330, 0.001));
+      expect(frame.height, closeTo(339.9, 0.001));
+    });
   });
 
   group('ocrCaptureCropRect', () {

@@ -106,6 +106,8 @@ class OverlapCard extends StatelessWidget {
         overlapHighlight: overlap.mergedHighlight,
         bookId: overlap.bookId,
         globalBookId: overlap.globalBookId,
+        coverUrl: overlap.coverUrl,
+        isbn13: overlap.isbn13,
       ),
     );
   }

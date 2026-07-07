@@ -4,8 +4,9 @@ class AppConstants {
   static const String routeHome = '/home';
   static const String routeExplore = '/explore';
   static const String routeAnalytics = '/analytics';
-  static const String routeTasteAnalysis = '/taste-analysis';
+  static const String routeTasteAnalysis = '/library/taste-analysis';
   static const String routeReadingHistory = '/reading-history';
+  static const String routeCompletedBooks = '/library/completed';
   static const String routeFeed = '/feed';
   static const String routeLibrary = '/library';
   static const String routeSession = '/session';
@@ -34,11 +35,6 @@ class AppConstants {
   static const double fireflyActiveOpacity = 1.0; // 현재 읽는 중
   static const double fireflyTodayOpacity = 0.45; // 오늘 읽음
   static const double fireflyWeekOpacity = 0.18; // 이번 주 읽음
-
-  // ─── 더미 데이터 (MVP 용) ──────────────────────────────────────
-  static const int mockActiveReaders = 15;
-  static const int mockTodayReaders = 48;
-  static const int mockWeekReaders = 134;
 
   // ─── 요일 라벨 ────────────────────────────────────────────────
   /// 월 시작 (분석/홈 위클리)

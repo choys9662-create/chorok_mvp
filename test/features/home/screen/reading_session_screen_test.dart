@@ -54,6 +54,9 @@ class _FakeLibraryNotifier extends LibraryNotifier {
 
   @override
   List<Book> build() => _books;
+
+  @override
+  void markSessionStarted(String bookId) {}
 }
 
 class _FakePresenceRepository implements ReadingPresenceRepository {

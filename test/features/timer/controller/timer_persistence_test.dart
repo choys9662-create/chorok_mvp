@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -54,5 +56,27 @@ void main() {
     final restored = await loadPersistedTimerData();
 
     expect(restored.isIdle, isTrue);
+  });
+
+  test('앱이 죽어있던 동안의 공백은 일부만 인정한다(유령 시간 방지)', () async {
+    final staleUpdatedAt = DateTime.now().subtract(const Duration(hours: 5));
+    SharedPreferences.setMockInitialValues({
+      'live_forest_timer_snapshot_v1': jsonEncode({
+        'seconds': 100,
+        'timerState': 'running',
+        'updatedAt': staleUpdatedAt.toIso8601String(),
+        'startedAt': staleUpdatedAt.toIso8601String(),
+        'goal': null,
+        'session': null,
+      }),
+    });
+
+    final restored = await loadPersistedTimerData();
+
+    expect(restored.timerState, TimerState.running);
+    // 5시간 공백을 통째로 더하면 100 + 18000이 되어야 하지만, 체크포인트 주기의
+    // 몇 배 수준으로만 늘어나야 한다.
+    expect(restored.seconds, greaterThanOrEqualTo(100));
+    expect(restored.seconds, lessThan(200));
   });
 }

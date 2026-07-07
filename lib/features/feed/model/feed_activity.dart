@@ -4,7 +4,15 @@
 /// - sentenceBatch: 문장을 N개 기록함
 /// - sessionComplete: 독서 세션을 완료함
 /// - bookComplete: 도서를 완독함
-enum FeedActivityType { sentenceBatch, sessionComplete, bookComplete }
+/// - wantToRead: 책을 읽고 싶은 책으로 추가함
+/// - readingStart: 책을 읽는 중으로 표시함
+enum FeedActivityType {
+  sentenceBatch,
+  sessionComplete,
+  bookComplete,
+  wantToRead,
+  readingStart,
+}
 
 /// 활동 카드 안에 미리보기로 노출되는 개별 문장.
 class FeedActivitySentence {

@@ -23,7 +23,7 @@ extension AppThemeExt on BuildContext {
   // 브랜드 초록 — 다크: 라이브 포레스트 네온, 라이트: 같은 hue를 낮춘 포레스트 라임
   Color get appPrimaryAccent =>
       _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
-  // accent 계열 — 다크: #00CC6A, 라이트: lightPrimaryAccent와 동일 톤
+  // accent 계열 — 다크: 메인 그린, 라이트: lightPrimaryAccent와 동일 톤
   Color get appAccentColor =>
       _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
 
@@ -81,31 +81,31 @@ class AppTheme {
   static const String fontFamily = 'ChosunGu';
 
   // ─── 브랜드 색상 팔레트 ───────────────────────────────────────────
-  static const Color primary = Color(0xFF131313); // 어두운 배경 (CTA 버튼 fill 등)
+  static const Color primary = Color(0xFF000000); // 배경
   static const Color primaryLight = Color(0xFF8DFF54); // 다크 모드 브랜드 네온 그린
-  static const Color accent = Color(0xFF6DE034); // 보조 강조 (그라디언트 끝값)
+  static const Color accent = Color(0xFF8DFF54); // 메인 그린
   static const Color fireflyColor = Color(0xFF8DFF54); // 반딧불 이펙트 전용
   static const Color warningColor = Color(0xFFFF8C42); // 경고/연속 독서
   static const Color empathyColor = Color(0xFFFF6B6B); // 공감/좋아요 하트
 
   // ─── 그린 그라디언트 ─────────────────────────────────────────────
-  /// #8DFF54 → #6DE034: 네온 그린 그라디언트
+  /// 메인 그린 그라디언트
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8DFF54), Color(0xFF6DE034)],
+    colors: [Color(0xFF8DFF54), Color(0xFF8DFF54)],
   );
   static const LinearGradient greenGradientVertical = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF8DFF54), Color(0xFF6DE034)],
+    colors: [Color(0xFF8DFF54), Color(0xFF8DFF54)],
   );
 
-  /// 카드/배경에 쓸 어두운 그린 그라디언트
+  /// 카드/배경에 쓸 박스 그라디언트
   static const LinearGradient greenCardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF132A13), Color(0xFF0D1A0D)],
+    colors: [Color(0xFF141614), Color(0xFF141614)],
   );
 
   // ─── 책 표지 그라디언트 팔레트 ──────────────────────────────────────
@@ -131,12 +131,12 @@ class AppTheme {
 
   // ─── 다크 배경 (중립 다크 — DESIGN.md §1) ──────────────────────
   static const Color darkBg = Colors.black;
-  static const Color darkSurface = Color(0xFF0B0D0B);
-  static const Color darkCard = Color(0xFF111411);
-  static const Color darkCardElevated = Color(0xFF1B211B);
-  static const Color darkActionBg = Color(0xFF161616); // 비활성 액션 버튼 fill (다크)
+  static const Color darkSurface = Color(0xFF000000);
+  static const Color darkCard = Color(0xFF141614);
+  static const Color darkCardElevated = Color(0xFF141614);
+  static const Color darkActionBg = Color(0xFF141614); // 비활성 액션 버튼 fill (다크)
   static const Color darkBorder = Color(0x3D8DFF54); // 네온 그린 투명 테두리
-  static const Color darkPrimaryContainer = Color(0xFF132A13);
+  static const Color darkPrimaryContainer = Color(0xFF141614);
   static const Color primaryPaused = Color(0xFF2A7A3D); // 일시정지/뮤트 그린 (다크 전용)
 
   // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
@@ -149,9 +149,9 @@ class AppTheme {
   static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
   // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB8C2B2);
-  static const Color textTertiary = Color(0xFF7D8878);
+  static const Color textPrimary = Color(0xFFF1FFF2);
+  static const Color textSecondary = Color(0xFF7B847C);
+  static const Color textTertiary = Color(0xFF7B847C);
 
   // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
   static const Color lightTextPrimary = Color(0xFF1A1A1A);

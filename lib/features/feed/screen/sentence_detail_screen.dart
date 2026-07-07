@@ -8,6 +8,8 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/repositories/comment_repository.dart';
+import '../../../shared/widgets/book_cover.dart';
+import '../../search/model/aladin_book.dart';
 import '../controller/overlap_provider.dart';
 import '../widget/split_highlight_widget.dart';
 
@@ -30,6 +32,8 @@ class SentenceDetailExtra {
   final HighlightRange? overlapHighlight;
   final String? bookId;
   final String? globalBookId;
+  final String? coverUrl;
+  final String? isbn13;
 
   const SentenceDetailExtra({
     required this.sentenceContent,
@@ -45,6 +49,8 @@ class SentenceDetailExtra {
     this.overlapHighlight,
     this.bookId,
     this.globalBookId,
+    this.coverUrl,
+    this.isbn13,
   });
 
   bool get isOverlapGroup =>
@@ -319,6 +325,21 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     );
   }
 
+  void _openBookInfo() {
+    final d = widget.data;
+    HapticFeedback.selectionClick();
+    context.push(
+      AppConstants.routeBookInfo,
+      extra: AladinBook(
+        title: d.bookTitle,
+        author: d.bookAuthor,
+        publisher: '',
+        coverUrl: d.coverUrl,
+        isbn13: d.isbn13,
+      ),
+    );
+  }
+
   Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
     if (kUseMock || d.isOverlapGroup) return const SizedBox.shrink();
 
@@ -493,25 +514,59 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                d.bookTitle,
-                                style: AppTheme.bodySmall.copyWith(
-                                  color: context.appPrimaryAccent,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          child: Semantics(
+                            label: '${d.bookTitle} 책 정보 보기',
+                            button: true,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _openBookInfo,
+                              child: Row(
+                                children: [
+                                  BookCover(
+                                    coverUrl: d.coverUrl,
+                                    gradientIndex:
+                                        d.bookTitle.hashCode.abs() %
+                                        AppTheme.coverGradients.length,
+                                    width: 38,
+                                    height: 52,
+                                    radius: 7,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          d.bookTitle,
+                                          style: AppTheme.bodySmall.copyWith(
+                                            color: context.appPrimaryAccent,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          d.bookAuthor,
+                                          style: AppTheme.captionSmall.copyWith(
+                                            color: context.appTextTertiary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 22,
+                                    color: context.appTextTertiary,
+                                  ),
+                                ],
                               ),
-                              Text(
-                                d.bookAuthor,
-                                style: AppTheme.captionSmall.copyWith(
-                                  color: context.appTextTertiary,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -875,7 +930,9 @@ class _CollectorThought extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: context.appPrimaryAccent.withValues(alpha: 0.06),
         radius: 10,
-        side: BorderSide(color: context.appPrimaryAccent.withValues(alpha: 0.4)),
+        side: BorderSide(
+          color: context.appPrimaryAccent.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

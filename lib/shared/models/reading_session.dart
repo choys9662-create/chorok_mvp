@@ -64,6 +64,8 @@ class Book {
   final DateTime? completedAt;
   final String? genre;
   final String? description;
+  final DateTime? addedAt;
+  final DateTime? lastSessionStartedAt;
 
   const Book({
     required this.id,
@@ -79,6 +81,8 @@ class Book {
     this.completedAt,
     this.genre,
     this.description,
+    this.addedAt,
+    this.lastSessionStartedAt,
   });
 
   double get readingProgress => totalPages > 0 ? currentPage / totalPages : 0.0;
@@ -97,6 +101,8 @@ class Book {
     DateTime? completedAt,
     String? genre,
     String? description,
+    DateTime? addedAt,
+    DateTime? lastSessionStartedAt,
   }) {
     return Book(
       id: id ?? this.id,
@@ -112,6 +118,8 @@ class Book {
       completedAt: completedAt ?? this.completedAt,
       genre: genre ?? this.genre,
       description: description ?? this.description,
+      addedAt: addedAt ?? this.addedAt,
+      lastSessionStartedAt: lastSessionStartedAt ?? this.lastSessionStartedAt,
     );
   }
 }

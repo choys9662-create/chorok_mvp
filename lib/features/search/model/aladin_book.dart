@@ -12,6 +12,10 @@ class AladinBook {
   final int totalPages;
   final String? genre;
 
+  /// 알라딘 원본 저자 문자열 — "한강 (지은이), 데버라 스미스 (옮긴이)" 형태.
+  /// 책 정보 화면의 저자·옮긴이 행 파싱용. [author]는 첫 저자명만 담는다.
+  final String? rawAuthor;
+
   const AladinBook({
     required this.title,
     required this.author,
@@ -21,6 +25,7 @@ class AladinBook {
     this.description,
     this.totalPages = 0,
     this.genre,
+    this.rawAuthor,
   });
 
   factory AladinBook.fromJson(Map<String, dynamic> json) {
@@ -50,6 +55,7 @@ class AladinBook {
       description: json['description'] as String?,
       totalPages: totalPages,
       genre: _parseGenre(json['categoryName'] as String?),
+      rawAuthor: rawAuthor.trim().isEmpty ? null : rawAuthor.trim(),
     );
   }
 

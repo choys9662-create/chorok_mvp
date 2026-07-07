@@ -11,6 +11,7 @@ class FollowOverlap {
   final String bookTitle;
   final String bookAuthor;
   final String? coverUrl;
+  final String? isbn13;
   final String? bookId;
   final String? globalBookId;
 
@@ -36,6 +37,7 @@ class FollowOverlap {
     required this.bookTitle,
     required this.bookAuthor,
     this.coverUrl,
+    this.isbn13,
     this.bookId,
     this.globalBookId,
     required this.mySentenceId,
@@ -167,6 +169,7 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
       bookTitle: book?['title'] as String? ?? '알 수 없는 책',
       bookAuthor: book?['author'] as String? ?? '',
       coverUrl: book?['cover_url'] as String?,
+      isbn13: (book?['isbn13'] ?? book?['isbn']) as String?,
       bookId: neighborRow['book_id'] as String?,
       globalBookId: neighborRow['global_book_id'] as String?,
       mySentenceId: mineRow['id'] as String? ?? '',

@@ -1,18 +1,13 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
-import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/analytics_provider.dart';
-import '../widgets/bullet_graph_widget.dart';
-import '../widgets/habit_radar_chart_widget.dart';
 import '../widgets/heatmap_calendar_widget.dart';
 import '../widget/analytics_charts.dart';
 import '../widget/analytics_summary_cards.dart';
@@ -90,61 +85,18 @@ String _pct(int curr, int prev) {
   return p >= 0 ? '+$p%' : '$p%';
 }
 
+String _formatHoursMinutes(int seconds) {
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds % 3600) ~/ 60;
+  if (hours > 0) return '$hours시간 $minutes분';
+  return '$minutes분';
+}
+
 String _focusDesc(int score) {
   if (score >= 90) return '최고예요! 집중도가 매우 높아요.';
   if (score >= 80) return '훌륭해요! 지난주보다 집중력이 높아졌어요.';
   if (score >= 70) return '꾸준히 읽고 있어요. 조금만 더 집중해 볼까요?';
   return '독서를 시작해 볼까요?';
-}
-
-({String persona, IconData icon, String desc}) _weekPersona(
-  List<TodSlot> slots,
-) {
-  if (slots.isEmpty) {
-    return (
-      persona: '독서가',
-      icon: Icons.menu_book_rounded,
-      desc: '독서 데이터가 쌓이면 독서 성향이 분석돼요.',
-    );
-  }
-  final peak = slots.reduce((a, b) => a.minutes >= b.minutes ? a : b);
-  switch (peak.label) {
-    case '새벽':
-      return (
-        persona: '새벽형 독서가',
-        icon: Icons.nights_stay_rounded,
-        desc: '고요한 새벽, 세상이 잠든 시간에 책을 펼치는 사람이에요. 새벽 독서 비중이 가장 높아요.',
-      );
-    case '오전':
-      return (
-        persona: '오전형 독서가',
-        icon: Icons.wb_sunny_rounded,
-        desc: '맑은 오전의 에너지로 책을 읽는 사람이에요. 오전 집중 시간을 잘 활용하고 있어요.',
-      );
-    case '오후':
-      return (
-        persona: '오후형 독서가',
-        icon: Icons.light_mode_rounded,
-        desc: '오후의 여유로운 시간에 책과 함께하는 사람이에요. 안정적인 독서 루틴이 느껴져요.',
-      );
-    default:
-      return (
-        persona: '저녁형 독서가',
-        icon: Icons.nights_stay_rounded,
-        desc:
-            '하루의 끝자락, 고요한 저녁에 책장을 펼치는 사람이에요. 이 루틴이 지속되는 한, 집중도는 자연스럽게 높아질 거예요.',
-      );
-  }
-}
-
-String _weekInsight(AnalyticsState a) {
-  if (a.weekReadDays == 0) return '이번 주는 아직 독서 기록이 없어요. 오늘부터 시작해 볼까요?';
-  final buf = StringBuffer('이번 주 ${a.weekReadDays}일 동안 책을 읽었어요.');
-  if (a.weekMaxSessionMinutes > 0) {
-    buf.write(' 가장 긴 집중은 ${a.weekMaxSessionMinutes}분이었어요.');
-  }
-  if (a.weekChoseoCount > 0) buf.write(' ${a.weekChoseoCount}개의 문장을 수집했어요.');
-  return buf.toString();
 }
 
 String _monthInsight(AnalyticsState a) {
@@ -311,23 +263,21 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     DateTime now,
   ) {
     final totalSecs =
-        a?.weekTotalSeconds ?? (kUseMock ? 9 * 3600 + 38 * 60 : 0);
-    final readDays = a?.weekReadDays ?? 0;
-    final choseoCount = a?.weekChoseoCount ?? 0;
+        a?.weekTotalSeconds ?? (kUseMock ? 10 * 3600 + 0 * 60 : 0);
     final prevSecs = a?.prevWeekTotalSeconds ?? 0;
     final dailyMin =
         a?.weekDailyMinutes ??
         (kUseMock
-            ? const [85, 42, 120, 65, 30, 153, 83]
+            ? const [42, 78, 101, 70, 87, 56, 0]
             : const [0, 0, 0, 0, 0, 0, 0]);
     final rawTimeOfDay =
         a?.weekTimeOfDay ??
         (kUseMock
             ? const [
-                (label: '새벽', range: '00–06', minutes: 12),
-                (label: '오전', range: '06–12', minutes: 65),
-                (label: '오후', range: '12–18', minutes: 148),
-                (label: '저녁', range: '18–24', minutes: 353),
+                (label: '새벽', range: '00–06', minutes: 0),
+                (label: '오전', range: '06–12', minutes: 12),
+                (label: '오후', range: '12–18', minutes: 24),
+                (label: '저녁', range: '18–24', minutes: 564),
               ]
             : const <({String label, String range, int minutes})>[]);
     final timeOfDay = rawTimeOfDay.isNotEmpty
@@ -338,320 +288,50 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             (label: '오후', range: '12–18', minutes: 0),
             (label: '저녁', range: '18–24', minutes: 0),
           ];
-    final focusScore = a?.weekFocusScore ?? 0;
-    final maxSessMin = a?.weekMaxSessionMinutes ?? 0;
-    final avgSessMin = a?.weekAvgSessionMinutes ?? 0;
-    final radar =
-        a?.weekRadar ??
-        (kUseMock
-            ? AnalyticsMockData.currentMonthRadar
-            : const <double>[0.0, 0.0, 0.0, 0.0, 0.0]);
-    final prevRadar = kUseMock
-        ? AnalyticsMockData.previousMonthRadar
-        : const <double>[0.0, 0.0, 0.0, 0.0, 0.0];
-    final sessions =
-        a?.weekSessions ??
-        (kUseMock
-            ? const [
-                (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
-                (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
-                (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
-                (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
-              ]
-            : const <
-                ({String title, String author, String duration, String date})
-              >[]);
-    final allSessions =
-        a?.allRecentSessions ??
-        (kUseMock
-            ? const [
-                (title: '채식주의자', author: '한강', duration: '1시간 23분', date: '오늘'),
-                (title: '82년생 김지영', author: '조남주', duration: '52분', date: '어제'),
-                (title: '아몬드', author: '손원평', duration: '1시간 8분', date: '2일 전'),
-                (title: '채식주의자', author: '한강', duration: '41분', date: '3일 전'),
-                (
-                  title: '파친코',
-                  author: '이민진',
-                  duration: '2시간 15분',
-                  date: '4일 전',
-                ),
-                (title: '채식주의자', author: '한강', duration: '35분', date: '5일 전'),
-                (title: '아몬드', author: '손원평', duration: '48분', date: '6일 전'),
-                (
-                  title: '82년생 김지영',
-                  author: '조남주',
-                  duration: '1시간 2분',
-                  date: '1주 전',
-                ),
-              ]
-            : const <
-                ({String title, String author, String duration, String date})
-              >[]);
-    final highlights = a != null
-        ? a.weekChoseo
-              .take(2)
-              .map(
-                (c) => (
-                  text: c.content,
-                  book: c.bookTitle.isNotEmpty
-                      ? '${c.bookTitle}${c.bookAuthor.isNotEmpty ? ' — ${c.bookAuthor}' : ''}'
-                      : '알 수 없는 책',
-                ),
-              )
-              .toList()
-        : (kUseMock
-              ? const [
-                  (
-                    text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
-                    book: '채식주의자 — 한강',
-                  ),
-                  (
-                    text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
-                    book: '아몬드 — 손원평',
-                  ),
-                ]
-              : const <({String text, String book})>[]);
-    final weekPersonaData = !kUseMock && a != null && timeOfDay.isNotEmpty
-        ? _weekPersona(timeOfDay)
-        : null;
-    final weekInsightMsg = !kUseMock && a != null ? _weekInsight(a) : null;
-    final weekMyReactions = a?.weekMyReactions ?? const [];
-    final weekCommunityHL = a?.weekCommunityHighlights ?? const [];
+    final avgSessionMinutes = a?.weekAvgSessionMinutes ?? (kUseMock ? 70 : 0);
+    final averageSecs = avgSessionMinutes > 0
+        ? avgSessionMinutes * 60
+        : totalSecs == 0
+        ? 0
+        : totalSecs ~/ dailyMin.where((m) => m > 0).length.clamp(1, 7);
+    final goalHours = AnalyticsMockData.weekBulletGoal;
+    final targetHours = kUseMock ? 12.0 : totalSecs / 3600.0;
+    final goalPercent = (targetHours / goalHours * 100).floor().clamp(0, 999);
 
     return [
-      ChorokSectionHeader(title: '이번 주 독서', subtitle: subtitle),
-      const SizedBox(height: AppTheme.spaceMD),
-      SummaryCard(
-        mainValue: _mainVal(totalSecs),
-        mainUnit: _mainUnit(totalSecs),
-        stats: [
-          (
-            icon: Icons.calendar_today_rounded,
-            label: '독서 일수',
-            value: '$readDays일',
-            color: null,
-          ),
-          (
-            icon: Icons.format_quote_rounded,
-            label: '수집 문장',
-            value: '$choseoCount개',
-            color: context.appAccentColor,
-          ),
-          (
-            icon: Icons.trending_up_rounded,
-            label: '전주 대비',
-            value: _pct(totalSecs, prevSecs),
-            color: context.appPrimaryAccent,
-          ),
-        ],
-      ),
+      _PeriodNavigator(label: '이번 주', subtitle: subtitle),
       const SizedBox(height: AppTheme.spaceXL),
-
-      const ChorokSectionHeader(title: '이번 주 목표'),
-      const SizedBox(height: AppTheme.spaceMD),
-      BulletGraphWidget(
-        label: '주간 독서 목표',
-        currentHours: totalSecs / 3600.0,
-        goalHours: AnalyticsMockData.weekBulletGoal,
-      ),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      const ChorokSectionHeader(title: '요일별 독서 시간'),
-      const SizedBox(height: AppTheme.spaceMD),
-      ChorokCard(
-        child: BarChart(
-          labels: AppConstants.weekdaysMonFirst,
-          values: dailyMin,
-          highlightIndex: now.weekday - 1,
-        ),
-      ),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      const ChorokSectionHeader(title: '요일별 독서 리듬'),
-      const SizedBox(height: AppTheme.spaceMD),
-      ChorokCard(
-        child: LineRhythmChart(
-          labels: AppConstants.weekdaysMonFirst,
-          values: dailyMin,
-          highlightIndex: now.weekday - 1,
-        ),
-      ),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      const ChorokSectionHeader(title: '시간대별 독서 패턴'),
-      const SizedBox(height: AppTheme.spaceMD),
-      TimeOfDayChart(slots: timeOfDay),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      ChorokSectionHeader(
-        title: '집중도',
-        trailing: Text(
-          '이번 주 $focusScore점',
-          style: AppTheme.captionLarge.copyWith(
-            color: context.appPrimaryAccent,
-          ),
-        ),
+      Text(
+        '이번 주 독서',
+        style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
       ),
       const SizedBox(height: AppTheme.spaceMD),
-      FocusCard(
-        score: focusScore,
-        label: '이번 주 집중도',
-        description: kUseMock
-            ? '훌륭해요! 지난주보다 집중력이 높아졌어요.'
-            : _focusDesc(focusScore),
-        stat1Label: '최장 연속',
-        stat1Value: time_fmt.formatDurationSeconds(maxSessMin * 60),
-        stat2Label: '평균 세션',
-        stat2Value: time_fmt.formatDurationSeconds(avgSessMin * 60),
-        stat3Label: '평균 속도',
-        stat3Value: (a?.weekAvgPagesPerMin ?? 0) > 0
-            ? '분당 ${a!.weekAvgPagesPerMin}p'
-            : '–',
+      _WeeklyReadingCard(
+        dailyMinutes: dailyMin,
+        highlightIndex: now.weekday - 1,
+        totalLabel: _formatHoursMinutes(totalSecs),
+        averageLabel: _formatHoursMinutes(averageSecs),
+        comparisonLabel: _pct(totalSecs, prevSecs).replaceFirst('+100%', '-'),
       ),
       const SizedBox(height: AppTheme.spaceXL),
-
-      const ChorokSectionHeader(title: '독서 습관 레이더'),
-      const SizedBox(height: AppTheme.spaceMD),
-      HabitRadarChartWidget(current: radar, previous: prevRadar),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      ChorokSectionHeader(
-        title: '최근 독서 세션',
-        trailing: TextButton(
-          onPressed: () {
-            HapticFeedback.selectionClick();
-            _showAllSessions(context, allSessions);
-          },
-          child: Text(
-            '전체',
-            style: AppTheme.captionLarge.copyWith(
-              color: context.appPrimaryAccent,
-            ),
-          ),
-        ),
+      Text(
+        '이번 주 목표',
+        style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
       ),
-      const SizedBox(height: AppTheme.spaceSM),
-      SessionList(sessions: sessions),
-      const SizedBox(height: AppTheme.spaceXL),
-
-      if (highlights.isNotEmpty) ...[
-        const ChorokSectionHeader(title: '이번 주 수집 문장'),
-        const SizedBox(height: AppTheme.spaceMD),
-        HighlightPreview(highlights: highlights),
-        const SizedBox(height: AppTheme.spaceXL),
-      ],
-
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '내 문장에 온 반응'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const SentenceReactionsCard(
-          sentences: [
-            (
-              text: '나는 채식을 한다. 그게 다야. 나한테 피해 주지 않잖아.',
-              book: '채식주의자 — 한강',
-              reactions: 34,
-              isTop: true,
-            ),
-            (
-              text: '나는 살아있다고 느끼는 순간이 거의 없었어. 어릴 때부터 죽은 것처럼 살아왔어.',
-              book: '아몬드 — 손원평',
-              reactions: 21,
-              isTop: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ] else if (weekMyReactions.isNotEmpty) ...[
-        const ChorokSectionHeader(title: '내 문장에 온 반응'),
-        const SizedBox(height: AppTheme.spaceMD),
-        SentenceReactionsCard(
-          sentences: weekMyReactions.indexed
-              .map(
-                (e) => (
-                  text: e.$2.content,
-                  book: e.$2.bookTitle.isNotEmpty
-                      ? '${e.$2.bookTitle} — ${e.$2.bookAuthor}'
-                      : e.$2.bookAuthor,
-                  reactions: e.$2.likeCount,
-                  isTop: e.$1 == 0,
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ],
-
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const CommunityHighlightsCard(
-          highlights: [
-            (
-              text: '어떤 책이든 결국은 사람 이야기야. 우리가 살아가는 이야기.',
-              book: '파친코 — 이민진',
-              reactions: 128,
-            ),
-            (
-              text: '고통이 있는 곳에 이야기가 있고, 이야기가 있는 곳에 위로가 있다.',
-              book: '소년이 온다 — 한강',
-              reactions: 97,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ] else if (weekCommunityHL.isNotEmpty) ...[
-        const ChorokSectionHeader(title: '이번 주 커뮤니티 하이라이트'),
-        const SizedBox(height: AppTheme.spaceMD),
-        CommunityHighlightsCard(
-          highlights: weekCommunityHL
-              .map(
-                (e) => (
-                  text: e.content,
-                  book: e.bookTitle.isNotEmpty
-                      ? '${e.bookTitle} — ${e.bookAuthor}'
-                      : e.bookAuthor,
-                  reactions: e.likeCount,
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ],
-
-      if (kUseMock) ...[
-        const ChorokSectionHeader(title: '이번 주 독서 성향'),
-        const SizedBox(height: AppTheme.spaceMD),
-        const ReadingPersonaCard(
-          persona: '저녁형 독서가',
-          icon: Icons.nights_stay_rounded,
-          description:
-              '하루의 끝자락, 고요한 밤에 책장을 펼치는 사람이에요. 저녁 독서 비중이 61%로, 일상의 마무리 루틴이 확실하게 자리잡혔어요. 이 루틴이 계속되는 한, 집중도는 자연스럽게 높아질 거예요.',
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ] else if (weekPersonaData != null) ...[
-        const ChorokSectionHeader(title: '이번 주 독서 성향'),
-        const SizedBox(height: AppTheme.spaceMD),
-        ReadingPersonaCard(
-          persona: weekPersonaData.persona,
-          icon: weekPersonaData.icon,
-          description: weekPersonaData.desc,
-        ),
-        const SizedBox(height: AppTheme.spaceXL),
-      ],
-
-      const ChorokSectionHeader(title: '이번 주 인사이트'),
       const SizedBox(height: AppTheme.spaceMD),
-      if (kUseMock)
-        const QualitativeInsightCard(
-          icon: Icons.auto_awesome_rounded,
-          message:
-              '5일 연속 책을 펼쳤어요. 독서가 더 이상 \'해야 할 일\'이 아닌 자연스러운 하루의 일부가 된 것 같아요. 특히 수요일엔 2시간 넘게 집중했는데, 그 몰입의 순간이 이번 주를 빛나게 했어요.',
-        )
-      else if (weekInsightMsg != null)
-        QualitativeInsightCard(
-          icon: Icons.auto_awesome_rounded,
-          message: weekInsightMsg,
-        ),
+      _WeeklyGoalCard(
+        currentLabel: '${targetHours.toStringAsFixed(0)}시간',
+        goalLabel: '${goalHours.toStringAsFixed(0)}시간',
+        progress: targetHours / goalHours,
+        percentLabel: '$goalPercent%',
+      ),
+      const SizedBox(height: AppTheme.spaceXL),
+      Text(
+        '시간대별 독서 패턴',
+        style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
+      ),
+      const SizedBox(height: AppTheme.spaceMD),
+      _TimePatternCard(slots: timeOfDay),
     ];
   }
 
@@ -1189,71 +869,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ),
     ];
   }
-
-  void _showAllSessions(BuildContext context, List<SessionEntry> sessions) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.appCard,
-      shape: SmoothRectangleBorder(
-        smoothness: 0.6,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(10),
-        ),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            const SizedBox(height: 12),
-            const ChorokSheetHandle(),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Text(
-                    '전체 독서 세션',
-                    style: AppTheme.headingMedium.copyWith(
-                      color: context.appTextPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${sessions.length}회',
-                    style: AppTheme.captionLarge.copyWith(
-                      color: AppTheme.accent,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                controller: scrollCtrl,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: sessions.length,
-                separatorBuilder: (_, i) =>
-                    const SizedBox(height: AppTheme.spaceSM),
-                itemBuilder: (_, i) {
-                  final s = sessions[i];
-                  return SessionTile(
-                    title: s.title,
-                    author: s.author,
-                    duration: s.duration,
-                    date: s.date,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _AnalyticsHeader extends StatelessWidget {
@@ -1282,15 +897,436 @@ class _AnalyticsHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: Text(
+                '나의 독서 습관',
+                style: AppTheme.headingLarge.copyWith(
+                  color: context.appTextPrimary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 48),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodNavigator extends StatelessWidget {
+  final String label;
+  final String subtitle;
+
+  const _PeriodNavigator({required this.label, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.arrow_left_rounded, color: context.appTextTertiary),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: AppTheme.bodyLarge.copyWith(
+                color: context.appTextSecondary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Icon(Icons.arrow_right_rounded, color: context.appTextTertiary),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+        ),
+      ],
+    );
+  }
+}
+
+class _HabitCard extends StatelessWidget {
+  final Widget child;
+
+  const _HabitCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: AppTheme.smoothPill(color: context.appCard),
+      child: child,
+    );
+  }
+}
+
+class _WeeklyReadingCard extends StatelessWidget {
+  final List<int> dailyMinutes;
+  final int highlightIndex;
+  final String totalLabel;
+  final String averageLabel;
+  final String comparisonLabel;
+
+  const _WeeklyReadingCard({
+    required this.dailyMinutes,
+    required this.highlightIndex,
+    required this.totalLabel,
+    required this.averageLabel,
+    required this.comparisonLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _HabitCard(
+      child: SizedBox(
+        height: 176,
+        child: Row(
+          children: [
+            Expanded(
+              child: _WeeklyBarChart(
+                values: dailyMinutes,
+                highlightIndex: highlightIndex,
+              ),
+            ),
+            const SizedBox(width: 18),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _StatBlock(label: '누적', value: totalLabel),
+                const SizedBox(height: 18),
+                _StatBlock(label: '평균', value: averageLabel),
+                const SizedBox(height: 18),
+                _StatBlock(label: '지난 주 대비', value: comparisonLabel),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeeklyBarChart extends StatelessWidget {
+  final List<int> values;
+  final int highlightIndex;
+
+  const _WeeklyBarChart({required this.values, required this.highlightIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxValue = values.fold<int>(1, (max, v) => v > max ? v : max);
+    const labels = ['일', '월', '화', '수', '목', '금', '토'];
+    return Column(
+      children: [
+        Expanded(
+          child: CustomPaint(
+            painter: _GridPainter(color: context.appBorderSubtle),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(values.length, (i) {
+                final isSelected = i == highlightIndex;
+                return Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FractionallySizedBox(
+                      heightFactor: values[i] / maxValue,
+                      child: Container(
+                        width: 16,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.appPrimaryAccent
+                              : context.appTextSecondary.withValues(
+                                  alpha: 0.72,
+                                ),
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: List.generate(
+            labels.length,
+            (i) => Expanded(
+              child: Text(
+                labels[i],
+                textAlign: TextAlign.center,
+                style: AppTheme.captionSmall.copyWith(
+                  color: i == highlightIndex
+                      ? context.appPrimaryAccent
+                      : context.appTextTertiary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GridPainter extends CustomPainter {
+  final Color color;
+
+  _GridPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.6;
+    for (final y in [0.0, size.height / 2, size.height]) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class _StatBlock extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatBlock({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          label,
+          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
+        ),
+      ],
+    );
+  }
+}
+
+class _WeeklyGoalCard extends StatelessWidget {
+  final String currentLabel;
+  final String goalLabel;
+  final double progress;
+  final String percentLabel;
+
+  const _WeeklyGoalCard({
+    required this.currentLabel,
+    required this.goalLabel,
+    required this.progress,
+    required this.percentLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = progress.clamp(0.0, 1.0);
+    return _HabitCard(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _GoalText(label: '이번 주 독서 시간', value: currentLabel),
+              _GoalText(label: '주간 독서 목표', value: goalLabel, alignEnd: true),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: clamped,
+                  minHeight: 18,
+                  backgroundColor: context.appProgressTrack.withValues(
+                    alpha: 0.25,
+                  ),
+                  valueColor: AlwaysStoppedAnimation(
+                    context.appTextSecondary.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 24,
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: clamped,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.arrow_drop_up_rounded,
+                          color: context.appPrimaryAccent,
+                          size: 18,
+                        ),
+                        Text(
+                          percentLabel,
+                          style: AppTheme.captionSmall.copyWith(
+                            color: context.appPrimaryAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 34),
           Text(
-            '분석',
-            style: AppTheme.headingLarge.copyWith(
-              color: context.appTextPrimary,
+            '목표가 코앞이에요!',
+            style: AppTheme.captionLarge.copyWith(
+              color: context.appTextTertiary,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GoalText extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool alignEnd;
+
+  const _GoalText({
+    required this.label,
+    required this.value,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimePatternCard extends StatelessWidget {
+  final List<TodSlot> slots;
+
+  const _TimePatternCard({required this.slots});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = slots.fold<int>(0, (sum, slot) => sum + slot.minutes);
+    return _HabitCard(
+      child: Column(
+        children: slots
+            .map((slot) {
+              final percent = total == 0 ? 0 : (slot.minutes / total * 100);
+              return _TimePatternRow(
+                label: slot.label,
+                range: slot.range,
+                progress: total == 0 ? 0 : slot.minutes / total,
+                percentLabel: '${percent.round()}%',
+              );
+            })
+            .expand((row) => [row, const SizedBox(height: 12)])
+            .take(slots.length * 2 - 1)
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _TimePatternRow extends StatelessWidget {
+  final String label;
+  final String range;
+  final double progress;
+  final String percentLabel;
+
+  const _TimePatternRow({
+    required this.label,
+    required this.range,
+    required this.progress,
+    required this.percentLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = progress.clamp(0.0, 1.0);
+    return Row(
+      children: [
+        SizedBox(
+          width: 64,
+          child: RichText(
+            text: TextSpan(
+              text: label,
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextPrimary,
+              ),
+              children: [
+                const TextSpan(text: '  '),
+                TextSpan(
+                  text: range,
+                  style: AppTheme.captionSmall.copyWith(
+                    color: context.appTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: clamped,
+              minHeight: 5,
+              backgroundColor: context.appProgressTrack.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation(
+                clamped > 0.8
+                    ? context.appTextPrimary
+                    : context.appTextSecondary.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 38,
+          child: Text(
+            percentLabel,
+            textAlign: TextAlign.right,
+            style: AppTheme.bodyMedium.copyWith(color: context.appTextTertiary),
+          ),
+        ),
+      ],
     );
   }
 }

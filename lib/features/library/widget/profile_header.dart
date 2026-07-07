@@ -306,15 +306,13 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
     HapticFeedback.selectionClick();
     final list = isFollower ? _followerProfiles : _followingProfiles;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.appCard,
-      shape: _modalShape,
-      builder: (_) => _FollowListSheet(
-        title: isFollower ? '팔로워 $_followers명' : '팔로잉 $_following명',
-        profiles: list,
-        showFollowButton: kUseMock && !isFollower,
-        emptyMessage: isFollower ? '아직 팔로워가 없어요' : '아직 팔로우한 독자가 없어요',
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _FollowListScreen(
+          title: isFollower ? '팔로워' : '팔로잉',
+          profiles: list,
+          emptyMessage: isFollower ? '아직 팔로워가 없어요' : '아직 팔로우한 독자가 없어요',
+        ),
       ),
     );
   }
@@ -551,155 +549,306 @@ class _SheetField extends StatelessWidget {
   }
 }
 
-// ─── 팔로워/팔로잉 목록 (토글 가능) ──────────────────────────────────
-class _FollowListSheet extends StatefulWidget {
+// ─── 팔로워/팔로잉 목록 ────────────────────────────────────────────────
+class _FollowListScreen extends ConsumerStatefulWidget {
   final String title;
   final List<UserProfile> profiles;
-  final bool showFollowButton;
   final String emptyMessage;
 
-  const _FollowListSheet({
+  const _FollowListScreen({
     required this.title,
     required this.profiles,
-    required this.showFollowButton,
     required this.emptyMessage,
   });
 
   @override
-  State<_FollowListSheet> createState() => _FollowListSheetState();
+  ConsumerState<_FollowListScreen> createState() => _FollowListScreenState();
 }
 
-class _FollowListSheetState extends State<_FollowListSheet> {
-  // ─── 시각 상수 (라운드·테두리 한곳 관리) ───────────────────────────
-  static final _followButtonRadius = BorderRadius.circular(10);
+class _FollowListScreenState extends ConsumerState<_FollowListScreen> {
+  late final Future<List<UserRecommendation>> _recommendations;
+  final Set<String> _followedRecommendationIds = {};
 
-  late List<bool> _followStates;
+  static final _cardRadius = BorderRadius.circular(8);
 
   @override
   void initState() {
     super.initState();
-    _followStates = List.filled(widget.profiles.length, true);
+    _recommendations = kUseMock
+        ? Future.value(_mockRecommendations)
+        : FollowRepository(Supabase.instance.client).getUserRecommendations();
+  }
+
+  Future<void> _follow(UserProfile profile) async {
+    if (profile.id.isEmpty || _followedRecommendationIds.contains(profile.id)) {
+      return;
+    }
+    HapticFeedback.selectionClick();
+    setState(() => _followedRecommendationIds.add(profile.id));
+    try {
+      await FollowRepository(Supabase.instance.client).follow(profile.id);
+      ref.read(followMutationVersionProvider.notifier).state++;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _followedRecommendationIds.remove(profile.id));
+    }
+  }
+
+  void _openProfile(UserProfile profile) {
+    if (profile.id.isEmpty) return;
+    HapticFeedback.selectionClick();
+    GoRouter.of(context).push(AppConstants.routeUserProfile, extra: profile);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        const SizedBox(height: 12),
-        const ChorokSheetHandle(),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            widget.title,
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextPrimary,
-            ),
-          ),
-        ),
-        Expanded(
-          child: widget.profiles.isEmpty
-              ? _FollowEmptyState(message: widget.emptyMessage)
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: widget.profiles.length,
-                  itemBuilder: (context, i) {
-                    final p = widget.profiles[i];
-                    final initial = p.displayName.isNotEmpty
-                        ? p.displayName[0]
-                        : '?';
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        // 빈 id(목업)는 실제 프로필이 없으므로 이동하지 않는다.
-                        onTap: p.id.isEmpty
-                            ? null
-                            : () {
-                                HapticFeedback.selectionClick();
-                                final router = GoRouter.of(context);
-                                Navigator.pop(context);
-                                router.push(
-                                  AppConstants.routeUserProfile,
-                                  extra: p,
-                                );
-                              },
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: isDark
-                                  ? AppTheme.primary.withValues(alpha: 0.3)
-                                  : context.primaryBg(0.12),
-                              child: Text(
-                                initial,
-                                style: AppTheme.bodyMedium.copyWith(
-                                  color: context.appPrimaryAccent,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                p.displayName,
-                                style: AppTheme.bodyMedium.copyWith(
-                                  color: context.appTextPrimary,
-                                ),
-                              ),
-                            ),
-                            if (widget.showFollowButton)
-                              GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setState(
-                                    () => _followStates[i] = !_followStates[i],
-                                  );
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOutCubic,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: ShapeDecoration(
-                                    color: _followStates[i]
-                                        ? context.appCardElevated
-                                        : isDark
-                                        ? AppTheme.primary
-                                        : context.appPrimaryAccent,
-                                    shape: SmoothRectangleBorder(
-                                      smoothness: 0.6,
-                                      borderRadius: _followButtonRadius,
-                                      side: BorderSide.none,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    _followStates[i] ? '팔로잉' : '팔로우',
-                                    style: AppTheme.captionLarge.copyWith(
-                                      color: _followStates[i]
-                                          ? context.appTextTertiary
-                                          : isDark
-                                          ? context.appPrimaryAccent
-                                          : Colors.white,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+    return Scaffold(
+      backgroundColor: context.appBg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 64,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    left: 8,
+                    top: 0,
+                    child: IconButton(
+                      constraints: const BoxConstraints.tightFor(
+                        width: 44,
+                        height: 44,
                       ),
-                    );
-                  },
-                ),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.chevron_left_rounded,
+                        size: 28,
+                        color: context.appTextPrimary,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  Text(
+                    widget.title,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: context.appTextPrimary,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                children: [
+                  if (widget.profiles.isEmpty)
+                    SizedBox(
+                      height: 220,
+                      child: _FollowEmptyState(message: widget.emptyMessage),
+                    )
+                  else
+                    for (final profile in widget.profiles)
+                      _FollowUserTile(
+                        profile: profile,
+                        subtitle: profile.username.isEmpty
+                            ? '함께 읽는 독자'
+                            : '@${profile.username}',
+                        buttonLabel: '팔로잉',
+                        cardRadius: _cardRadius,
+                        onTap: () => _openProfile(profile),
+                      ),
+                  const SizedBox(height: 18),
+                  FutureBuilder<List<UserRecommendation>>(
+                    future: _recommendations,
+                    builder: (context, snapshot) {
+                      final recommendations = snapshot.data ?? const [];
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+                      if (recommendations.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(2, 0, 2, 10),
+                            child: Text(
+                              '추천 독자',
+                              style: AppTheme.bodyMedium.copyWith(
+                                color: context.appTextPrimary,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          for (final recommendation in recommendations)
+                            _FollowUserTile(
+                              profile: recommendation.profile,
+                              subtitle: recommendation.reason,
+                              buttonLabel:
+                                  _followedRecommendationIds.contains(
+                                    recommendation.profile.id,
+                                  )
+                                  ? '팔로잉'
+                                  : '팔로우',
+                              cardRadius: _cardRadius,
+                              onTap: () => _openProfile(recommendation.profile),
+                              onButtonTap: () =>
+                                  _follow(recommendation.profile),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
+
+class _FollowUserTile extends StatelessWidget {
+  final UserProfile profile;
+  final String subtitle;
+  final String buttonLabel;
+  final BorderRadius cardRadius;
+  final VoidCallback? onTap;
+  final VoidCallback? onButtonTap;
+
+  const _FollowUserTile({
+    required this.profile,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.cardRadius,
+    this.onTap,
+    this.onButtonTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = profile.avatarUrl == null || profile.avatarUrl!.isEmpty
+        ? null
+        : NetworkImage(profile.avatarUrl!);
+    final initial = profile.displayName.isNotEmpty
+        ? profile.displayName[0]
+        : '?';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 65,
+          padding: const EdgeInsets.fromLTRB(12, 10, 18, 10),
+          decoration: ShapeDecoration(
+            color: AppTheme.darkCard,
+            shape: SmoothRectangleBorder(
+              smoothness: 0.6,
+              borderRadius: cardRadius,
+            ),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: context.appCardElevated,
+                backgroundImage: avatar,
+                child: avatar == null
+                    ? Text(
+                        initial,
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: context.appTextSecondary,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextPrimary,
+                        fontWeight: FontWeight.w400,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                        height: 1.15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: onButtonTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: context.appCardElevated,
+                    shape: SmoothRectangleBorder(
+                      smoothness: 0.6,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  child: Text(
+                    buttonLabel,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextTertiary,
+                      fontWeight: FontWeight.w400,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final _mockRecommendations = [
+  UserRecommendation(
+    profile: UserProfile(id: '', username: 'hae', displayName: '해골맨'),
+    reason: '맞팔 독자들이 많이 팔로우해요',
+  ),
+  UserRecommendation(
+    profile: UserProfile(id: '', username: 'book', displayName: '용가리맨'),
+    reason: '나와 비슷한 책을 읽어요',
+  ),
+];
 
 // ─── 팔로우 목록 빈 상태 ────────────────────────────────────────────────
 class _FollowEmptyState extends StatelessWidget {

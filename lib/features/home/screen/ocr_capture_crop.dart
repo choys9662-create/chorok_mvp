@@ -3,14 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 Rect quoteGuideFrameRect(Size size, EdgeInsets padding) {
-  final frameW = math.min(size.width - 44, 360.0);
+  final frameW = math.min(size.width - 60, 330.0);
   final maxFrameH = math.max(
-    190.0,
-    size.height - padding.top - padding.bottom - 230,
+    260.0,
+    size.height - padding.top - padding.bottom - 360,
   );
-  final frameH = math.min(math.max(frameW * 0.64, 210.0), maxFrameH);
+  final frameH = math.min(math.max(frameW * 1.03, 300.0), maxFrameH);
   final frameLeft = (size.width - frameW) / 2;
-  final frameTop = (size.height - frameH) / 2 - 22;
+  final frameTop = math.max(padding.top + 83, (size.height - frameH) * 0.18);
   return Rect.fromLTWH(frameLeft, frameTop, frameW, frameH);
 }
 

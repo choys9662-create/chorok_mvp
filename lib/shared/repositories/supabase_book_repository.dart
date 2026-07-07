@@ -110,6 +110,17 @@ class SupabaseBookRepository {
     }, onConflict: 'user_id,global_book_id');
   }
 
+  /// 라이브 포레스트(독서 세션) 시작 시각만 갱신 — 다른 필드는 건드리지 않는다.
+  Future<void> markSessionStarted(String bookId, DateTime startedAt) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client
+        .from('books')
+        .update({'last_session_started_at': startedAt.toIso8601String()})
+        .eq('user_id', userId)
+        .eq('book_id', bookId);
+  }
+
   Future<void> deleteByBookId(String bookId) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
@@ -176,6 +187,16 @@ class SupabaseBookRepository {
       genre: r['genre'] as String?,
       description:
           r['description'] as String? ?? globalBook?['description'] as String?,
+      addedAt: r['created_at'] != null
+          ? DateTime.tryParse(r['created_at'] as String)
+          : null,
+      // last_session_started_at 기록이 없는 책(이 필드 생기기 전에 읽던 책)은
+      // updated_at(페이지 갱신 등으로 매번 갱신됨)으로 대체해 정렬이 어긋나지 않게 한다.
+      lastSessionStartedAt: r['last_session_started_at'] != null
+          ? DateTime.tryParse(r['last_session_started_at'] as String)
+          : (r['updated_at'] != null
+                ? DateTime.tryParse(r['updated_at'] as String)
+                : null),
     );
   }
 }

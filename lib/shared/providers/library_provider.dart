@@ -63,6 +63,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
     final clamped = old.totalPages > 0
         ? newPage.clamp(0, old.totalPages)
         : newPage;
+    // 페이지가 실제로 바뀌었다는 건 방금 읽었다는 뜻 — 홈 '읽고 있는 책' 정렬 신호로도 쓴다.
+    final justRead = clamped != old.currentPage;
 
     // 상태 결정 로직:
     // 1. 페이지가 끝까지 도달하면 completed
@@ -77,14 +79,16 @@ class LibraryNotifier extends Notifier<List<Book>> {
       }
     }
 
+    final now = DateTime.now();
     final updated = old.copyWith(
       currentPage: clamped,
       status: newStatus,
       completedAt:
           (newStatus == ReadingStatus.completed &&
               old.status != ReadingStatus.completed)
-          ? DateTime.now()
+          ? now
           : (newStatus != ReadingStatus.completed ? null : old.completedAt),
+      lastSessionStartedAt: justRead ? now : old.lastSessionStartedAt,
     );
 
     debugPrint('LibraryProvider: Updated status to ${updated.status}');
@@ -92,6 +96,9 @@ class LibraryNotifier extends Notifier<List<Book>> {
 
     if (kUseMock) return;
     ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
+    if (justRead) {
+      ref.read(supabaseBookRepositoryProvider).markSessionStarted(bookId, now);
+    }
   }
 
   /// 완독 취소 — status를 reading으로 되돌리고 completedAt 초기화
@@ -117,6 +124,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
       completedAt: null,
       genre: old.genre,
       description: old.description,
+      addedAt: old.addedAt,
+      lastSessionStartedAt: old.lastSessionStartedAt,
     );
 
     state = [...state]..[idx] = updated;
@@ -167,6 +176,17 @@ class LibraryNotifier extends Notifier<List<Book>> {
     ref.read(supabaseBookRepositoryProvider).saveFromBook(updated);
   }
 
+  /// 라이브 포레스트(독서 세션) 시작 시각 기록 — 홈 '읽고 있는 책' 정렬 기준.
+  void markSessionStarted(String bookId) {
+    final idx = state.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+    final now = DateTime.now();
+    final updated = state[idx].copyWith(lastSessionStartedAt: now);
+    state = [...state]..[idx] = updated;
+    if (kUseMock) return;
+    ref.read(supabaseBookRepositoryProvider).markSessionStarted(bookId, now);
+  }
+
   void deleteBook(String bookId) {
     state = state.where((b) => b.id != bookId).toList();
     if (kUseMock) return;
@@ -199,6 +219,8 @@ class LibraryNotifier extends Notifier<List<Book>> {
       completedAt: old.completedAt,
       genre: version.genre ?? old.genre,
       description: version.description ?? old.description,
+      addedAt: old.addedAt,
+      lastSessionStartedAt: old.lastSessionStartedAt,
     );
 
     state = [...state]..[idx] = updated;

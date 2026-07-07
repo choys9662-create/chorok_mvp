@@ -16,7 +16,7 @@ import '../../../main.dart';
 import '../util/auth_error.dart';
 
 // ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
-const _kBg = Color(0xFF121212); // AppTheme.darkBg
+const _kBg = AppTheme.darkBg;
 const _kAuthControlFill = Color(0xFF111811);
 const _kAuthControlBorder = Color(0x3D8DFF54);
 const _authRedirectUri = 'com.chorok.chorokapp://login-callback/';

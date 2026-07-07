@@ -125,17 +125,15 @@ void main() {
     await tester.pumpWidget(_buildRecapScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('세션 요약'), findsOneWidget);
+    expect(find.text('6번째 세션 요약'), findsOneWidget);
     expect(find.text('채식주의자 (리마스터판)'), findsOneWidget);
     expect(find.text('한강 | 창비 | 2022'), findsOneWidget);
     expect(find.text('02:30:25'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
     expect(find.text('196 / 267'), findsOneWidget);
     expect(find.text('70%'), findsOneWidget);
-    expect(find.text('문장'), findsOneWidget);
-    expect(find.text('10'), findsOneWidget);
-    expect(find.text('기록'), findsOneWidget);
-    expect(find.text('5'), findsOneWidget);
+    expect(find.text('문장 10 | 생각 5'), findsOneWidget);
+    expect(find.text('10개'), findsOneWidget);
     expect(find.text('깊고 집중한 오전의 독서'), findsOneWidget);
     expect(find.text('공유하기'), findsOneWidget);
     expect(find.text('홈'), findsOneWidget);
@@ -152,10 +150,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('내 초서 기록 접기'), findsOneWidget);
-    expect(find.text('수집한 문장'), findsOneWidget);
     expect(find.text('문장 0'), findsWidgets);
 
-    await tester.tap(find.byIcon(Icons.keyboard_arrow_down_rounded));
+    await tester.tap(find.bySemanticsLabel('내 초서 기록 접기'));
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('내 초서 기록 펼치기'), findsOneWidget);
@@ -223,18 +220,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
 
-    expect(find.text('수집한 문장'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(find.text('내 생각'), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
 
     await tester.ensureVisible(find.text(mySentence));
     await tester.pumpAndSettle();
     await tester.tap(find.text(mySentence));
     await tester.pumpAndSettle();
 
-    expect(find.text('같은 문장, 다른 생각'), findsOneWidget);
-    expect(find.text('내가 기록한 문장'), findsOneWidget);
+    expect(find.text('내 생각'), findsOneWidget);
     expect(find.text('1명의 독자가 이 문장에 남긴 생각'), findsOneWidget);
     expect(find.text('같은 문장에서 오래 멈췄어요.'), findsOneWidget);
-    expect(find.text('공감 3'), findsOneWidget);
   });
 }

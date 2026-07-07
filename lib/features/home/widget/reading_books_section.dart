@@ -14,6 +14,21 @@ import '../../search/util/book_info_navigation.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
+/// 최근에 읽은(라이브 포레스트를 켰거나 페이지가 갱신된) 책이 먼저 오고, 그다음은 추가한 순서대로.
+int compareReadingBooks(Book a, Book b) {
+  final aStarted = a.lastSessionStartedAt;
+  final bStarted = b.lastSessionStartedAt;
+  if (aStarted != null || bStarted != null) {
+    if (aStarted == null) return 1;
+    if (bStarted == null) return -1;
+    return bStarted.compareTo(aStarted);
+  }
+  final aAdded = a.addedAt;
+  final bAdded = b.addedAt;
+  if (aAdded == null || bAdded == null) return 0;
+  return aAdded.compareTo(bAdded);
+}
+
 const _readingBookCardWidth = 118.0;
 const _readingBookCardHeight = 180.0;
 const _readingBookCardGap = 8.0;
@@ -28,7 +43,8 @@ class ReadingBooksSection extends ConsumerWidget {
         allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
     final readingBooks = allBooks
         .where((b) => b.status == ReadingStatus.reading)
-        .toList();
+        .toList()
+      ..sort(compareReadingBooks);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
