@@ -621,9 +621,9 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
               padding: EdgeInsets.fromLTRB(20, topPad + 8, 20, 24),
               child: Column(
                 children: [
-                  if (showBackButton) ...[
-                    Row(
-                      children: [
+                  Row(
+                    children: [
+                      if (showBackButton)
                         Semantics(
                           button: true,
                           label: '뒤로가기',
@@ -643,11 +643,36 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                               ),
                             ),
                           ),
+                        )
+                      else
+                        const SizedBox(width: 44, height: 44),
+                      const Spacer(),
+                      Semantics(
+                        button: true,
+                        label: '도서 정보 보기',
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push(
+                              AppConstants.routeBookDetailInfo,
+                              extra: book,
+                            );
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.info_outline_rounded,
+                              color: context.appTextSecondary,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   BookCover(
                     coverUrl: book.coverUrl,
                     gradientIndex: gradientIndex,
@@ -688,18 +713,28 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
           if (libraryBook != null)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                child: _ContinueReadingButton(book: libraryBook),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Center(
+                  child: SizedBox(
+                    width: 172,
+                    child: _ContinueReadingButton(book: libraryBook),
+                  ),
+                ),
               ),
             ),
 
           // ── 서재에 있는 책 / 서재에 추가 ───────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: _AddToLibraryButton(
-                isInLibrary: isInLibrary,
-                onTap: _onAddTap,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Center(
+                child: SizedBox(
+                  width: 172,
+                  child: _AddToLibraryButton(
+                    isInLibrary: isInLibrary,
+                    onTap: _onAddTap,
+                  ),
+                ),
               ),
             ),
           ),
@@ -825,31 +860,29 @@ class _ContinueReadingButton extends StatelessWidget {
           ),
         );
       },
-      child: Center(
-        child: Container(
-          width: 232,
-          height: 30,
-          decoration: AppTheme.smoothBox(
-            gradient: AppTheme.greenGradient,
-            radius: AppTheme.radiusMD,
-            side: BorderSide.none,
-          ),
-          alignment: Alignment.center,
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.play_arrow_rounded, size: 16, color: AppTheme.darkBg),
-              SizedBox(width: 4),
-              Text(
-                '이어 읽기',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: AppTheme.darkBg,
-                ),
+      child: Container(
+        width: double.infinity,
+        height: 28,
+        decoration: AppTheme.smoothBox(
+          gradient: AppTheme.greenGradient,
+          radius: 5,
+          side: BorderSide.none,
+        ),
+        alignment: Alignment.center,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.play_arrow_rounded, size: 15, color: AppTheme.darkBg),
+            SizedBox(width: 4),
+            Text(
+              '이어 읽기',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: AppTheme.darkBg,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -873,54 +906,52 @@ class _AddToLibraryButtonState extends State<_AddToLibraryButton> {
   Widget build(BuildContext context) {
     final isIn = widget.isInLibrary;
 
-    return Center(
-      child: Semantics(
-        button: true,
-        label: isIn ? '서재에서 삭제' : '서재에 추가',
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) {
-            setState(() => _pressed = false);
-            widget.onTap();
-          },
-          onTapCancel: () => setState(() => _pressed = false),
-          child: AnimatedScale(
-            scale: _pressed ? 0.97 : 1.0,
-            duration: const Duration(milliseconds: 120),
+    return Semantics(
+      button: true,
+      label: isIn ? '서재에서 삭제' : '서재에 추가',
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedScale(
+          scale: _pressed ? 0.97 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              width: 232,
-              height: 30,
-              decoration: AppTheme.smoothBox(
-                gradient: isIn ? null : AppTheme.greenGradient,
-                color: isIn ? Colors.transparent : null,
-                radius: AppTheme.radiusMD,
-                side: isIn
-                    ? BorderSide(color: context.appPillBorderActive)
-                    : BorderSide.none,
-              ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isIn ? Icons.check_rounded : Icons.add_rounded,
-                    size: 15,
+            width: double.infinity,
+            height: 28,
+            decoration: AppTheme.smoothBox(
+              gradient: isIn ? null : AppTheme.greenGradient,
+              color: isIn ? Colors.transparent : null,
+              radius: 5,
+              side: isIn
+                  ? BorderSide(color: context.appPillBorderActive)
+                  : BorderSide.none,
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isIn ? Icons.check_rounded : Icons.add_rounded,
+                  size: 15,
+                  color: isIn ? context.appTextPrimary : AppTheme.darkBg,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isIn ? '서재에 있는 책' : '서재에 추가',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                     color: isIn ? context.appTextPrimary : AppTheme.darkBg,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isIn ? '서재에 있는 책' : '서재에 추가',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: isIn ? context.appTextPrimary : AppTheme.darkBg,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

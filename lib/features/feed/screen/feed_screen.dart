@@ -16,6 +16,14 @@ import '../controller/feed_activity_provider.dart';
 import '../model/feed_activity.dart';
 import 'sentence_detail_screen.dart';
 
+/// 겹문장 알림과 활동 소식을 하나의 시간순 타임라인으로 합치기 위한 항목.
+/// 정확히 [overlap], [activity] 중 하나만 채워진다.
+typedef _FeedItem = ({
+  DateTime time,
+  FollowOverlap? overlap,
+  FeedActivity? activity,
+});
+
 List<BoxShadow>? _feedCardShadow(BuildContext context) {
   if (Theme.of(context).brightness == Brightness.dark) {
     return [
@@ -78,12 +86,15 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final canGoBack = Navigator.of(context).canPop();
 
     // 겹문장(나 ∩ 팔로잉, 같은 책) — 친구 피드에서만 의미가 있다.
-    final overlaps = ref.watch(followOverlapProvider).valueOrNull ?? const [];
-    final showOverlapSection =
-        _scope == FeedScope.friends &&
-        !isLoading &&
-        !async.hasError &&
-        overlaps.isNotEmpty;
+    final overlaps = _scope == FeedScope.friends
+        ? (ref.watch(followOverlapProvider).valueOrNull ?? const [])
+        : const <FollowOverlap>[];
+
+    // 겹문장 알림 + 활동 소식을 하나의 타임라인으로 합쳐 최신순으로 보여준다.
+    final feedItems = <_FeedItem>[
+      for (final o in overlaps) (time: o.neighborCreatedAt, overlap: o, activity: null),
+      for (final a in activities) (time: a.occurredAt, overlap: null, activity: a),
+    ]..sort((a, b) => b.time.compareTo(a.time));
 
     return Scaffold(
       backgroundColor: _feedBg,
@@ -132,55 +143,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                             ref.invalidate(feedActivityProvider(_scope)),
                       ),
                     )
-                  else if (activities.isEmpty && overlaps.isEmpty)
+                  else if (feedItems.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: _EmptyState(scope: _scope),
                     )
-                  else ...[
-                    // ── 겹문장 알림 섹션 ──────────────────────
-                    if (showOverlapSection) ...[
-                      SliverToBoxAdapter(
-                        child: _SectionHeader(
-                          title: '겹문장',
-                          subtitle: '팔로우한 독자와 같은 문장에 멈췄어요',
-                          trailing: '${overlaps.length}건',
-                        ),
+                  else
+                    // ── 겹문장 알림 + 활동 소식 (최신순 통합) ──────
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      sliver: SliverList.separated(
+                        itemCount: feedItems.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (_, i) {
+                          final item = feedItems[i];
+                          return item.overlap != null
+                              ? _OverlapNotificationCard(
+                                  overlap: item.overlap!,
+                                )
+                              : _ActivityCard(activity: item.activity!);
+                        },
                       ),
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          0,
-                          16,
-                          activities.isEmpty ? 24 : 8,
-                        ),
-                        sliver: SliverList.separated(
-                          itemCount: overlaps.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (_, i) =>
-                              _OverlapNotificationCard(overlap: overlaps[i]),
-                        ),
-                      ),
-                    ],
-                    if (activities.isNotEmpty) ...[
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          showOverlapSection ? 0 : 12,
-                          16,
-                          24,
-                        ),
-                        sliver: SliverList.separated(
-                          itemCount: activities.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (_, i) =>
-                              _ActivityCard(activity: activities[i]),
-                        ),
-                      ),
-                    ],
-                  ],
+                    ),
                 ],
               ),
             ),
@@ -354,57 +338,6 @@ class _ActivityCard extends StatelessWidget {
       case FeedActivityType.readingStart:
         return const [];
     }
-  }
-}
-
-// ─── 섹션 헤더 (겹문장 / 친구의 초서) ──────────────────────────────────────────
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final String? trailing;
-  const _SectionHeader({required this.title, this.subtitle, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle!,
-                    style: AppTheme.captionLarge.copyWith(
-                      color: context.appTextTertiary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (trailing != null)
-            Text(
-              trailing!,
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }
 

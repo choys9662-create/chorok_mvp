@@ -37,7 +37,10 @@ void main() {
     expect(find.byTooltip('문장만 저장'), findsOneWidget);
     final sentenceField = _sentenceField();
     expect(sentenceField, findsOneWidget);
-    expect(tester.widget<TextField>(sentenceField).autofocus, isTrue);
+    final sentenceTextField = tester.widget<TextField>(sentenceField);
+    expect(sentenceTextField.autofocus, isTrue);
+    expect(sentenceTextField.decoration?.focusedBorder, InputBorder.none);
+    expect(sentenceTextField.decoration?.filled, isFalse);
 
     await tester.enterText(
       sentenceField,

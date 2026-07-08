@@ -14,12 +14,14 @@ class ChosuSheet extends StatefulWidget {
   final String initialText;
   final String bookTitle;
   final bool autofocusSentence;
+  final String? timerText;
 
   const ChosuSheet({
     super.key,
     this.initialText = '',
     this.bookTitle = '',
     this.autofocusSentence = true,
+    this.timerText,
   });
 
   @override
@@ -119,7 +121,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
                 360.0,
               );
 
-              return Align(
+              final card = Align(
                 alignment: const Alignment(0, -0.18),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -157,6 +159,22 @@ class _ChosuSheetState extends State<ChosuSheet> {
                     ),
                   ),
                 ),
+              );
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  const Positioned.fill(child: _ChosuOverlayBackground()),
+                  if (widget.timerText != null)
+                    Positioned(
+                      top: 62,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: _ChosuTimerPill(text: widget.timerText!),
+                      ),
+                    ),
+                  card,
+                ],
               );
             },
           ),
@@ -213,7 +231,14 @@ class _SentenceStep extends StatelessWidget {
                   color: context.appTextTertiary,
                   letterSpacing: 0,
                 ),
+                filled: false,
+                fillColor: Colors.transparent,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -224,42 +249,46 @@ class _SentenceStep extends StatelessWidget {
             color: context.appBorderSubtle.withValues(alpha: 0.36),
           ),
           Expanded(
-            child: _ChosuTextField(
-              controller: sentenceCtrl,
-              focusNode: sentenceFocus,
-              hintText: '',
-              expands: true,
-              autofocus: autofocus,
-              cursorColor: context.appPrimaryAccent,
-              keyboardInset: keyboardInset,
-              onChanged: onChanged,
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 9),
-              child: Wrap(
-                spacing: 11,
-                children: [
-                  _CardIconButton(
-                    tooltip: '생각 쓰기',
-                    icon: Icons.chat_bubble_outline_rounded,
-                    enabled: hasSentence,
-                    primary: true,
-                    saved: false,
-                    onPressed: onContinue,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: _ChosuTextField(
+                    controller: sentenceCtrl,
+                    focusNode: sentenceFocus,
+                    hintText: '',
+                    expands: true,
+                    autofocus: autofocus,
+                    cursorColor: context.appPrimaryAccent,
+                    keyboardInset: keyboardInset,
+                    contentPaddingBottom: 42,
+                    onChanged: onChanged,
                   ),
-                  _CardIconButton(
-                    tooltip: '문장만 저장',
-                    icon: saved ? Icons.check_rounded : Icons.add_rounded,
-                    enabled: hasSentence,
-                    primary: false,
-                    saved: saved,
-                    onPressed: onSave,
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Wrap(
+                    spacing: 11,
+                    children: [
+                      _CardIconButton(
+                        tooltip: '생각 쓰기',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        enabled: hasSentence,
+                        primary: true,
+                        saved: false,
+                        onPressed: onContinue,
+                      ),
+                      _CardIconButton(
+                        tooltip: '문장만 저장',
+                        icon: saved ? Icons.check_rounded : Icons.add_rounded,
+                        enabled: hasSentence,
+                        primary: false,
+                        saved: saved,
+                        onPressed: onSave,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -338,6 +367,75 @@ class _CardIconButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ChosuTimerPill extends StatelessWidget {
+  final String text;
+
+  const _ChosuTimerPill({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: context.appPrimaryAccent, width: 1),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: context.appPrimaryAccent,
+          fontSize: 17,
+          height: 1,
+          fontWeight: FontWeight.w400,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChosuOverlayBackground extends StatelessWidget {
+  const _ChosuOverlayBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: const _ChosuOverlayBackgroundPainter());
+  }
+}
+
+class _ChosuOverlayBackgroundPainter extends CustomPainter {
+  const _ChosuOverlayBackgroundPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.black);
+    _drawGlow(canvas, size, 0.79, 0.19, 27);
+    _drawGlow(canvas, size, 0.50, 0.62, 20);
+    _drawGlow(canvas, size, 0.77, 0.82, 8);
+    _drawGlow(canvas, size, 0.16, 0.60, 7);
+  }
+
+  void _drawGlow(Canvas canvas, Size size, double x, double y, double radius) {
+    final center = Offset(size.width * x, size.height * y);
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = AppTheme.primaryLight.withValues(alpha: 0.08)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
+    );
+    canvas.drawCircle(
+      center,
+      radius * 0.32,
+      Paint()..color = AppTheme.primaryLight.withValues(alpha: 0.22),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ChosuOverlayBackgroundPainter oldDelegate) => false;
 }
 
 class _ThoughtStep extends StatelessWidget {
@@ -430,6 +528,7 @@ class _ChosuTextField extends StatefulWidget {
   final bool autofocus;
   final Color cursorColor;
   final double keyboardInset;
+  final double contentPaddingBottom;
   final ValueChanged<String> onChanged;
 
   const _ChosuTextField({
@@ -440,6 +539,7 @@ class _ChosuTextField extends StatefulWidget {
     this.autofocus = false,
     required this.cursorColor,
     this.keyboardInset = 0,
+    this.contentPaddingBottom = 0,
     required this.onChanged,
   });
 
@@ -544,8 +644,18 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
           color: context.appTextTertiary,
           letterSpacing: 0,
         ),
+        filled: false,
+        fillColor: Colors.transparent,
         border: InputBorder.none,
-        contentPadding: const EdgeInsets.only(top: 12),
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        focusedErrorBorder: InputBorder.none,
+        contentPadding: EdgeInsets.only(
+          top: 12,
+          bottom: widget.contentPaddingBottom,
+        ),
       ),
       onChanged: widget.onChanged,
     );

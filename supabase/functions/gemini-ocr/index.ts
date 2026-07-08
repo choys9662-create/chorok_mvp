@@ -12,7 +12,8 @@ const allowedMimeTypes = new Set([
 const maxBase64Length = 19 * 1024 * 1024;
 const model = Deno.env.get("GEMINI_OCR_MODEL")?.trim() || "gemini-2.5-flash";
 const prompt =
-  "이 이미지는 책의 한 페이지야. 본문 텍스트를 문장 단위로 정확히 끊어서 각 문장을 배열의 한 원소로 반환해. " +
+  "이 이미지는 책의 한 페이지야. 본문 텍스트를 문단 단위로 구분하고, 각 문단 안의 문장을 정확히 끊어서 반환해. " +
+  "결과는 문단의 배열이고, 각 문단은 그 문단에 속한 문장 문자열의 배열이야. " +
   "글자 그대로 전사하고 맞춤법·띄어쓰기·문장부호를 절대 교정하거나 바꾸지 마. " +
   "대화문과 인용부호(\"…\")를 고려해 자연스러운 문장 경계로 나눠. " +
   "페이지 번호·머리말·각주 등 본문 외 요소는 제외해. 본문이 없으면 빈 배열을 반환해.";
@@ -79,7 +80,10 @@ Deno.serve(async (req: Request) => {
           responseMimeType: "application/json",
           responseSchema: {
             type: "ARRAY",
-            items: { type: "STRING" },
+            items: {
+              type: "ARRAY",
+              items: { type: "STRING" },
+            },
           },
         },
       }),
@@ -118,11 +122,17 @@ Deno.serve(async (req: Request) => {
     if (!Array.isArray(parsed)) {
       return json({ error: "invalid_gemini_response" }, 502);
     }
-    const sentences = parsed
-      .filter((value): value is string => typeof value === "string")
-      .map((value) => value.trim())
-      .filter(Boolean);
-    return json({ sentences });
+    const paragraphs = parsed
+      .filter(Array.isArray)
+      .map((paragraph) =>
+        paragraph
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+      .filter((paragraph) => paragraph.length > 0);
+    // sentences(평면)는 문단 정보가 없는 구버전 앱 호환용으로 함께 반환한다.
+    return json({ sentences: paragraphs.flat(), paragraphs });
   } catch {
     return json({ error: "internal_error" }, 500);
   }

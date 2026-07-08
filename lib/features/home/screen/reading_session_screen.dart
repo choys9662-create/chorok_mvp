@@ -510,8 +510,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final result = await _pushOcrCapture();
     if (!mounted) return null;
     switch (result ?? const OcrCancelled()) {
-      case OcrSuccess(text: final text, sentences: final sentences):
-        return (text: text, sentences: sentences);
+      case OcrSuccess(text: final text, paragraphs: final paragraphs):
+        return (text: text, paragraphs: paragraphs);
       case OcrNoText():
         _showOcrSnack('텍스트를 인식하지 못했어요. 더 또렷한 사진으로 다시 시도해 보세요.');
         return null;
@@ -538,8 +538,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
   void _handleOcrResult(OcrResult result, {required String noTextMessage}) {
     switch (result) {
-      case OcrSuccess(text: final text, sentences: final sentences):
-        _openSentenceOrganizer(text, sentences: sentences);
+      case OcrSuccess(text: final text, paragraphs: final paragraphs):
+        _openSentenceOrganizer(text, paragraphs: paragraphs);
       case OcrNoText():
         ref.read(timerProvider.notifier).resume();
         _showOcrSnack(noTextMessage);
@@ -811,7 +811,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   // 기존 초서 수집(생각 입력) 흐름으로 넘긴다. STT(음성)는 한 발화이므로 거치지 않는다.
   Future<void> _openSentenceOrganizer(
     String text, {
-    List<String>? sentences,
+    List<List<String>>? paragraphs,
   }) async {
     final blocks = await showGeneralDialog<List<String>>(
       context: context,
@@ -821,7 +821,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       transitionDuration: const Duration(milliseconds: 260),
       pageBuilder: (_, _, _) => SentenceOrganizerSheet(
         rawText: text,
-        sentences: sentences,
+        paragraphs: paragraphs,
         onCapture: _captureSentences,
       ),
       transitionBuilder: (_, animation, _, child) {
@@ -854,19 +854,19 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     final hasInitialText = initialText.trim().isNotEmpty;
     final book = _readSessionBook();
     ref.read(timerProvider.notifier).pause();
-    // 뒤에 깔린 액션 그리드(직접적기/사진찍기 박스)가 barrier 너머로 비치지
-    // 않도록 카드가 뜨기 전에 세션 UI 레이어를 숨긴다.
+    // 뒤에 깔린 액션 그리드가 비치지 않도록 카드가 뜨기 전에 세션 UI 레이어를 숨긴다.
     _setUi(UiVisibility.hidden);
     final result = await showGeneralDialog<CollectedSentence>(
       context: context,
       barrierDismissible: true,
       barrierLabel: '문장 수집 닫기',
-      barrierColor: Colors.black.withValues(alpha: 0.88),
+      barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (_, _, _) => ChosuSheet(
         initialText: initialText,
         bookTitle: book.title,
         autofocusSentence: !hasInitialText,
+        timerText: ref.read(timerProvider).formattedTime,
       ),
       // 카드는 고정 위치(키보드 위)에서 제자리 페이드로만 등장한다.
       // 슬라이드가 조금이라도 섞이면 키보드와 함께 솟아오르는 모션으로
@@ -1152,6 +1152,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     coverUrl: book.coverUrl,
                     currentPage: book.startPage,
                     totalPages: book.totalPages,
+                    activeReaderCount: readersCount,
+                    nearbyReaderCount: neighborCount,
                     promptSeeds:
                         ref
                             .watch(
@@ -2623,6 +2625,8 @@ class _TodaysTopicOverlay extends StatefulWidget {
   final String? coverUrl;
   final int currentPage;
   final int totalPages;
+  final int activeReaderCount;
+  final int nearbyReaderCount;
   final List<SessionPromptSeed> promptSeeds;
   final Color accentColor;
   final VoidCallback onStart;
@@ -2633,6 +2637,8 @@ class _TodaysTopicOverlay extends StatefulWidget {
     this.coverUrl,
     required this.currentPage,
     required this.totalPages,
+    required this.activeReaderCount,
+    required this.nearbyReaderCount,
     required this.promptSeeds,
     required this.accentColor,
     required this.onStart,
@@ -2675,96 +2681,89 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
           widget.onStart();
         },
         child: ColoredBox(
-          color: Colors.black.withValues(alpha: 0.94),
+          color: Colors.black,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              _SessionEntryFireflies(accentColor: widget.accentColor),
               SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final maxWidth = math.min(constraints.maxWidth, 430.0);
-                    const verticalPadding = 28.0;
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: verticalPadding,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          minHeight: math.max(
-                            0,
-                            constraints.maxHeight - verticalPadding * 2,
-                          ),
+                          minHeight: math.max(0, constraints.maxHeight),
                         ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxWidth),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _SessionEntryBadge(
-                                  label: '6번째 세션',
-                                  accentColor: widget.accentColor,
-                                ),
-                                const SizedBox(height: 17),
-                                Text(
-                                  widget.bookTitle,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: widget.accentColor,
-                                    fontSize: 20,
-                                    height: 1.18,
-                                    fontWeight: FontWeight.w400,
-                                    fontFamily: _kFont,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  _sessionEntryBookMeta(widget.bookAuthor),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: widget.accentColor.withValues(
-                                      alpha: 0.78,
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: constraints.maxHeight * 0.165,
+                              bottom: 40,
+                            ),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: maxWidth),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _SessionEntryQuestionButton(
+                                    label: sessionEntryPrompt(
+                                      bookTitle: widget.bookTitle,
+                                      currentPage: widget.currentPage,
+                                      totalPages: widget.totalPages,
+                                      now: DateTime.now(),
+                                      seeds: widget.promptSeeds,
                                     ),
-                                    fontSize: 13,
-                                    height: 1.2,
-                                    fontWeight: FontWeight.w400,
-                                    fontFamily: _kFont,
+                                    accentColor: widget.accentColor,
                                   ),
-                                ),
-                                const SizedBox(height: 23),
-                                BookCover(
-                                  coverUrl: widget.coverUrl,
-                                  gradientIndex: widget.bookTitle.hashCode
-                                      .abs(),
-                                  width: 200,
-                                  height: 305,
-                                  radius: 8,
-                                  shadows: [
-                                    BoxShadow(
-                                      color: widget.accentColor.withValues(
-                                        alpha: 0.12,
+                                  const SizedBox(height: 34),
+                                  BookCover(
+                                    coverUrl: widget.coverUrl,
+                                    gradientIndex: widget.bookTitle.hashCode
+                                        .abs(),
+                                    width: 160,
+                                    height: 244,
+                                    radius: 8,
+                                  ),
+                                  const SizedBox(height: 26),
+                                  const _SessionEntryBadge(label: '6번째 세션'),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    widget.bookTitle,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      height: 1.18,
+                                      fontWeight: FontWeight.w400,
+                                      fontFamily: _kFont,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _sessionEntryBookMeta(widget.bookAuthor),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.34,
                                       ),
-                                      blurRadius: 18,
-                                      spreadRadius: 1,
+                                      fontSize: 12,
+                                      height: 1.2,
+                                      fontWeight: FontWeight.w400,
+                                      fontFamily: _kFont,
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 34),
-                                _SessionEntryQuestionButton(
-                                  label: sessionEntryPrompt(
-                                    bookTitle: widget.bookTitle,
-                                    currentPage: widget.currentPage,
-                                    totalPages: widget.totalPages,
-                                    now: DateTime.now(),
-                                    seeds: widget.promptSeeds,
                                   ),
-                                  accentColor: widget.accentColor,
-                                ),
-                              ],
+                                  const SizedBox(height: 43),
+                                  _SessionEntryStats(
+                                    activeReaderCount: widget.activeReaderCount,
+                                    nearbyReaderCount: widget.nearbyReaderCount,
+                                    accentColor: widget.accentColor,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -2789,27 +2788,22 @@ String _sessionEntryBookMeta(String author) {
 
 class _SessionEntryBadge extends StatelessWidget {
   final String label;
-  final Color accentColor;
 
-  const _SessionEntryBadge({required this.label, required this.accentColor});
+  const _SessionEntryBadge({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: 0.82),
+        color: const Color(0xFFF2FFF0),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color:
-              ThemeData.estimateBrightnessForColor(accentColor) ==
-                  Brightness.dark
-              ? Colors.white
-              : const Color(0xFF07101C),
-          fontSize: 11,
+        style: const TextStyle(
+          color: Color(0xFF07101C),
+          fontSize: 12,
           height: 1,
           fontWeight: FontWeight.w500,
           fontFamily: _kFont,
@@ -2834,12 +2828,8 @@ class _SessionEntryQuestionButton extends StatelessWidget {
       key: const ValueKey('session-entry-question-button'),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.66),
+        color: const Color(0xFF151816),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: accentColor, width: 1.1),
-        boxShadow: [
-          BoxShadow(color: accentColor.withValues(alpha: 0.14), blurRadius: 14),
-        ],
       ),
       child: Text(
         label,
@@ -2856,63 +2846,79 @@ class _SessionEntryQuestionButton extends StatelessWidget {
   }
 }
 
-class _SessionEntryFireflies extends StatelessWidget {
+class _SessionEntryStats extends StatelessWidget {
+  final int activeReaderCount;
+  final int nearbyReaderCount;
   final Color accentColor;
 
-  const _SessionEntryFireflies({required this.accentColor});
-
-  static const _orbs = <({double x, double y, double size, double alpha})>[
-    (x: 0.145, y: 0.129, size: 22, alpha: 0.30),
-    (x: 0.846, y: 0.075, size: 9, alpha: 0.14),
-    (x: 0.246, y: 0.339, size: 45, alpha: 0.11),
-    (x: 0.225, y: 0.525, size: 43, alpha: 0.25),
-    (x: 0.805, y: 0.707, size: 36, alpha: 0.18),
-    (x: 0.467, y: 0.763, size: 22, alpha: 0.30),
-    (x: 0.136, y: 0.794, size: 9, alpha: 0.16),
-    (x: 0.846, y: 0.875, size: 22, alpha: 0.26),
-  ];
+  const _SessionEntryStats({
+    required this.activeReaderCount,
+    required this.nearbyReaderCount,
+    required this.accentColor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(
-          children: [
-            for (final orb in _orbs)
-              Positioned(
-                left: constraints.maxWidth * orb.x - orb.size / 2,
-                top: constraints.maxHeight * orb.y - orb.size / 2,
-                child: Container(
-                  width: orb.size,
-                  height: orb.size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accentColor.withValues(alpha: orb.alpha * 0.18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: orb.alpha),
-                        blurRadius: orb.size * 0.45,
-                        spreadRadius: orb.size * 0.08,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Container(
-                      width: orb.size * 0.34,
-                      height: orb.size * 0.34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accentColor.withValues(
-                          alpha: math.min(0.72, orb.alpha + 0.18),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SessionEntryStatChip(
+          value: activeReaderCount,
+          dotColor: accentColor,
+          textColor: accentColor,
+        ),
+        const SizedBox(width: 6),
+        _SessionEntryStatChip(
+          value: nearbyReaderCount,
+          dotColor: const Color(0xFF6D756D),
+          textColor: const Color(0xFF5F685F),
+        ),
+      ],
+    );
+  }
+}
+
+class _SessionEntryStatChip extends StatelessWidget {
+  final int value;
+  final Color dotColor;
+  final Color textColor;
+
+  const _SessionEntryStatChip({
+    required this.value,
+    required this.dotColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFF151816),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$value',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 15,
+              height: 1,
+              fontWeight: FontWeight.w400,
+              fontFamily: _kFont,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

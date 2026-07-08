@@ -16,6 +16,9 @@ class AladinBook {
   /// 책 정보 화면의 저자·옮긴이 행 파싱용. [author]는 첫 저자명만 담는다.
   final String? rawAuthor;
 
+  /// 알라딘 원본 출판일 — "2022-03-28" 형태(ISO 날짜). 파싱 실패해도 무시.
+  final String? pubDate;
+
   const AladinBook({
     required this.title,
     required this.author,
@@ -26,6 +29,7 @@ class AladinBook {
     this.totalPages = 0,
     this.genre,
     this.rawAuthor,
+    this.pubDate,
   });
 
   factory AladinBook.fromJson(Map<String, dynamic> json) {
@@ -56,6 +60,7 @@ class AladinBook {
       totalPages: totalPages,
       genre: _parseGenre(json['categoryName'] as String?),
       rawAuthor: rawAuthor.trim().isEmpty ? null : rawAuthor.trim(),
+      pubDate: json['pubDate'] as String?,
     );
   }
 

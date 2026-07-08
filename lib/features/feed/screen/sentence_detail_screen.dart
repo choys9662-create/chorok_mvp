@@ -8,6 +8,7 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/repositories/comment_repository.dart';
+import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/overlap_provider.dart';
@@ -325,6 +326,50 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
     );
   }
 
+  Future<void> _reportSentence() async {
+    final sid = widget.data.sentenceId;
+    if (sid == null) return;
+    HapticFeedback.mediumImpact();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('이 문장을 신고할까요?'),
+        content: const Text('신고 내용은 운영팀이 확인 후 처리해요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('신고'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref
+          .read(moderationRepositoryProvider)
+          .report(ReportTargetType.sentence, sid);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('신고가 접수됐어요'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('신고를 접수하지 못했어요'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _openBookInfo() {
     final d = widget.data;
     HapticFeedback.selectionClick();
@@ -569,6 +614,32 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                             ),
                           ),
                         ),
+                        if (!kUseMock && d.sentenceId != null) ...[
+                          const SizedBox(width: 8),
+                          Semantics(
+                            label: '문장 신고하기',
+                            button: true,
+                            child: GestureDetector(
+                              onTap: _reportSentence,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                alignment: Alignment.center,
+                                decoration: AppTheme.smoothBox(
+                                  color: context.appSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  radius: AppTheme.radiusSM,
+                                ),
+                                child: Icon(
+                                  Icons.flag_outlined,
+                                  size: 18,
+                                  color: context.appTextTertiary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

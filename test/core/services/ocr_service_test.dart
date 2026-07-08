@@ -32,10 +32,19 @@ void main() {
       expect(normalizeGeminiModelName(''), GeminiOcrConfig.defaultModel);
     });
 
-    test('구조화된 문장 배열을 공백 제거 후 파싱한다', () {
-      expect(parseGeminiSentenceArray('[" 첫 문장. ", "둘째 문장.", 3, ""]'), [
-        '첫 문장.',
-        '둘째 문장.',
+    test('문단 배열을 공백 제거 후 파싱한다', () {
+      expect(
+        parseGeminiParagraphArray('[[" 첫 문장. ", "둘째 문장.", 3, ""], ["셋째 문장."]]'),
+        [
+          ['첫 문장.', '둘째 문장.'],
+          ['셋째 문장.'],
+        ],
+      );
+    });
+
+    test('구형 평면 문장 배열은 한 문단으로 취급한다', () {
+      expect(parseGeminiParagraphArray('["첫 문장.", "둘째 문장."]'), [
+        ['첫 문장.', '둘째 문장.'],
       ]);
     });
 
@@ -113,7 +122,10 @@ void main() {
                   'content': {
                     'parts': [
                       {
-                        'text': jsonEncode(['첫 문장.', '둘째 문장.']),
+                        'text': jsonEncode([
+                          ['첫 문장.', '둘째 문장.'],
+                          ['셋째 문장.'],
+                        ]),
                       },
                     ],
                   },
@@ -144,8 +156,11 @@ void main() {
         reason: result is OcrError ? result.message : null,
       );
       final success = result as OcrSuccess;
-      expect(success.sentences, ['첫 문장.', '둘째 문장.']);
-      expect(success.text, '첫 문장.\n둘째 문장.');
+      expect(success.paragraphs, [
+        ['첫 문장.', '둘째 문장.'],
+        ['셋째 문장.'],
+      ]);
+      expect(success.text, '첫 문장. 둘째 문장.\n셋째 문장.');
     });
 
     test('권한 오류 본문을 그대로 노출하지 않는다', () async {
@@ -224,13 +239,17 @@ void main() {
   });
 
   group('SupabaseGeminiOcrService', () {
-    test('이미지와 MIME만 Edge Function에 전달하고 문장 목록을 반환한다', () async {
+    test('이미지와 MIME만 Edge Function에 전달하고 문단 목록을 반환한다', () async {
       Map<String, dynamic>? invokedBody;
       final service = SupabaseGeminiOcrService(
         invoke: (body) async {
           invokedBody = body;
           return {
-            'sentences': [' 첫 문장. ', '둘째 문장.'],
+            'sentences': [' 첫 문장. ', '둘째 문장.', '셋째 문장.'],
+            'paragraphs': [
+              [' 첫 문장. ', '둘째 문장.'],
+              ['셋째 문장.'],
+            ],
           };
         },
       );
@@ -241,7 +260,25 @@ void main() {
       expect(invokedBody?['imageBase64'], isNotEmpty);
       expect(invokedBody, isNot(contains('apiKey')));
       expect(result, isA<OcrSuccess>());
-      expect((result as OcrSuccess).sentences, ['첫 문장.', '둘째 문장.']);
+      expect((result as OcrSuccess).paragraphs, [
+        ['첫 문장.', '둘째 문장.'],
+        ['셋째 문장.'],
+      ]);
+    });
+
+    test('문단 정보가 없는 구버전 응답은 한 문단으로 폴백한다', () async {
+      final service = SupabaseGeminiOcrService(
+        invoke: (_) async => {
+          'sentences': [' 첫 문장. ', '둘째 문장.'],
+        },
+      );
+
+      final result = await service.extractTextFromBytes([0xFF, 0xD8, 0xFF]);
+
+      expect(result, isA<OcrSuccess>());
+      expect((result as OcrSuccess).paragraphs, [
+        ['첫 문장.', '둘째 문장.'],
+      ]);
     });
 
     test('프록시 응답이 문장 목록이 아니면 오류 처리한다', () async {

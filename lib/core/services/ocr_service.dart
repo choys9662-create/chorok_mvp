@@ -27,10 +27,11 @@ class OcrError extends OcrResult {
 class OcrSuccess extends OcrResult {
   final String text;
 
-  /// AI가 문장 단위로 끊어 준 경우 채워진다. null이면 호출부에서 규칙 기반으로 분리.
-  final List<String>? sentences;
+  /// AI가 문단→문장 구조로 끊어 준 경우 채워진다(각 원소가 한 문단의 문장 목록).
+  /// null이면 호출부에서 규칙 기반으로 분리.
+  final List<List<String>>? paragraphs;
 
-  const OcrSuccess(this.text, {this.sentences});
+  const OcrSuccess(this.text, {this.paragraphs});
 }
 
 String normalizeOcrText(String text) {
@@ -242,7 +243,8 @@ class GeminiOcrService implements OcrService {
   static const _imageReadTimeout = Duration(seconds: 12);
 
   static const _prompt =
-      '이 이미지는 책의 한 페이지야. 본문 텍스트를 문장 단위로 정확히 끊어서 각 문장을 배열의 한 원소로 반환해. '
+      '이 이미지는 책의 한 페이지야. 본문 텍스트를 문단 단위로 구분하고, 각 문단 안의 문장을 정확히 끊어서 반환해. '
+      '결과는 문단의 배열이고, 각 문단은 그 문단에 속한 문장 문자열의 배열이야. '
       '글자 그대로 전사하고 맞춤법·띄어쓰기·문장부호를 절대 교정하거나 바꾸지 마. '
       '대화문과 인용부호("…")를 고려해 자연스러운 문장 경계로 나눠. '
       '페이지 번호·머리말·각주 등 본문 외 요소는 제외해. 본문이 없으면 빈 배열을 반환해.';
@@ -280,7 +282,10 @@ class GeminiOcrService implements OcrService {
         'responseMimeType': 'application/json',
         'responseSchema': {
           'type': 'ARRAY',
-          'items': {'type': 'STRING'},
+          'items': {
+            'type': 'ARRAY',
+            'items': {'type': 'STRING'},
+          },
         },
       },
     };
@@ -351,12 +356,12 @@ class GeminiOcrService implements OcrService {
         );
       }
 
-      final sentences = parseGeminiSentenceArray(raw);
-      if (sentences == null) {
+      final paragraphs = parseGeminiParagraphArray(raw);
+      if (paragraphs == null) {
         return const OcrError('Gemini 문장 응답 형식을 확인할 수 없어요');
       }
-      if (sentences.isEmpty) return const OcrNoText();
-      return OcrSuccess(sentences.join('\n'), sentences: sentences);
+      if (paragraphs.isEmpty) return const OcrNoText();
+      return OcrSuccess(joinParagraphsText(paragraphs), paragraphs: paragraphs);
     } on TimeoutException {
       return const OcrError('OCR 응답이 지연되고 있어요. 네트워크를 확인한 뒤 다시 시도해 주세요.');
     } catch (_) {
@@ -425,17 +430,20 @@ class SupabaseGeminiOcrService implements OcrService {
       if (data is! Map) {
         return const OcrError('Gemini 프록시 응답 형식을 확인할 수 없어요');
       }
+      final rawParagraphs = data['paragraphs'];
       final rawSentences = data['sentences'];
-      if (rawSentences is! List) {
+      final List<List<String>> paragraphs;
+      if (rawParagraphs is List) {
+        paragraphs = cleanParagraphs(rawParagraphs);
+      } else if (rawSentences is List) {
+        // 문단 정보가 없는 구버전 함수 응답: 전체를 한 문단으로 취급.
+        final flat = cleanSentences(rawSentences);
+        paragraphs = flat.isEmpty ? const [] : [flat];
+      } else {
         return const OcrError('Gemini 프록시가 문장 목록을 반환하지 않았어요');
       }
-      final sentences = rawSentences
-          .whereType<String>()
-          .map((sentence) => sentence.trim())
-          .where((sentence) => sentence.isNotEmpty)
-          .toList(growable: false);
-      if (sentences.isEmpty) return const OcrNoText();
-      return OcrSuccess(sentences.join('\n'), sentences: sentences);
+      if (paragraphs.isEmpty) return const OcrNoText();
+      return OcrSuccess(joinParagraphsText(paragraphs), paragraphs: paragraphs);
     } on FunctionException catch (error) {
       return OcrError(supabaseGeminiErrorMessage(error.status));
     } on TimeoutException {
@@ -491,15 +499,33 @@ String normalizeGeminiModelName(String model) {
   return normalized.isEmpty ? GeminiOcrConfig.defaultModel : normalized;
 }
 
-List<String>? parseGeminiSentenceArray(String raw) {
+List<String> cleanSentences(List raw) => raw
+    .whereType<String>()
+    .map((sentence) => sentence.trim())
+    .where((sentence) => sentence.isNotEmpty)
+    .toList(growable: false);
+
+List<List<String>> cleanParagraphs(List raw) => raw
+    .whereType<List>()
+    .map(cleanSentences)
+    .where((paragraph) => paragraph.isNotEmpty)
+    .toList(growable: false);
+
+/// 문단 안은 공백으로, 문단 사이는 줄바꿈으로 잇는다 — 규칙 분리 폴백(_split)의
+/// "한 줄 = 한 문단" 관례와 동일한 평문 표현.
+String joinParagraphsText(List<List<String>> paragraphs) =>
+    paragraphs.map((paragraph) => paragraph.join(' ')).join('\n');
+
+List<List<String>>? parseGeminiParagraphArray(String raw) {
   try {
     final decoded = jsonDecode(raw.trim());
     if (decoded is! List) return null;
-    return decoded
-        .whereType<String>()
-        .map((sentence) => sentence.trim())
-        .where((sentence) => sentence.isNotEmpty)
-        .toList(growable: false);
+    // 구형 평면 문장 배열 응답은 한 문단으로 취급한다.
+    if (decoded.isNotEmpty && decoded.every((e) => e is String)) {
+      final flat = cleanSentences(decoded);
+      return flat.isEmpty ? const [] : [flat];
+    }
+    return cleanParagraphs(decoded);
   } catch (_) {
     return null;
   }

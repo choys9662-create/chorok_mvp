@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
@@ -9,6 +11,16 @@ import '../../../shared/providers/user_library_providers.dart';
 import '../../../shared/utils/book_genre.dart';
 
 enum _TasteMode { time, completed }
+
+const _tasteHorizontalPadding = 16.0;
+
+final _tasteSessionGroupsProvider = FutureProvider.autoDispose
+    .family<List<_TasteGroup>, String?>((ref, userId) async {
+      if (kUseMock) {
+        return _buildGroups(ref.watch(libraryProvider), _TasteMode.time);
+      }
+      return _loadTasteGroupsFromSessions(userId);
+    });
 
 class TasteAnalysisScreen extends ConsumerStatefulWidget {
   final String? userId;
@@ -29,6 +41,9 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
     final booksAsync = widget.userId == null
         ? AsyncValue.data(ref.watch(libraryProvider))
         : ref.watch(userBooksProvider(widget.userId!));
+    final sessionGroupsAsync = _mode == _TasteMode.time
+        ? ref.watch(_tasteSessionGroupsProvider(widget.userId))
+        : null;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -41,13 +56,18 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 28, 30, 28),
+                  padding: const EdgeInsets.fromLTRB(
+                    _tasteHorizontalPadding,
+                    38,
+                    _tasteHorizontalPadding,
+                    22,
+                  ),
                   child: _TasteHeader(
                     onBack: () => Navigator.of(context).pop(),
                   ),
                 ),
               ),
-              ..._buildContent(context, books),
+              ..._buildContent(context, books, sessionGroupsAsync),
             ],
           ),
         ),
@@ -55,8 +75,32 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
     );
   }
 
-  List<Widget> _buildContent(BuildContext context, List<Book> books) {
-    final groups = _buildGroups(books, _mode);
+  List<Widget> _buildContent(
+    BuildContext context,
+    List<Book> books,
+    AsyncValue<List<_TasteGroup>>? sessionGroupsAsync,
+  ) {
+    final bookGroups = _buildGroups(books, _mode);
+    final sessionGroups = sessionGroupsAsync?.valueOrNull ?? const [];
+    final groups = sessionGroups.isNotEmpty ? sessionGroups : bookGroups;
+    if (groups.isEmpty &&
+        sessionGroupsAsync != null &&
+        sessionGroupsAsync.isLoading) {
+      return [
+        const SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+    if (groups.isEmpty && (sessionGroupsAsync?.hasError ?? false)) {
+      return [
+        const SliverFillRemaining(
+          hasScrollBody: false,
+          child: _TasteEmpty(message: '독서 취향을 불러오지 못했어요'),
+        ),
+      ];
+    }
     if (groups.isEmpty) {
       return [
         const SliverFillRemaining(
@@ -69,7 +113,9 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _tasteHorizontalPadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -81,23 +127,23 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
                       : _TasteMode.time;
                 }),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               _TasteHeroCard(group: groups.first, mode: _mode),
-              const SizedBox(height: 46),
+              const SizedBox(height: 26),
             ],
           ),
         ),
       ),
       SliverPadding(
         padding: EdgeInsets.fromLTRB(
-          30,
+          _tasteHorizontalPadding,
           0,
-          30,
+          _tasteHorizontalPadding,
           MediaQuery.paddingOf(context).bottom + 112,
         ),
         sliver: SliverList.separated(
           itemCount: groups.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 58),
+          separatorBuilder: (_, _) => const SizedBox(height: 40),
           itemBuilder: (context, index) {
             final group = groups[index];
             return _TasteGenreSection(
@@ -155,6 +201,7 @@ class _TasteHeader extends StatelessWidget {
                 '나의 독서 취향',
                 style: AppTheme.headingLarge.copyWith(
                   color: context.appTextPrimary,
+                  fontSize: 24,
                   fontWeight: FontWeight.w400,
                   letterSpacing: 0,
                 ),
@@ -181,8 +228,9 @@ class _TasteModeRow extends StatelessWidget {
         Expanded(
           child: Text(
             mode == _TasteMode.time ? '읽은 시간 기준' : '완독 기준',
-            style: AppTheme.headingLarge.copyWith(
+            style: AppTheme.bodyLarge.copyWith(
               color: const Color(0xFF758076),
+              fontSize: 13,
               letterSpacing: 0,
             ),
           ),
@@ -197,29 +245,29 @@ class _TasteModeRow extends StatelessWidget {
               onToggle();
             },
             child: Container(
-              width: 86,
-              height: 48,
+              width: 46,
+              height: 24,
               alignment: mode == _TasteMode.time
                   ? Alignment.centerLeft
                   : Alignment.centerRight,
-              padding: const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(3),
               decoration: AppTheme.smoothBox(
                 color: const Color(0xFF171C18),
-                radius: 8,
+                radius: 3,
               ),
               child: Container(
-                width: 34,
-                height: 34,
+                width: 18,
+                height: 18,
                 alignment: Alignment.center,
                 decoration: AppTheme.smoothBox(
                   color: const Color(0xFF97A49A),
-                  radius: 5,
+                  radius: 3,
                 ),
                 child: Icon(
                   mode == _TasteMode.time
                       ? Icons.watch_later_rounded
                       : Icons.menu_book_rounded,
-                  size: 22,
+                  size: 13,
                   color: AppTheme.darkCard,
                 ),
               ),
@@ -244,10 +292,10 @@ class _TasteHeroCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
       decoration: AppTheme.smoothBox(
         color: AppTheme.darkCard,
-        radius: 8,
+        radius: 5,
         side: const BorderSide(color: Color(0xFF273027)),
       ),
       child: Column(
@@ -255,20 +303,22 @@ class _TasteHeroCard extends StatelessWidget {
           Text(
             '${group.genre} $suffix',
             textAlign: TextAlign.center,
-            style: AppTheme.displayMedium.copyWith(
+            style: AppTheme.headingLarge.copyWith(
               color: AppTheme.primaryLight,
+              fontSize: 20,
               letterSpacing: 0,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               '전체 이용자 중에서 ${group.genre}을 $action',
               textAlign: TextAlign.center,
               maxLines: 1,
-              style: AppTheme.headingSmall.copyWith(
+              style: AppTheme.bodySmall.copyWith(
                 color: AppTheme.primaryLight,
+                fontSize: 13,
                 letterSpacing: 0,
               ),
             ),
@@ -305,8 +355,9 @@ class _TasteGenreSection extends StatelessWidget {
             Expanded(
               child: Text(
                 '$rank | ${group.genre}',
-                style: AppTheme.displayMedium.copyWith(
+                style: AppTheme.headingSmall.copyWith(
                   color: const Color(0xFFDDE5DC),
+                  fontSize: 17,
                   letterSpacing: 0,
                 ),
               ),
@@ -317,24 +368,25 @@ class _TasteGenreSection extends StatelessWidget {
                   : '${group.completedCount}권',
               style: AppTheme.headingLarge.copyWith(
                 color: const Color(0xFFDDE5DC),
+                fontSize: 17,
                 letterSpacing: 0,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 14),
         Container(
-          padding: const EdgeInsets.fromLTRB(30, 22, 30, 0),
-          decoration: AppTheme.smoothBox(color: AppTheme.darkCard, radius: 10),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          decoration: AppTheme.smoothBox(color: AppTheme.darkCard, radius: 7),
           child: Column(
             children: [
               for (final entry in visibleBooks.indexed) ...[
                 _TasteBookRow(book: entry.$2),
                 if (entry.$1 != visibleBooks.length - 1)
-                  const Divider(height: 36, color: Color(0xFF242B24)),
+                  const Divider(height: 31, color: Color(0xFF242B24)),
               ],
               if (group.books.length > visibleBooks.length) ...[
-                const Divider(height: 36, color: Color(0xFF242B24)),
+                const Divider(height: 31, color: Color(0xFF242B24)),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -342,7 +394,7 @@ class _TasteGenreSection extends StatelessWidget {
                     onToggleExpanded();
                   },
                   child: SizedBox(
-                    height: 64,
+                    height: 52,
                     child: Center(
                       child: Text(
                         '전체보기',
@@ -355,7 +407,7 @@ class _TasteGenreSection extends StatelessWidget {
                   ),
                 ),
               ] else if (expanded && group.books.length > 6) ...[
-                const Divider(height: 36, color: Color(0xFF242B24)),
+                const Divider(height: 31, color: Color(0xFF242B24)),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -363,7 +415,7 @@ class _TasteGenreSection extends StatelessWidget {
                     onToggleExpanded();
                   },
                   child: SizedBox(
-                    height: 64,
+                    height: 52,
                     child: Center(
                       child: Text(
                         '접기',
@@ -376,7 +428,7 @@ class _TasteGenreSection extends StatelessWidget {
                   ),
                 ),
               ] else
-                const SizedBox(height: 22),
+                const SizedBox(height: 16),
             ],
           ),
         ),
@@ -393,7 +445,7 @@ class _TasteBookRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 42,
+      height: 34,
       child: Row(
         children: [
           Expanded(
@@ -404,6 +456,7 @@ class _TasteBookRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppTheme.headingSmall.copyWith(
                 color: const Color(0xFF879187),
+                fontSize: 16,
                 letterSpacing: 0,
               ),
             ),
@@ -417,13 +470,14 @@ class _TasteBookRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppTheme.bodyLarge.copyWith(
                 color: const Color(0xFF879187),
+                fontSize: 12,
                 letterSpacing: 0,
               ),
             ),
           ),
           const SizedBox(width: 12),
           SizedBox(
-            width: 96,
+            width: 82,
             child: Text(
               _formatMinutes(book.minutes),
               maxLines: 1,
@@ -431,6 +485,7 @@ class _TasteBookRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: AppTheme.bodyLarge.copyWith(
                 color: const Color(0xFF879187),
+                fontSize: 14,
                 letterSpacing: 0,
               ),
             ),
@@ -448,10 +503,15 @@ class _TasteEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Align(
+      alignment: const Alignment(0, -0.06),
       child: Text(
         message,
-        style: AppTheme.bodyLarge.copyWith(color: context.appTextTertiary),
+        style: AppTheme.bodyLarge.copyWith(
+          color: const Color(0xFF6F786F),
+          fontSize: 18,
+          letterSpacing: 0,
+        ),
       ),
     );
   }
@@ -483,6 +543,111 @@ class _TasteBook {
   });
 }
 
+class _TasteBookDraft {
+  final String title;
+  final String author;
+  final String genre;
+  int seconds;
+
+  _TasteBookDraft({
+    required this.title,
+    required this.author,
+    required this.genre,
+    required this.seconds,
+  });
+}
+
+Future<List<_TasteGroup>> _loadTasteGroupsFromSessions(String? userId) async {
+  final client = Supabase.instance.client;
+  final effectiveUserId = userId ?? client.auth.currentUser?.id;
+  if (effectiveUserId == null) return const [];
+
+  List<dynamic> rows;
+  try {
+    rows = await client
+        .from('reading_sessions')
+        .select(
+          'book_id, duration_seconds, books(title, author, genre, global_books(category))',
+        )
+        .eq('user_id', effectiveUserId);
+  } catch (_) {
+    rows = await client
+        .from('reading_sessions')
+        .select('book_id, duration_seconds, books(title, author, genre)')
+        .eq('user_id', effectiveUserId);
+  }
+
+  return _buildGroupsFromSessionRows(rows);
+}
+
+List<_TasteGroup> _buildGroupsFromSessionRows(List<dynamic> rows) {
+  final byBook = <String, _TasteBookDraft>{};
+  for (final row in rows.cast<Map<String, dynamic>>()) {
+    final seconds = (row['duration_seconds'] as num?)?.toInt() ?? 0;
+    if (seconds <= 0) continue;
+
+    final book = row['books'] as Map<String, dynamic>?;
+    final title = (book?['title'] as String?)?.trim();
+    if (title == null || title.isEmpty) continue;
+    final author = (book?['author'] as String?)?.trim() ?? '';
+    final globalBook = book?['global_books'] as Map<String, dynamic>?;
+    final genre = _genreLabel(
+      (book?['genre'] as String?) ?? globalBook?['category'] as String?,
+      fallbackTitle: title,
+    );
+    final key = '${row['book_id'] ?? '$title|$author'}';
+    final existing = byBook[key];
+    if (existing == null) {
+      byBook[key] = _TasteBookDraft(
+        title: title,
+        author: author,
+        genre: genre,
+        seconds: seconds,
+      );
+    } else {
+      existing.seconds += seconds;
+    }
+  }
+
+  final rowsByGenre = <String, List<_TasteBook>>{};
+  for (final draft in byBook.values) {
+    final minutes = (draft.seconds / 60).round();
+    if (minutes <= 0) continue;
+    rowsByGenre
+        .putIfAbsent(draft.genre, () => [])
+        .add(
+          _TasteBook(
+            title: draft.title,
+            author: draft.author,
+            genre: draft.genre,
+            minutes: minutes,
+            completed: false,
+          ),
+        );
+  }
+
+  final groups = rowsByGenre.entries.map((entry) {
+    final books = entry.value..sort((a, b) => b.minutes.compareTo(a.minutes));
+    return _TasteGroup(genre: entry.key, books: books);
+  }).toList();
+  groups.sort((a, b) => b.totalMinutes.compareTo(a.totalMinutes));
+  return groups;
+}
+
+List<({String genre, String title, String author, int minutes})>
+tasteSessionRowsForTest(List<Map<String, dynamic>> rows) {
+  return [
+    for (final group in _buildGroupsFromSessionRows(rows))
+      for (final book in group.books)
+        (
+          genre: group.genre,
+          title: book.title,
+          author: book.author,
+          minutes: book.minutes,
+        ),
+  ];
+}
+
 List<_TasteGroup> _buildGroups(List<Book> books, _TasteMode mode) {
   final rows = books
       .where(
@@ -494,7 +659,7 @@ List<_TasteGroup> _buildGroups(List<Book> books, _TasteMode mode) {
         (book) => _TasteBook(
           title: book.title,
           author: book.author,
-          genre: _genreLabel(book.genre),
+          genre: _genreLabel(book.genre, fallbackTitle: book.title),
           minutes: (book.totalReadingHours * 60).round(),
           completed: book.status == ReadingStatus.completed,
         ),
@@ -521,9 +686,19 @@ List<_TasteGroup> _buildGroups(List<Book> books, _TasteMode mode) {
   return groups;
 }
 
-String _genreLabel(String? raw) {
+String _genreLabel(String? raw, {String? fallbackTitle}) {
   final label = classifyBookGenre(raw);
-  return label == unclassifiedGenre ? '기타' : label;
+  if (label != unclassifiedGenre) return label;
+  return _genreFromKnownTitle(fallbackTitle) ?? '기타';
+}
+
+String? _genreFromKnownTitle(String? title) {
+  final t = title?.trim();
+  if (t == null || t.isEmpty) return null;
+  if (t.contains('지구 끝의 온실')) return 'SF';
+  if (t.contains('파친코')) return '역사소설';
+  if (t.contains('달러구트')) return '판타지';
+  return null;
 }
 
 String _formatMinutes(int totalMinutes) {

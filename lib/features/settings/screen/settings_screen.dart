@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/auth/screen/auth_screen.dart';
+import '../../../shared/repositories/profile_repository.dart';
 
 // ─── 독서 목표 상태 ────────────────────────────────────────────────────────
 class _ReadingGoal {
@@ -82,6 +83,62 @@ class _NotifNotifier extends Notifier<_NotifState> {
 
 final _notifProvider = NotifierProvider<_NotifNotifier, _NotifState>(
   _NotifNotifier.new,
+);
+
+// ─── 계정 정보 상태 (이메일 · 로그인 방식 · 비공개 계정) ───────────────────
+class _AccountInfo {
+  final String? email;
+  final String? providerLabel;
+  final bool isPrivate;
+
+  const _AccountInfo({this.email, this.providerLabel, this.isPrivate = false});
+
+  _AccountInfo copyWith({bool? isPrivate}) => _AccountInfo(
+    email: email,
+    providerLabel: providerLabel,
+    isPrivate: isPrivate ?? this.isPrivate,
+  );
+}
+
+String? _providerLabelOf(String? provider) {
+  if (provider == null) return null;
+  if (provider.contains('google')) return 'Google';
+  if (provider.contains('apple')) return 'Apple';
+  if (provider.contains('naver')) return '네이버';
+  return null;
+}
+
+class _AccountNotifier extends AsyncNotifier<_AccountInfo> {
+  @override
+  Future<_AccountInfo> build() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return const _AccountInfo();
+    final profile = await ref.read(profileRepositoryProvider).getById(user.id);
+    return _AccountInfo(
+      email: user.email,
+      providerLabel: _providerLabelOf(user.appMetadata['provider'] as String?),
+      isPrivate: profile?.isPrivate ?? false,
+    );
+  }
+
+  Future<void> setPrivate(bool value) async {
+    final previous = state.valueOrNull;
+    if (previous == null) return;
+    state = AsyncData(previous.copyWith(isPrivate: value));
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(user.id, isPrivate: value);
+    } catch (_) {
+      state = AsyncData(previous); // 실패 시 롤백
+    }
+  }
+}
+
+final _accountProvider = AsyncNotifierProvider<_AccountNotifier, _AccountInfo>(
+  _AccountNotifier.new,
 );
 
 // ─── 메인 화면 ─────────────────────────────────────────────────────────────
@@ -180,17 +237,7 @@ class SettingsScreen extends ConsumerWidget {
           // ─── 계정 (실사용 빌드 전용) ──────────────────────────────
           if (!kUseMock) ...[
             _SectionLabel('계정'),
-            _SettingsCard(
-              children: [
-                _InfoTile(
-                  icon: Icons.logout_rounded,
-                  label: '로그아웃',
-                  iconColor: const Color(0xFFFF4F4F),
-                  labelColor: const Color(0xFFFF4F4F),
-                  onTap: () => _showLogoutConfirm(context),
-                ),
-              ],
-            ),
+            _AccountSection(),
             const SizedBox(height: AppTheme.space2XL),
           ],
 
@@ -568,6 +615,69 @@ class _ToggleTile extends StatelessWidget {
   }
 }
 
+// ─── 계정 섹션 ─────────────────────────────────────────────────────────────
+class _AccountSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(_accountProvider).valueOrNull;
+
+    return _SettingsCard(
+      children: [
+        if (account?.email != null)
+          _InfoTile(
+            icon: Icons.mail_outline_rounded,
+            label: account!.providerLabel != null
+                ? '이메일 (${account.providerLabel} 로그인)'
+                : '이메일',
+            trailing: Text(
+              account.email!,
+              style: AppTheme.captionLarge.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ),
+
+        _ToggleTile(
+          icon: Icons.lock_outline_rounded,
+          label: '비공개 계정',
+          subtitle: '켜면 팔로우를 승인해야 내 초서를 볼 수 있어요',
+          value: account?.isPrivate ?? false,
+          onChanged: (v) {
+            HapticFeedback.selectionClick();
+            ref.read(_accountProvider.notifier).setPrivate(v);
+          },
+        ),
+
+        _InfoTile(
+          icon: Icons.block_rounded,
+          label: '차단 유저 목록',
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push(AppConstants.routeBlockedUsers);
+          },
+          trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+        ),
+
+        _InfoTile(
+          icon: Icons.logout_rounded,
+          label: '로그아웃',
+          iconColor: const Color(0xFFFF4F4F),
+          labelColor: const Color(0xFFFF4F4F),
+          onTap: () => _showLogoutConfirm(context),
+        ),
+
+        _InfoTile(
+          icon: Icons.no_accounts_rounded,
+          label: '탈퇴하기',
+          iconColor: const Color(0xFFFF4F4F),
+          labelColor: const Color(0xFFFF4F4F),
+          onTap: () => _showDeleteAccountConfirm(context),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── 공용 컴포넌트 ─────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String text;
@@ -671,6 +781,91 @@ void _showLogoutConfirm(BuildContext context) {
                       shape: AppTheme.smoothShape(radius: 10),
                     ),
                     child: const Text('로그아웃'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+void _showDeleteAccountConfirm(BuildContext context) {
+  HapticFeedback.mediumImpact();
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.appBorder,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '탈퇴하기',
+              style: AppTheme.headingSmall.copyWith(
+                color: const Color(0xFFFF4F4F),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '계정과 모든 독서 기록·초서·소셜 활동이 영구적으로 삭제돼요.\n이 작업은 되돌릴 수 없어요.',
+              style: AppTheme.captionLarge.copyWith(
+                color: Theme.of(ctx).textTheme.bodySmall?.color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: AppTheme.smoothShape(radius: 10),
+                    ),
+                    child: const Text('취소'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      try {
+                        await ProfileRepository(
+                          Supabase.instance.client,
+                        ).deleteAccount();
+                      } catch (_) {
+                        // 삭제 실패해도 아래에서 로그아웃은 시도한다
+                      }
+                      try {
+                        await Supabase.instance.client.auth.signOut();
+                      } catch (_) {}
+                      // GoRouter refreshListenable이 signOut을 감지해서 /auth로 리다이렉트
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF4F4F),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: AppTheme.smoothShape(radius: 10),
+                    ),
+                    child: const Text('영구 삭제'),
                   ),
                 ),
               ],

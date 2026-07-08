@@ -38,6 +38,42 @@ class _FakeLibraryNotifier extends LibraryNotifier {
 }
 
 void main() {
+  test('독서 취향 상세는 reading_sessions를 책별로 합산한다', () {
+    final rows = tasteSessionRowsForTest([
+      {
+        'book_id': 'vegetarian',
+        'duration_seconds': 3600,
+        'books': {
+          'title': '채식주의자',
+          'author': '한강',
+          'genre': null,
+          'global_books': {'category': '국내도서>소설/시/희곡>한국소설'},
+        },
+      },
+      {
+        'book_id': 'vegetarian',
+        'duration_seconds': 1800,
+        'books': {
+          'title': '채식주의자',
+          'author': '한강',
+          'genre': null,
+          'global_books': {'category': '국내도서>소설/시/희곡>한국소설'},
+        },
+      },
+      {
+        'book_id': 'philosophy',
+        'duration_seconds': 1200,
+        'books': {'title': '몸과 삶의 철학자 메를로퐁티', 'author': '심귀연', 'genre': '철학'},
+      },
+    ]);
+
+    expect(rows.first.genre, '문학');
+    expect(rows.first.title, '채식주의자');
+    expect(rows.first.minutes, 90);
+    expect(rows.last.genre, '인문');
+    expect(rows.last.minutes, 20);
+  });
+
   testWidgets('독서 취향 상세는 장르별 정확한 시간을 순위 리스트로 표시한다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

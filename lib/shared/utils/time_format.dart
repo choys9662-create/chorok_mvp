@@ -32,3 +32,9 @@ String formatDurationSeconds(int seconds) {
 String formatDate(DateTime dt) {
   return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
 }
+
+/// "2022년 03월 28일"
+String formatKoreanDate(DateTime dt) {
+  return '${dt.year}년 ${dt.month.toString().padLeft(2, '0')}월 '
+      '${dt.day.toString().padLeft(2, '0')}일';
+}

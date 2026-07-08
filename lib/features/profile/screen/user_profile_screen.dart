@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/utils/follow_relationship_text.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/user_profile_provider.dart';
@@ -57,6 +58,68 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
+  Future<void> _toggleBlock(bool currentlyBlocked) async {
+    HapticFeedback.mediumImpact();
+    final repo = ref.read(moderationRepositoryProvider);
+    try {
+      if (currentlyBlocked) {
+        await repo.unblock(widget.profile.id);
+      } else {
+        await repo.block(widget.profile.id);
+      }
+      if (!mounted) return;
+      setState(() => _relationshipOverride = FollowRelationship.none);
+      ref.invalidate(userProfileProvider(widget.profile.id));
+      ref.read(blockMutationVersionProvider.notifier).state++;
+      ref.read(followMutationVersionProvider.notifier).state++;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, currentlyBlocked ? '차단을 해제했어요' : '차단했어요'),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, '처리하지 못했어요. 다시 시도해주세요', success: false),
+      );
+    }
+  }
+
+  Future<void> _reportUser() async {
+    HapticFeedback.mediumImpact();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('이 유저를 신고할까요?'),
+        content: const Text('신고 내용은 운영팀이 확인 후 처리해요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('신고'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref
+          .read(moderationRepositoryProvider)
+          .report(ReportTargetType.user, widget.profile.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '신고가 접수됐어요'));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, '신고를 접수하지 못했어요', success: false),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.profile;
@@ -83,6 +146,28 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             color: context.appTextPrimary,
           ),
         ),
+        actions: [
+          async.whenOrNull(
+                data: (data) => PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: context.appTextSecondary,
+                  ),
+                  onSelected: (value) {
+                    if (value == 'block') _toggleBlock(data.isBlocked);
+                    if (value == 'report') _reportUser();
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(
+                      value: 'block',
+                      child: Text(data.isBlocked ? '차단 해제하기' : '차단하기'),
+                    ),
+                    const PopupMenuItem(value: 'report', child: Text('신고하기')),
+                  ],
+                ),
+              ) ??
+              const SizedBox.shrink(),
+        ],
       ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -94,10 +179,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
+              if (data.isBlocked)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _BlockedBanner(
+                    onUnblock: () => _toggleBlock(true),
+                  ),
+                ),
               _Header(
                 profile: p,
                 relationship: relationship,
                 busy: _busy,
+                showFollowButton: !data.isBlocked,
                 onToggleFollow: () => _toggleFollow(relationship),
               ),
               const SizedBox(height: 24),
@@ -116,16 +209,48 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 }
 
+class _BlockedBanner extends StatelessWidget {
+  final VoidCallback onUnblock;
+  const _BlockedBanner({required this.onUnblock});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: AppTheme.smoothBox(
+        color: const Color(0xFFFF4F4F).withValues(alpha: 0.08),
+        radius: AppTheme.radiusMD,
+        side: BorderSide(color: const Color(0xFFFF4F4F).withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.block_rounded, size: 18, color: Color(0xFFFF4F4F)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '차단한 유저예요',
+              style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+            ),
+          ),
+          TextButton(onPressed: onUnblock, child: const Text('차단 해제')),
+        ],
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   final UserProfile profile;
   final FollowRelationship relationship;
   final bool busy;
+  final bool showFollowButton;
   final VoidCallback onToggleFollow;
 
   const _Header({
     required this.profile,
     required this.relationship,
     required this.busy,
+    this.showFollowButton = true,
     required this.onToggleFollow,
   });
 
@@ -169,12 +294,14 @@ class _Header extends StatelessWidget {
           const SizedBox(height: 10),
           _RelationshipPill(label: hint),
         ],
-        const SizedBox(height: 16),
-        _FollowButton(
-          relationship: relationship,
-          busy: busy,
-          onTap: onToggleFollow,
-        ),
+        if (showFollowButton) ...[
+          const SizedBox(height: 16),
+          _FollowButton(
+            relationship: relationship,
+            busy: busy,
+            onTap: onToggleFollow,
+          ),
+        ],
       ],
     );
   }

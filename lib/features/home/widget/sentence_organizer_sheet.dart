@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// OCR로 인식한 텍스트를 문장 단위로 끊어 보여주고,
-/// 사용자가 여러 문장을 골라 하나로 합치거나(문단) 따로 둘 수 있게 하는 시트.
+/// OCR로 인식한 텍스트를 문단→문장 구조로 보여주고,
+/// 사용자가 같은 문단 안의 문장들을 골라 하나로 합칠 수 있게 하는 시트.
+/// 최대 기록 단위는 한 문단 — 문단 경계를 넘는 합치기는 막는다.
 ///
 /// 합치기는 저장 전 클라이언트 합성이라 추가 비용/네트워크가 없다.
 /// 결과로 최종 블록 목록(`List<String>`)을 pop 한다. 각 블록이 곧 저장 1행.
 /// 추가 촬영 1회의 OCR 결과. null이면 취소/실패(시트는 그대로 유지).
-typedef OcrCapture = ({String text, List<String>? sentences});
+typedef OcrCapture = ({String text, List<List<String>>? paragraphs});
+
+/// 시트 내부 블록: 문장 텍스트 + 소속 문단 번호.
+typedef _Block = ({String text, int para});
 
 class SentenceOrganizerSheet extends StatefulWidget {
   final String rawText;
 
-  /// AI가 이미 문장 단위로 끊어 준 경우. 있으면 규칙 분리 대신 그대로 사용한다.
-  final List<String>? sentences;
+  /// AI가 문단→문장 구조로 끊어 준 경우. 있으면 규칙 분리 대신 그대로 사용한다.
+  final List<List<String>>? paragraphs;
 
   /// 다음 페이지를 추가로 촬영해 문장을 이어 붙일 때 호출. null이면 버튼을 숨긴다.
   final Future<OcrCapture?> Function()? onCapture;
@@ -22,7 +26,7 @@ class SentenceOrganizerSheet extends StatefulWidget {
   const SentenceOrganizerSheet({
     super.key,
     required this.rawText,
-    this.sentences,
+    this.paragraphs,
     this.onCapture,
   });
 
@@ -31,33 +35,55 @@ class SentenceOrganizerSheet extends StatefulWidget {
 }
 
 class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
-  /// 문단 사이 줄바꿈은 살리고, 종결부호(. ! ? 등)를 보존해 문장 단위로 끊는다.
-  /// SentenceNormalizer.tokenize는 부호를 떼어내 합칠 때 가독성이 떨어지므로 별도 분리.
-  static List<String> _split(String text) {
-    final result = <String>[];
+  /// 문단 사이 줄바꿈(한 줄 = 한 문단)을 살리고, 종결부호(. ! ? 등)를 보존해
+  /// 문장 단위로 끊는다. SentenceNormalizer.tokenize는 부호를 떼어내
+  /// 합칠 때 가독성이 떨어지므로 별도 분리.
+  static List<_Block> _split(String text) {
+    final result = <_Block>[];
     final sentence = RegExp(r'[^.!?。！？…\n]+[.!?。！？…]*');
+    var para = 0;
     for (final line in text.split('\n')) {
+      var added = false;
       for (final m in sentence.allMatches(line)) {
         final s = m.group(0)!.trim();
-        if (s.isNotEmpty) result.add(s);
+        if (s.isNotEmpty) {
+          result.add((text: s, para: para));
+          added = true;
+        }
       }
+      if (added) para++;
     }
     // 부호가 전혀 없어 분리되지 않으면 통째로 한 블록.
     if (result.isEmpty) {
       final trimmed = text.trim();
-      if (trimmed.isNotEmpty) result.add(trimmed);
+      if (trimmed.isNotEmpty) result.add((text: trimmed, para: 0));
     }
     return result;
   }
 
-  static List<String> _blocksFrom(String text, List<String>? sentences) =>
-      (sentences != null && sentences.isNotEmpty)
-      ? List.of(sentences)
-      : _split(text);
+  /// AI가 끊어 준 문단→문장 구조가 있으면 그대로, 없으면 규칙 분리로 폴백.
+  /// [paraOffset]은 추가 촬영분이 기존 문단과 섞이지 않게 문단 번호를 밀어 준다.
+  static List<_Block> _blocksFrom(
+    String text,
+    List<List<String>>? paragraphs, {
+    int paraOffset = 0,
+  }) {
+    final blocks = (paragraphs != null && paragraphs.isNotEmpty)
+        ? [
+            for (final (p, sentences) in paragraphs.indexed)
+              for (final s in sentences)
+                if (s.trim().isNotEmpty) (text: s.trim(), para: p),
+          ]
+        : _split(text);
+    return paraOffset == 0
+        ? blocks
+        : [
+            for (final b in blocks) (text: b.text, para: b.para + paraOffset),
+          ];
+  }
 
-  // AI가 끊어 준 문장이 있으면 그대로, 없으면 규칙 분리로 폴백.
-  late List<String> _initial = _blocksFrom(widget.rawText, widget.sentences);
-  late List<String> _blocks = List.of(_initial);
+  late List<_Block> _initial = _blocksFrom(widget.rawText, widget.paragraphs);
+  late List<_Block> _blocks = List.of(_initial);
   final Set<int> _selected = <int>{};
   int _justMergedCount = 0;
   bool _capturing = false;
@@ -77,16 +103,22 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     });
   }
 
+  /// 선택이 2개 이상이고 모두 같은 문단일 때만 합칠 수 있다(최대 단위 = 한 문단).
+  bool get _canMerge =>
+      _selected.length >= 2 &&
+      _selected.map((i) => _blocks[i].para).toSet().length == 1;
+
   void _merge() {
-    if (_selected.length < 2) return;
+    if (!_canMerge) return;
     final indices = _selected.toList()..sort();
-    final merged = indices.map((i) => _blocks[i]).join(' ');
+    final merged = indices.map((i) => _blocks[i].text).join(' ');
     final insertAt = indices.first;
+    final para = _blocks[insertAt].para;
     setState(() {
       for (final i in indices.reversed) {
         _blocks.removeAt(i);
       }
-      _blocks.insert(insertAt, merged);
+      _blocks.insert(insertAt, (text: merged, para: para));
       _justMergedCount = indices.length;
       _selected
         ..clear()
@@ -114,7 +146,12 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
       if (mounted) setState(() => _capturing = false);
     }
     if (!mounted || capture == null) return;
-    final added = _blocksFrom(capture.text, capture.sentences);
+    final added = _blocksFrom(
+      capture.text,
+      capture.paragraphs,
+      // 새 촬영분의 문단은 기존 마지막 문단 다음부터 시작한다.
+      paraOffset: _initial.isEmpty ? 0 : _initial.last.para + 1,
+    );
     if (added.isEmpty) return;
     setState(() {
       _initial = [..._initial, ...added];
@@ -129,13 +166,15 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
       ..sort();
     Navigator.pop(
       context,
-      selectedBlocks.map((index) => _blocks[index]).toList(growable: false),
+      selectedBlocks
+          .map((index) => _blocks[index].text)
+          .toList(growable: false),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final canMerge = _selected.length >= 2;
+    final canMerge = _canMerge;
     final canConfirm = _selected.isNotEmpty;
     return Material(
       color: context.appBg,
@@ -178,9 +217,12 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _blocks.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  // 문단이 바뀌는 자리는 간격을 넓혀 문단 단위를 드러낸다.
+                  separatorBuilder: (_, i) => SizedBox(
+                    height: _blocks[i].para == _blocks[i + 1].para ? 12 : 28,
+                  ),
                   itemBuilder: (_, i) => _SentenceCard(
-                    text: _blocks[i],
+                    text: _blocks[i].text,
                     selected: _selected.contains(i),
                     onTap: () => _toggle(i),
                   ),
@@ -195,30 +237,33 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                     tooltip: '되돌리기',
                     onTap: _blocks.length == _initial.length ? null : _reset,
                   ),
+                  const SizedBox(width: 12),
+                  // 같은 문단 여러 문장 선택 → 합치기, 그 외(한 문장·합친 뒤) → 추가.
+                  Expanded(
+                    child: canMerge
+                        ? _MainButton(
+                            icon: Icons.merge_rounded,
+                            label: '문장 합치기',
+                            enabled: true,
+                            onTap: _merge,
+                          )
+                        : _MainButton(
+                            icon: Icons.check_rounded,
+                            label: '추가',
+                            enabled: canConfirm,
+                            onTap: canConfirm ? _confirm : null,
+                          ),
+                  ),
                   if (widget.onCapture != null) ...[
                     const SizedBox(width: 12),
                     _CircleAction(
                       icon: Icons.add_a_photo_outlined,
                       color: context.appPrimaryAccent,
-                      tooltip: '다음 페이지 추가 촬영',
+                      tooltip: '추가 촬영',
+                      filled: true,
                       onTap: _capturing ? null : _addCapture,
                     ),
                   ],
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _MergeButton(
-                      enabled: canMerge,
-                      onTap: canMerge ? _merge : null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  _CircleAction(
-                    icon: Icons.check_rounded,
-                    color: context.appPrimaryAccent,
-                    tooltip: '문장 기록하기',
-                    filled: true,
-                    onTap: canConfirm ? _confirm : null,
-                  ),
                 ],
               ),
             ],
@@ -313,11 +358,18 @@ class _Checkbox extends StatelessWidget {
   }
 }
 
-class _MergeButton extends StatelessWidget {
+class _MainButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final bool enabled;
   final VoidCallback? onTap;
 
-  const _MergeButton({required this.enabled, required this.onTap});
+  const _MainButton({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -343,10 +395,10 @@ class _MergeButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.merge_rounded, size: 18, color: fg),
+            Icon(icon, size: 18, color: fg),
             const SizedBox(width: 8),
             Text(
-              '문장 합치기',
+              label,
               style: AppTheme.bodyMedium.copyWith(
                 color: fg,
                 fontWeight: FontWeight.w400,

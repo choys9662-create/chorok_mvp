@@ -130,11 +130,12 @@ class FollowOverlapNotifier extends AsyncNotifier<List<FollowOverlap>> {
       }
     }
 
+    // 최신순 — 매칭 품질(ratio)은 동시각 타이브레이커로만 사용한다.
     final list = best.values.toList()
       ..sort((a, b) {
-        final r = b.ratio.compareTo(a.ratio);
-        if (r != 0) return r;
-        return b.neighborCreatedAt.compareTo(a.neighborCreatedAt);
+        final t = b.neighborCreatedAt.compareTo(a.neighborCreatedAt);
+        if (t != 0) return t;
+        return b.ratio.compareTo(a.ratio);
       });
     return list;
   }

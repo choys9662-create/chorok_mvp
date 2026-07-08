@@ -123,16 +123,24 @@ class ProfileRepository {
     return result as String;
   }
 
+  /// 계정 + 소유 데이터 전부 삭제(cascade). 성공 후 세션은 서버에서 무효화되므로
+  /// 호출부에서 signOut()으로 로컬 세션을 정리해야 한다.
+  Future<void> deleteAccount() async {
+    await _client.rpc('delete_own_account');
+  }
+
   Future<void> updateProfile(
     String userId, {
     String? displayName,
     String? bio,
     String? avatarUrl,
+    bool? isPrivate,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) updates['display_name'] = displayName;
     if (bio != null) updates['bio'] = bio;
     if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
+    if (isPrivate != null) updates['is_private'] = isPrivate;
     if (updates.isEmpty) return;
     await _client.from('profiles').update(updates).eq('id', userId);
   }

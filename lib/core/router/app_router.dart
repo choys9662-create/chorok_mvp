@@ -29,9 +29,11 @@ import '../../features/library/screen/taste_analysis_screen.dart';
 import '../../features/search/barcode_scanner_screen.dart';
 import '../../features/library/choseo_list_screen.dart';
 import '../../features/settings/screen/settings_screen.dart';
+import '../../features/settings/screen/blocked_users_screen.dart';
 import '../../features/achievements/screen/achievements_screen.dart';
 import '../../features/feed/screen/sentence_detail_screen.dart';
 import '../../features/search/screen/book_info_screen.dart';
+import '../../features/search/screen/book_detail_info_screen.dart';
 import '../../features/search/model/aladin_book.dart';
 import '../../shared/models/user_profile.dart';
 import '../../shared/models/reading_session.dart';
@@ -241,6 +243,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AchievementsScreen(),
       ),
 
+      // 차단 유저 목록
+      GoRoute(
+        path: AppConstants.routeBlockedUsers,
+        builder: (context, state) => const BlockedUsersScreen(),
+      ),
+
       // 문장 상세
       GoRoute(
         path: AppConstants.routeSentenceDetail,
@@ -256,6 +264,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final book = state.extra as AladinBook;
           return BookInfoScreen(book: book);
+        },
+      ),
+
+      // 도서 원본 메타데이터 (제목·저자·출판사·출판일 + 전체 소개글)
+      GoRoute(
+        path: AppConstants.routeBookDetailInfo,
+        builder: (context, state) {
+          final book = state.extra as AladinBook;
+          return BookDetailInfoScreen(book: book);
         },
       ),
 
