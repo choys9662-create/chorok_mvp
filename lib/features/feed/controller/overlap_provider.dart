@@ -49,13 +49,15 @@ class OverlapMatch {
 
 // ─── Provider ─────────────────────────────────────────────────────────────
 
+/// family 키는 문장 **원문**이다. 정규화·문장 단위 분리는
+/// [DbService.findOverlappingSentences] 안에서 한 번만 한다.
 class OverlapNotifier extends FamilyAsyncNotifier<List<OverlapMatch>, String> {
   @override
-  Future<List<OverlapMatch>> build(String normalizedText) async {
-    if (normalizedText.isEmpty) return const [];
+  Future<List<OverlapMatch>> build(String content) async {
+    if (content.isEmpty) return const [];
     final rows = await ref
         .read(dbServiceProvider)
-        .findOverlappingSentences(normalizedText);
+        .findOverlappingSentences(content);
     return rows.map(OverlapMatch.fromMap).toList();
   }
 }

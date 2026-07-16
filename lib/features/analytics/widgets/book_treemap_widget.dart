@@ -74,6 +74,10 @@ class BookTreemapWidget extends StatelessWidget {
                     t,
                   )!;
                   final showLabel = rect.width > 80 && rect.height > 50;
+                  // 블록 크기에 비례한 폰트 — 장르가 적어 블록이 클 때 라벨이 작게 뜨는 문제 방지
+                  final labelFontSize = (math.min(rect.width, rect.height) / 7)
+                      .clamp(12.0, 28.0);
+                  final hoursFontSize = (labelFontSize * 0.5).clamp(9.0, 15.0);
 
                   return Positioned(
                     left: rect.left + 1,
@@ -94,6 +98,7 @@ class BookTreemapWidget extends StatelessWidget {
                                     child: Text(
                                       item.label,
                                       style: AppTheme.captionSmall.copyWith(
+                                        fontSize: labelFontSize,
                                         color: Colors.black.withValues(
                                           alpha: 0.8,
                                         ),
@@ -107,6 +112,7 @@ class BookTreemapWidget extends StatelessWidget {
                                   Text(
                                     '${item.hours.toStringAsFixed(1)}h',
                                     style: AppTheme.captionSmall.copyWith(
+                                      fontSize: hoursFontSize,
                                       color: Colors.black.withValues(
                                         alpha: 0.6,
                                       ),

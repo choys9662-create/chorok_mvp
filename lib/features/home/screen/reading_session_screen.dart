@@ -210,6 +210,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   // dispose에서 안전하게 쓰도록 repository 참조를 캡처해 둔다.
   ReadingPresenceRepository? _presence;
   Timer? _presenceHeartbeat;
+  bool _presenceStarted = false;
 
   void _setUi(UiVisibility next, {Duration? autoHideAfter}) {
     setState(() => _uiState = next);
@@ -323,6 +324,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       if (detoxStatus == DetoxStartStatus.unsupported) {
         _showSoftDetoxNotice();
       }
+      _beginPresenceTracking();
     }
     setState(() => _showTopic = false);
     _setUi(UiVisibility.hidden);
@@ -678,16 +680,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       });
       _brightenScreen();
 
-      // 세션 시작 — 실시간 presence 등록 + 주기적 heartbeat (TTL 90s의 절반 주기).
-      if (!kUseMock) {
-        final presence = ref.read(readingPresenceRepositoryProvider);
-        _presence = presence;
-        final sessionBook = _readSessionBook();
-        _startPresence(presence, sessionBook);
-        _presenceHeartbeat = Timer.periodic(
-          const Duration(seconds: 45),
-          (_) => presence.heartbeat(),
-        );
+      // 타이머가 이미 running(예: 화면 재진입·복귀)이면 즉시 presence를 시작한다.
+      // 아직 화두 오버레이가 떠 있어 timer.isIdle이면 _dismissTopicAndStart()에서
+      // 실제로 독서가 시작되는 시점에 presence를 시작한다 — 화면 진입만으로
+      // 위치 권한 요청·위치 수집이 일어나지 않게 하기 위함.
+      if (!kUseMock && !ref.read(timerProvider).isIdle) {
+        _beginPresenceTracking();
       }
 
       final sessionBookId = _readSessionBook().id;
@@ -712,6 +710,21 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         );
       }
     });
+  }
+
+  /// 타이머가 실제로 running으로 전환된 뒤에만 호출한다 — presence·위치 수집을
+  /// 화면 진입 시점이 아니라 '진짜 독서 시작' 시점에 묶기 위한 진입점.
+  /// 두 번 호출돼도 안전하도록(재진입·복귀 케이스) 가드한다.
+  void _beginPresenceTracking() {
+    if (_presenceStarted || kUseMock) return;
+    _presenceStarted = true;
+    final presence = ref.read(readingPresenceRepositoryProvider);
+    _presence = presence;
+    _startPresence(presence, _readSessionBook());
+    _presenceHeartbeat = Timer.periodic(
+      const Duration(seconds: 45),
+      (_) => presence.heartbeat(),
+    );
   }
 
   Future<void> _startPresence(
@@ -4572,7 +4585,7 @@ class _SocialView extends StatelessWidget {
 }
 
 // ─── 독자 목록 시트 — 두 탭(사람들 / 책) ─────────────────────────────────
-// 세션 시간 및 책 정보는 username 해시 시드 기반 표시 (실데이터 연동 전)
+// 시드 기반 시간·책과 이웃 목록은 디자인 앱 전용이다.
 const _kMockBooks = [
   (title: '데미안', author: '헤르만 헤세'),
   (title: '종의 기원', author: '정유정'),
@@ -4622,12 +4635,14 @@ String _seededTimer(String username) {
   if (presence?.hasTitle ?? false) {
     return (title: presence!.title!, author: presence.author ?? '');
   }
-  return _seededBook(username);
+  return kUseMock ? _seededBook(username) : (title: '책 정보 없음', author: '');
 }
 
 String _readerTime(UserProfile user, Map<String, ReadingPresenceInfo> readers) {
   final startedAt = readers[user.id]?.startedAt;
-  if (startedAt == null) return _seededTimer(user.username);
+  if (startedAt == null) {
+    return kUseMock ? _seededTimer(user.username) : '--:--:--';
+  }
   return _formatStoppedTime(
     DateTime.now().difference(startedAt).inSeconds.clamp(0, 359999),
   );
@@ -4834,6 +4849,9 @@ class _PeopleTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mutuals.isEmpty && !kUseMock) {
+      return const _ReadersEmptyState();
+    }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
       children: [
@@ -4845,17 +4863,19 @@ class _PeopleTab extends StatelessWidget {
             seed: user.username,
             active: true,
           ),
-        const SizedBox(height: 18),
-        const _ReaderSectionTitle('함께 읽는 이웃'),
-        const SizedBox(height: 18),
-        for (final neighbor in _kMockNeighbors)
-          _PersonReaderRow(
-            name: neighbor.name,
-            bookTitle: neighbor.bookTitle,
-            time: neighbor.time,
-            seed: neighbor.name,
-            active: false,
-          ),
+        if (kUseMock) ...[
+          const SizedBox(height: 18),
+          const _ReaderSectionTitle('함께 읽는 이웃'),
+          const SizedBox(height: 18),
+          for (final neighbor in _kMockNeighbors)
+            _PersonReaderRow(
+              name: neighbor.name,
+              bookTitle: neighbor.bookTitle,
+              time: neighbor.time,
+              seed: neighbor.name,
+              active: false,
+            ),
+        ],
       ],
     );
   }
@@ -4942,6 +4962,9 @@ class _BooksTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mutuals.isEmpty && !kUseMock) {
+      return const _ReadersEmptyState();
+    }
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
       children: [
@@ -4952,20 +4975,40 @@ class _BooksTab extends StatelessWidget {
             coverUrl: books[user.id]?.coverUrl,
             active: true,
           ),
-        const SizedBox(height: 18),
-        const _ReaderSectionTitle('함께 읽는 이웃'),
-        const SizedBox(height: 18),
-        for (var i = 0; i < _kMockNeighbors.length; i++)
-          _BookReaderRow(
-            book: (
-              title: _kMockNeighbors[i].bookTitle,
-              author: _kMockNeighbors[i].author,
+        if (kUseMock) ...[
+          const SizedBox(height: 18),
+          const _ReaderSectionTitle('함께 읽는 이웃'),
+          const SizedBox(height: 18),
+          for (var i = 0; i < _kMockNeighbors.length; i++)
+            _BookReaderRow(
+              book: (
+                title: _kMockNeighbors[i].bookTitle,
+                author: _kMockNeighbors[i].author,
+              ),
+              seed: _kMockNeighbors[i].name,
+              coverUrl: null,
+              active: false,
             ),
-            seed: _kMockNeighbors[i].name,
-            coverUrl: null,
-            active: false,
-          ),
+        ],
       ],
+    );
+  }
+}
+
+class _ReadersEmptyState extends StatelessWidget {
+  const _ReadersEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        '지금 함께 읽는 친구가 없어요',
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.5),
+          fontSize: 14,
+          fontFamily: _kFont,
+        ),
+      ),
     );
   }
 }

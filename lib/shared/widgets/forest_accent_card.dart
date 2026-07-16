@@ -53,11 +53,7 @@ class ForestAccentCard extends StatelessWidget {
     );
 
     return DecoratedBox(
-      decoration: AppTheme.smoothBox(
-        color: bg,
-        radius: radius,
-        side: side,
-      ),
+      decoration: AppTheme.smoothBox(color: bg, radius: radius, side: side),
       child: Padding(
         padding: padding ?? const EdgeInsets.all(AppTheme.cardPaddingLG),
         child: child,

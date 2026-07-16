@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/user_profile.dart';
@@ -18,7 +19,7 @@ class UserSearchNotifier extends AsyncNotifier<List<UserProfile>> {
     _lastQuery = q;
     if (scope != null) _scope = scope;
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(_run);
+    state = await AsyncValue.guard(_runSafely);
   }
 
   void setScope(UserSearchScope scope) {
@@ -48,6 +49,15 @@ class UserSearchNotifier extends AsyncNotifier<List<UserProfile>> {
       UserSearchScope.following => follows.searchFollowing(_lastQuery),
       UserSearchScope.followers => follows.searchFollowers(_lastQuery),
     };
+  }
+
+  Future<List<UserProfile>> _runSafely() async {
+    try {
+      return await _run();
+    } catch (error, stackTrace) {
+      debugPrint('[사용자 검색 오류] $error\n$stackTrace');
+      throw Exception('사용자 검색 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.');
+    }
   }
 }
 

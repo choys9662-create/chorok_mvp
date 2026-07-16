@@ -8,13 +8,17 @@ void main() {
     WidgetTester tester, {
     required String rawText,
     List<List<String>>? paragraphs,
+    Future<OcrCapture?> Function()? onCapture,
   }) {
     return showModalBottomSheet<List<String>>(
       context: tester.element(find.byType(Scaffold)),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          SentenceOrganizerSheet(rawText: rawText, paragraphs: paragraphs),
+      builder: (_) => SentenceOrganizerSheet(
+        rawText: rawText,
+        paragraphs: paragraphs,
+        onCapture: onCapture,
+      ),
     );
   }
 
@@ -91,7 +95,7 @@ void main() {
     expect(await resultFuture, ['첫 문장입니다. 둘째 문장입니다.']);
   });
 
-  testWidgets('다른 문단의 문장끼리는 합치기가 뜨지 않는다', (tester) async {
+  testWidgets('추가 촬영 뒤에도 기존 선택 문장과 합칠 수 있다', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark,
@@ -101,24 +105,64 @@ void main() {
 
     final resultFuture = showSheet(
       tester,
-      rawText: '첫 문단 문장입니다.\n둘째 문단 문장입니다.',
-      paragraphs: [
-        ['첫 문단 문장입니다.'],
-        ['둘째 문단 문장입니다.'],
-      ],
+      rawText: '첫 페이지 문장입니다.',
+      onCapture: () async => (
+        text: '다음 페이지 문장입니다.',
+        paragraphs: [
+          ['다음 페이지 문장입니다.'],
+        ],
+      ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('첫 문단 문장입니다.'));
+    await tester.tap(find.text('첫 페이지 문장입니다.'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('둘째 문단 문장입니다.'));
+    await tester.tap(find.byTooltip('추가 촬영'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('다음 페이지 문장입니다.'));
     await tester.pumpAndSettle();
 
-    // 문단이 다르므로 합치기 대신 추가 버튼이 유지되고, 각 문장이 따로 반환된다.
+    expect(find.text('문장 합치기'), findsOneWidget);
+    await tester.tap(find.text('문장 합치기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('추가'));
+    await tester.pumpAndSettle();
+
+    expect(await resultFuture, ['첫 페이지 문장입니다. 다음 페이지 문장입니다.']);
+  });
+
+  testWidgets('추가 촬영분에서 다음 문단을 넘겨 합치지 않는다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: const Scaffold(body: SizedBox.shrink()),
+      ),
+    );
+
+    final resultFuture = showSheet(
+      tester,
+      rawText: '첫 페이지 문장입니다.',
+      onCapture: () async => (
+        text: '이어지는 문장입니다. 다음 문단 문장입니다.',
+        paragraphs: [
+          ['이어지는 문장입니다.'],
+          ['다음 문단 문장입니다.'],
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('첫 페이지 문장입니다.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('추가 촬영'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('다음 문단 문장입니다.'));
+    await tester.pumpAndSettle();
+
     expect(find.text('문장 합치기'), findsNothing);
     await tester.tap(find.text('추가'));
     await tester.pumpAndSettle();
 
-    expect(await resultFuture, ['첫 문단 문장입니다.', '둘째 문단 문장입니다.']);
+    expect(await resultFuture, ['첫 페이지 문장입니다.', '다음 문단 문장입니다.']);
   });
 }

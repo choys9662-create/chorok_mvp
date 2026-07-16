@@ -108,12 +108,16 @@ class PassiveAggroEngine {
 
       case AggroTrigger.idleDays:
         if (ctx.idleDays >= 3) {
-          return pick(_idleHardMessages).replaceAll('{days}', '${ctx.idleDays}');
+          return pick(
+            _idleHardMessages,
+          ).replaceAll('{days}', '${ctx.idleDays}');
         }
         return pick(_idleSoftMessages);
 
       case AggroTrigger.streakRisk:
-        return pick(_streakRiskMessages).replaceAll('{streak}', '${ctx.streakDays}');
+        return pick(
+          _streakRiskMessages,
+        ).replaceAll('{streak}', '${ctx.streakDays}');
 
       case AggroTrigger.neighborCompare:
         final name = ctx.neighborName ?? '숲벗';

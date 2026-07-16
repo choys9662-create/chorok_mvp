@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../model/aladin_book.dart';
 
 enum BookSearchType { keyword, title, author }
+
+const bookSearchFailureMessage = '검색 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.';
 
 class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
   BookSearchType _type = BookSearchType.keyword;
@@ -62,11 +65,14 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
           .cast<Map<String, dynamic>>()
           .map(AladinBook.fromJson)
           .toList();
-    } catch (e) {
-      if (e is FunctionException) {
-        throw Exception('검색 서버 에러 (${e.status}): ${e.details ?? e.toString()}');
-      }
-      throw Exception('검색 중 오류가 발생했습니다: $e');
+    } on FunctionException catch (error, stackTrace) {
+      debugPrint(
+        '[도서 검색 서버 오류] ${error.status}: ${error.details}\n$stackTrace',
+      );
+      throw Exception(bookSearchFailureMessage);
+    } catch (error, stackTrace) {
+      debugPrint('[도서 검색 오류] $error\n$stackTrace');
+      throw Exception(bookSearchFailureMessage);
     }
   }
 }

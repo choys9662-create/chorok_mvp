@@ -32,10 +32,9 @@ class BookPickerSheet extends ConsumerWidget {
     final allBooks = ref.watch(libraryProvider);
     final isLoading =
         allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
-    final readingBooks = allBooks
-        .where((b) => b.status == ReadingStatus.reading)
-        .toList()
-      ..sort(compareReadingBooks);
+    final readingBooks =
+        allBooks.where((b) => b.status == ReadingStatus.reading).toList()
+          ..sort(compareReadingBooks);
 
     if (isLoading && readingBooks.isEmpty) {
       return _SheetShell(child: _LoadingState());

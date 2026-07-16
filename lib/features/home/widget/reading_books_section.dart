@@ -26,7 +26,7 @@ int compareReadingBooks(Book a, Book b) {
   final aAdded = a.addedAt;
   final bAdded = b.addedAt;
   if (aAdded == null || bAdded == null) return 0;
-  return aAdded.compareTo(bAdded);
+  return bAdded.compareTo(aAdded);
 }
 
 const _readingBookCardWidth = 118.0;
@@ -41,10 +41,9 @@ class ReadingBooksSection extends ConsumerWidget {
     final allBooks = ref.watch(libraryProvider);
     final isLoading =
         allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
-    final readingBooks = allBooks
-        .where((b) => b.status == ReadingStatus.reading)
-        .toList()
-      ..sort(compareReadingBooks);
+    final readingBooks =
+        allBooks.where((b) => b.status == ReadingStatus.reading).toList()
+          ..sort(compareReadingBooks);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

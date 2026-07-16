@@ -25,13 +25,17 @@ Future<List<int>> _loadWeeklyMinutesFromSupabase() async {
       .from('reading_sessions')
       .select('ended_at, duration_seconds')
       .eq('user_id', userId)
-      .gte('ended_at', weekStart.toIso8601String())
-      .lt('ended_at', weekEnd.toIso8601String());
+      // timestamptz 비교라 오프셋을 붙여 보내야 창이 로컬 자정에 맞는다.
+      .gte('ended_at', weekStart.toUtc().toIso8601String())
+      .lt('ended_at', weekEnd.toUtc().toIso8601String());
 
   final result = List<int>.filled(7, 0);
   for (final row in rows as List) {
     final map = row as Map<String, dynamic>;
-    final endedAt = DateTime.tryParse(map['ended_at'] as String? ?? '');
+    // UTC 로 파싱되므로 weekday 를 로컬 기준으로 읽으려면 변환이 필요하다.
+    final endedAt = DateTime.tryParse(
+      map['ended_at'] as String? ?? '',
+    )?.toLocal();
     if (endedAt == null) continue;
     final dur = (map['duration_seconds'] as num?)?.toInt() ?? 0;
     final idx = (endedAt.weekday - 1).clamp(0, 6);

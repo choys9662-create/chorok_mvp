@@ -10,7 +10,10 @@ class MemoRepository {
 
   String? get _me => _c.auth.currentUser?.id;
 
-  Future<List<BookMemo>> fetchMemos({String? globalBookId, String? bookId}) async {
+  Future<List<BookMemo>> fetchMemos({
+    String? globalBookId,
+    String? bookId,
+  }) async {
     final me = _me;
     if (me == null) return const [];
     var q = _c

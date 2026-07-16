@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 
 import '../widget/home_stat_cards.dart';
 import '../widget/reading_books_section.dart';
+import '../widget/recommended_books_section.dart';
 import '../widget/reading_friends_section.dart';
 import '../widget/friends_read_today_section.dart';
 import '../widget/overlap_section.dart';
@@ -47,11 +48,11 @@ class HomeScreen extends ConsumerWidget {
                   const SliverToBoxAdapter(child: HomeStatCards()),
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                   const SliverToBoxAdapter(child: ReadingBooksSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
+                  const SliverToBoxAdapter(child: RecommendedBooksSection()),
+                  // ponytail: 아래 세 섹션은 비면 통째로 숨는다. 간격을 각 섹션이
+                  // 직접 들고 있어야 숨을 때 여백도 같이 사라진다.
                   const SliverToBoxAdapter(child: ReadingFriendsSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
                   const SliverToBoxAdapter(child: FriendsReadTodaySection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
                   const SliverToBoxAdapter(child: OverlapSection()),
                   SliverPadding(
                     padding: EdgeInsets.only(

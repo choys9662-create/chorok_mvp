@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_theme.dart';
 
+/// 알라딘 cover150 은 1px 흰 테두리가 이미지에 박혀 있고(표지 좌우에 흰 선으로 보임)
+/// 3x 기기엔 해상도도 모자람. cover500 은 테두리가 없다.
+/// ponytail: 문자열 치환으로 충분. 알라딘 외 URL 은 그대로 통과.
+String? normalizedCoverUrl(String? url) =>
+    url?.replaceFirst('/cover150/', '/cover500/');
+
 class BookCover extends StatelessWidget {
   final String? coverUrl;
   final int gradientIndex;
@@ -28,6 +34,7 @@ class BookCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradColors = AppTheme.coverGradientByIndex(gradientIndex);
     final fallback = coverUrl == null || coverUrl!.isEmpty;
+    final url = normalizedCoverUrl(coverUrl);
 
     return Container(
       width: width,
@@ -58,9 +65,9 @@ class BookCover extends StatelessWidget {
             ),
 
           // 실제 이미지 (캐싱 적용)
-          if (coverUrl != null && coverUrl!.isNotEmpty)
+          if (url != null && url.isNotEmpty)
             CachedNetworkImage(
-              imageUrl: coverUrl!,
+              imageUrl: url,
               fit: BoxFit.cover,
               fadeInDuration: const Duration(milliseconds: 200),
               errorWidget: (context, url, error) => const SizedBox.shrink(),

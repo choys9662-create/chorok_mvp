@@ -110,7 +110,7 @@ class SessionOverlapInsightsNotifier
 
       for (final entry in candidates) {
         final normalized = SentenceNormalizer.normalize(entry.content);
-        final rows = await dbService.findOverlappingSentences(normalized);
+        final rows = await dbService.findOverlappingSentences(entry.content);
         final thoughts = _representativeThoughts(rows, neighborIds);
         if (rows.isEmpty || thoughts.isEmpty) continue;
 

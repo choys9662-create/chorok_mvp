@@ -25,12 +25,27 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 배포 전 게이트 — analyze/test 실패 시 이후 배포 단계로 진행하지 않는다.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.109.1
 
-      - name: Deploy Gemini OCR proxy
+      # 운영 migration history가 rebaseline되기 전에는 CI에서 db push를 실행하지 않는다.
+      # rebaseline과 dry-run 검증을 마친 뒤에만 명시적 DB 게이트를 다시 추가한다.
+
+      - name: Deploy Edge Functions
+        # aladin-search/naver-userinfo-proxy는 회수한 소스 검토와 Aladin 키 회전 전까지
+        # 이 워크플로에서 배포하지 않는다.
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
@@ -50,13 +65,8 @@ jobs:
         run: |
           test -n "${{ secrets.SUPABASE_URL }}" || { echo "Missing SUPABASE_URL secret"; exit 1; }
           test -n "${{ secrets.SUPABASE_ANON_KEY }}" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
-          echo "ALADIN_API_KEY=${{ secrets.ALADIN_API_KEY }}" >> .env
-          echo "GOOGLE_SERVER_CLIENT_ID=${{ secrets.GOOGLE_SERVER_CLIENT_ID }}" >> .env
-
-      - name: Install dependencies
-        run: flutter pub get
 
       - name: Build Flutter Web (real)
         # 웹 Google 로그인은 Supabase OAuth redirect로 처리. Google client ID는

@@ -33,6 +33,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # 배포 전 게이트 — analyze/test 실패 시 아래 빌드·배포로 진행하지 않는다.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
       - name: Build Flutter Web (USE_MOCK=true)
         run: >
           flutter build web --release

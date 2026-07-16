@@ -318,7 +318,9 @@ final _bookStatsProvider = FutureProvider.family<_BookStats, String>((
         .limit(5000);
     final list = (sessions as List).cast<Map<String, dynamic>>();
     final readers = list.map((s) => s['user_id']).whereType<String>().toSet();
-    if (readers.isNotEmpty) avgSessions = (list.length / readers.length).round();
+    if (readers.isNotEmpty) {
+      avgSessions = (list.length / readers.length).round();
+    }
   } catch (_) {}
 
   return (
@@ -352,7 +354,9 @@ final _myRecordCountsProvider =
               );
           sentenceCount = rows.length;
           thoughtCount = rows
-              .where((r) => (r['thought'] as String?)?.trim().isNotEmpty == true)
+              .where(
+                (r) => (r['thought'] as String?)?.trim().isNotEmpty == true,
+              )
               .length;
         } catch (_) {}
         try {
@@ -548,6 +552,27 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
 
     if (existing != null) {
       HapticFeedback.mediumImpact();
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('서재에서 제거'),
+          content: Text(
+            '\'${book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('제거'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
       ref.read(libraryProvider.notifier).deleteBook(existing.id);
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -723,6 +748,20 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
               ),
             ),
 
+          // ── 완독 처리 (서재에 있는 책만) ─────────────────────────────
+          if (libraryBook != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Center(
+                  child: SizedBox(
+                    width: 172,
+                    child: _CompleteButton(book: libraryBook),
+                  ),
+                ),
+              ),
+            ),
+
           // ── 서재에 있는 책 / 서재에 추가 ───────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
@@ -883,6 +922,64 @@ class _ContinueReadingButton extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompleteButton extends ConsumerWidget {
+  final Book book;
+  const _CompleteButton({required this.book});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isCompleted = book.status == ReadingStatus.completed;
+
+    return Semantics(
+      button: true,
+      label: isCompleted ? '완독 취소' : '완독 처리',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          final notifier = ref.read(libraryProvider.notifier);
+          if (isCompleted) {
+            notifier.cancelCompletion(book.id);
+          } else {
+            notifier.markAsCompleted(book.id);
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          height: 28,
+          decoration: AppTheme.smoothBox(
+            gradient: isCompleted ? null : AppTheme.greenGradient,
+            color: isCompleted ? Colors.transparent : null,
+            radius: 5,
+            side: isCompleted
+                ? BorderSide(color: context.appPillBorderActive)
+                : BorderSide.none,
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isCompleted ? Icons.check_circle_rounded : Icons.flag_outlined,
+                size: 15,
+                color: isCompleted ? context.appTextPrimary : AppTheme.darkBg,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isCompleted ? '완독함' : '완독',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: isCompleted ? context.appTextPrimary : AppTheme.darkBg,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1207,9 +1304,13 @@ class _MyRecordsSection extends ConsumerWidget {
         state.when(
           loading: () => const Row(
             children: [
-              Expanded(child: ChorokShimmer(width: double.infinity, height: 76)),
+              Expanded(
+                child: ChorokShimmer(width: double.infinity, height: 76),
+              ),
               SizedBox(width: 10),
-              Expanded(child: ChorokShimmer(width: double.infinity, height: 76)),
+              Expanded(
+                child: ChorokShimmer(width: double.infinity, height: 76),
+              ),
             ],
           ),
           error: (_, _) => _cards(context, (sentences: 0, thoughts: 0)),
@@ -1621,10 +1722,7 @@ class _SentenceThoughtCard extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _Avatar(
-                    username: reply.username,
-                    avatarUrl: reply.avatarUrl,
-                  ),
+                  _Avatar(username: reply.username, avatarUrl: reply.avatarUrl),
                   const SizedBox(width: 8),
                   Expanded(
                     child: GestureDetector(

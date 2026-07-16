@@ -181,7 +181,8 @@ void main() {
       find.descendant(of: button, matching: find.byType(Text)),
     );
 
-    expect(buttonSize.width, closeTo(textSize.width + 32.2, 0.1));
+    // 좌우 패딩 15+15 = 30 (보더 없음)
+    expect(buttonSize.width, closeTo(textSize.width + 30, 0.1));
     expect(buttonSize.width, lessThanOrEqualTo(402 - 80));
   });
 
@@ -247,8 +248,16 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    const mago = UserProfile(id: 'friend-1', username: 'mago', displayName: '마고');
-    const idle = UserProfile(id: 'friend-2', username: 'idle', displayName: '안읽는친구');
+    const mago = UserProfile(
+      id: 'friend-1',
+      username: 'mago',
+      displayName: '마고',
+    );
+    const idle = UserProfile(
+      id: 'friend-2',
+      username: 'idle',
+      displayName: '안읽는친구',
+    );
 
     await tester.pumpWidget(
       _buildScreen(
@@ -278,6 +287,34 @@ void main() {
 
     expect(find.text('마고'), findsOneWidget);
     expect(find.text('안읽는친구'), findsNothing); // active 아닌 맞팔은 안 뜬다
+  });
+
+  testWidgets('실사용 독자 시트는 목업 이웃 대신 실제 빈 상태를 보여준다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump();
+    ScaffoldMessenger.of(
+      tester.element(find.byType(ReadingSessionScreen)),
+    ).hideCurrentSnackBar();
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('함께 읽는 초록 확인'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('지금 함께 읽는 친구가 없어요'), findsOneWidget);
+    expect(find.text('익명의 나뭇잎'), findsNothing);
+    expect(find.text('용기리기리'), findsNothing);
   });
 
   testWidgets('iOS Screen Time 권한이 거절되면 디톡스 세션을 시작하지 않는다', (tester) async {

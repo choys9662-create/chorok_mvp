@@ -610,6 +610,10 @@ class _FollowListScreenState extends ConsumerState<_FollowListScreen> {
           children: [
             SizedBox(
               height: 64,
+              // width 를 주지 않으면 Column(crossAxisAlignment: center)의 느슨한
+              // 제약 탓에 Stack 이 제목 글자 폭만큼만 차지해, Positioned(left: 8)
+              // 이 화면 왼쪽이 아니라 제목 왼쪽 기준이 되어 화살표가 제목과 겹친다.
+              width: double.infinity,
               child: Stack(
                 alignment: Alignment.center,
                 children: [

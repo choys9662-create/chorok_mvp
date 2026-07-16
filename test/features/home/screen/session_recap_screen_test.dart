@@ -8,7 +8,6 @@ import 'package:chorok_app/features/home/screen/session_recap_screen.dart';
 import 'package:chorok_app/shared/models/reading_session.dart';
 import 'package:chorok_app/shared/models/session_goal.dart';
 import 'package:chorok_app/shared/providers/library_provider.dart';
-import 'package:chorok_app/shared/utils/sentence_normalizer.dart';
 
 class _FakeDbService extends DbService {
   final Map<String, List<Map<String, dynamic>>> overlaps;
@@ -40,9 +39,9 @@ class _FakeDbService extends DbService {
 
   @override
   Future<List<Map<String, dynamic>>> findOverlappingSentences(
-    String normalizedText,
+    String content,
   ) async {
-    return overlaps[normalizedText] ?? const [];
+    return overlaps[content] ?? const [];
   }
 }
 
@@ -183,10 +182,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     const mySentence = '나도, 너를 사랑 해';
-    final normalized = SentenceNormalizer.normalize(mySentence);
     final dbService = _FakeDbService(
       overlaps: {
-        normalized: [
+        mySentence: [
           {
             'id': 'overlap-1',
             'user_id': 'user-2',

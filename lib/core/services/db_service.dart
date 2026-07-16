@@ -9,6 +9,14 @@ final _uuidLike = RegExp(
   r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
 );
 
+({String lowerBound, String upperBound}) utcDateRange(
+  DateTime from,
+  DateTime to,
+) => (
+  lowerBound: from.toUtc().toIso8601String(),
+  upperBound: to.toUtc().toIso8601String(),
+);
+
 /// Supabase DB 접근 서비스
 class DbService {
   // ── 현재 로그인된 유저 ID ─────────────────────────────────────────
@@ -124,8 +132,9 @@ class DbService {
       'duration_seconds': durationSeconds,
       'sentence_count': sentenceCount ?? sentences.length,
       'score': ?score,
-      'started_at': started.toIso8601String(),
-      'ended_at': ended.toIso8601String(),
+      // timestamptz 컬럼이라 오프셋 없는 문자열을 보내면 서버가 UTC 로 읽어 로컬 오프셋만큼 밀린다.
+      'started_at': started.toUtc().toIso8601String(),
+      'ended_at': ended.toUtc().toIso8601String(),
       'client_session_id': ?clientSessionId,
       'pages_read': pagesRead,
       'exit_count': exitCount,
@@ -155,8 +164,8 @@ class DbService {
         'duration_seconds': durationSeconds,
         'sentence_count': sentenceCount ?? sentences.length,
         'score': ?score,
-        'started_at': started.toIso8601String(),
-        'ended_at': ended.toIso8601String(),
+        'started_at': started.toUtc().toIso8601String(),
+        'ended_at': ended.toUtc().toIso8601String(),
       };
       session = await supabase
           .from('reading_sessions')
@@ -182,9 +191,8 @@ class DbService {
                     'global_book_id': ?ids.globalBookId,
                     'session_id': sessionId,
                     'content': e.value,
-                    'normalized_sentences': [
-                      SentenceNormalizer.normalize(e.value),
-                    ],
+                    'normalized_sentences':
+                        SentenceNormalizer.tokenizeAndNormalize(e.value),
                     'thought': thoughts != null && e.key < thoughts.length
                         ? thoughts[e.key]
                         : null,
@@ -221,7 +229,9 @@ class DbService {
       'global_book_id': ?ids.globalBookId,
       'content': trimmedContent,
       'page_number': ?pageNumber,
-      'normalized_sentences': [SentenceNormalizer.normalize(trimmedContent)],
+      'normalized_sentences': SentenceNormalizer.tokenizeAndNormalize(
+        trimmedContent,
+      ),
       'thought': (trimmedThought?.isNotEmpty == true) ? trimmedThought : null,
     });
   }
@@ -404,13 +414,22 @@ class DbService {
     };
   }
 
-  Future<List<Map<String, dynamic>>> fetchMySentences() async {
-    final res = await supabase
+  /// 초서 전체 목록 — 커서 기반 페이지네이션. [before]보다 오래된 [limit]개를 반환한다.
+  /// 반환 개수가 [limit]보다 적으면 더 이상 불러올 데이터가 없다는 뜻이다.
+  Future<List<Map<String, dynamic>>> fetchMySentences({
+    DateTime? before,
+    int limit = 50,
+  }) async {
+    var query = supabase
         .from('sentences')
         .select('*, books(title, author)')
-        .eq('user_id', _uid)
+        .eq('user_id', _uid);
+    if (before != null) {
+      query = query.lt('created_at', before.toUtc().toIso8601String());
+    }
+    final res = await query
         .order('created_at', ascending: false)
-        .limit(50);
+        .limit(limit);
     return List<Map<String, dynamic>>.from(res);
   }
 
@@ -447,12 +466,13 @@ class DbService {
     required DateTime to,
     int limit = 5,
   }) async {
+    final range = utcDateRange(from, to);
     final res = await supabase
         .from('sentences')
         .select('content, books(title, author), sentence_likes(count)')
         .eq('user_id', _uid)
-        .gte('created_at', from.toIso8601String())
-        .lte('created_at', to.toIso8601String())
+        .gte('created_at', range.lowerBound)
+        .lt('created_at', range.upperBound)
         .limit(50);
 
     final items =
@@ -482,6 +502,7 @@ class DbService {
     required DateTime to,
     int limit = 3,
   }) async {
+    final range = utcDateRange(from, to);
     final follows = await supabase
         .from('follows')
         .select('following_id')
@@ -498,8 +519,8 @@ class DbService {
         .from('sentences')
         .select('content, books(title, author), sentence_likes(count)')
         .inFilter('user_id', followingIds)
-        .gte('created_at', from.toIso8601String())
-        .lte('created_at', to.toIso8601String())
+        .gte('created_at', range.lowerBound)
+        .lt('created_at', range.upperBound)
         .limit(50);
 
     final items =
@@ -535,14 +556,20 @@ class DbService {
     return (res as List).length;
   }
 
-  /// 정규화된 문장과 exact-match되는 다른 유저들의 문장을 조회한다.
+  /// 한 문장 단위라도 겹치는 다른 유저들의 문장을 조회한다.
   ///
-  /// Supabase GIN 인덱스를 통해 normalized_sentences 배열 포함 검색.
+  /// `A.B.C.D` 와 `B.C` 는 `B`·`C` 에서 겹친다 — 전문이 같을 필요는 없다.
+  /// DB 트리거 `notify_on_overlap` 의 `&&` 와 같은 의미가 되도록 `ov`(배열 교집합)를 쓴다.
+  /// GIN 인덱스(normalized_sentences)는 그대로 태워진다.
+  ///
   /// 반환: [{ id, user_id, content, thought, created_at, profiles, books, sentence_likes }]
   Future<List<Map<String, dynamic>>> findOverlappingSentences(
-    String normalizedText,
+    String content,
   ) async {
-    if (normalizedText.isEmpty) return const [];
+    final units = SentenceNormalizer.overlapUnits(content);
+    if (units.isEmpty) return const [];
+    // units 는 정규화를 거쳐 한글·영숫자만 남으므로 배열 리터럴에 주입될 문자가 없다.
+    final literal = '{${units.map((u) => '"$u"').join(',')}}';
     final res = await supabase
         .from('sentences')
         .select(
@@ -551,7 +578,7 @@ class DbService {
           'books(title), '
           'sentence_likes(count)',
         )
-        .filter('normalized_sentences', 'cs', '{"$normalizedText"}')
+        .filter('normalized_sentences', 'ov', literal)
         .neq('user_id', _uid)
         .order('created_at', ascending: false)
         .limit(20);

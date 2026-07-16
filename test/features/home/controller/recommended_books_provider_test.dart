@@ -6,9 +6,18 @@ void main() {
   group('extractAuthorFromSentences', () {
     test('가장 많은 문장이 달린 책의 저자 반환', () {
       final sentences = [
-        {'book_id': 'b1', 'books': {'author': '한강', 'title': '채식주의자'}},
-        {'book_id': 'b1', 'books': {'author': '한강', 'title': '채식주의자'}},
-        {'book_id': 'b2', 'books': {'author': '손원평', 'title': '아몬드'}},
+        {
+          'book_id': 'b1',
+          'books': {'author': '한강', 'title': '채식주의자'},
+        },
+        {
+          'book_id': 'b1',
+          'books': {'author': '한강', 'title': '채식주의자'},
+        },
+        {
+          'book_id': 'b2',
+          'books': {'author': '손원평', 'title': '아몬드'},
+        },
       ];
       expect(extractAuthorFromSentences(sentences), '한강');
     });
@@ -16,7 +25,10 @@ void main() {
     test('book_id 없는 문장은 무시', () {
       final sentences = [
         {'book_id': null, 'books': null},
-        {'book_id': 'b1', 'books': {'author': '김영하', 'title': '살인자의 기억법'}},
+        {
+          'book_id': 'b1',
+          'books': {'author': '김영하', 'title': '살인자의 기억법'},
+        },
       ];
       expect(extractAuthorFromSentences(sentences), '김영하');
     });
@@ -30,9 +42,18 @@ void main() {
   group('extractTopBookTitleFromSentences', () {
     test('가장 많은 문장이 달린 책 제목 반환', () {
       final sentences = [
-        {'book_id': 'b1', 'books': {'author': '한강', 'title': '채식주의자'}},
-        {'book_id': 'b1', 'books': {'author': '한강', 'title': '채식주의자'}},
-        {'book_id': 'b2', 'books': {'author': '손원평', 'title': '아몬드'}},
+        {
+          'book_id': 'b1',
+          'books': {'author': '한강', 'title': '채식주의자'},
+        },
+        {
+          'book_id': 'b1',
+          'books': {'author': '한강', 'title': '채식주의자'},
+        },
+        {
+          'book_id': 'b2',
+          'books': {'author': '손원평', 'title': '아몬드'},
+        },
       ];
       expect(extractTopBookTitleFromSentences(sentences), '채식주의자');
     });

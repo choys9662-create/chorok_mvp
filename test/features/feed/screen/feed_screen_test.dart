@@ -114,7 +114,7 @@ void main() {
     expect(find.text('접기'), findsOneWidget);
   });
 
-  testWidgets('전체 탭에서 친구가 아닌 독자의 활동도 표시한다', (tester) async {
+  testWidgets('피드에는 친구 활동만 나오고 친구가 아닌 독자는 제외한다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -130,11 +130,9 @@ void main() {
 
     expect(activityTitle('다른독자'), findsNothing);
 
-    await tester.tap(find.text('전체'));
-    await tester.pumpAndSettle();
-
-    expect(activityTitle('다른독자'), findsOneWidget);
-    expect(find.text('100%'), findsOneWidget);
+    // 친구/전체 범위 토글은 제거됐다.
+    expect(find.text('친구'), findsNothing);
+    expect(find.text('전체'), findsNothing);
   });
 
   testWidgets('push로 진입한 피드에는 뒤로가기를 표시하고 이전 화면으로 돌아간다', (tester) async {

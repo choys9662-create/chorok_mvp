@@ -143,6 +143,8 @@ lib/
     └── utils/         # 유틸 함수
 ```
 
+**website/ (Flutter 외부):** 정적 홍보 사이트(순수 HTML/JS, 독서 유형 테스트 포함). firebase hosting `site` 타겟으로 배포 — Flutter 웹 빌드(`design`/`prod` 타겟, `build/web`)와 별개.
+
 **스택 규칙:**
 - 상태 관리: Riverpod — 수동 선언 방식 (`NotifierProvider`/`AsyncNotifierProvider`/`Provider`를 직접 작성). `@riverpod` 코드젠은 쓰지 않는다 (`.g.dart` 없음, build_runner 불필요). `riverpod_annotation`이 pubspec에 있지만 미사용 — 신규 프로바이더도 수동 선언으로 통일한다.
 - 라우팅: GoRouter — 라우트 정의는 `core/router/app_router.dart`
@@ -228,3 +230,64 @@ flutter run -d 00008120-0011549E3640C01E
 - **롤백:** 배포 후 문제 시 `git revert <머지커밋>` → `main` 재배포. git 이력에 다 남아 있다.
 
 **테스트 데이터 (출시 전):** dev/prod DB 는 아직 분리 안 함(단일 운영 Supabase). 개발 테스트는 **전용 테스트 구글 계정**으로만 로그인해 데이터를 식별 가능하게 둔다. 유저 간 상호작용 테스트는 계정 2~3개(아이폰=계정A 실로그인 + 웹 `chorok-real`=계정B). 쌓인 테스트 데이터는 `supabase/scripts/purge_test_user.sql`로 이메일 기준 일괄 삭제(모든 user 테이블이 `auth.users` cascade). dev/prod Supabase 분리는 실유저 생기기 직전에(`.env.dev`/`.env.prod` + `--dart-define=ENV`).
+
+---
+
+## 10. Figma / 이미지 → Flutter 변환 규칙
+
+**적용 대상:** Figma 링크, 스크린샷, 목업 이미지를 주고 "이 화면 구현해줘" 류의 요청을 받을 때 항상 적용한다. 디자인을 MCP로 읽든 수동 복사(CSS 모든 레이어 + PNG)로 받든 아래 변환 규칙은 동일하게 적용한다.
+
+**Figma MCP 한도 주의:** Starter 플랜은 **월 6회** — 호출 전에 nodeId·fileKey가 정확한지 확인해 낭비를 막고, 한도 초과 시 사용자에게 수동 복사(프레임 우클릭 → 코드로 복사 → CSS 모든 레이어 + PNG로 복사)를 요청한다. 수동 경로는 한도와 무관.
+
+`get_metadata` 도구는 현재 "Tool not found" MCP 에러로 호출 불가(2026-07 기준) — `get_design_context` 하나로 좌표·크기·폰트가 Tailwind 클래스에 다 포함되어 있으니 재시도 없이 그것만 쓴다.
+
+**핵심 원칙:** Figma Dev Mode·Code Connect는 React/HTML/SwiftUI/Jetpack Compose가 1급 대상이고 Flutter는 공식 지원 목록에 없다. 따라서 Figma·MCP가 반환하는 값(Auto Layout, CSS-like 속성)은 **중간 표현**일 뿐, 그대로 옮기면 안 되고 Flutter의 constraint 기반 레이아웃·위젯·테마 구조로 번역해야 한다. React, HTML, CSS 코드를 생성하지 않는다.
+
+**Figma 링크 → React 치환 파이프라인 (항상 이 순서):**
+1. URL에서 `fileKey`/`nodeId` 추출 (`node-id` 쿼리의 `-`는 `:`로 바꿔도 되고 그대로 써도 됨)
+2. `get_design_context(fileKey, nodeId)` 호출 — MCP는 **항상 React+Tailwind JSX로 반환한다** (Flutter를 모르는 도구라 다른 형식으로 안 옴, 버그 아님)
+3. 반환된 JSX를 그대로 쓰지 않는다 — `className` 안 임의값(`left-[16px]`, `top-[76px]`, `text-[14px]`, `tracking-[-0.28px]`)만 진짜 스펙 숫자로 신뢰하고, Tailwind 클래스 이름·구조(`absolute`, `flex` 등)는 무시한다
+4. 그 숫자를 **레이아웃 매핑 표**(아래)로 Flutter 위젯/속성에, **색상 매핑 표**(아래)로 `AppTheme` 토큰에 치환한다
+
+**구현 전 확인 순서** (기존 구조 우선, §7 참조):
+1. Figma 프레임의 한국어 텍스트로 `lib/features/`를 grep — 이 화면이 이미 구현돼 있을 수 있다(예: `feed_screen.dart`가 이미 있었던 사례). 있으면 새로 만들지 않고 기존 화면의 정렬·색상만 대조·수정한다.
+2. `lib/core/theme/` — 색상·타이포·spacing 토큰이 이미 있는지 확인
+3. `lib/shared/widgets/` — 재사용 가능한 컴포넌트(버튼, 카드, 리스트 아이템 등)가 이미 있는지 확인
+4. 없을 때만 새 토큰/컴포넌트 추가. 화면 파일에 매직 넘버·중복 컴포넌트를 만들지 않는다.
+
+**레이아웃 매핑:**
+| Figma / CSS | Flutter |
+|---|---|
+| 수직 Auto Layout / `flex-direction: column` | `Column` |
+| 수평 Auto Layout / `flex-direction: row` | `Row` |
+| `gap` | `SizedBox(width/height:)` 또는 spacing 토큰 |
+| `padding` | `Padding` |
+| hug contents | 위젯 기본 크기 |
+| fill container | `Expanded` / `Flexible` |
+| `justify-content: center` | `mainAxisAlignment: .center` |
+| `justify-content: space-between` | `mainAxisAlignment: .spaceBetween` |
+| `align-items: center` | `crossAxisAlignment: .center` |
+| `border-radius` | `BorderRadius` |
+| `box-shadow` | `BoxShadow` |
+| absolute positioning / 레이어 오버레이 | `Stack` + `Positioned` — **일반 레이아웃에는 쓰지 않는다.** 실제 겹침(배지, 이미지 오버레이 등)에만 사용 |
+
+**타이포·색상:** `Theme.of(context).textTheme` / 기존 테마 확장을 우선 사용. 기존 스타일과 근접하면 새 `TextStyle`을 만들지 않는다.
+
+**CHOROK-PITCH 색상 변수 매핑** (새 hex 상수 만들기 전에 확인):
+| Figma 변수 | hex | AppTheme |
+|---|---|---|
+| `--색상` | `#141614` | `darkCard` / `context.appCard` |
+| `--색상-2` | `#7b847c` | `textSecondary`/`textTertiary` (동일값) |
+| `--색상-3` | `#8dff54` | `primaryLight` / `context.appPrimaryAccent` |
+| `--색상-4` | `#f1fff2` | `textPrimary` |
+| `--색상-5` | `#222422` | 대응 토큰 없음 — 화면 로컬 const로 선언 |
+
+**반응형:** 특정 디바이스 고정 폭·높이를 하드코딩하지 않는다. `Expanded`/`Flexible`/`MediaQuery`/`LayoutBuilder`/`SafeArea`/`ListView`를 우선 사용하고, 아이콘·아바타·버튼 높이처럼 진짜 고정 크기여야 하는 요소에만 고정값을 쓴다.
+
+**구현 순서:** 화면 구조 파악 → 반복 패턴 식별 → 기존 컴포넌트 재사용 → 부족한 컴포넌트만 추가 → 화면 조립 → `flutter analyze` 실행, 에러 수정 (§8 검증 명령 참조).
+
+**`flutter analyze` 통과 ≠ Figma 일치.** 컴파일 에러만 잡아준다. 색상값 / 폰트 실제 px(`AppTheme.bodySmall`처럼 스타일 이름이 같아도 px가 Figma와 다를 수 있음) / 정렬(Figma 절대좌표가 함의하는 상대 배치 — 예: 텍스트가 이미지 아래쪽에 붙어야 하는지)을 **각각 따로** Figma 원본 수치와 대조한다. 한 카테고리만 보고 다른 카테고리를 놓치기 쉽다.
+
+**금지:** React/HTML/CSS/Tailwind 생성, 전체 화면을 `Stack`/`Positioned`로 구현, 반복 컴포넌트 중복 생성, UI 전체를 이미지로 export.
+
+**픽셀 정확도 vs 유지보수성:** 완전한 픽셀 매칭이 나쁜 Flutter 구조를 요구하면, 트레이드오프를 설명하고 유지보수 가능한 쪽을 선택한다.

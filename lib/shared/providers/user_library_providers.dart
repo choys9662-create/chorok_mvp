@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../features/library/widget/library_calendar_view.dart' show ReadingLog;
+import '../../features/library/widget/library_calendar_view.dart'
+    show ReadingLog;
 import '../models/reading_session.dart';
 import '../repositories/supabase_book_repository.dart';
 
@@ -23,31 +24,30 @@ final userBooksProvider = FutureProvider.family<List<Book>, String>((
 
 /// 특정 사용자의 독서 기록(캘린더/통계용). library_screen의
 /// _fetchSupabaseReadingLogs 로직을 userId로 파라미터화한 버전.
-final userReadingLogsProvider = FutureProvider.family<List<ReadingLog>, String>((
-  ref,
-  userId,
-) async {
-  final client = Supabase.instance.client;
-  final rows = await _fetchReadingLogs(client, userId);
-  return rows.map<ReadingLog>((r) {
-    final book = r['books'] as Map<String, dynamic>?;
-    final secs = (r['duration_seconds'] as num?)?.toInt() ?? 0;
-    final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
-    final title = book?['title'] as String? ?? '알 수 없는 책';
-    return (
-      // UTC로 저장된 시각을 로컬 날짜로 변환해야 캘린더 날짜가 맞는다.
-      date: dateStr != null
-          ? DateTime.parse(dateStr).toLocal()
-          : DateTime.now(),
-      bookTitle: title,
-      bookAuthor: book?['author'] as String? ?? '',
-      minutes: (secs / 60).round(),
-      pages: (r['pages_read'] as num?)?.toInt() ?? 0,
-      coverUrl: book?['cover_url'] as String?,
-      gradientIndex: title.hashCode.abs() % AppTheme.coverGradients.length,
-    );
-  }).toList();
-});
+final userReadingLogsProvider = FutureProvider.family<List<ReadingLog>, String>(
+  (ref, userId) async {
+    final client = Supabase.instance.client;
+    final rows = await _fetchReadingLogs(client, userId);
+    return rows.map<ReadingLog>((r) {
+      final book = r['books'] as Map<String, dynamic>?;
+      final secs = (r['duration_seconds'] as num?)?.toInt() ?? 0;
+      final dateStr = r['ended_at'] as String? ?? r['started_at'] as String?;
+      final title = book?['title'] as String? ?? '알 수 없는 책';
+      return (
+        // UTC로 저장된 시각을 로컬 날짜로 변환해야 캘린더 날짜가 맞는다.
+        date: dateStr != null
+            ? DateTime.parse(dateStr).toLocal()
+            : DateTime.now(),
+        bookTitle: title,
+        bookAuthor: book?['author'] as String? ?? '',
+        minutes: (secs / 60).round(),
+        pages: (r['pages_read'] as num?)?.toInt() ?? 0,
+        coverUrl: book?['cover_url'] as String?,
+        gradientIndex: title.hashCode.abs() % AppTheme.coverGradients.length,
+      );
+    }).toList();
+  },
+);
 
 Future<List<dynamic>> _fetchReadingLogs(
   SupabaseClient client,

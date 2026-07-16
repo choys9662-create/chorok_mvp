@@ -20,8 +20,11 @@ import '../controller/user_search_controller.dart';
 import '../util/add_book_flow.dart';
 import '../model/aladin_book.dart';
 import '../widget/add_to_library_sheet.dart';
+import '../../../shared/widgets/book_cover.dart';
 
 enum _SearchTab { book, author, user }
+
+const _searchErrorMessage = '네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
 
 // ─── 검색 화면 ───────────────────────────────────────────────────────────────
 
@@ -167,7 +170,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return;
     }
 
-    // 이미 서재에 있으면 삭제
+    // 이미 서재에 있으면 삭제 — 파괴적 동작이므로 확인을 거친다.
     final lib = ref.read(libraryProvider);
     final existing = book.isbn13 != null && book.isbn13!.isNotEmpty
         ? lib.where((b) => b.isbn == book.isbn13).firstOrNull
@@ -175,6 +178,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               .where((b) => b.title == book.title && b.author == book.author)
               .firstOrNull;
     if (existing != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('서재에서 제거'),
+          content: Text(
+            '\'${book.title}\'을(를) 서재에서 제거할까요?\n기록된 독서 데이터도 함께 삭제됩니다.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('제거'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
       ref.read(libraryProvider.notifier).deleteBook(existing.id);
       if (!mounted) return;
       HapticFeedback.mediumImpact();
@@ -374,8 +398,8 @@ class _BookResultArea extends ConsumerWidget {
     final state = ref.watch(bookSearchProvider);
     return state.when(
       loading: () => const _ShimmerList(),
-      error: (error, _) => _ErrorView(
-        message: error.toString().replaceFirst('Exception: ', ''),
+      error: (_, _) => _ErrorView(
+        message: _searchErrorMessage,
         onRetry: () => ref.read(bookSearchProvider.notifier).search(query),
       ),
       data: (books) {
@@ -400,8 +424,8 @@ class _UserResultArea extends ConsumerWidget {
     final state = ref.watch(userSearchProvider);
     return state.when(
       loading: () => const _ShimmerList(),
-      error: (error, _) => _ErrorView(
-        message: error.toString().replaceFirst('Exception: ', ''),
+      error: (_, _) => _ErrorView(
+        message: _searchErrorMessage,
         onRetry: () =>
             ref.read(userSearchProvider.notifier).search(query, scope: scope),
       ),
@@ -1016,6 +1040,7 @@ class _CoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final url = normalizedCoverUrl(coverUrl);
     return Container(
       width: 72,
       height: 104,
@@ -1023,17 +1048,14 @@ class _CoverImage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            context.appPrimaryAccent,
-            context.appAccentColor,
-          ],
+          colors: [context.appPrimaryAccent, context.appAccentColor],
         ),
         radius: AppTheme.radiusSM,
       ),
       clipBehavior: Clip.antiAlias,
-      child: coverUrl != null && coverUrl!.isNotEmpty
+      child: url != null && url.isNotEmpty
           ? Image.network(
-              coverUrl!,
+              url,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => _PlaceholderCover(title: title),
             )

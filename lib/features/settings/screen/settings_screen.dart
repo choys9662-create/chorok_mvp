@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -185,24 +185,27 @@ class SettingsScreen extends ConsumerWidget {
           _GoalSection(),
           const SizedBox(height: AppTheme.space2XL),
 
-          // ─── 알림 ──────────────────────────────────────────────────
-          _SectionLabel('알림'),
-          _NotifSection(),
-          const SizedBox(height: AppTheme.space2XL),
+          // 로컬 알림 스케줄링이 붙기 전까지 실사용 앱에서는 가짜 토글을 숨긴다.
+          if (kUseMock) ...[
+            _SectionLabel('알림'),
+            _NotifSection(),
+            const SizedBox(height: AppTheme.space2XL),
+          ],
 
           // ─── 앱 정보 ───────────────────────────────────────────────
           _SectionLabel('앱 정보'),
           _SettingsCard(
             children: [
-              _InfoTile(
-                icon: Icons.emoji_events_outlined,
-                label: '성취 & 뱃지',
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.push(AppConstants.routeAchievements);
-                },
-                trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-              ),
+              if (kUseMock)
+                _InfoTile(
+                  icon: Icons.emoji_events_outlined,
+                  label: '성취 & 뱃지',
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    context.push(AppConstants.routeAchievements);
+                  },
+                  trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                ),
 
               _InfoTile(
                 icon: Icons.info_outline_rounded,
@@ -800,80 +803,120 @@ void _showDeleteAccountConfirm(BuildContext context) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.appBorder,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              '탈퇴하기',
-              style: AppTheme.headingSmall.copyWith(
-                color: const Color(0xFFFF4F4F),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '계정과 모든 독서 기록·초서·소셜 활동이 영구적으로 삭제돼요.\n이 작업은 되돌릴 수 없어요.',
-              style: AppTheme.captionLarge.copyWith(
-                color: Theme.of(ctx).textTheme.bodySmall?.color,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Row(
+    builder: (ctx) {
+      var isDeleting = false;
+      String? errorMessage;
+      return StatefulBuilder(
+        builder: (ctx, setModalState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: AppTheme.smoothShape(radius: 10),
-                    ),
-                    child: const Text('취소'),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.appBorder,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      try {
-                        await ProfileRepository(
-                          Supabase.instance.client,
-                        ).deleteAccount();
-                      } catch (_) {
-                        // 삭제 실패해도 아래에서 로그아웃은 시도한다
-                      }
-                      try {
-                        await Supabase.instance.client.auth.signOut();
-                      } catch (_) {}
-                      // GoRouter refreshListenable이 signOut을 감지해서 /auth로 리다이렉트
-                    },
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF4F4F),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: AppTheme.smoothShape(radius: 10),
-                    ),
-                    child: const Text('영구 삭제'),
+                const SizedBox(height: 20),
+                Text(
+                  '탈퇴하기',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: const Color(0xFFFF4F4F),
+                    fontWeight: FontWeight.w400,
                   ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '계정과 모든 독서 기록·초서·소셜 활동이 영구적으로 삭제돼요.\n이 작업은 되돌릴 수 없어요.',
+                  style: AppTheme.captionLarge.copyWith(
+                    color: Theme.of(ctx).textTheme.bodySmall?.color,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    errorMessage!,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: const Color(0xFFFF4F4F),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: AppTheme.smoothShape(radius: 10),
+                        ),
+                        child: const Text('취소'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: isDeleting
+                            ? null
+                            : () async {
+                                setModalState(() => isDeleting = true);
+                                try {
+                                  await ProfileRepository(
+                                    Supabase.instance.client,
+                                  ).deleteAccount();
+                                } catch (error, stackTrace) {
+                                  debugPrint('[계정 삭제 오류] $error\n$stackTrace');
+                                  if (ctx.mounted) {
+                                    setModalState(() {
+                                      isDeleting = false;
+                                      errorMessage =
+                                          '계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.';
+                                    });
+                                  }
+                                  return;
+                                }
+
+                                try {
+                                  await Supabase.instance.client.auth.signOut();
+                                } catch (error, stackTrace) {
+                                  debugPrint(
+                                    '[계정 삭제 후 로그아웃 오류] $error\n$stackTrace',
+                                  );
+                                }
+                                if (ctx.mounted) Navigator.pop(ctx);
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF4F4F),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: AppTheme.smoothShape(radius: 10),
+                        ),
+                        child: isDeleting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('영구 삭제'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 

@@ -53,6 +53,7 @@ class RecommendedBooksSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 28),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -83,10 +84,11 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
             : LaunchMode.externalApplication,
       );
     } on AuthException catch (e) {
-      _showError(e.message);
+      debugPrint('[Google 로그인 오류] ${e.message}');
+      _showError('Google 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } catch (e) {
       debugPrint('[Google로그인 오류] $e');
-      _showError('Google 로그인 실패\n${e.toString()}');
+      _showError('Google 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       if (!kIsWeb) _setLoading(false);
     }
@@ -103,10 +105,11 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
         redirectTo: kIsWeb ? Uri.base.origin : _authRedirectUri,
       );
     } on AuthException catch (e) {
-      _showError(e.message);
+      debugPrint('[네이버 로그인 오류] ${e.message}');
+      _showError('네이버 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } catch (e) {
       debugPrint('[네이버로그인 오류] $e');
-      _showError('네이버 로그인 실패\n${e.toString()}');
+      _showError('네이버 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       if (!kIsWeb) _setLoading(false);
     }
@@ -155,11 +158,14 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
       if (mounted) context.go(AppConstants.routeHome);
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code != AuthorizationErrorCode.canceled) {
-        _showError('Apple 로그인에 실패했어요: ${e.message}');
+        debugPrint('[Apple 로그인 오류] ${e.code}: ${e.message}');
+        _showError('Apple 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
       }
     } on AuthException catch (e) {
-      _showError(e.message);
+      debugPrint('[Apple 로그인 오류] ${e.message}');
+      _showError('Apple 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } catch (e) {
+      debugPrint('[Apple 로그인 오류] $e');
       _showError('Apple 로그인 중 오류가 발생했어요.');
     } finally {
       if (!kIsWeb) _setLoading(false);
@@ -210,13 +216,19 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                       icon: _naverIcon,
                       label: '네이버로 계속하기',
                     ),
-                    const SizedBox(height: 12),
-                    _SocialButton(
-                      onTap: _loading ? null : _signInWithApple,
-                      icon: _appleIcon,
-                      label: 'Apple로 계속하기',
-                      dark: true,
-                    ),
+                    // iOS 네이티브는 Runner.entitlements에 Sign in with Apple이
+                    // 아직 프로비저닝되지 않아 항상 실패한다(유료 Apple Developer
+                    // Program 가입 전까지). 웹 OAuth 경로는 entitlement가 필요
+                    // 없으므로 그대로 노출한다.
+                    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) ...[
+                      const SizedBox(height: 12),
+                      _SocialButton(
+                        onTap: _loading ? null : _signInWithApple,
+                        icon: _appleIcon,
+                        label: 'Apple로 계속하기',
+                        dark: true,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -224,14 +236,64 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
               // ── 약관 동의 안내 (소셜 로그인으로 가입·로그인 시 간주) ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  '계속하면 이용약관 및 개인정보처리방침에\n동의하는 것으로 간주됩니다.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.5,
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    Text(
+                      '계속하면 ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse('https://chorok-web.web.app/terms.html'),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Text(
+                        '이용약관',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      ' 및 ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => launchUrl(
+                        Uri.parse('https://chorok-web.web.app/privacy.html'),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      child: Text(
+                        '개인정보처리방침',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '에\n동의하는 것으로 간주됩니다.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.5,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),

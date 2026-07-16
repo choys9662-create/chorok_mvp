@@ -6,19 +6,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/models/reading_session.dart';
-import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/book_genre.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
+
+// ponytail: 디자인 레퍼런스 고정값 — 분류기에 없는 라벨(철학/시/종교)이라 책 목록에서
+// 유도하지 않고 직접 지정. 책이 늘어도 이 화면 값은 안 바뀐다.
+const _kMockGenreReadingTimes = [
+  (label: '문학', hours: 14.5),
+  (label: '철학', hours: 4 + 20 / 60),
+  (label: '시', hours: 2 + 10 / 60),
+  (label: '역사', hours: 1 + 40 / 60),
+  (label: '종교', hours: 50 / 60),
+];
 
 final genreReadingTimesProvider =
     FutureProvider.autoDispose<List<({String label, double hours})>>((
       ref,
     ) async {
       if (kUseMock) {
-        return _buildGenreReadingTimesFromBooks(ref.watch(libraryProvider));
+        return _kMockGenreReadingTimes;
       }
 
       final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -56,21 +64,6 @@ Future<List<({String label, double hours})>> _loadGenreReadingTimesFromSupabase(
       byGenre.entries
           .map((e) => (label: e.key, hours: e.value / 3600.0))
           .toList()
-        ..sort((a, b) => b.hours.compareTo(a.hours));
-  return list;
-}
-
-List<({String label, double hours})> _buildGenreReadingTimesFromBooks(
-  List<Book> books,
-) {
-  final byGenre = <String, double>{};
-  for (final book in books) {
-    if (book.totalReadingHours <= 0) continue;
-    final genre = _genreLabel(book.genre, fallbackTitle: book.title);
-    byGenre[genre] = (byGenre[genre] ?? 0) + book.totalReadingHours;
-  }
-  final list =
-      byGenre.entries.map((e) => (label: e.key, hours: e.value)).toList()
         ..sort((a, b) => b.hours.compareTo(a.hours));
   return list;
 }
@@ -211,8 +204,7 @@ class _EmbeddedGenreMosaic extends StatelessWidget {
     const minSharePercent = 3;
     var visible = sorted
         .where(
-          (i) =>
-              (i.hours * 60).round() * 100 >= totalMinutes * minSharePercent,
+          (i) => (i.hours * 60).round() * 100 >= totalMinutes * minSharePercent,
         )
         .take(5)
         .toList();

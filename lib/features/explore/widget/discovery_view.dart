@@ -7,6 +7,7 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../home/controller/recommended_books_provider.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/discovery_provider.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 /// 검색 탭에서 검색어가 비어 있을 때 보여주는 디스커버리 랜딩.
 /// 인기 책 · 인기 작가 · 맞춤 추천 책 세 섹션으로 구성된다.
@@ -99,7 +100,10 @@ class DiscoveryView extends ConsumerWidget {
     HapticFeedback.selectionClick();
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: context.appSurface,
+      backgroundColor: context.appCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: ConstrainedBox(
@@ -176,43 +180,51 @@ class DiscoveryView extends ConsumerWidget {
       );
     }
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.only(top: 4, bottom: 40),
-      children: [
-        if (books.isNotEmpty) ...[
-          _SectionHeader(
-            title: '지금 가장 많이 검색되는 책',
-            onTap: () => _showPopularBooks(context, books),
-          ),
-          const SizedBox(height: 12),
-          _PopularBooksRow(books: books, onTap: onBookNavigate),
-          const SizedBox(height: 28),
+    return ChorokRefresh(
+      onRefresh: () async {
+        ref.invalidate(popularBooksProvider);
+        ref.invalidate(popularAuthorsProvider);
+        ref.invalidate(recommendedBooksProvider);
+        await ref.read(popularBooksProvider.future);
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.only(top: 4, bottom: 40),
+        children: [
+          if (books.isNotEmpty) ...[
+            _SectionHeader(
+              title: '지금 가장 많이 검색되는 책',
+              onTap: () => _showPopularBooks(context, books),
+            ),
+            const SizedBox(height: 12),
+            _PopularBooksRow(books: books, onTap: onBookNavigate),
+            const SizedBox(height: 28),
+          ],
+          if (authors.isNotEmpty) ...[
+            _SectionHeader(
+              title: '지금 가장 많이 검색되는 작가',
+              onTap: () => _showPopularAuthors(context, authors),
+            ),
+            const SizedBox(height: 12),
+            _PopularAuthorsCard(
+              authors: authors,
+              onTap: onAuthorTap,
+              onMoreTap: () => _showPopularAuthors(context, authors),
+            ),
+            const SizedBox(height: 28),
+          ],
+          if (recs.isNotEmpty) ...[
+            _SectionHeader(
+              title: recommendationTitle,
+              onTap: () =>
+                  _showRecommendations(context, recommendationTitle, recs),
+            ),
+            const SizedBox(height: 12),
+            _RecommendedGrid(books: recs, onTap: onTitleTap),
+          ],
         ],
-        if (authors.isNotEmpty) ...[
-          _SectionHeader(
-            title: '지금 가장 많이 검색되는 작가',
-            onTap: () => _showPopularAuthors(context, authors),
-          ),
-          const SizedBox(height: 12),
-          _PopularAuthorsCard(
-            authors: authors,
-            onTap: onAuthorTap,
-            onMoreTap: () => _showPopularAuthors(context, authors),
-          ),
-          const SizedBox(height: 28),
-        ],
-        if (recs.isNotEmpty) ...[
-          _SectionHeader(
-            title: recommendationTitle,
-            onTap: () =>
-                _showRecommendations(context, recommendationTitle, recs),
-          ),
-          const SizedBox(height: 12),
-          _RecommendedGrid(books: recs, onTap: onTitleTap),
-        ],
-      ],
+      ),
     );
   }
 }

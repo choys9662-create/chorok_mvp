@@ -74,7 +74,8 @@ class ModerationRepository {
         .order('created_at', ascending: false);
     return (rows as List)
         .map(
-          (r) => (r as Map<String, dynamic>)['profiles'] as Map<String, dynamic>?,
+          (r) =>
+              (r as Map<String, dynamic>)['profiles'] as Map<String, dynamic>?,
         )
         .whereType<Map<String, dynamic>>()
         .map(UserProfile.fromRow)

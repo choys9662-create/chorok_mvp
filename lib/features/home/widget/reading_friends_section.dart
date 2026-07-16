@@ -47,6 +47,7 @@ class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 30),
             if (visibleFriends.isNotEmpty) ...[
               _Header(title: '읽고 있는 친구', count: totalFriends),
               const SizedBox(height: 12),

@@ -138,6 +138,15 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
             memorableLine: _lineCtrl.text,
             legacy: _legacyCtrl.text,
           );
+    } catch (error, stackTrace) {
+      debugPrint('[독서 회고 저장 오류] $error\n$stackTrace');
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      context.go(AppConstants.routeHome);
+      return;
+    }
+
+    try {
       await ref
           .read(supabaseBookRepositoryProvider)
           .saveReview(
@@ -146,8 +155,8 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
             memorableLine: _lineCtrl.text,
             legacy: _legacyCtrl.text,
           );
-    } catch (_) {
-      // 저장 실패해도 홈으로 이동
+    } catch (error, stackTrace) {
+      debugPrint('[공개 리뷰 저장 오류] $error\n$stackTrace');
     }
 
     if (!mounted) return;

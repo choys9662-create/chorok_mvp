@@ -44,39 +44,52 @@ class FollowRepository {
 
   String? get _meId => _client.auth.currentUser?.id;
 
-  /// 팔로우 시도. 공개 계정이면 accepted, 비공개 계정이면 pending.
-  /// 반환값은 결과 상태.
+  /// 팔로우 시도. 공개 계정이면 accepted, 비공개 계정이면 pending으로 서버가 결정한다
+  /// (follows_enforce_status 트리거). 클라이언트가 보내는 status 값은 무시된다 —
+  /// 여기서 어떤 값을 넣든 서버가 대상의 is_private를 직접 읽어 덮어쓴다.
+  /// 반환값은 서버가 실제로 저장한 상태.
   Future<FollowState> follow(String targetUserId) async {
     final me = _meId;
     if (me == null || me == targetUserId) return FollowState.none;
-
-    var isPrivate = false;
-    try {
-      final targetRow = await _client
-          .from('profiles')
-          .select('is_private')
-          .eq('id', targetUserId)
-          .maybeSingle();
-      isPrivate = targetRow?['is_private'] as bool? ?? false;
-    } catch (_) {
-      isPrivate = false;
-    }
-    final status = isPrivate ? 'pending' : 'accepted';
 
     final existing = await followStatus(targetUserId);
     if (existing != FollowState.none) return existing;
 
     try {
-      await _client.from('follows').insert({
-        'follower_id': me,
-        'following_id': targetUserId,
-        'status': status,
-      });
+      final row = await _client
+          .from('follows')
+          .insert({'follower_id': me, 'following_id': targetUserId})
+          .select('status')
+          .single();
+      return (row['status'] as String?) == 'pending'
+          ? FollowState.pending
+          : FollowState.accepted;
     } on PostgrestException catch (error) {
       if (error.code != '23505') rethrow;
       return followStatus(targetUserId);
     }
-    return isPrivate ? FollowState.pending : FollowState.accepted;
+  }
+
+  /// 나에게 온 팔로우 요청(pending)을 승인한다. 대상(following_id)이 나인 행만 허용.
+  Future<void> acceptFollowRequest(String requesterId) async {
+    final me = _meId;
+    if (me == null) return;
+    await _client
+        .from('follows')
+        .update({'status': 'accepted'})
+        .eq('follower_id', requesterId)
+        .eq('following_id', me);
+  }
+
+  /// 나에게 온 팔로우 요청(pending)을 거절한다.
+  Future<void> rejectFollowRequest(String requesterId) async {
+    final me = _meId;
+    if (me == null) return;
+    await _client
+        .from('follows')
+        .delete()
+        .eq('follower_id', requesterId)
+        .eq('following_id', me);
   }
 
   Future<void> unfollow(String targetUserId) async {

@@ -12,7 +12,7 @@ String localizeAuthError(String msg) {
   if (lower.contains('user already registered')) return '이미 가입된 이메일이에요.';
   if (lower.contains('password should be')) return '비밀번호는 6자 이상이어야 해요.';
   if (lower.contains('network')) return '네트워크 연결을 확인해주세요.';
-  return msg;
+  return '로그인 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.';
 }
 
 /// 인증 화면 전용 에러 스낵바 — 다크 테마 고정 (인증 화면이 다크-only)

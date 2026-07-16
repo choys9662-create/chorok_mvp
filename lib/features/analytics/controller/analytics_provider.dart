@@ -265,293 +265,301 @@ Future<AnalyticsState> _analyticsFromSupabase(
   String userId, {
   required bool includeSocial,
 }) async {
-    final client = Supabase.instance.client;
+  final client = Supabase.instance.client;
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final weekday = today.weekday;
-    final weekStart = today.subtract(Duration(days: weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 7));
-    final prevWeekStart = weekStart.subtract(const Duration(days: 7));
-    final monthStart = DateTime(now.year, now.month, 1);
-    final nextMonthStart = now.month == 12
-        ? DateTime(now.year + 1, 1, 1)
-        : DateTime(now.year, now.month + 1, 1);
-    final prevMonthStart = now.month == 1
-        ? DateTime(now.year - 1, 12, 1)
-        : DateTime(now.year, now.month - 1, 1);
-    final monthTotalDays = nextMonthStart.subtract(const Duration(days: 1)).day;
-    final yearStart = DateTime(now.year, 1, 1);
-    final yearEnd = DateTime(now.year + 1, 1, 1);
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final weekday = today.weekday;
+  final weekStart = today.subtract(Duration(days: weekday - 1));
+  final weekEnd = weekStart.add(const Duration(days: 7));
+  final prevWeekStart = weekStart.subtract(const Duration(days: 7));
+  final monthStart = DateTime(now.year, now.month, 1);
+  final nextMonthStart = now.month == 12
+      ? DateTime(now.year + 1, 1, 1)
+      : DateTime(now.year, now.month + 1, 1);
+  final prevMonthStart = now.month == 1
+      ? DateTime(now.year - 1, 12, 1)
+      : DateTime(now.year, now.month - 1, 1);
+  final monthTotalDays = nextMonthStart.subtract(const Duration(days: 1)).day;
+  final yearStart = DateTime(now.year, 1, 1);
+  final yearEnd = DateTime(now.year + 1, 1, 1);
 
-    // 연 단위로 한 번에 로드 후 메모리에서 필터링 (3개 쿼리 병렬)
-    final results = await Future.wait([
-      client
-          .from('reading_sessions')
-          .select(
-            'started_at, ended_at, duration_seconds, sentence_count, books(title, author)',
-          )
-          .eq('user_id', userId)
-          .gte('ended_at', yearStart.toIso8601String())
-          .lt('ended_at', yearEnd.toIso8601String())
-          .order('ended_at', ascending: false),
-      client
-          .from('sentences')
-          .select('created_at, content, books(title, author)')
-          .eq('user_id', userId)
-          .gte('created_at', yearStart.toIso8601String())
-          .lt('created_at', yearEnd.toIso8601String())
-          .order('created_at', ascending: false),
-      client
-          .from('books')
-          .select('id, title, author, total_pages, updated_at')
-          .eq('user_id', userId)
-          .eq('status', 'completed')
-          .order('updated_at', ascending: false),
-    ]);
-    final sessionsRes = results[0];
-    final sentencesRes = results[1];
-    final completedBooksRes = results[2];
+  // 연 단위로 한 번에 로드 후 메모리에서 필터링 (3개 쿼리 병렬)
+  final results = await Future.wait([
+    client
+        .from('reading_sessions')
+        .select(
+          'started_at, ended_at, duration_seconds, sentence_count, books(title, author)',
+        )
+        .eq('user_id', userId)
+        .gte('ended_at', yearStart.toUtc().toIso8601String())
+        .lt('ended_at', yearEnd.toUtc().toIso8601String())
+        .order('ended_at', ascending: false),
+    client
+        .from('sentences')
+        .select('created_at, content, books(title, author)')
+        .eq('user_id', userId)
+        .gte('created_at', yearStart.toUtc().toIso8601String())
+        .lt('created_at', yearEnd.toUtc().toIso8601String())
+        .order('created_at', ascending: false),
+    client
+        .from('books')
+        .select('id, title, author, total_pages, updated_at')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .order('updated_at', ascending: false),
+  ]);
+  final sessionsRes = results[0];
+  final sentencesRes = results[1];
+  final completedBooksRes = results[2];
 
-    // Supabase rows → 공통 _Sess 타입으로 변환
-    List<_Sess> rowsToSess(List rows) {
-      return rows.map((r) {
-        final map = r as Map<String, dynamic>;
-        final dateStr =
-            map['ended_at'] as String? ??
-            map['started_at'] as String? ??
-            now.toIso8601String();
-        final book = map['books'] as Map<String, dynamic>?;
-        return (
-          date: DateTime.tryParse(dateStr) ?? now,
-          durationSeconds: (map['duration_seconds'] as num?)?.toInt() ?? 0,
-          sentenceCount: (map['sentence_count'] as num?)?.toInt() ?? 0,
-          bookTitle: book?['title'] as String? ?? '',
-          bookAuthor: book?['author'] as String? ?? '',
-        );
-      }).toList();
-    }
-
-    final allSess = rowsToSess(sessionsRes as List);
-
-    bool inRange(DateTime d, DateTime from, DateTime to) =>
-        !d.isBefore(from) && d.isBefore(to);
-
-    final weekSess = allSess
-        .where((s) => inRange(s.date, weekStart, weekEnd))
-        .toList();
-    final prevWeekSess = allSess
-        .where((s) => inRange(s.date, prevWeekStart, weekStart))
-        .toList();
-    final monthSess = allSess
-        .where((s) => inRange(s.date, monthStart, nextMonthStart))
-        .toList();
-    final prevMonthSess = allSess
-        .where((s) => inRange(s.date, prevMonthStart, monthStart))
-        .toList();
-
-    // Sentences (choseo equivalent)
-    List<IsarChoseo> rowsToChoseo(List rows) {
-      return rows.map((r) {
-        final map = r as Map<String, dynamic>;
-        final book = map['books'] as Map<String, dynamic>?;
-        return IsarChoseo(
-          choseoId: map['id'] as String? ?? '',
-          bookId: map['book_id'] as String? ?? '',
-          bookTitle: book?['title'] as String? ?? '',
-          bookAuthor: book?['author'] as String? ?? '',
-          content: map['content'] as String? ?? '',
-          createdAt:
-              DateTime.tryParse(map['created_at'] as String? ?? '') ?? now,
-        );
-      }).toList();
-    }
-
-    final allChoseo = rowsToChoseo(sentencesRes as List);
-    final weekChoseo = allChoseo
-        .where((c) => inRange(c.createdAt, weekStart, weekEnd))
-        .toList();
-    final monthChoseo = allChoseo
-        .where((c) => inRange(c.createdAt, monthStart, nextMonthStart))
-        .toList();
-    final yearChoseo = allChoseo; // already filtered to year
-
-    // 히트맵 계산
-    final heatmap = <DateTime, int>{};
-    for (final s in allSess) {
-      final day = DateTime(s.date.year, s.date.month, s.date.day);
-      heatmap[day] = (heatmap[day] ?? 0) + s.durationSeconds ~/ 60;
-    }
-
-    // 월별 분 계산
-    final yearMonthlyMinutes = List<int>.filled(12, 0);
-    for (final s in allSess) {
-      yearMonthlyMinutes[s.date.month - 1] += s.durationSeconds ~/ 60;
-    }
-
-    // 완독 책
-    final completedBooks = (completedBooksRes as List).map((r) {
+  // Supabase rows → 공통 _Sess 타입으로 변환
+  List<_Sess> rowsToSess(List rows) {
+    return rows.map((r) {
       final map = r as Map<String, dynamic>;
-      return IsarBook(
-        bookId: map['id'] as String? ?? '',
-        title: map['title'] as String? ?? '',
-        author: map['author'] as String? ?? '',
-        currentPage: 0,
-        totalPages: (map['total_pages'] as num?)?.toInt() ?? 0,
-        status: IsarReadingStatus.completed,
-        createdAt: DateTime.now(),
-        updatedAt:
-            DateTime.tryParse(map['updated_at'] as String? ?? '') ??
-            DateTime.now(),
+      final dateStr =
+          map['ended_at'] as String? ??
+          map['started_at'] as String? ??
+          now.toIso8601String();
+      final book = map['books'] as Map<String, dynamic>?;
+      return (
+        // timestamptz 는 UTC 로 파싱된다. weekday·hour 를 로컬 기준으로 읽으려면 변환이 필요하다.
+        date: (DateTime.tryParse(dateStr) ?? now).toLocal(),
+        durationSeconds: (map['duration_seconds'] as num?)?.toInt() ?? 0,
+        sentenceCount: (map['sentence_count'] as num?)?.toInt() ?? 0,
+        bookTitle: book?['title'] as String? ?? '',
+        bookAuthor: book?['author'] as String? ?? '',
       );
     }).toList();
+  }
 
-    // Week 집계
-    final wStats = _computeSessStats(weekSess);
-    final prevWeekTotal = prevWeekSess.fold(0, (s, r) => s + r.durationSeconds);
-    final wFocus = weekSess.isEmpty
-        ? 0
-        : (weekSess.fold(0, (s, r) => s + r.sentenceCount) /
-                  weekSess.length *
-                  10)
-              .round()
-              .clamp(40, 100);
+  final allSess = rowsToSess(sessionsRes as List);
 
-    // Month 집계
-    final mStats = _computeSessStats(monthSess);
-    final prevMonthTotal = prevMonthSess.fold(
-      0,
-      (s, r) => s + r.durationSeconds,
+  bool inRange(DateTime d, DateTime from, DateTime to) =>
+      !d.isBefore(from) && d.isBefore(to);
+
+  final weekSess = allSess
+      .where((s) => inRange(s.date, weekStart, weekEnd))
+      .toList();
+  final prevWeekSess = allSess
+      .where((s) => inRange(s.date, prevWeekStart, weekStart))
+      .toList();
+  final monthSess = allSess
+      .where((s) => inRange(s.date, monthStart, nextMonthStart))
+      .toList();
+  final prevMonthSess = allSess
+      .where((s) => inRange(s.date, prevMonthStart, monthStart))
+      .toList();
+
+  // Sentences (choseo equivalent)
+  List<IsarChoseo> rowsToChoseo(List rows) {
+    return rows.map((r) {
+      final map = r as Map<String, dynamic>;
+      final book = map['books'] as Map<String, dynamic>?;
+      return IsarChoseo(
+        choseoId: map['id'] as String? ?? '',
+        bookId: map['book_id'] as String? ?? '',
+        bookTitle: book?['title'] as String? ?? '',
+        bookAuthor: book?['author'] as String? ?? '',
+        content: map['content'] as String? ?? '',
+        createdAt: DateTime.tryParse(map['created_at'] as String? ?? '') ?? now,
+      );
+    }).toList();
+  }
+
+  final allChoseo = rowsToChoseo(sentencesRes as List);
+  final weekChoseo = allChoseo
+      .where((c) => inRange(c.createdAt, weekStart, weekEnd))
+      .toList();
+  final monthChoseo = allChoseo
+      .where((c) => inRange(c.createdAt, monthStart, nextMonthStart))
+      .toList();
+  final yearChoseo = allChoseo; // already filtered to year
+
+  // 히트맵 계산
+  final heatmap = <DateTime, int>{};
+  for (final s in allSess) {
+    final day = DateTime(s.date.year, s.date.month, s.date.day);
+    heatmap[day] = (heatmap[day] ?? 0) + s.durationSeconds ~/ 60;
+  }
+
+  // 월별 분 계산
+  final yearMonthlyMinutes = List<int>.filled(12, 0);
+  for (final s in allSess) {
+    yearMonthlyMinutes[s.date.month - 1] += s.durationSeconds ~/ 60;
+  }
+
+  // 완독 책
+  final completedBooks = (completedBooksRes as List).map((r) {
+    final map = r as Map<String, dynamic>;
+    return IsarBook(
+      bookId: map['id'] as String? ?? '',
+      title: map['title'] as String? ?? '',
+      author: map['author'] as String? ?? '',
+      currentPage: 0,
+      totalPages: (map['total_pages'] as num?)?.toInt() ?? 0,
+      status: IsarReadingStatus.completed,
+      createdAt: DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+          DateTime.now(),
     );
-    final mFocus = monthSess.isEmpty
-        ? 0
-        : (monthSess.fold(0, (s, r) => s + r.sentenceCount) /
-                  monthSess.length *
-                  10)
-              .round()
-              .clamp(40, 100);
+  }).toList();
 
-    int maxStreak = 0, curStreak = 0;
-    for (int d = 1; d <= monthTotalDays; d++) {
-      if (heatmap.containsKey(DateTime(now.year, now.month, d))) {
-        curStreak++;
-        if (curStreak > maxStreak) maxStreak = curStreak;
+  // Week 집계
+  final wStats = _computeSessStats(weekSess);
+  final prevWeekTotal = prevWeekSess.fold(0, (s, r) => s + r.durationSeconds);
+  final wFocus = weekSess.isEmpty
+      ? 0
+      : (weekSess.fold(0, (s, r) => s + r.sentenceCount) / weekSess.length * 10)
+            .round()
+            .clamp(40, 100);
+
+  // Month 집계
+  final mStats = _computeSessStats(monthSess);
+  final prevMonthTotal = prevMonthSess.fold(0, (s, r) => s + r.durationSeconds);
+  final mFocus = monthSess.isEmpty
+      ? 0
+      : (monthSess.fold(0, (s, r) => s + r.sentenceCount) /
+                monthSess.length *
+                10)
+            .round()
+            .clamp(40, 100);
+
+  int maxStreak = 0, curStreak = 0;
+  for (int d = 1; d <= monthTotalDays; d++) {
+    if (heatmap.containsKey(DateTime(now.year, now.month, d))) {
+      curStreak++;
+      if (curStreak > maxStreak) maxStreak = curStreak;
+    } else {
+      curStreak = 0;
+    }
+  }
+
+  // Year 집계
+  final yearTotal = allSess.fold(0, (s, r) => s + r.durationSeconds);
+  final yearDaySet = <String>{};
+  for (final s in allSess) {
+    yearDaySet.add('${s.date.year}-${s.date.month}-${s.date.day}');
+  }
+  final yFocus = allSess.isEmpty
+      ? 0
+      : (allSess.fold(0, (s, r) => s + r.sentenceCount) / allSess.length * 10)
+            .round()
+            .clamp(40, 100);
+  final yStats = _computeSessStats(allSess);
+
+  // Year max streak
+  int yearMaxStreak = 0, yearCurStreak = 0;
+  for (int m = 1; m <= 12; m++) {
+    final daysInMonth = DateTime(now.year, m + 1, 0).day;
+    for (int d = 1; d <= daysInMonth; d++) {
+      if (heatmap.containsKey(DateTime(now.year, m, d))) {
+        yearCurStreak++;
+        if (yearCurStreak > yearMaxStreak) yearMaxStreak = yearCurStreak;
       } else {
-        curStreak = 0;
+        yearCurStreak = 0;
       }
     }
+  }
 
-    // Year 집계
-    final yearTotal = allSess.fold(0, (s, r) => s + r.durationSeconds);
-    final yearDaySet = <String>{};
-    for (final s in allSess) {
-      yearDaySet.add('${s.date.year}-${s.date.month}-${s.date.day}');
-    }
-    final yFocus = allSess.isEmpty
-        ? 0
-        : (allSess.fold(0, (s, r) => s + r.sentenceCount) /
-                  allSess.length *
-                  10)
-              .round()
-              .clamp(40, 100);
-    final yStats = _computeSessStats(allSess);
+  // Genre distribution (Supabase 경로에서는 genre 미지원 — 빈 맵)
+  final genreDistribution = <String, int>{};
 
-    // Year max streak
-    int yearMaxStreak = 0, yearCurStreak = 0;
-    for (int m = 1; m <= 12; m++) {
-      final daysInMonth = DateTime(now.year, m + 1, 0).day;
-      for (int d = 1; d <= daysInMonth; d++) {
-        if (heatmap.containsKey(DateTime(now.year, m, d))) {
-          yearCurStreak++;
-          if (yearCurStreak > yearMaxStreak) yearMaxStreak = yearCurStreak;
-        } else {
-          yearCurStreak = 0;
-        }
-      }
-    }
+  // 소셜 데이터 — 좋아요 수 + 커뮤니티 하이라이트 (내 통계 전용)
+  List<SocialSentenceEntry> toSocial(List<Map<String, dynamic>> rows) => rows
+      .map(
+        (r) => (
+          content: r['content'] as String,
+          bookTitle: r['book_title'] as String,
+          bookAuthor: r['book_author'] as String,
+          likeCount: r['like_count'] as int,
+        ),
+      )
+      .toList();
 
-    // Genre distribution (Supabase 경로에서는 genre 미지원 — 빈 맵)
-    final genreDistribution = <String, int>{};
+  final db = ref.read(dbServiceProvider);
+  final socialResults = includeSocial
+      ? await Future.wait([
+          db
+              .fetchMySentencesWithLikes(from: weekStart, to: weekEnd)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          db
+              .fetchCommunityHighlights(from: weekStart, to: weekEnd)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          db
+              .fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          db
+              .fetchCommunityHighlights(from: monthStart, to: nextMonthStart)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          db
+              .fetchMySentencesWithLikes(from: yearStart, to: yearEnd)
+              .catchError((_) => <Map<String, dynamic>>[]),
+          db
+              .fetchCommunityHighlights(from: yearStart, to: yearEnd)
+              .catchError((_) => <Map<String, dynamic>>[]),
+        ])
+      : const <List<Map<String, dynamic>>>[[], [], [], [], [], []];
 
-    // 소셜 데이터 — 좋아요 수 + 커뮤니티 하이라이트 (내 통계 전용)
-    List<SocialSentenceEntry> toSocial(List<Map<String, dynamic>> rows) =>
-        rows.map((r) => (
-              content: r['content'] as String,
-              bookTitle: r['book_title'] as String,
-              bookAuthor: r['book_author'] as String,
-              likeCount: r['like_count'] as int,
-            )).toList();
+  final wRadar = _radar(
+    totalSeconds: wStats.totalSeconds,
+    choseoCount: weekChoseo.length,
+    focusScore: wFocus,
+    completedCount: completedBooks.length,
+    readDays: wStats.readDays,
+  );
 
-    final db = ref.read(dbServiceProvider);
-    final socialResults = includeSocial
-        ? await Future.wait([
-            db.fetchMySentencesWithLikes(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
-            db.fetchCommunityHighlights(from: weekStart, to: weekEnd).catchError((_) => <Map<String, dynamic>>[]),
-            db.fetchMySentencesWithLikes(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
-            db.fetchCommunityHighlights(from: monthStart, to: nextMonthStart).catchError((_) => <Map<String, dynamic>>[]),
-            db.fetchMySentencesWithLikes(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
-            db.fetchCommunityHighlights(from: yearStart, to: yearEnd).catchError((_) => <Map<String, dynamic>>[]),
-          ])
-        : const <List<Map<String, dynamic>>>[[], [], [], [], [], []];
-
-    final wRadar = _radar(
-      totalSeconds: wStats.totalSeconds,
-      choseoCount: weekChoseo.length,
-      focusScore: wFocus,
-      completedCount: completedBooks.length,
-      readDays: wStats.readDays,
-    );
-
-    return AnalyticsState(
-      weekTotalSeconds: wStats.totalSeconds,
-      weekReadDays: wStats.readDays,
-      weekChoseoCount: weekChoseo.length,
-      prevWeekTotalSeconds: prevWeekTotal,
-      weekDailyMinutes: wStats.dailyMinutes,
-      weekTimeOfDay: [
-        (label: '새벽', range: '00–06', minutes: wStats.todSlots[0]),
-        (label: '오전', range: '06–12', minutes: wStats.todSlots[1]),
-        (label: '오후', range: '12–18', minutes: wStats.todSlots[2]),
-        (label: '저녁', range: '18–24', minutes: wStats.todSlots[3]),
-      ],
-      weekSessions: _sessToEntries(weekSess),
-      weekChoseo: weekChoseo,
-      weekFocusScore: wFocus,
-      weekMaxSessionMinutes: wStats.maxSessionMinutes,
-      weekAvgSessionMinutes: wStats.avgSessionMinutes,
-      weekRadar: wRadar,
-      weekAvgPagesPerMin: 0,
-      monthTotalSeconds: mStats.totalSeconds,
-      monthReadDays: mStats.readDays,
-      monthChoseoCount: monthChoseo.length,
-      prevMonthTotalSeconds: prevMonthTotal,
-      heatmap: heatmap,
-      monthMaxStreak: maxStreak,
-      monthTotalDays: monthTotalDays,
-      monthFocusScore: mFocus,
-      monthMaxSessionMinutes: mStats.maxSessionMinutes,
-      monthAvgSessionMinutes: mStats.avgSessionMinutes,
-      monthAvgPagesPerMin: 0,
-      yearTotalSeconds: yearTotal,
-      yearReadDays: yearDaySet.length,
-      yearChoseoCount: yearChoseo.length,
-      completedBooks: completedBooks,
-      yearMonthlyMinutes: yearMonthlyMinutes,
-      yearFocusScore: yFocus,
-      yearMaxStreak: yearMaxStreak,
-      yearMaxSessionMinutes: yStats.maxSessionMinutes,
-      yearAvgSessionMinutes: yStats.avgSessionMinutes,
-      yearAvgPagesPerMin: 0,
-      yearGenreDistribution: genreDistribution,
-      yearTopChoseo: yearChoseo.take(5).toList(),
-      allRecentSessions: _sessToEntries(allSess.take(20).toList()),
-      weekMyReactions: toSocial(socialResults[0]),
-      weekCommunityHighlights: toSocial(socialResults[1]),
-      monthMyReactions: toSocial(socialResults[2]),
-      monthCommunityHighlights: toSocial(socialResults[3]),
-      yearMyReactions: toSocial(socialResults[4]),
-      yearCommunityHighlights: toSocial(socialResults[5]),
-    );
+  return AnalyticsState(
+    weekTotalSeconds: wStats.totalSeconds,
+    weekReadDays: wStats.readDays,
+    weekChoseoCount: weekChoseo.length,
+    prevWeekTotalSeconds: prevWeekTotal,
+    weekDailyMinutes: wStats.dailyMinutes,
+    weekTimeOfDay: [
+      (label: '새벽', range: '00–06', minutes: wStats.todSlots[0]),
+      (label: '오전', range: '06–12', minutes: wStats.todSlots[1]),
+      (label: '오후', range: '12–18', minutes: wStats.todSlots[2]),
+      (label: '저녁', range: '18–24', minutes: wStats.todSlots[3]),
+    ],
+    weekSessions: _sessToEntries(weekSess),
+    weekChoseo: weekChoseo,
+    weekFocusScore: wFocus,
+    weekMaxSessionMinutes: wStats.maxSessionMinutes,
+    weekAvgSessionMinutes: wStats.avgSessionMinutes,
+    weekRadar: wRadar,
+    weekAvgPagesPerMin: 0,
+    monthTotalSeconds: mStats.totalSeconds,
+    monthReadDays: mStats.readDays,
+    monthChoseoCount: monthChoseo.length,
+    prevMonthTotalSeconds: prevMonthTotal,
+    heatmap: heatmap,
+    monthMaxStreak: maxStreak,
+    monthTotalDays: monthTotalDays,
+    monthFocusScore: mFocus,
+    monthMaxSessionMinutes: mStats.maxSessionMinutes,
+    monthAvgSessionMinutes: mStats.avgSessionMinutes,
+    monthAvgPagesPerMin: 0,
+    yearTotalSeconds: yearTotal,
+    yearReadDays: yearDaySet.length,
+    yearChoseoCount: yearChoseo.length,
+    completedBooks: completedBooks,
+    yearMonthlyMinutes: yearMonthlyMinutes,
+    yearFocusScore: yFocus,
+    yearMaxStreak: yearMaxStreak,
+    yearMaxSessionMinutes: yStats.maxSessionMinutes,
+    yearAvgSessionMinutes: yStats.avgSessionMinutes,
+    yearAvgPagesPerMin: 0,
+    yearGenreDistribution: genreDistribution,
+    yearTopChoseo: yearChoseo.take(5).toList(),
+    allRecentSessions: _sessToEntries(allSess.take(20).toList()),
+    weekMyReactions: toSocial(socialResults[0]),
+    weekCommunityHighlights: toSocial(socialResults[1]),
+    monthMyReactions: toSocial(socialResults[2]),
+    monthCommunityHighlights: toSocial(socialResults[3]),
+    yearMyReactions: toSocial(socialResults[4]),
+    yearCommunityHighlights: toSocial(socialResults[5]),
+  );
 }
 
 final analyticsProvider =

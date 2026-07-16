@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:chorok_app/core/services/db_service.dart';
 import 'package:chorok_app/features/home/controller/session_overlap_provider.dart';
 import 'package:chorok_app/shared/models/session_goal.dart';
-import 'package:chorok_app/shared/utils/sentence_normalizer.dart';
 
 class _FakeOverlapDbService extends DbService {
   final Map<String, List<Map<String, dynamic>>> overlaps;
@@ -19,10 +18,10 @@ class _FakeOverlapDbService extends DbService {
 
   @override
   Future<List<Map<String, dynamic>>> findOverlappingSentences(
-    String normalizedText,
+    String content,
   ) async {
     if (throwOnOverlap) throw Exception('network');
-    return overlaps[normalizedText] ?? const [];
+    return overlaps[content] ?? const [];
   }
 
   @override
@@ -72,11 +71,10 @@ void main() {
       content: '나도, 너를 사랑 해',
       thought: '내 생각',
     );
-    final normalized = SentenceNormalizer.normalize(sentence.content);
     final container = _container(
       _FakeOverlapDbService(
         overlaps: {
-          normalized: [
+          sentence.content: [
             _row(
               id: 'empty',
               userId: 'public-1',
@@ -113,12 +111,11 @@ void main() {
       content: '나도 너를 사랑해',
       thought: '내 생각',
     );
-    final normalized = SentenceNormalizer.normalize(sentence.content);
     final container = _container(
       _FakeOverlapDbService(
         followingIds: {'neighbor'},
         overlaps: {
-          normalized: [
+          sentence.content: [
             _row(
               id: 'public',
               userId: 'public',

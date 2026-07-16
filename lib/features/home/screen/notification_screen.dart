@@ -11,6 +11,7 @@ import '../../../shared/repositories/notification_repository.dart';
 import '../../../shared/repositories/profile_repository.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../feed/screen/sentence_detail_screen.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 // ─── 데이터 모델 ──────────────────────────────────────────────────────────
 
@@ -377,81 +378,85 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                     .where((e) => e.value.isRead)
                     .toList();
 
-                return CustomScrollView(
-                  slivers: [
-                    // 새로운 알림
-                    if (newItems.isNotEmpty) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                          child: Text(
-                            '새로운',
-                            style: AppTheme.captionLarge.copyWith(
-                              color: context.appPrimaryAccent,
-                              fontWeight: FontWeight.w400,
+                return ChorokRefresh(
+                  onRefresh: _load,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      // 새로운 알림
+                      if (newItems.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                            child: Text(
+                              '새로운',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: context.appPrimaryAccent,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate((_, i) {
-                          final entry = newItems[i];
-                          final n = entry.value;
-                          return _NotiTile(
-                            item: n,
-                            icon: _iconFor(n.type),
-                            color: _colorFor(n.type),
-                            onTap: () => _onNotiTap(context, entry.key),
-                          );
-                        }, childCount: newItems.length),
-                      ),
-                    ],
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((_, i) {
+                            final entry = newItems[i];
+                            final n = entry.value;
+                            return _NotiTile(
+                              item: n,
+                              icon: _iconFor(n.type),
+                              color: _colorFor(n.type),
+                              onTap: () => _onNotiTap(context, entry.key),
+                            );
+                          }, childCount: newItems.length),
+                        ),
+                      ],
 
-                    // 이전 알림
-                    if (oldItems.isNotEmpty) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                          child: Text(
-                            '이전',
-                            style: AppTheme.captionLarge.copyWith(
-                              color: context.appTextTertiary,
-                              fontWeight: FontWeight.w400,
+                      // 이전 알림
+                      if (oldItems.isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                            child: Text(
+                              '이전',
+                              style: AppTheme.captionLarge.copyWith(
+                                color: context.appTextTertiary,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate((_, i) {
-                          final entry = oldItems[i];
-                          final n = entry.value;
-                          return _NotiTile(
-                            item: n,
-                            icon: _iconFor(n.type),
-                            color: _colorFor(n.type),
-                            onTap: () => _onNotiTap(context, entry.key),
-                          );
-                        }, childCount: oldItems.length),
-                      ),
-                    ],
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate((_, i) {
+                            final entry = oldItems[i];
+                            final n = entry.value;
+                            return _NotiTile(
+                              item: n,
+                              icon: _iconFor(n.type),
+                              color: _colorFor(n.type),
+                              onTap: () => _onNotiTap(context, entry.key),
+                            );
+                          }, childCount: oldItems.length),
+                        ),
+                      ],
 
-                    // 알림 없음
-                    if (newItems.isEmpty && oldItems.isEmpty)
-                      SliverFillRemaining(
-                        child: Center(
-                          child: _loading
-                              ? CircularProgressIndicator(
-                                  color: context.appPrimaryAccent,
-                                )
-                              : Text(
-                                  '알림이 없어요',
-                                  style: TextStyle(
-                                    color: context.appTextTertiary,
+                      // 알림 없음
+                      if (newItems.isEmpty && oldItems.isEmpty)
+                        SliverFillRemaining(
+                          child: Center(
+                            child: _loading
+                                ? CircularProgressIndicator(
+                                    color: context.appPrimaryAccent,
+                                  )
+                                : Text(
+                                    '알림이 없어요',
+                                    style: TextStyle(
+                                      color: context.appTextTertiary,
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 );
               },
             ),

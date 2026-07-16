@@ -19,9 +19,7 @@ Widget _buildSheet(List<Book> books) {
     overrides: [
       libraryProvider.overrideWith(() => _FakeLibraryNotifier(books)),
     ],
-    child: const MaterialApp(
-      home: Scaffold(body: BookPickerSheet()),
-    ),
+    child: const MaterialApp(home: Scaffold(body: BookPickerSheet())),
   );
 }
 

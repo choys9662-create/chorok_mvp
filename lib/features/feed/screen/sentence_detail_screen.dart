@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/models/overlap_group.dart';
-import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/repositories/comment_repository.dart';
 import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
@@ -16,6 +15,7 @@ import '../widget/split_highlight_widget.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/chorok_refresh.dart';
 
 // ─── 네비게이션 데이터 ────────────────────────────────────────────────────
 
@@ -388,9 +388,8 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
   Widget _buildOverlapSection(BuildContext context, SentenceDetailExtra d) {
     if (kUseMock || d.isOverlapGroup) return const SizedBox.shrink();
 
-    final normalizedText = SentenceNormalizer.normalize(d.sentenceContent);
     final overlapsAsync = ref.watch(
-      overlappingSentencesProvider(normalizedText),
+      overlappingSentencesProvider(d.sentenceContent),
     );
 
     return overlapsAsync.when(
@@ -516,111 +515,41 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
         children: [
           // ── 스크롤 영역 ──────────────────────────────────
           Expanded(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: SizedBox(height: topPad)),
+            child: ChorokRefresh(
+              // 스크롤 뷰가 화면 최상단까지 차오르므로 인디케이터를 인셋만큼 내린다.
+              edgeOffset: topPad,
+              onRefresh: () async {
+                if (!kUseMock && !widget.data.isOverlapGroup) {
+                  ref.invalidate(
+                    overlappingSentencesProvider(widget.data.sentenceContent),
+                  );
+                }
+                await _loadComments();
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(child: SizedBox(height: topPad)),
 
-                // ── 네비 바 ──────────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding,
-                      8,
-                      AppTheme.screenPadding,
-                      0,
-                    ),
-                    child: Row(
-                      children: [
-                        Semantics(
-                          label: '뒤로 가기',
-                          button: true,
-                          child: GestureDetector(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              context.pop();
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              alignment: Alignment.center,
-                              decoration: AppTheme.smoothBox(
-                                color: context.appSurface.withValues(
-                                  alpha: 0.5,
-                                ),
-                                radius: AppTheme.radiusSM,
-                              ),
-                              child: Icon(
-                                Icons.arrow_back_ios_rounded,
-                                size: 18,
-                                color: context.appTextPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Semantics(
-                            label: '${d.bookTitle} 책 정보 보기',
-                            button: true,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _openBookInfo,
-                              child: Row(
-                                children: [
-                                  BookCover(
-                                    coverUrl: d.coverUrl,
-                                    gradientIndex:
-                                        d.bookTitle.hashCode.abs() %
-                                        AppTheme.coverGradients.length,
-                                    width: 38,
-                                    height: 52,
-                                    radius: 7,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          d.bookTitle,
-                                          style: AppTheme.bodySmall.copyWith(
-                                            color: context.appPrimaryAccent,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          d.bookAuthor,
-                                          style: AppTheme.captionSmall.copyWith(
-                                            color: context.appTextTertiary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 22,
-                                    color: context.appTextTertiary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (!kUseMock && d.sentenceId != null) ...[
-                          const SizedBox(width: 8),
+                  // ── 네비 바 ──────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        8,
+                        AppTheme.screenPadding,
+                        0,
+                      ),
+                      child: Row(
+                        children: [
                           Semantics(
-                            label: '문장 신고하기',
+                            label: '뒤로 가기',
                             button: true,
                             child: GestureDetector(
-                              onTap: _reportSentence,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                context.pop();
+                              },
                               child: Container(
                                 width: 40,
                                 height: 40,
@@ -632,233 +561,324 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                                   radius: AppTheme.radiusSM,
                                 ),
                                 child: Icon(
-                                  Icons.flag_outlined,
+                                  Icons.arrow_back_ios_rounded,
                                   size: 18,
-                                  color: context.appTextTertiary,
+                                  color: context.appTextPrimary,
                                 ),
                               ),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── 문장 히어로 ──────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding,
-                      AppTheme.space2XL,
-                      AppTheme.screenPadding,
-                      AppTheme.spaceLG,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 페이지 번호
-                        if (d.page != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: AppTheme.smoothPill(
-                                color: AppTheme.primary.withValues(alpha: 0.25),
-                              ),
-                              child: Text(
-                                'p.${d.page}',
-                                style: AppTheme.captionLarge.copyWith(
-                                  color: context.appPrimaryAccent,
-                                  fontWeight: FontWeight.w400,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Semantics(
+                              label: '${d.bookTitle} 책 정보 보기',
+                              button: true,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _openBookInfo,
+                                child: Row(
+                                  children: [
+                                    BookCover(
+                                      coverUrl: d.coverUrl,
+                                      gradientIndex:
+                                          d.bookTitle.hashCode.abs() %
+                                          AppTheme.coverGradients.length,
+                                      width: 38,
+                                      height: 52,
+                                      radius: 7,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            d.bookTitle,
+                                            style: AppTheme.bodySmall.copyWith(
+                                              color: context.appPrimaryAccent,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            d.bookAuthor,
+                                            style: AppTheme.captionSmall
+                                                .copyWith(
+                                                  color:
+                                                      context.appTextTertiary,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 22,
+                                      color: context.appTextTertiary,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-
-                        // 원문 인용
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppTheme.spaceLG),
-                          decoration: BoxDecoration(
-                            color: context.appCard,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: _SentenceHeroText(data: d),
-                        ),
-
-                        // 수집자 본인 생각 — 문장과 함께 노출 (겹문장 그룹은
-                        // 아래 목록에서 따로 보여주므로 여기선 제외).
-                        if (!d.isOverlapGroup &&
-                            (collectorThought?.isNotEmpty ?? false)) ...[
-                          const SizedBox(height: 12),
-                          _CollectorThought(
-                            username: d.collectorUsername ?? '독자',
-                            thought: collectorThought!,
-                          ),
+                          if (!kUseMock && d.sentenceId != null) ...[
+                            const SizedBox(width: 8),
+                            Semantics(
+                              label: '문장 신고하기',
+                              button: true,
+                              child: GestureDetector(
+                                onTap: _reportSentence,
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: AppTheme.smoothBox(
+                                    color: context.appSurface.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    radius: AppTheme.radiusSM,
+                                  ),
+                                  child: Icon(
+                                    Icons.flag_outlined,
+                                    size: 18,
+                                    color: context.appTextTertiary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
 
-                // ── 수집 통계 ────────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding,
-                      0,
-                      AppTheme.screenPadding,
-                      AppTheme.spaceLG,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  // ── 문장 히어로 ──────────────────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        AppTheme.space2XL,
+                        AppTheme.screenPadding,
+                        AppTheme.spaceLG,
                       ),
-                      decoration: AppTheme.smoothBox(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.08),
-                        radius: AppTheme.radiusMD,
-                      ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.people_rounded,
-                            size: 18,
-                            color: context.appPrimaryAccent,
-                          ),
-                          const SizedBox(width: 8),
-                          RichText(
-                            text: TextSpan(
-                              style: AppTheme.captionLarge.copyWith(
-                                color: context.appTextSecondary,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: '$thoughtAuthorCount',
+                          // 페이지 번호
+                          if (d.page != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: AppTheme.smoothPill(
+                                  color: AppTheme.primary.withValues(
+                                    alpha: 0.25,
+                                  ),
+                                ),
+                                child: Text(
+                                  'p.${d.page}',
                                   style: AppTheme.captionLarge.copyWith(
                                     color: context.appPrimaryAccent,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
-                                const TextSpan(text: '명이 이 문장에 생각을 남겼어요'),
-                              ],
+                              ),
                             ),
+
+                          // 원문 인용
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppTheme.spaceLG),
+                            decoration: BoxDecoration(
+                              color: context.appCard,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: _SentenceHeroText(data: d),
                           ),
+
+                          // 수집자 본인 생각 — 문장과 함께 노출 (겹문장 그룹은
+                          // 아래 목록에서 따로 보여주므로 여기선 제외).
+                          if (!d.isOverlapGroup &&
+                              (collectorThought?.isNotEmpty ?? false)) ...[
+                            const SizedBox(height: 12),
+                            _CollectorThought(
+                              username: d.collectorUsername ?? '독자',
+                              thought: collectorThought!,
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ),
-                ),
 
-                // ── 겹문장 섹션 ─────────────────────────────
-                SliverToBoxAdapter(child: _buildOverlapSection(context, d)),
-
-                // ── 구분선 ───────────────────────────────────
-                // SliverToBoxAdapter(
-                //   child: Divider(
-                //     height: 1,
-                //     color: context.appBorder,
-                //     indent: AppTheme.screenPadding,
-                //     endIndent: AppTheme.screenPadding,
-                //   ),
-                // ),
-
-                // ── 다른 독자들의 생각 헤더 ───────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.screenPadding,
-                      AppTheme.spaceLG,
-                      AppTheme.screenPadding,
-                      AppTheme.spaceMD,
-                    ),
-                    child: Text(
-                      '다른 독자들의 생각',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextPrimary,
+                  // ── 수집 통계 ────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        0,
+                        AppTheme.screenPadding,
+                        AppTheme.spaceLG,
                       ),
-                    ),
-                  ),
-                ),
-
-                // ── 생각 목록 ────────────────────────────────
-                if (visibleThoughts.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 48,
-                            color: context.appTextTertiary,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: AppTheme.smoothBox(
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.08,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '아직 남겨진 생각이 없어요\n첫 번째 생각을 남겨보세요!',
-                            textAlign: TextAlign.center,
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: context.appTextSecondary,
+                          radius: AppTheme.radiusMD,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.people_rounded,
+                              size: 18,
+                              color: context.appPrimaryAccent,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            RichText(
+                              text: TextSpan(
+                                style: AppTheme.captionLarge.copyWith(
+                                  color: context.appTextSecondary,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '$thoughtAuthorCount',
+                                    style: AppTheme.captionLarge.copyWith(
+                                      color: context.appPrimaryAccent,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  const TextSpan(text: '명이 이 문장에 생각을 남겼어요'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.screenPadding,
-                    ),
-                    sliver: SliverList.separated(
-                      itemCount: visibleThoughts.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AppTheme.spaceMD),
-                      itemBuilder: (context, index) {
-                        final recordThoughtCount = d.isOverlapGroup
-                            ? visibleThoughts.length - _thoughts.length
-                            : 0;
-                        // 겹문장 합성 카드(recordThoughts)는 댓글 row가 아니라
-                        // 좋아요·답글이 없다. 실제 댓글에만 상호작용을 붙인다.
-                        final isRealComment = index >= recordThoughtCount;
-                        final t = visibleThoughts[index];
-                        final isRecordedThought =
-                            !isRealComment &&
-                            t.recordedSentence?.trim().isNotEmpty == true;
-                        return _ThoughtCard(
-                          thought: t,
-                          formatTime: time_fmt.formatRelative,
-                          onToggleLike: isRealComment
-                              ? () => _toggleThoughtLike(t)
-                              : null,
-                          onReply: isRealComment ? () => _startReply(t) : null,
-                          onToggleReplyLike: _toggleThoughtLike,
-                          onOpenProfile: isRecordedThought
-                              ? null
-                              : () => _openReaderProfile(t),
-                          onOpenRecordedSentence: isRecordedThought
-                              ? () => showRecordedSentenceDetails(
-                                  context,
-                                  anchorText: d.overlapCommonPhrase!,
-                                  recordedText: t.recordedSentence!,
-                                  username: t.username,
-                                  thought: t.thought,
-                                )
-                              : null,
-                          onOpenReplyProfile: _openReaderProfile,
-                        );
-                      },
                     ),
                   ),
 
-                // ── 하단 여백 ────────────────────────────────
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
+                  // ── 겹문장 섹션 ─────────────────────────────
+                  SliverToBoxAdapter(child: _buildOverlapSection(context, d)),
+
+                  // ── 구분선 ───────────────────────────────────
+                  // SliverToBoxAdapter(
+                  //   child: Divider(
+                  //     height: 1,
+                  //     color: context.appBorder,
+                  //     indent: AppTheme.screenPadding,
+                  //     endIndent: AppTheme.screenPadding,
+                  //   ),
+                  // ),
+
+                  // ── 다른 독자들의 생각 헤더 ───────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        AppTheme.spaceLG,
+                        AppTheme.screenPadding,
+                        AppTheme.spaceMD,
+                      ),
+                      child: Text(
+                        '다른 독자들의 생각',
+                        style: AppTheme.headingSmall.copyWith(
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── 생각 목록 ────────────────────────────────
+                  if (visibleThoughts.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 48,
+                              color: context.appTextTertiary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '아직 남겨진 생각이 없어요\n첫 번째 생각을 남겨보세요!',
+                              textAlign: TextAlign.center,
+                              style: AppTheme.bodyMedium.copyWith(
+                                color: context.appTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.screenPadding,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: visibleThoughts.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppTheme.spaceMD),
+                        itemBuilder: (context, index) {
+                          final recordThoughtCount = d.isOverlapGroup
+                              ? visibleThoughts.length - _thoughts.length
+                              : 0;
+                          // 겹문장 합성 카드(recordThoughts)는 댓글 row가 아니라
+                          // 좋아요·답글이 없다. 실제 댓글에만 상호작용을 붙인다.
+                          final isRealComment = index >= recordThoughtCount;
+                          final t = visibleThoughts[index];
+                          final isRecordedThought =
+                              !isRealComment &&
+                              t.recordedSentence?.trim().isNotEmpty == true;
+                          return _ThoughtCard(
+                            thought: t,
+                            formatTime: time_fmt.formatRelative,
+                            onToggleLike: isRealComment
+                                ? () => _toggleThoughtLike(t)
+                                : null,
+                            onReply: isRealComment
+                                ? () => _startReply(t)
+                                : null,
+                            onToggleReplyLike: _toggleThoughtLike,
+                            onOpenProfile: isRecordedThought
+                                ? null
+                                : () => _openReaderProfile(t),
+                            onOpenRecordedSentence: isRecordedThought
+                                ? () => showRecordedSentenceDetails(
+                                    context,
+                                    anchorText: d.overlapCommonPhrase!,
+                                    recordedText: t.recordedSentence!,
+                                    username: t.username,
+                                    thought: t.thought,
+                                  )
+                                : null,
+                            onOpenReplyProfile: _openReaderProfile,
+                          );
+                        },
+                      ),
+                    ),
+
+                  // ── 하단 여백 ────────────────────────────────
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
+              ),
             ),
           ),
 

@@ -25,8 +25,9 @@ class LiveReaderCounts {
 /// 30초 주기로 전체 독자 수를 폴링한다(즉시 1회 + 주기 갱신).
 /// `kUseMock`이면 고정 폴백값만 내보낸다.
 /// autoDispose: 구독이 사라지면 [ref.onDispose]에서 타이머를 정리한다.
-final liveReaderCountsProvider =
-    StreamProvider.autoDispose<LiveReaderCounts>((ref) {
+final liveReaderCountsProvider = StreamProvider.autoDispose<LiveReaderCounts>((
+  ref,
+) {
   if (kUseMock) {
     return Stream.value(LiveReaderCounts.fallback);
   }

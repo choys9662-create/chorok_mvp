@@ -1020,7 +1020,8 @@ class _WeeklyBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxValue = values.fold<int>(1, (max, v) => v > max ? v : max);
-    const labels = ['일', '월', '화', '수', '목', '금', '토'];
+    // values 는 월=0 (weekDailyMinutes), weekStart 도 월요일이라 라벨도 월요일 시작.
+    const labels = ['월', '화', '수', '목', '금', '토', '일'];
     return Column(
       children: [
         Expanded(

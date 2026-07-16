@@ -27,6 +27,7 @@ class FriendsReadTodaySection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 30),
             _Header(count: friends.length),
             const SizedBox(height: 12),
             Padding(

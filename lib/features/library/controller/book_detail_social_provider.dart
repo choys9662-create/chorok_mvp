@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -189,6 +190,9 @@ class BookDetailSocialRepository {
       final discussedPassages = buildDiscussedPassages(thoughts);
 
       final globalBookId = globalBook?['id'] as String?;
+      final reviews = globalBookId == null
+          ? const <BookReviewSummary>[]
+          : await _fetchReviewsOrEmpty(globalBookId, followingIds);
       return BookDetailSocialData(
         meta: BookDetailSocialMeta(
           globalBookId: globalBookId,
@@ -201,12 +205,23 @@ class BookDetailSocialRepository {
         popularThoughts: popular.take(5).toList(),
         followingThoughts: following.take(8).toList(),
         recentSentenceThoughts: recent.take(24).toList(),
-        reviews: globalBookId == null
-            ? const []
-            : await _fetchReviews(globalBookId, followingIds),
+        reviews: reviews,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('[책 소셜 정보 조회 오류] $error\n$stackTrace');
       return BookDetailSocialData.empty;
+    }
+  }
+
+  Future<List<BookReviewSummary>> _fetchReviewsOrEmpty(
+    String globalBookId,
+    Set<String> followingIds,
+  ) async {
+    try {
+      return await _fetchReviews(globalBookId, followingIds);
+    } catch (error) {
+      debugPrint('[책 리뷰 조회 오류] $error');
+      return const [];
     }
   }
 

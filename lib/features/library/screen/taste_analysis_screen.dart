@@ -9,6 +9,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/user_library_providers.dart';
 import '../../../shared/utils/book_genre.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 enum _TasteMode { time, completed }
 
@@ -52,27 +53,41 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
         child: booksAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, _) => const _TasteEmpty(message: '독서 취향을 불러오지 못했어요'),
-          data: (books) => CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    _tasteHorizontalPadding,
-                    38,
-                    _tasteHorizontalPadding,
-                    22,
-                  ),
-                  child: _TasteHeader(
-                    onBack: () => Navigator.of(context).pop(),
+          data: (books) => ChorokRefresh(
+            onRefresh: () => _refresh(ref),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      _tasteHorizontalPadding,
+                      38,
+                      _tasteHorizontalPadding,
+                      22,
+                    ),
+                    child: _TasteHeader(
+                      onBack: () => Navigator.of(context).pop(),
+                    ),
                   ),
                 ),
-              ),
-              ..._buildContent(context, books, sessionGroupsAsync),
-            ],
+                ..._buildContent(context, books, sessionGroupsAsync),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(_tasteSessionGroupsProvider(widget.userId));
+    if (widget.userId == null) {
+      await ref.read(libraryProvider.notifier).reload();
+    } else {
+      ref.invalidate(userBooksProvider(widget.userId!));
+      await ref.read(userBooksProvider(widget.userId!).future);
+    }
   }
 
   List<Widget> _buildContent(

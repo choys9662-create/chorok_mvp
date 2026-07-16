@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:chorok_app/features/library/controller/book_detail_social_provider.dart';
 
@@ -117,6 +122,57 @@ void main() {
       ),
       isFalse,
     );
+  });
+
+  test('리뷰 조회 실패가 다른 소셜 정보를 비우지 않는다', () async {
+    final client = SupabaseClient(
+      'http://localhost:54321',
+      'test-key',
+      httpClient: MockClient((request) async {
+        switch (request.url.path) {
+          case '/rest/v1/global_books':
+            return http.Response(
+              jsonEncode({
+                'id': 'global-book',
+                'reader_count': 7,
+                'sentence_count': 3,
+              }),
+              200,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          case '/rest/v1/global_book_sentences':
+            return http.Response(
+              '[]',
+              200,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          case '/rest/v1/book_reviews':
+            return http.Response(
+              jsonEncode({
+                'code': '42P01',
+                'message': 'relation does not exist',
+              }),
+              404,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          default:
+            fail('unexpected request: ${request.url}');
+        }
+      }),
+    );
+    addTearDown(client.dispose);
+
+    final data = await BookDetailSocialRepository(
+      client,
+    ).fetch((title: '채식주의자', author: '한강', isbn: '9788936433598'));
+
+    expect(data.meta.globalBookId, 'global-book');
+    expect(data.meta.readerCount, 7);
+    expect(data.meta.sentenceCount, 3);
+    expect(data.reviews, isEmpty);
   });
 }
 

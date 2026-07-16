@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 final _blockedUsersProvider = FutureProvider.autoDispose<List<UserProfile>>((
   ref,
@@ -64,29 +65,37 @@ class BlockedUsersScreen extends ConsumerWidget {
               ),
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding,
-              vertical: AppTheme.spaceMD,
-            ),
-            itemCount: users.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceSM),
-            itemBuilder: (context, i) {
-              final u = users[i];
-              return _BlockedUserTile(
-                profile: u,
-                onUnblock: () async {
-                  HapticFeedback.selectionClick();
-                  await ref.read(moderationRepositoryProvider).unblock(u.id);
-                  ref.invalidate(_blockedUsersProvider);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(chorokSnackBar(context, '차단을 해제했어요'));
-                  }
-                },
-              );
+          return ChorokRefresh(
+            onRefresh: () async {
+              ref.invalidate(_blockedUsersProvider);
+              await ref.read(_blockedUsersProvider.future);
             },
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+                vertical: AppTheme.spaceMD,
+              ),
+              itemCount: users.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: AppTheme.spaceSM),
+              itemBuilder: (context, i) {
+                final u = users[i];
+                return _BlockedUserTile(
+                  profile: u,
+                  onUnblock: () async {
+                    HapticFeedback.selectionClick();
+                    await ref.read(moderationRepositoryProvider).unblock(u.id);
+                    ref.invalidate(_blockedUsersProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(chorokSnackBar(context, '차단을 해제했어요'));
+                    }
+                  },
+                );
+              },
+            ),
           );
         },
       ),

@@ -24,6 +24,7 @@ class OverlapSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 30),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -37,8 +38,10 @@ class OverlapSection extends ConsumerWidget {
                     Text(
                       '겹문장',
                       style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextPrimary,
+                        color: context.appTextTertiary,
                         fontWeight: FontWeight.w400,
+                        fontSize: 20,
+                        letterSpacing: 0,
                       ),
                     ),
                     const SizedBox(height: 4),

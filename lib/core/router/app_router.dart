@@ -18,6 +18,7 @@ import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/screen/search_screen.dart';
 import '../../shared/models/session_goal.dart';
 import '../../features/library/screen/book_detail_screen.dart';
+import '../../features/library/screen/book_sentences_screen.dart';
 import '../../features/home/screen/home_screen.dart';
 import '../../features/home/screen/notification_screen.dart';
 import '../../features/home/screen/reading_session_screen.dart';
@@ -69,6 +70,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: initialLocation,
     debugLogDiagnostics: false,
     refreshListenable: authRefresh,
+    // extra 없이 상세 라우트에 직접 접근하면(딥링크·새로고침·잘못된 push) 여러 화면이
+    // `state.extra as T`에서 예외를 던진다. 빈 화면 대신 홈으로 돌아갈 수 있게 한다.
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '페이지를 찾을 수 없어요',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => context.go(AppConstants.routeHome),
+              child: const Text('홈으로'),
+            ),
+          ],
+        ),
+      ),
+    ),
 
     // ── 인증 가드 ────────────────────────────────────────────────
     redirect: (context, state) {
@@ -229,6 +250,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeChoseoList,
         builder: (context, state) => const ChoseoListScreen(),
+      ),
+
+      // 책 개별 — 나의 문장·생각
+      GoRoute(
+        path: AppConstants.routeBookSentences,
+        builder: (context, state) {
+          final book = state.extra as Book;
+          return BookSentencesScreen(book: book);
+        },
       ),
 
       // 설정

@@ -60,4 +60,44 @@ void main() {
 
     expect(find.text('분석 열기'), findsOneWidget);
   });
+
+  // weekDailyMinutes 는 월=0 이고 weekStart 도 월요일이라, 라벨도 월요일 시작이어야 한다.
+  // 일요일 시작 라벨을 쓰면 강조된(오늘) 막대 아래에 엉뚱한 요일이 찍힌다.
+  testWidgets('주별 차트 라벨은 월요일 시작이고 오늘 라벨이 강조된다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [analyticsProvider.overrideWith(_FakeAnalyticsNotifier.new)],
+        child: MaterialApp(
+          theme: AppTheme.dark,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
+          home: const AnalyticsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    const monFirst = ['월', '화', '수', '목', '금', '토', '일'];
+
+    // 라벨이 왼쪽에서 오른쪽으로 월→일 순서로 놓여 있다.
+    final xs = monFirst
+        .map((d) => tester.getCenter(find.text(d).last).dx)
+        .toList();
+    expect(xs, orderedEquals(<double>[...xs]..sort()));
+
+    // 강조색이 칠해진 라벨 == 오늘 요일.
+    final today = monFirst[DateTime.now().weekday - 1];
+    final highlighted = tester
+        .widgetList<Text>(find.byType(Text))
+        .where((t) => monFirst.contains(t.data))
+        .where((t) => t.style?.color == AppTheme.primaryLight)
+        .map((t) => t.data)
+        .toList();
+    expect(highlighted, [today]);
+  });
 }

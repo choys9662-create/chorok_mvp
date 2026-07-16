@@ -23,6 +23,7 @@ import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/sheet_handle.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 const _detailAccent = AppTheme.primaryLight;
 const _detailCard = Color(0xFF141414);
@@ -469,99 +470,122 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         onContinue: () => _startSession(book),
         onAddSentence: () => _showSentenceMethodSheet(book),
       ),
-      body: CustomScrollView(
-        slivers: [
-          // ── 히어로 섹션 ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Builder(
-              builder: (context) {
-                final sessions =
-                    ref
-                        .watch(_bookSessionStatsProvider(widget.bookId))
-                        .valueOrNull
-                        ?.sessions ??
-                    0;
-                return _HeroSection(
-                  book: book,
-                  sessionCount: sessions,
-                  sentenceCount: heroSentenceCount,
-                );
-              },
-            ),
-          ),
-
-          // ── 현재 페이지 조절 ──────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _CurrentPageControl(
-              key: ValueKey('${book.id}_${book.totalPages}'),
-              currentPage: _currentPage,
-              totalPages: book.totalPages,
-              onPreviewPage: (page) => setState(() => _currentPage = page),
-              onCommitPage: _savePage,
-              onEditTotalPages: () => _showSetTotalPages(book.totalPages),
-            ),
-          ),
-
-          // ── 독서 통계 ──────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Builder(
-              builder: (context) {
-                final stats = ref
-                    .watch(_bookSessionStatsProvider(widget.bookId))
-                    .valueOrNull;
-                return _StatsRow(
-                  sessions: stats?.sessions ?? 0,
-                  totalHours: stats?.totalHours ?? 0.0,
-                  progress: kUseMock && book.id == '1'
-                      ? 0.70
-                      : book.readingProgress,
-                  sentenceCount: detailSentenceCount,
-                );
-              },
-            ),
-          ),
-
-          // ── 내 수집 문장 리스트 ─────────────────────────────────────
-          SliverToBoxAdapter(child: const _SectionHeader(title: '내가 수집한 문장')),
-          if (sentences.isEmpty)
+      body: ChorokRefresh(
+        // 히어로 섹션이 화면 최상단까지 차오르므로 인디케이터를 인셋만큼 내린다.
+        edgeOffset: MediaQuery.paddingOf(context).top,
+        onRefresh: () async {
+          ref.invalidate(_bookChoseoProvider(sentenceQuery));
+          ref.invalidate(bookDetailSocialProvider(_socialQueryFor(book)));
+          await ref.read(libraryProvider.notifier).reload();
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ── 히어로 섹션 ────────────────────────────────────────────
             SliverToBoxAdapter(
-              child: isLoadingSentences
-                  ? const _SentenceLoadingState()
-                  : _SentenceEmptyState(
-                      onAdd: () => _showSentenceMethodSheet(book),
-                      hasError: hasSentenceError,
-                    ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _SentenceItem(
-                  sentence: sentences[index],
-                  onEditThought: () =>
-                      _showEditThoughtSheet(sentences[index], book),
-                ),
-                childCount: sentences.length,
+              child: Builder(
+                builder: (context) {
+                  final sessions =
+                      ref
+                          .watch(_bookSessionStatsProvider(widget.bookId))
+                          .valueOrNull
+                          ?.sessions ??
+                      0;
+                  return _HeroSection(
+                    book: book,
+                    sessionCount: sessions,
+                    sentenceCount: heroSentenceCount,
+                  );
+                },
               ),
             ),
 
-          _DiscussedPassagesSection(book: book),
-
-          _FollowingHighlightsSection(book: book),
-
-          _PopularThoughtsSection(book: book),
-
-          _ThoughtExplorerSection(book: book),
-
-          _ReviewsSummarySection(book: book),
-
-          SliverToBoxAdapter(child: _BookInfoSection(book: book)),
-
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: MediaQuery.of(context).padding.bottom + 110,
+            // ── 현재 페이지 조절 ──────────────────────────────────────
+            SliverToBoxAdapter(
+              child: _CurrentPageControl(
+                key: ValueKey('${book.id}_${book.totalPages}'),
+                currentPage: _currentPage,
+                totalPages: book.totalPages,
+                onPreviewPage: (page) => setState(() => _currentPage = page),
+                onCommitPage: _savePage,
+                onEditTotalPages: () => _showSetTotalPages(book.totalPages),
+              ),
             ),
-          ),
-        ],
+
+            // ── 독서 통계 ──────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Builder(
+                builder: (context) {
+                  final stats = ref
+                      .watch(_bookSessionStatsProvider(widget.bookId))
+                      .valueOrNull;
+                  return _StatsRow(
+                    sessions: stats?.sessions ?? 0,
+                    totalHours: stats?.totalHours ?? 0.0,
+                    progress: kUseMock && book.id == '1'
+                        ? 0.70
+                        : book.readingProgress,
+                    sentenceCount: detailSentenceCount,
+                  );
+                },
+              ),
+            ),
+
+            // ── 내 수집 문장 리스트 ─────────────────────────────────────
+            SliverToBoxAdapter(
+              child: _SectionHeader(
+                title: '내가 수집한 문장',
+                onTap: sentences.isEmpty
+                    ? null
+                    : () {
+                        HapticFeedback.selectionClick();
+                        context.push(
+                          AppConstants.routeBookSentences,
+                          extra: book,
+                        );
+                      },
+              ),
+            ),
+            if (sentences.isEmpty)
+              SliverToBoxAdapter(
+                child: isLoadingSentences
+                    ? const _SentenceLoadingState()
+                    : _SentenceEmptyState(
+                        onAdd: () => _showSentenceMethodSheet(book),
+                        hasError: hasSentenceError,
+                      ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => _SentenceItem(
+                    sentence: sentences[index],
+                    onEditThought: () =>
+                        _showEditThoughtSheet(sentences[index], book),
+                  ),
+                  childCount: sentences.length,
+                ),
+              ),
+
+            _DiscussedPassagesSection(book: book),
+
+            _FollowingHighlightsSection(book: book),
+
+            _PopularThoughtsSection(book: book),
+
+            _ThoughtExplorerSection(book: book),
+
+            _ReviewsSummarySection(book: book),
+
+            SliverToBoxAdapter(child: _BookInfoSection(book: book)),
+
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: MediaQuery.of(context).padding.bottom + 110,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2771,17 +2795,25 @@ String _relativeDate(DateTime dt) {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final VoidCallback? onTap;
+  const _SectionHeader({required this.title, this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final text = Text(
+      title,
+      style: AppTheme.bodySmall.copyWith(color: _detailAccent),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: Center(
-        child: Text(
-          title,
-          style: AppTheme.bodySmall.copyWith(color: _detailAccent),
-        ),
+        child: onTap == null
+            ? text
+            : Semantics(
+                button: true,
+                label: '$title 전체보기',
+                child: GestureDetector(onTap: onTap, child: text),
+              ),
       ),
     );
   }

@@ -121,10 +121,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      context.appPrimaryAccent,
-                      context.appAccentColor,
-                    ],
+                    colors: [context.appPrimaryAccent, context.appAccentColor],
                   ),
                 ),
                 child: Stack(

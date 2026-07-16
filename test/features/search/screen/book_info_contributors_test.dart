@@ -16,10 +16,7 @@ void main() {
     final rows = parseBookContributors(
       _book(rawAuthor: '한강 (지은이), 데버라 스미스 (옮긴이)'),
     );
-    expect(rows, [
-      (name: '한강', role: '저자'),
-      (name: '데버라 스미스', role: '옮긴이'),
-    ]);
+    expect(rows, [(name: '한강', role: '저자'), (name: '데버라 스미스', role: '옮긴이')]);
   });
 
   test('역할 표기가 없으면 저자로 간주한다', () {

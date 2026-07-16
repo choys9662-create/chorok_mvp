@@ -16,6 +16,10 @@ import '../controller/feed_activity_provider.dart';
 import '../model/feed_activity.dart';
 import 'sentence_detail_screen.dart';
 
+// Figma(CHOROK-PITCH 피드, node 1557:1690) 매칭 색상 — AppTheme 토큰에 없는 강조 박스 전용 값.
+const _kQuoteHighlightBg = Color(0xFF222422);
+const _kThoughtBorder = Color(0xFF222422);
+
 /// 겹문장 알림과 활동 소식을 하나의 시간순 타임라인으로 합치기 위한 항목.
 /// 정확히 [overlap], [activity] 중 하나만 채워진다.
 typedef _FeedItem = ({
@@ -52,28 +56,18 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
-  FeedScope _scope = FeedScope.friends;
-  bool _isRefreshing = false;
   static const Color _feedBg = Colors.black;
-  static const Color _feedCard = Color(0xFF111512);
-  static const Color _feedInset = Color(0xFF171B18);
-  static const Color _feedBorder = Color(0xFF3C443D);
+
+  // 피드는 친구 범위만 보여준다. FeedScope.all 은 아직 쓰는 화면이 없다.
+  static const _scope = FeedScope.friends;
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isRefreshing = true);
     ref.invalidate(feedActivityProvider(_scope));
     ref.invalidate(followOverlapProvider);
     await ref
         .read(feedActivityProvider(_scope).future)
         .catchError((_) => <FeedActivity>[]);
-    if (mounted) setState(() => _isRefreshing = false);
-  }
-
-  void _setScope(FeedScope scope) {
-    if (_scope == scope) return;
-    HapticFeedback.selectionClick();
-    setState(() => _scope = scope);
   }
 
   @override
@@ -85,15 +79,15 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final canGoBack = Navigator.of(context).canPop();
 
-    // 겹문장(나 ∩ 팔로잉, 같은 책) — 친구 피드에서만 의미가 있다.
-    final overlaps = _scope == FeedScope.friends
-        ? (ref.watch(followOverlapProvider).valueOrNull ?? const [])
-        : const <FollowOverlap>[];
+    // 겹문장(나 ∩ 팔로잉, 같은 책)
+    final overlaps = ref.watch(followOverlapProvider).valueOrNull ?? const [];
 
     // 겹문장 알림 + 활동 소식을 하나의 타임라인으로 합쳐 최신순으로 보여준다.
     final feedItems = <_FeedItem>[
-      for (final o in overlaps) (time: o.neighborCreatedAt, overlap: o, activity: null),
-      for (final a in activities) (time: a.occurredAt, overlap: null, activity: a),
+      for (final o in overlaps)
+        (time: o.neighborCreatedAt, overlap: o, activity: null),
+      for (final a in activities)
+        (time: a.occurredAt, overlap: null, activity: a),
     ]..sort((a, b) => b.time.compareTo(a.time));
 
     return Scaffold(
@@ -101,17 +95,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       body: Column(
         children: [
           SizedBox(height: topPad + 8),
-          // ─── 친구 / 전체 토글 (고정) ─────────────────────
-          _ScopeToggle(
-            scope: _scope,
-            onChanged: _setScope,
-            busy: _isRefreshing,
-            showBack: canGoBack,
-            onBack: () {
-              HapticFeedback.selectionClick();
-              Navigator.of(context).pop();
-            },
-          ),
+          if (canGoBack)
+            _FeedBackButton(
+              onBack: () {
+                HapticFeedback.selectionClick();
+                Navigator.of(context).pop();
+              },
+            ),
           const SizedBox(height: 8),
           Expanded(
             child: RefreshIndicator(
@@ -146,7 +136,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   else if (feedItems.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _EmptyState(scope: _scope),
+                      child: const _EmptyState(),
                     )
                   else
                     // ── 겹문장 알림 + 활동 소식 (최신순 통합) ──────
@@ -158,9 +148,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         itemBuilder: (_, i) {
                           final item = feedItems[i];
                           return item.overlap != null
-                              ? _OverlapNotificationCard(
-                                  overlap: item.overlap!,
-                                )
+                              ? _OverlapNotificationCard(overlap: item.overlap!)
                               : _ActivityCard(activity: item.activity!);
                         },
                       ),
@@ -175,123 +163,32 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 }
 
-// ─── 친구 / 전체 토글 ────────────────────────────────────────────────────────
-class _ScopeToggle extends StatelessWidget {
-  final FeedScope scope;
-  final ValueChanged<FeedScope> onChanged;
-  final bool busy;
-  final bool showBack;
+// ─── 뒤로가기 (push 로 열렸을 때만) ───────────────────────────────────────────
+class _FeedBackButton extends StatelessWidget {
   final VoidCallback onBack;
 
-  const _ScopeToggle({
-    required this.scope,
-    required this.onChanged,
-    required this.busy,
-    required this.showBack,
-    required this.onBack,
-  });
+  const _FeedBackButton({required this.onBack});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: Center(
-            child: SizedBox(
-              width: 132,
-              height: 36,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ScopeTab(
-                      label: '친구',
-                      selected: scope == FeedScope.friends,
-                      onTap: () => onChanged(FeedScope.friends),
-                    ),
-                  ),
-                  Expanded(
-                    child: _ScopeTab(
-                      label: '전체',
-                      selected: scope == FeedScope.all,
-                      onTap: () => onChanged(FeedScope.all),
-                    ),
-                  ),
-                ],
+    return SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          const SizedBox(width: AppTheme.screenPadding),
+          Semantics(
+            label: '뒤로 가기',
+            button: true,
+            child: IconButton(
+              onPressed: onBack,
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: context.appTextSecondary,
               ),
             ),
           ),
-        ),
-        if (showBack)
-          Positioned(
-            left: AppTheme.screenPadding,
-            child: Semantics(
-              label: '뒤로 가기',
-              button: true,
-              child: IconButton(
-                onPressed: onBack,
-                icon: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 20,
-                  color: context.appTextSecondary,
-                ),
-              ),
-            ),
-          ),
-        if (busy)
-          Positioned(
-            right: 20,
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: context.appPrimaryAccent,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _ScopeTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ScopeTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.symmetric(horizontal: 3),
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothPill(
-          color: selected ? const Color(0xFF1A1E1A) : const Color(0xFF0B0E0B),
-          side: selected
-              ? BorderSide(color: Colors.white.withValues(alpha: 0.86))
-              : BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Text(
-          label,
-          style: AppTheme.bodySmall.copyWith(
-            color: selected
-                ? Colors.white.withValues(alpha: 0.9)
-                : Colors.white.withValues(alpha: 0.24),
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -306,9 +203,9 @@ class _ActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: AppTheme.smoothBox(
-        color: _FeedScreenState._feedCard,
+        color: context.appCard,
         radius: 8,
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.04)),
+        side: BorderSide(color: context.appBorderSubtle),
         shadows: _feedCardShadow(context),
       ),
       padding: const EdgeInsets.all(16),
@@ -569,8 +466,8 @@ class _ActivityHeader extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 time_fmt.formatRelative(a.occurredAt),
-                style: AppTheme.captionSmall.copyWith(
-                  color: Colors.white.withValues(alpha: 0.36),
+                style: AppTheme.captionLarge.copyWith(
+                  color: context.appTextTertiary,
                 ),
               ),
               if (a.type == FeedActivityType.sessionComplete ||
@@ -596,7 +493,7 @@ class _ActivityHeader extends StatelessWidget {
             onTap: () => _openBook(context, a),
             behavior: HitTestBehavior.opaque,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -609,7 +506,7 @@ class _ActivityHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.captionLarge.copyWith(
-                          color: Colors.white.withValues(alpha: 0.82),
+                          color: context.appTextPrimary,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -622,8 +519,8 @@ class _ActivityHeader extends StatelessWidget {
                         textAlign: TextAlign.right,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTheme.captionSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.46),
+                        style: AppTheme.captionLarge.copyWith(
+                          color: context.appTextSecondary,
                         ),
                       ),
                     ),
@@ -663,15 +560,16 @@ class _ActivityHeader extends StatelessWidget {
 
   Widget _titleText(BuildContext context, FeedActivity a) {
     final base = AppTheme.bodySmall.copyWith(
-      color: Colors.white.withValues(alpha: 0.48),
+      fontSize: 14,
+      color: context.appTextSecondary,
       height: 1.35,
     );
     final name = base.copyWith(
-      color: Colors.white.withValues(alpha: 0.72),
+      color: context.appTextPrimary,
       fontWeight: FontWeight.w400,
     );
     final accent = base.copyWith(
-      color: Colors.white.withValues(alpha: 0.72),
+      color: context.appTextPrimary,
       fontWeight: FontWeight.w400,
     );
 
@@ -698,8 +596,6 @@ class _ActivityHeader extends StatelessWidget {
         break;
     }
 
-    final showHandle =
-        a.handle != null && a.handle!.isNotEmpty && a.handle != a.username;
     return RichText(
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
@@ -707,11 +603,6 @@ class _ActivityHeader extends StatelessWidget {
         style: base,
         children: [
           TextSpan(text: a.username, style: name),
-          if (showHandle)
-            TextSpan(
-              text: ' @${a.handle}',
-              style: base.copyWith(color: Colors.white.withValues(alpha: 0.34)),
-            ),
           ...children,
         ],
       ),
@@ -728,7 +619,7 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
     return CircleAvatar(
-      radius: 14,
+      radius: 15,
       backgroundColor: context.appPrimaryAccent.withValues(alpha: 0.14),
       backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty)
           ? NetworkImage(avatarUrl!)
@@ -756,7 +647,7 @@ class _MetricRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.45)),
+        Icon(icon, size: 18, color: context.appTextSecondary),
         const SizedBox(width: 4),
         Flexible(
           child: FittedBox(
@@ -765,7 +656,7 @@ class _MetricRow extends StatelessWidget {
             child: Text(
               value,
               style: AppTheme.headingMedium.copyWith(
-                color: Colors.white.withValues(alpha: 0.62),
+                color: context.appTextSecondary,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -846,7 +737,8 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
                 child: Text(
                   _expanded ? '접기' : '$hiddenCount개 더보기',
                   style: AppTheme.captionLarge.copyWith(
-                    color: Colors.white.withValues(alpha: 0.36),
+                    fontSize: 14,
+                    color: context.appTextTertiary,
                   ),
                 ),
               ),
@@ -876,9 +768,9 @@ class _SentencePreview extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: AppTheme.smoothBox(
-              color: _FeedScreenState._feedInset,
+              color: _kQuoteHighlightBg,
               radius: 6,
-              side: const BorderSide(color: _FeedScreenState._feedBorder),
+              side: BorderSide(color: context.appTextSecondary),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,8 +780,9 @@ class _SentencePreview extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 1),
                     child: Text(
                       '${s.pageNumber}',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: Colors.white.withValues(alpha: 0.32),
+                      style: AppTheme.bodySmall.copyWith(
+                        fontSize: 14,
+                        color: context.appTextSecondary,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -900,7 +793,7 @@ class _SentencePreview extends StatelessWidget {
                   child: Text(
                     s.content,
                     style: AppTheme.bodySmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.66),
+                      color: context.appTextPrimary,
                       height: 1.55,
                     ),
                   ),
@@ -915,12 +808,10 @@ class _SentencePreview extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: ShapeDecoration(
-                color: _FeedScreenState._feedInset,
+                color: context.appCard,
                 shape: SmoothRectangleBorder(
                   smoothness: 0.6,
-                  side: BorderSide(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.24),
-                  ),
+                  side: const BorderSide(color: _kThoughtBorder),
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -943,8 +834,7 @@ class _SentencePreview extends StatelessWidget {
 
 // ─── 빈 상태 ──────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
-  final FeedScope scope;
-  const _EmptyState({required this.scope});
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -959,9 +849,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            scope == FeedScope.friends
-                ? '팔로우한 친구의 독서 활동이 여기 모여요'
-                : '아직 보여줄 활동이 없어요',
+            '팔로우한 친구의 독서 활동이 여기 모여요',
             style: AppTheme.bodyMedium.copyWith(
               color: context.appTextSecondary,
             ),

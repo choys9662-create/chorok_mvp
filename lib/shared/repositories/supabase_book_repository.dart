@@ -67,9 +67,10 @@ class SupabaseBookRepository {
       'total_reading_hours': book.totalReadingHours,
       'saved_sentences': book.savedSentences,
       'global_book_id': globalBookId,
-      'completed_at': book.completedAt?.toIso8601String(),
+      // timestamptz — 오프셋 없이 보내면 서버가 UTC 로 읽어 로컬 오프셋만큼 밀린다.
+      'completed_at': book.completedAt?.toUtc().toIso8601String(),
       'genre': book.genre,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     try {
@@ -99,7 +100,7 @@ class SupabaseBookRepository {
       return trimmed == null || trimmed.isEmpty ? null : trimmed;
     }
 
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     await _client.from('book_reviews').upsert({
       'user_id': userId,
       'global_book_id': globalBookId,
@@ -116,7 +117,9 @@ class SupabaseBookRepository {
     if (userId == null) return;
     await _client
         .from('books')
-        .update({'last_session_started_at': startedAt.toIso8601String()})
+        .update({
+          'last_session_started_at': startedAt.toUtc().toIso8601String(),
+        })
         .eq('user_id', userId)
         .eq('book_id', bookId);
   }
@@ -131,32 +134,28 @@ class SupabaseBookRepository {
         .eq('book_id', bookId);
   }
 
+  /// global_books는 클라이언트가 직접 쓰지 못한다(RLS로 INSERT/UPDATE 정책 제거됨).
+  /// upsert_global_book RPC가 null/빈 값만 채우는 병합 규칙으로 서버에서 대신 쓴다 —
+  /// 인증된 아무 유저나 공용 서지정보를 임의로 덮어쓰는 것을 막기 위함(ISSUE: global_books
+  /// 임의 수정 취약점).
   Future<String?> _upsertGlobalBook(Book book) async {
     if (book.isbn == null || book.isbn!.isEmpty) return null;
     try {
-      final row = {
-        'isbn13': book.isbn,
-        'title': book.title,
-        'author': book.author,
-        'cover_url': book.coverUrl,
-        'total_pages': book.totalPages,
-      };
-      final description = book.description?.trim();
-      if (description != null && description.isNotEmpty) {
-        row['description'] = description;
-      }
-      final genre = book.genre?.trim();
-      if (genre != null && genre.isNotEmpty) {
-        row['category'] = genre;
-      }
-      final gbRow = await _client
-          .from('global_books')
-          .upsert(row, onConflict: 'isbn13')
-          .select('id')
-          .single();
-      return gbRow['id'] as String?;
+      final id = await _client.rpc(
+        'upsert_global_book',
+        params: {
+          'p_isbn13': book.isbn,
+          'p_title': book.title,
+          'p_author': book.author,
+          'p_cover_url': book.coverUrl,
+          'p_description': book.description?.trim(),
+          'p_total_pages': book.totalPages,
+          'p_category': book.genre?.trim(),
+        },
+      );
+      return id as String?;
     } catch (_) {
-      // global_books 테이블이 아직 없거나 에러 시 무시
+      // global_books/RPC가 아직 없거나 에러 시 무시
       return null;
     }
   }

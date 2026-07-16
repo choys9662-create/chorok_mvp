@@ -40,7 +40,10 @@ final friendsReadTodayProvider = FutureProvider<List<FriendReadToday>>((
       .gte('ended_at', startUtc)
       .order('ended_at', ascending: false);
 
-  return aggregateFriendReads((rows as List).cast<Map<String, dynamic>>(), byId);
+  return aggregateFriendReads(
+    (rows as List).cast<Map<String, dynamic>>(),
+    byId,
+  );
 });
 
 /// 세션 행(ended_at desc)을 친구별로 합산. 대표 책 = 가장 최근 세션의 책,
@@ -92,11 +95,7 @@ const _mockFriendsReadToday = <FriendReadToday>[
     seconds: 35 * 60,
   ),
   (
-    friend: UserProfile(
-      id: 'm3',
-      username: 'ground',
-      displayName: '온더그라운드',
-    ),
+    friend: UserProfile(id: 'm3', username: 'ground', displayName: '온더그라운드'),
     bookTitle: '토니오 크뢰거',
     coverUrl: null,
     seconds: 18 * 60,

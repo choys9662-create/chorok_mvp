@@ -1,7 +1,10 @@
 /// 앱 실행 모드 — `--dart-define=APP_MODE=design|test` 로 주입.
 ///
 /// 기본값은 `test` 이다.
-const String kAppMode = String.fromEnvironment('APP_MODE', defaultValue: 'test');
+const String kAppMode = String.fromEnvironment(
+  'APP_MODE',
+  defaultValue: 'test',
+);
 
 /// 빌드 타임 플래그 — `--dart-define`으로 주입
 ///

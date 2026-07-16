@@ -3,8 +3,7 @@ import 'package:smooth_corner/smooth_corner.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// OCR로 인식한 텍스트를 문단→문장 구조로 보여주고,
-/// 사용자가 같은 문단 안의 문장들을 골라 하나로 합칠 수 있게 하는 시트.
-/// 최대 기록 단위는 한 문단 — 문단 경계를 넘는 합치기는 막는다.
+/// 사용자가 고른 문장들을 하나로 합칠 수 있게 하는 시트.
 ///
 /// 합치기는 저장 전 클라이언트 합성이라 추가 비용/네트워크가 없다.
 /// 결과로 최종 블록 목록(`List<String>`)을 pop 한다. 각 블록이 곧 저장 1행.
@@ -62,7 +61,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
   }
 
   /// AI가 끊어 준 문단→문장 구조가 있으면 그대로, 없으면 규칙 분리로 폴백.
-  /// [paraOffset]은 추가 촬영분이 기존 문단과 섞이지 않게 문단 번호를 밀어 준다.
+  /// [paraOffset]은 추가 촬영 첫 문단을 이전 마지막 문단에 이어 붙이기 위해 쓴다.
   static List<_Block> _blocksFrom(
     String text,
     List<List<String>>? paragraphs, {
@@ -77,9 +76,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
         : _split(text);
     return paraOffset == 0
         ? blocks
-        : [
-            for (final b in blocks) (text: b.text, para: b.para + paraOffset),
-          ];
+        : [for (final b in blocks) (text: b.text, para: b.para + paraOffset)];
   }
 
   late List<_Block> _initial = _blocksFrom(widget.rawText, widget.paragraphs);
@@ -103,7 +100,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     });
   }
 
-  /// 선택이 2개 이상이고 모두 같은 문단일 때만 합칠 수 있다(최대 단위 = 한 문단).
+  /// 추가 촬영은 페이지 경계를 넘을 수 있지만, 실제 문단 경계는 넘지 않는다.
   bool get _canMerge =>
       _selected.length >= 2 &&
       _selected.map((i) => _blocks[i].para).toSet().length == 1;
@@ -149,8 +146,9 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
     final added = _blocksFrom(
       capture.text,
       capture.paragraphs,
-      // 새 촬영분의 문단은 기존 마지막 문단 다음부터 시작한다.
-      paraOffset: _initial.isEmpty ? 0 : _initial.last.para + 1,
+      // 다음 페이지의 첫 문단은 이전 페이지 마지막 문단의 이어짐일 수 있다.
+      // 그 뒤 문단부터는 새 문단으로 구분돼 합치기 경계를 만든다.
+      paraOffset: _initial.isEmpty ? 0 : _initial.last.para,
     );
     if (added.isEmpty) return;
     setState(() {
@@ -162,8 +160,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
 
   void _confirm() {
     if (_selected.isEmpty) return;
-    final selectedBlocks = _selected.toList()
-      ..sort();
+    final selectedBlocks = _selected.toList()..sort();
     Navigator.pop(
       context,
       selectedBlocks
@@ -238,7 +235,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                     onTap: _blocks.length == _initial.length ? null : _reset,
                   ),
                   const SizedBox(width: 12),
-                  // 같은 문단 여러 문장 선택 → 합치기, 그 외(한 문장·합친 뒤) → 추가.
+                  // 같은 문단의 여러 문장 선택 → 합치기, 그 외(한 문장·합친 뒤) → 추가.
                   Expanded(
                     child: canMerge
                         ? _MainButton(
@@ -433,7 +430,9 @@ class _CircleAction extends StatelessWidget {
     final bg = filled
         ? color.withValues(alpha: enabled ? 1 : 0.4)
         : color.withValues(alpha: enabled ? 0.16 : 0.06);
-    final fg = filled ? Colors.black : color.withValues(alpha: enabled ? 1 : 0.4);
+    final fg = filled
+        ? Colors.black
+        : color.withValues(alpha: enabled ? 1 : 0.4);
     return Tooltip(
       message: tooltip,
       child: GestureDetector(

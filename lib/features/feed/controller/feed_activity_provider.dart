@@ -131,7 +131,8 @@ class _FeedActivityLoader {
           .from('profiles')
           .select('id, username, display_name, avatar_url')
           .inFilter('id', userIds.toList());
-      final map = <String, ({String name, String? handle, String? avatarUrl})>{};
+      final map =
+          <String, ({String name, String? handle, String? avatarUrl})>{};
       for (final r in rows as List) {
         final m = r as Map<String, dynamic>;
         final id = m['id'] as String?;
@@ -349,6 +350,7 @@ class _FeedActivityLoader {
       return const [];
     }
   }
+
   // ── 읽고 싶은 책 추가 ────────────────────────────────────────────────────────
   Future<List<FeedActivity>> _wantToReadEvents(
     String me,

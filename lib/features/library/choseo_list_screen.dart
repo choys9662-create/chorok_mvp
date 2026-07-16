@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/models/isar/isar_choseo.dart';
 import 'controller/choseo_list_controller.dart';
+import '../../shared/widgets/chorok_refresh.dart';
 
 // ─── 색상 토큰 ────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,10 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
           Expanded(
             child: state.isLoading
                 ? const _LoadingShimmer()
+                : (state.hasError && state.items.isEmpty)
+                ? _ErrorView(
+                    onRetry: () => ref.read(choseoListProvider.notifier).load(),
+                  )
                 : TabBarView(
                     controller: _tabCtrl,
                     physics: const NeverScrollableScrollPhysics(),
@@ -331,14 +336,31 @@ class _ByBookTab extends StatelessWidget {
     if (grouped.isEmpty) return const _EmptyView();
 
     final books = grouped.keys.toList();
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      itemCount: books.length,
-      itemBuilder: (_, i) {
-        final title = books[i];
-        final items = grouped[title]!;
-        return _BookGroup(title: title, items: items);
-      },
+    return _ChoseoRefresh(
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        itemCount: books.length,
+        itemBuilder: (_, i) {
+          final title = books[i];
+          final items = grouped[title]!;
+          return _BookGroup(title: title, items: items);
+        },
+      ),
+    );
+  }
+}
+
+/// 초서 목록 탭 공용 새로고침. 상단 바가 스크롤 뷰 위에 있어 edgeOffset 은 0.
+class _ChoseoRefresh extends ConsumerWidget {
+  final Widget child;
+  const _ChoseoRefresh({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ChorokRefresh(
+      onRefresh: () => ref.read(choseoListProvider.notifier).load(),
+      child: child,
     );
   }
 }
@@ -507,20 +529,64 @@ class _BookGroupState extends State<_BookGroup> {
 
 // ─── 날짜순 탭 ────────────────────────────────────────────────────────────────
 
-class _ByDateTab extends StatelessWidget {
+class _ByDateTab extends ConsumerWidget {
   final ChoseoListState state;
   const _ByDateTab({required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final items = state.filtered;
     if (items.isEmpty) return const _EmptyView();
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _ChoseoCard(item: items[i], showBookInfo: true),
+    // 검색 중에는 더 보기를 노출하지 않는다 — 검색은 이미 불러온 항목만 필터링하므로
+    // 다음 페이지를 불러와도 검색 결과에 곧바로 반영되지 않아 혼란을 줄 수 있다.
+    final canLoadMore = state.query.trim().isEmpty && state.hasMore;
+    final itemCount = items.length + (canLoadMore ? 1 : 0);
+
+    return _ChoseoRefresh(
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        itemCount: itemCount,
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        itemBuilder: (_, i) {
+          if (i >= items.length) {
+            return _LoadMoreRow(
+              isLoading: state.isLoadingMore,
+              onTap: () => ref.read(choseoListProvider.notifier).loadMore(),
+            );
+          }
+          return _ChoseoCard(item: items[i], showBookInfo: true);
+        },
+      ),
+    );
+  }
+}
+
+class _LoadMoreRow extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onTap;
+  const _LoadMoreRow({required this.isLoading, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: TextButton(onPressed: onTap, child: const Text('더 보기')),
+      ),
     );
   }
 }
@@ -754,6 +820,39 @@ class _EmptyView extends StatelessWidget {
               height: 1.6,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorView({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 48,
+            color: context.appTextTertiary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '초서를 불러오지 못했어요',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: context.appTextSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
         ],
       ),
     );

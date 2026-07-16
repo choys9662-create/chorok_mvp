@@ -20,7 +20,9 @@ final bookRepositoryProvider = Provider<BookRepository?>((ref) {
   return BookRepository(db);
 });
 
-final readingStreakProvider = FutureProvider<int>((_) => _readingStreakFromSupabase());
+final readingStreakProvider = FutureProvider<int>(
+  (_) => _readingStreakFromSupabase(),
+);
 
 Future<int> _readingStreakFromSupabase() async {
   final client = Supabase.instance.client;

@@ -30,8 +30,12 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/user_library_providers.dart';
 import '../../../shared/repositories/follow_repository.dart';
+import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/utils/follow_relationship_text.dart';
+import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../profile/controller/user_profile_provider.dart';
+import '../util/completed_sort.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 
 typedef _LibraryQuote = ({String content, String bookTitle, String bookAuthor});
 typedef _CalendarDaySummary = ({ReadingLog representative, int bookCount});
@@ -97,6 +101,84 @@ class LibraryScreen extends ConsumerStatefulWidget {
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool get _isOwner => widget.viewedUser == null;
   String? get _uid => widget.viewedUser?.id;
+  bool? _isBlockedOverride;
+
+  Future<void> _toggleBlock(bool currentlyBlocked) async {
+    HapticFeedback.mediumImpact();
+    if (kUseMock) {
+      setState(() => _isBlockedOverride = !currentlyBlocked);
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, currentlyBlocked ? '차단을 해제했어요' : '차단했어요'),
+      );
+      return;
+    }
+    try {
+      final repo = ref.read(moderationRepositoryProvider);
+      if (currentlyBlocked) {
+        await repo.unblock(_uid!);
+      } else {
+        await repo.block(_uid!);
+      }
+      if (!mounted) return;
+      setState(() => _isBlockedOverride = !currentlyBlocked);
+      ref.invalidate(userProfileProvider(_uid!));
+      ref.invalidate(userBooksProvider(_uid!));
+      ref.invalidate(userReadingLogsProvider(_uid!));
+      ref.read(blockMutationVersionProvider.notifier).state++;
+      ref.read(followMutationVersionProvider.notifier).state++;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, currentlyBlocked ? '차단을 해제했어요' : '차단했어요'),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        chorokSnackBar(context, '처리하지 못했어요. 다시 시도해주세요', success: false),
+      );
+    }
+  }
+
+  Future<void> _reportUser() async {
+    HapticFeedback.mediumImpact();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('이 유저를 신고할까요?'),
+        content: const Text('신고 내용은 운영팀이 확인 후 처리해요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('신고'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (kUseMock) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '신고가 접수됐어요'));
+      return;
+    }
+    try {
+      await ref
+          .read(moderationRepositoryProvider)
+          .report(ReportTargetType.user, _uid!);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '신고가 접수됐어요'));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(chorokSnackBar(context, '신고를 접수하지 못했어요', success: false));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +203,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final viewerData = _isOwner
         ? null
         : ref.watch(userProfileProvider(_uid!)).valueOrNull;
+    final isBlocked = _isBlockedOverride ?? viewerData?.isBlocked ?? false;
     final isLocked =
         !_isOwner &&
         widget.viewedUser!.isPrivate &&
@@ -150,41 +233,84 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   color: context.appTextPrimary,
                 ),
               ),
-            ),
-      body: SingleChildScrollView(
-        controller: _isOwner ? ref.read(tabScrollControllersProvider)[3] : null,
-        child: Column(
-          children: [
-            if (_isOwner) SizedBox(height: topPad),
-            // ── 프로필 헤더 ──────────────────────────────────────
-            if (_isOwner)
-              Consumer(
-                builder: (context, ref, _) {
-                  final streak =
-                      ref
-                          .watch(readingStreakProvider)
-                          .whenOrNull(data: (v) => v) ??
-                      0;
-                  return ProfileHeader(
-                    onSettingsTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push(AppConstants.routeSettings);
+              actions: [
+                if (kUseMock || viewerData != null)
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      color: context.appTextSecondary,
+                    ),
+                    onSelected: (value) {
+                      if (value == 'block') _toggleBlock(isBlocked);
+                      if (value == 'report') _reportUser();
                     },
-                    streak: streak,
-                  );
-                },
-              )
-            else
-              _ViewerProfileHeader(profile: widget.viewedUser!),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'block',
+                        child: Text(isBlocked ? '차단 해제하기' : '차단하기'),
+                      ),
+                      const PopupMenuItem(value: 'report', child: Text('신고하기')),
+                    ],
+                  ),
+              ],
+            ),
+      body: ChorokRefresh(
+        // 본인 서재는 스크롤 뷰가 화면 최상단까지 차오르므로 인디케이터를 인셋만큼
+        // 내린다. 남의 서재는 위에 AppBar 가 있어 0 이면 그 아래에 뜬다.
+        edgeOffset: _isOwner ? topPad : 0,
+        onRefresh: _refresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: _isOwner
+              ? ref.read(tabScrollControllersProvider)[3]
+              : null,
+          child: Column(
+            children: [
+              if (_isOwner) SizedBox(height: topPad),
+              // ── 프로필 헤더 ──────────────────────────────────────
+              if (_isOwner)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final streak =
+                        ref
+                            .watch(readingStreakProvider)
+                            .whenOrNull(data: (v) => v) ??
+                        0;
+                    return ProfileHeader(
+                      onSettingsTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push(AppConstants.routeSettings);
+                      },
+                      streak: streak,
+                    );
+                  },
+                )
+              else
+                _ViewerProfileHeader(
+                  profile: widget.viewedUser!,
+                  isBlocked: isBlocked,
+                ),
 
-            if (isLocked)
-              const _PrivateLibraryLock()
-            else
-              _buildOverviewTab(viewerData),
-          ],
+              if (isLocked)
+                const _PrivateLibraryLock()
+              else
+                _buildOverviewTab(viewerData),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _refresh() async {
+    if (_isOwner) {
+      ref.invalidate(readingLogsProvider);
+      await ref.read(libraryProvider.notifier).reload();
+    } else {
+      ref.invalidate(userProfileProvider(_uid!));
+      ref.invalidate(userBooksProvider(_uid!));
+      await ref.read(userProfileProvider(_uid!).future);
+    }
   }
 
   // ── 서재 탭 (내/다른 사용자 데이터 분기) ──────────────────────────
@@ -633,6 +759,48 @@ class CompletedBooksScreen extends ConsumerStatefulWidget {
 
 class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
   _LibraryViewMode _viewMode = _LibraryViewMode.list;
+  CompletedSort _sort = CompletedSort.recent;
+
+  void _showSortSheet() {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final sort in CompletedSort.values)
+              ListTile(
+                title: Text(
+                  sort.label,
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: sort == _sort
+                        ? sheetContext.appTextPrimary
+                        : sheetContext.appTextSecondary,
+                  ),
+                ),
+                trailing: sort == _sort
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 20,
+                        color: sheetContext.appPrimaryAccent,
+                      )
+                    : null,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  setState(() => _sort = sort);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -641,13 +809,7 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
             .watch(libraryProvider)
             .where((book) => book.status == ReadingStatus.completed)
             .toList()
-          ..sort((a, b) {
-            final aDate =
-                a.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final bDate =
-                b.completedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return bDate.compareTo(aDate);
-          });
+          ..sort((a, b) => compareCompletedBooks(_sort, a, b));
 
     return Scaffold(
       backgroundColor: context.appBg,
@@ -666,8 +828,16 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
                       onTap: () => Navigator.of(context).pop(),
                     ),
                     const Spacer(),
-                    Text(
-                      '완독',
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(text: '완독  '),
+                          TextSpan(
+                            text: '${books.length}',
+                            style: TextStyle(color: context.appPrimaryAccent),
+                          ),
+                        ],
+                      ),
                       style: AppTheme.headingLarge.copyWith(
                         color: context.appTextPrimary,
                         fontWeight: FontWeight.w400,
@@ -682,16 +852,15 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 44, 24, 10),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _CompletedViewSwitch(
-                    mode: _viewMode,
-                    onChanged: (mode) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _viewMode = mode);
-                    },
-                  ),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+                child: _CompletedViewSwitch(
+                  mode: _viewMode,
+                  sortLabel: _sort.label,
+                  onSortTap: _showSortSheet,
+                  onChanged: (mode) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _viewMode = mode);
+                  },
                 ),
               ),
             ),
@@ -768,34 +937,59 @@ class _CompletedIconButton extends StatelessWidget {
 
 class _CompletedViewSwitch extends StatelessWidget {
   final _LibraryViewMode mode;
+  final String sortLabel;
+  final VoidCallback onSortTap;
   final ValueChanged<_LibraryViewMode> onChanged;
 
-  const _CompletedViewSwitch({required this.mode, required this.onChanged});
+  const _CompletedViewSwitch({
+    required this.mode,
+    required this.sortLabel,
+    required this.onSortTap,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.all(2),
+    final isGrid = mode == _LibraryViewMode.grid;
+    return SizedBox(
+      height: 32,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '날짜순',
-            style: AppTheme.captionLarge.copyWith(
-              color: context.appTextSecondary,
-              height: 1,
+          Semantics(
+            label: '정렬 기준: $sortLabel, 변경하려면 누르세요',
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onSortTap,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    sortLabel,
+                    style: AppTheme.captionLarge.copyWith(
+                      color: context.appTextSecondary,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.sort_rounded,
+                    size: 16,
+                    color: context.appTextSecondary,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const Spacer(),
           _ViewSwitchButton(
             icon: Icons.view_module_rounded,
-            selected: mode == _LibraryViewMode.grid,
+            selected: isGrid,
             onTap: () => onChanged(_LibraryViewMode.grid),
           ),
           _ViewSwitchButton(
             icon: Icons.view_list_rounded,
-            selected: mode == _LibraryViewMode.list,
+            selected: !isGrid,
             onTap: () => onChanged(_LibraryViewMode.list),
           ),
         ],
@@ -2992,8 +3186,9 @@ class _SortSheet extends StatelessWidget {
 // ─── 다른 사용자 서재 헤더 (읽기 전용 + 팔로우 버튼) ───────────────────────
 class _ViewerProfileHeader extends ConsumerStatefulWidget {
   final UserProfile profile;
+  final bool isBlocked;
 
-  const _ViewerProfileHeader({required this.profile});
+  const _ViewerProfileHeader({required this.profile, required this.isBlocked});
 
   @override
   ConsumerState<_ViewerProfileHeader> createState() =>
@@ -3003,6 +3198,14 @@ class _ViewerProfileHeader extends ConsumerStatefulWidget {
 class _ViewerProfileHeaderState extends ConsumerState<_ViewerProfileHeader> {
   FollowRelationship? _relationshipOverride;
   bool _busy = false;
+
+  @override
+  void didUpdateWidget(_ViewerProfileHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isBlocked != widget.isBlocked) {
+      _relationshipOverride = FollowRelationship.none;
+    }
+  }
 
   Future<void> _toggleFollow(FollowRelationship current) async {
     if (_busy) return;
@@ -3139,42 +3342,43 @@ class _ViewerProfileHeaderState extends ConsumerState<_ViewerProfileHeader> {
                 ),
               ),
               const SizedBox(width: 8),
-              SizedBox(
-                height: 40,
-                child: filled
-                    ? FilledButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _toggleFollow(relationship),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: context.appPrimaryAccent,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: context.appPrimaryAccent
-                              .withValues(alpha: 0.45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radiusMD,
+              if (!widget.isBlocked)
+                SizedBox(
+                  height: 40,
+                  child: filled
+                      ? FilledButton(
+                          onPressed: _busy
+                              ? null
+                              : () => _toggleFollow(relationship),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: context.appPrimaryAccent,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: context.appPrimaryAccent
+                                .withValues(alpha: 0.45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
                             ),
                           ),
-                        ),
-                        child: buttonChild(),
-                      )
-                    : TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => _toggleFollow(relationship),
-                        style: TextButton.styleFrom(
-                          backgroundColor: context.appCardElevated,
-                          foregroundColor: context.appTextSecondary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radiusMD,
+                          child: buttonChild(),
+                        )
+                      : TextButton(
+                          onPressed: _busy
+                              ? null
+                              : () => _toggleFollow(relationship),
+                          style: TextButton.styleFrom(
+                            backgroundColor: context.appCardElevated,
+                            foregroundColor: context.appTextSecondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD,
+                              ),
                             ),
                           ),
+                          child: buttonChild(),
                         ),
-                        child: buttonChild(),
-                      ),
-              ),
+                ),
             ],
           ),
           if (p.bio != null && p.bio!.isNotEmpty) ...[
