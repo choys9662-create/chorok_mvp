@@ -131,7 +131,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final userState = ref.watch(userSearchProvider);
 
     return Scaffold(
-      backgroundColor: context.appSurface,
+      backgroundColor: context.appBg,
       body: Column(
         children: [
           SizedBox(height: topPad),
@@ -189,7 +189,7 @@ class _AppBarArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: context.appSurface,
+      color: context.appBg,
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
         12,

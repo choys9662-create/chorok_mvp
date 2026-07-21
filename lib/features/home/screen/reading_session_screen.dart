@@ -44,6 +44,35 @@ const _kGreen = AppTheme.primaryLight;
 const _kFont = AppTheme.fontFamily;
 const _captureTimeout = Duration(seconds: 8);
 
+const _fireflyStageOneEnd = Duration(minutes: 10);
+const _fireflyStageTwoEnd = Duration(minutes: 30);
+const _fireflyStageThreeEnd = Duration(minutes: 60);
+
+typedef FireflyVisual = ({double radius, int layers, double pulseAmplitude});
+
+/// 현재 라이브 세션의 연속 독서 시간에 따른 반딧불이 성장 규칙.
+@visibleForTesting
+FireflyVisual fireflyVisualForElapsed(Duration elapsed) {
+  if (elapsed < _fireflyStageOneEnd) {
+    return (radius: 10, layers: 1, pulseAmplitude: 0);
+  }
+  if (elapsed < _fireflyStageTwoEnd) {
+    return (radius: 14, layers: 2, pulseAmplitude: 0);
+  }
+  if (elapsed < _fireflyStageThreeEnd) {
+    return (radius: 18, layers: 3, pulseAmplitude: 0.04);
+  }
+  return (radius: 22, layers: 3, pulseAmplitude: 0.06);
+}
+
+/// 동시 접속자가 많을 때 겹침을 줄이는 숲 밀도 규칙.
+@visibleForTesting
+double fireflyDensityScale(int activeReaderCount) {
+  if (activeReaderCount <= 5) return 1;
+  if (activeReaderCount <= 10) return 0.9;
+  return 0.8;
+}
+
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
   final SessionGoal? goal;
@@ -210,6 +239,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   // 실시간 '읽고 있는 친구' presence — 세션 화면이 살아있는 동안만 행 유지.
   // dispose에서 안전하게 쓰도록 repository 참조를 캡처해 둔다.
   ReadingPresenceRepository? _presence;
+  Timer? _presenceStartupRetry;
   Timer? _presenceHeartbeat;
   bool _presenceStarted = false;
 
@@ -325,7 +355,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       if (detoxStatus == DetoxStartStatus.unsupported) {
         _showSoftDetoxNotice();
       }
-      _beginPresenceTracking();
+      _beginPresenceTracking(includeLocation: true);
     }
     setState(() => _showTopic = false);
     _setUi(UiVisibility.hidden);
@@ -681,13 +711,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       });
       _brightenScreen();
 
-      // 타이머가 이미 running(예: 화면 재진입·복귀)이면 즉시 presence를 시작한다.
-      // 아직 화두 오버레이가 떠 있어 timer.isIdle이면 _dismissTopicAndStart()에서
-      // 실제로 독서가 시작되는 시점에 presence를 시작한다 — 화면 진입만으로
-      // 위치 권한 요청·위치 수집이 일어나지 않게 하기 위함.
-      if (!kUseMock && !ref.read(timerProvider).isIdle) {
-        _beginPresenceTracking();
-      }
+      // 라이브 포레스트 진입 자체를 presence로 등록한다. 위치 권한은 실제 독서를
+      // 시작할 때만 요청하므로, 둘러보기만 해도 권한 팝업이 뜨지는 않는다.
+      _beginPresenceTracking();
 
       final sessionBookId = _readSessionBook().id;
       if (sessionBookId != null && !kUseMock) {
@@ -713,27 +739,59 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     });
   }
 
-  /// 타이머가 실제로 running으로 전환된 뒤에만 호출한다 — presence·위치 수집을
-  /// 화면 진입 시점이 아니라 '진짜 독서 시작' 시점에 묶기 위한 진입점.
-  /// 두 번 호출돼도 안전하도록(재진입·복귀 케이스) 가드한다.
-  void _beginPresenceTracking() {
-    if (_presenceStarted || kUseMock) return;
-    _presenceStarted = true;
+  /// 라이브 포레스트 진입을 presence로 등록한다. 실제 독서 시작 때만 위치를
+  /// 보강해 이웃 집계에 반영한다.
+  void _beginPresenceTracking({bool includeLocation = false}) {
+    if (kUseMock) return;
+
+    if (_presenceStarted) {
+      final presence = _presence;
+      if (includeLocation && presence != null) {
+        _startPresence(presence, _readSessionBook(), includeLocation: true);
+      }
+      return;
+    }
+
     final presence = ref.read(readingPresenceRepositoryProvider);
+    _presenceStarted = true;
     _presence = presence;
-    _startPresence(presence, _readSessionBook());
+    _startPresence(
+      presence,
+      _readSessionBook(),
+      includeLocation: includeLocation,
+    );
+    // 진입 직후 auth 복원이 아직 끝나지 않아 start가 건너뛴 경우를 빠르게 복구한다.
+    // heartbeat는 upsert라 이미 시작된 경우에도 안전하다.
+    _presenceStartupRetry = Timer(
+      const Duration(seconds: 2),
+      () => unawaited(_heartbeatPresence()),
+    );
     _presenceHeartbeat = Timer.periodic(
       const Duration(seconds: 45),
-      (_) => presence.heartbeat(),
+      (_) => unawaited(_heartbeatPresence()),
     );
+  }
+
+  /// heartbeat가 성공하면 즉시 숲 데이터를 다시 읽는다. 특히 iOS가 백그라운드
+  /// 동안 타이머를 멈췄다가 복귀한 직후에는 다음 45초 주기를 기다리면 안 된다.
+  Future<void> _heartbeatPresence() async {
+    final presence = _presence;
+    if (presence == null || kUseMock) return;
+    try {
+      await presence.heartbeat();
+      if (mounted) ref.invalidate(sessionFireflyProvider);
+    } catch (error) {
+      debugPrint('[presence] heartbeat failed: $error');
+    }
   }
 
   Future<void> _startPresence(
     ReadingPresenceRepository presence,
-    _SessionBookMeta sessionBook,
-  ) async {
+    _SessionBookMeta sessionBook, {
+    bool includeLocation = false,
+  }) async {
     try {
-      final position = await _currentPositionOrNull();
+      final position = includeLocation ? await _currentPositionOrNull() : null;
       await presence.start(
         bookTitle: sessionBook.title.isNotEmpty ? sessionBook.title : null,
         bookAuthor: sessionBook.author.isNotEmpty ? sessionBook.author : null,
@@ -742,7 +800,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         longitude: position == null ? null : _coarseCoord(position.longitude),
       );
       if (mounted) ref.invalidate(sessionFireflyProvider);
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('[presence] start failed: $error');
+    }
   }
 
   Future<Position?> _currentPositionOrNull() async {
@@ -781,6 +841,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       }
       ref.read(timerProvider.notifier).syncFromWallClock();
       WakelockPlus.enable();
+      unawaited(_heartbeatPresence());
       // 백그라운드 동안 OS가 app 밝기 오버라이드를 해제하므로 복귀 시 다시 건다.
       _dimmed = false;
       _brightenScreen();
@@ -802,6 +863,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   void dispose() {
     _uiHideTimer?.cancel();
     // 세션 종료 — presence 행 삭제 (fire-and-forget). 누락돼도 TTL로 stale 처리됨.
+    _presenceStartupRetry?.cancel();
     _presenceHeartbeat?.cancel();
     _presence?.end();
     WidgetsBinding.instance.removeObserver(this);
@@ -1031,6 +1093,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     // 오브로 흩뿌리는 친구 = '지금 같이 읽는 맞팔'만. 전체 맞팔(mutualFollowProvider)을
     // 뿌리면 안 읽는 친구가 반딧불로 떠서 CTA 수("함께 읽는 N명")·시트와 안 맞는다.
     final mutuals = firefly?.mutuals ?? const [];
+    final readerPresences =
+        firefly?.books ?? const <String, ReadingPresenceInfo>{};
     final nearbyCount = firefly?.nearbyCount ?? 0;
     final neighborCount = math.max(0, nearbyCount);
     // 함께 읽는 독자 CTA — 시트(_PeopleTab)·오브와 동일하게 '지금 읽는 맞팔' 수.
@@ -1081,6 +1145,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                     children: [
                       _NamedReaderOrbs(
                         mutuals: mutuals,
+                        presences: readerPresences,
                         neighborCount: neighborCount,
                         time: _moveCtrl.value,
                         showNames: _uiState == UiVisibility.social,
@@ -1232,12 +1297,14 @@ class _PillTimerOnly extends StatelessWidget {
 // 캔버스 기반 오브/반딧불 렌더링은 세션의 몰입 레이어이므로 카드 규칙 적용 예외다.
 class _NamedReaderOrbs extends StatelessWidget {
   final List<UserProfile> mutuals;
+  final Map<String, ReadingPresenceInfo> presences;
   final int neighborCount;
   final double time;
   final bool showNames;
 
   const _NamedReaderOrbs({
     required this.mutuals,
+    required this.presences,
     required this.neighborCount,
     required this.time,
     this.showNames = false,
@@ -1250,6 +1317,7 @@ class _NamedReaderOrbs extends StatelessWidget {
     final tp = time * 2 * math.pi;
 
     final widgets = <Widget>[];
+    final densityScale = fireflyDensityScale(mutuals.length);
     final neighborLimit = math.min(neighborCount, 12);
     for (int i = 0; i < neighborLimit; i++) {
       _addOrb(
@@ -1259,6 +1327,7 @@ class _NamedReaderOrbs extends StatelessWidget {
         seed: Object.hash('neighbor', i).abs(),
         radiusBase: 4.0,
         radiusRange: 8.0,
+        layers: 1,
         label: '이웃',
         labelColor: context.appTextSecondary.withValues(alpha: 0.62),
         orbColor: context.appTextSecondary,
@@ -1266,15 +1335,25 @@ class _NamedReaderOrbs extends StatelessWidget {
       );
     }
 
-    for (int i = 0; i < mutuals.length; i++) {
+    for (int i = 0; i < math.min(mutuals.length, 12); i++) {
       final user = mutuals[i];
+      final startedAt = presences[user.id]?.startedAt;
+      final elapsed = startedAt == null
+          ? Duration.zero
+          : DateTime.now().difference(startedAt);
+      final visual = fireflyVisualForElapsed(
+        elapsed.isNegative ? Duration.zero : elapsed,
+      );
       _addOrb(
         widgets: widgets,
         size: size,
         tp: tp,
         seed: user.username.hashCode.abs(),
-        radiusBase: 4.0,
-        radiusRange: 26.0,
+        radiusBase: visual.radius,
+        radiusRange: 0,
+        layers: visual.layers,
+        pulseAmplitude: visual.pulseAmplitude,
+        sizeScale: densityScale,
         label: user.displayName,
         labelColor: _kGreen.withValues(alpha: 0.90),
         orbColor: _kGreen,
@@ -1292,6 +1371,9 @@ class _NamedReaderOrbs extends StatelessWidget {
     required int seed,
     required double radiusBase,
     required double radiusRange,
+    int layers = 3,
+    double pulseAmplitude = 0,
+    double sizeScale = 1,
     required String label,
     required Color labelColor,
     required Color orbColor,
@@ -1299,7 +1381,10 @@ class _NamedReaderOrbs extends StatelessWidget {
   }) {
     final rng = math.Random(seed);
 
-    final orbR = radiusBase + rng.nextDouble() * radiusRange;
+    final pulsePhase = (seed % 360) * math.pi / 180;
+    final pulseScale = 1 + pulseAmplitude * math.sin(tp + pulsePhase);
+    final orbR =
+        (radiusBase + rng.nextDouble() * radiusRange) * sizeScale * pulseScale;
 
     // 서로 다른 정수 주파수 사인의 합 → 궤도처럼 안 보이고 무작위하게 떠돈다.
     // 정수 주파수라 40초 루프 이음새(1→0)에서 위치가 안 튄다.
@@ -1329,7 +1414,12 @@ class _NamedReaderOrbs extends StatelessWidget {
       Positioned(
         left: left,
         top: top,
-        child: _SingleNamedOrb(radius: orbR, color: orbColor, alpha: orbAlpha),
+        child: _SingleNamedOrb(
+          radius: orbR,
+          color: orbColor,
+          alpha: orbAlpha,
+          layers: layers,
+        ),
       ),
     );
 
@@ -1362,11 +1452,13 @@ class _SingleNamedOrb extends StatelessWidget {
   final double radius;
   final Color color;
   final double alpha;
+  final int layers;
 
   const _SingleNamedOrb({
     required this.radius,
     this.color = _kGreen,
     this.alpha = 1.0,
+    this.layers = 3,
   });
 
   @override
@@ -1376,7 +1468,12 @@ class _SingleNamedOrb extends StatelessWidget {
       width: d,
       height: d,
       child: CustomPaint(
-        painter: _OrbRingPainter(radius: radius, color: color, alpha: alpha),
+        painter: _OrbRingPainter(
+          radius: radius,
+          color: color,
+          alpha: alpha,
+          layers: layers,
+        ),
       ),
     );
   }
@@ -1386,32 +1483,46 @@ class _OrbRingPainter extends CustomPainter {
   final double radius;
   final Color color;
   final double alpha;
+  final int layers;
 
   const _OrbRingPainter({
     required this.radius,
     this.color = _kGreen,
     this.alpha = 1.0,
-  });
+    this.layers = 3,
+  }) : assert(layers >= 1 && layers <= 3);
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
-    final shader = ui.Gradient.radial(
+    // 시간이 지날수록 중심에서 바깥쪽으로 최대 3단까지 성장한다.
+    if (layers >= 3) {
+      canvas.drawCircle(
+        c,
+        radius,
+        Paint()..color = color.withValues(alpha: 0.08 * alpha),
+      );
+    }
+    if (layers >= 2) {
+      canvas.drawCircle(
+        c,
+        radius * 0.65,
+        Paint()..color = color.withValues(alpha: 0.20 * alpha),
+      );
+    }
+    canvas.drawCircle(
       c,
-      radius,
-      [
-        color.withValues(alpha: 0.40 * alpha),
-        color.withValues(alpha: 0.20 * alpha),
-        color.withValues(alpha: 0),
-      ],
-      const [0.0, 0.42, 1.0],
+      radius * 0.32,
+      Paint()..color = color.withValues(alpha: alpha),
     );
-    canvas.drawCircle(c, radius, Paint()..shader = shader);
   }
 
   @override
   bool shouldRepaint(_OrbRingPainter old) =>
-      old.radius != radius || old.color != color || old.alpha != alpha;
+      old.radius != radius ||
+      old.color != color ||
+      old.alpha != alpha ||
+      old.layers != layers;
 }
 
 // ─── 배경 (순수 블랙) ──────────────────────────────────────────────────────
@@ -4656,7 +4767,6 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
     final books =
         fireflyAsync.valueOrNull?.books ??
         const <String, ReadingPresenceInfo>{};
-    final timer = ref.watch(timerProvider);
     final size = MediaQuery.sizeOf(context);
     final panelHeight = size.height * 0.80;
 
@@ -4674,12 +4784,6 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            top: size.height * 0.07,
-            left: 0,
-            right: 0,
-            child: Center(child: _SheetTopTimer(timer: timer)),
-          ),
           Positioned(
             left: 0,
             right: 0,
@@ -4727,7 +4831,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                         ),
                         Align(
                           alignment: Alignment.centerRight,
-                          child: _TabToggle(
+                          child: _ReadersFilter(
                             current: _tab,
                             onChanged: changeTab,
                           ),
@@ -4763,63 +4867,91 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
   }
 }
 
-class _SheetTopTimer extends StatelessWidget {
-  final TimerData timer;
-
-  const _SheetTopTimer({required this.timer});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSM),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(AppTheme.radiusInner),
-        border: Border.all(color: _kGreen, width: 1),
-      ),
-      child: Text(
-        timer.formattedTime,
-        style: TextStyle(
-          color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontSize: AppTheme.fsRowText,
-          fontFamily: _kFont,
-          letterSpacing: 0.6,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
-      ),
-    );
-  }
-}
-
-// 탭 토글 (사람 / 책)
-class _TabToggle extends StatelessWidget {
+// 사람 / 책을 좌우로 넘기는 필터. 본문 PageView와 같은 상태를 공유한다.
+class _ReadersFilter extends StatelessWidget {
   final int current;
   final ValueChanged<int> onChanged;
 
-  const _TabToggle({required this.current, required this.onChanged});
+  const _ReadersFilter({required this.current, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final target = current == 0 ? 1 : 0;
-    final icon = current == 0 ? Icons.menu_book_rounded : Icons.people_rounded;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => onChanged(target),
-      child: Container(
-        width: 50,
-        height: 30,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radiusInner),
-          color: Colors.white.withValues(alpha: 0.08),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white.withValues(alpha: 0.58),
-          size: 22,
+    return Semantics(
+      label: current == 0 ? '친구 필터, 책으로 전환' : '책 필터, 친구로 전환',
+      button: true,
+      child: GestureDetector(
+        key: const ValueKey('readers-sheet-filter'),
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (details) {
+          onChanged(details.localPosition.dx < AppTheme.spaceXL * 2 ? 0 : 1);
+        },
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() < 100) return;
+          onChanged(velocity < 0 ? 1 : 0);
+        },
+        child: SizedBox(
+          width: AppTheme.spaceXL * 4,
+          height: kMinInteractiveDimension,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppTheme.darkNested,
+              borderRadius: BorderRadius.circular(AppTheme.radiusInner),
+            ),
+            child: Stack(
+              children: [
+                AnimatedAlign(
+                  key: const ValueKey('readers-sheet-filter-thumb'),
+                  alignment: current == 0
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    heightFactor: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppTheme.spaceXS),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkCard,
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusInner,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: Icon(
+                          Icons.people_rounded,
+                          color: current == 0
+                              ? _kGreen
+                              : Colors.white.withValues(alpha: 0.48),
+                          size: AppTheme.fsSectionTitle,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Icon(
+                          Icons.menu_book_rounded,
+                          color: current == 1
+                              ? _kGreen
+                              : Colors.white.withValues(alpha: 0.48),
+                          size: AppTheme.fsSectionTitle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

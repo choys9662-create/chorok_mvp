@@ -67,37 +67,47 @@ class BlockedUsersScreen extends ConsumerWidget {
               ),
             );
           }
-          return ChorokRefresh(
-            onRefresh: () async {
-              ref.invalidate(_blockedUsersProvider);
-              await ref.read(_blockedUsersProvider.future);
-            },
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding,
-                vertical: AppTheme.spaceMD,
-              ),
-              itemCount: users.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: AppTheme.spaceSM),
-              itemBuilder: (context, i) {
-                final u = users[i];
-                return _BlockedUserTile(
-                  profile: u,
-                  onUnblock: () async {
-                    HapticFeedback.selectionClick();
-                    await ref.read(moderationRepositoryProvider).unblock(u.id);
-                    ref.invalidate(_blockedUsersProvider);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(chorokSnackBar(context, '차단을 해제했어요'));
-                    }
-                  },
-                );
-              },
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
+            slivers: [
+              ChorokSliverRefreshControl(
+                onRefresh: () async {
+                  ref.invalidate(_blockedUsersProvider);
+                  await ref.read(_blockedUsersProvider.future);
+                },
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                  vertical: AppTheme.spaceMD,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index.isOdd) {
+                      return const SizedBox(height: AppTheme.spaceSM);
+                    }
+                    final u = users[index ~/ 2];
+                    return _BlockedUserTile(
+                      profile: u,
+                      onUnblock: () async {
+                        HapticFeedback.selectionClick();
+                        await ref
+                            .read(moderationRepositoryProvider)
+                            .unblock(u.id);
+                        ref.invalidate(_blockedUsersProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(chorokSnackBar(context, '차단을 해제했어요'));
+                        }
+                      },
+                    );
+                  }, childCount: users.length * 2 - 1),
+                ),
+              ),
+            ],
           );
         },
       ),

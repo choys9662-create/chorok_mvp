@@ -85,6 +85,8 @@ Home summary card: active card만 `#8DFF54` fill을 허용한다. 비활성 card
 
 Book card: 표지 이미지가 있으면 이미지를 우선하고, fallback gradient는 보조 수단이다. progress bar는 얇게 유지한다.
 
+Book info hero: 402 기준 첫 진입 표지는 168 x 244, 스크롤 후 표지는 28 x 40이다. 첫 화면의 제목·저자와 CTA는 실제 제목 줄 수에 맞춰 붙인다. 스크롤 시 고정 헤더는 제목·저자 두 줄과 48pt 터치 영역 높이까지 접히고, 표지는 오른쪽 상단으로 축소되며 제목·저자는 상단 중앙에 정렬된다. 실제 표지 값은 `AppTheme.bookInfoCoverExpandedSize` / `bookInfoCoverCollapsedSize`가 가진다.
+
 Live reader card:
 
 - row 중심.

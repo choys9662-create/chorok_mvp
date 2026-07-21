@@ -305,46 +305,40 @@ class _ChoseoTabBar extends StatelessWidget {
 
 // ─── 책별 탭 ─────────────────────────────────────────────────────────────────
 
-class _ByBookTab extends StatelessWidget {
+class _ByBookTab extends ConsumerWidget {
   final ChoseoListState state;
   const _ByBookTab({required this.state});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final grouped = state.byBook;
     if (grouped.isEmpty) return const _EmptyView();
 
     final books = grouped.keys.toList();
-    return _ChoseoRefresh(
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          AppTheme.spaceSM,
-          AppTheme.screenPadding,
-          AppTheme.sectionGap,
-        ),
-        itemCount: books.length,
-        itemBuilder: (_, i) {
-          final title = books[i];
-          final items = grouped[title]!;
-          return _BookGroup(title: title, items: items);
-        },
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
       ),
-    );
-  }
-}
-
-/// 초서 목록 탭 공용 새로고침. 상단 바가 스크롤 뷰 위에 있어 edgeOffset 은 0.
-class _ChoseoRefresh extends ConsumerWidget {
-  final Widget child;
-  const _ChoseoRefresh({required this.child});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ChorokRefresh(
-      onRefresh: () => ref.read(choseoListProvider.notifier).load(),
-      child: child,
+      slivers: [
+        ChorokSliverRefreshControl(
+          onRefresh: () => ref.read(choseoListProvider.notifier).load(),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            AppTheme.spaceSM,
+            AppTheme.screenPadding,
+            AppTheme.sectionGap,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((_, i) {
+              final title = books[i];
+              final items = grouped[title]!;
+              return _BookGroup(title: title, items: items);
+            }, childCount: books.length),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -479,27 +473,38 @@ class _ByDateTab extends ConsumerWidget {
     final canLoadMore = state.query.trim().isEmpty && state.hasMore;
     final itemCount = items.length + (canLoadMore ? 1 : 0);
 
-    return _ChoseoRefresh(
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          AppTheme.spaceSM,
-          AppTheme.screenPadding,
-          AppTheme.sectionGap,
-        ),
-        itemCount: itemCount,
-        separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
-        itemBuilder: (_, i) {
-          if (i >= items.length) {
-            return _LoadMoreRow(
-              isLoading: state.isLoadingMore,
-              onTap: () => ref.read(choseoListProvider.notifier).loadMore(),
-            );
-          }
-          return _ChoseoCard(item: items[i], showBookInfo: true);
-        },
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
       ),
+      slivers: [
+        ChorokSliverRefreshControl(
+          onRefresh: () => ref.read(choseoListProvider.notifier).load(),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            AppTheme.spaceSM,
+            AppTheme.screenPadding,
+            AppTheme.sectionGap,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((_, index) {
+              if (index.isOdd) {
+                return const SizedBox(height: AppTheme.spaceMD);
+              }
+              final itemIndex = index ~/ 2;
+              if (itemIndex >= items.length) {
+                return _LoadMoreRow(
+                  isLoading: state.isLoadingMore,
+                  onTap: () => ref.read(choseoListProvider.notifier).loadMore(),
+                );
+              }
+              return _ChoseoCard(item: items[itemIndex], showBookInfo: true);
+            }, childCount: itemCount * 2 - 1),
+          ),
+        ),
+      ],
     );
   }
 }

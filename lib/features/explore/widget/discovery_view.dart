@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../home/controller/recommended_books_provider.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/discovery_provider.dart';
@@ -182,51 +183,63 @@ class DiscoveryView extends ConsumerWidget {
       );
     }
 
-    return ChorokRefresh(
-      onRefresh: () async {
-        ref.invalidate(popularBooksProvider);
-        ref.invalidate(popularAuthorsProvider);
-        ref.invalidate(recommendedBooksProvider);
-        await ref.read(popularBooksProvider.future);
-      },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.only(top: 4, bottom: 40),
-        children: [
-          if (books.isNotEmpty) ...[
-            _SectionHeader(
-              title: '지금 가장 많이 검색되는 책',
-              onTap: () => _showPopularBooks(context, books),
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            _PopularBooksRow(books: books, onTap: onBookNavigate),
-            const SizedBox(height: 28),
-          ],
-          if (authors.isNotEmpty) ...[
-            _SectionHeader(
-              title: '지금 가장 많이 검색되는 작가',
-              onTap: () => _showPopularAuthors(context, authors),
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            _PopularAuthorsCard(
-              authors: authors,
-              onTap: onAuthorTap,
-              onMoreTap: () => _showPopularAuthors(context, authors),
-            ),
-            const SizedBox(height: 28),
-          ],
-          if (recs.isNotEmpty) ...[
-            _SectionHeader(
-              title: recommendationTitle,
-              onTap: () =>
-                  _showRecommendations(context, recommendationTitle, recs),
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            _RecommendedGrid(books: recs, onTap: onTitleTap),
-          ],
-        ],
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
       ),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        ChorokSliverRefreshControl(
+          onRefresh: () async {
+            ref.invalidate(popularBooksProvider);
+            ref.invalidate(popularAuthorsProvider);
+            ref.invalidate(recommendedBooksProvider);
+            await Future.wait<void>([
+              ref.read(popularBooksProvider.future).then<void>((_) {}),
+              ref.read(popularAuthorsProvider.future).then<void>((_) {}),
+              ref.read(recommendedBooksProvider.future).then<void>((_) {}),
+            ]);
+          },
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.only(top: 4, bottom: 40),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              if (books.isNotEmpty) ...[
+                _SectionHeader(
+                  title: '지금 가장 많이 검색되는 책',
+                  onTap: () => _showPopularBooks(context, books),
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+                _PopularBooksRow(books: books, onTap: onBookNavigate),
+                const SizedBox(height: 28),
+              ],
+              if (authors.isNotEmpty) ...[
+                _SectionHeader(
+                  title: '지금 가장 많이 검색되는 작가',
+                  onTap: () => _showPopularAuthors(context, authors),
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+                _PopularAuthorsCard(
+                  authors: authors,
+                  onTap: onAuthorTap,
+                  onMoreTap: () => _showPopularAuthors(context, authors),
+                ),
+                const SizedBox(height: 28),
+              ],
+              if (recs.isNotEmpty) ...[
+                _SectionHeader(
+                  title: recommendationTitle,
+                  onTap: () =>
+                      _showRecommendations(context, recommendationTitle, recs),
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+                _RecommendedGrid(books: recs, onTap: onTitleTap),
+              ],
+            ]),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -395,12 +408,8 @@ class _PopularAuthorsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-      child: Container(
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: AppTheme.radiusOuter,
-          side: BorderSide.none,
-        ),
+      child: ChorokCard(
+        showBorder: false,
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
         child: Column(
           children: [

@@ -12,6 +12,7 @@ import '../widget/overlap_section.dart';
 import '../widget/home_app_bar.dart';
 
 import '../../../shared/providers/tab_scroll_controllers.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 import '../controller/weekly_minutes_provider.dart';
 
 // ─── 홈 전용 Provider ────────────────────────────────────────────────────────
@@ -35,36 +36,35 @@ class HomeScreen extends ConsumerWidget {
           SizedBox(height: topPad),
           const HomeAppBar(),
           Expanded(
-            child: RefreshIndicator(
-              color: context.appAccentColor,
-              onRefresh: () async {
-                ref.invalidate(weeklyMinutesProvider);
-              },
-              child: CustomScrollView(
-                controller: scrollCtrl,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppTheme.spaceLG),
-                  ),
-                  const SliverToBoxAdapter(child: HomeStatCards()),
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppTheme.sectionGap),
-                  ),
-                  const SliverToBoxAdapter(child: ReadingBooksSection()),
-                  const SliverToBoxAdapter(child: RecommendedBooksSection()),
-                  // ponytail: 아래 세 섹션은 비면 통째로 숨는다. 간격을 각 섹션이
-                  // 직접 들고 있어야 숨을 때 여백도 같이 사라진다.
-                  const SliverToBoxAdapter(child: ReadingFriendsSection()),
-                  const SliverToBoxAdapter(child: FriendsReadTodaySection()),
-                  const SliverToBoxAdapter(child: OverlapSection()),
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).padding.bottom + 112,
-                    ),
-                  ),
-                ],
+            child: CustomScrollView(
+              controller: scrollCtrl,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
+              slivers: [
+                ChorokSliverRefreshControl(
+                  onRefresh: () => ref.refresh(weeklyMinutesProvider.future),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.spaceLG),
+                ),
+                const SliverToBoxAdapter(child: HomeStatCards()),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: AppTheme.sectionGap),
+                ),
+                const SliverToBoxAdapter(child: ReadingBooksSection()),
+                const SliverToBoxAdapter(child: RecommendedBooksSection()),
+                // ponytail: 아래 세 섹션은 비면 통째로 숨는다. 간격을 각 섹션이
+                // 직접 들고 있어야 숨을 때 여백도 같이 사라진다.
+                const SliverToBoxAdapter(child: ReadingFriendsSection()),
+                const SliverToBoxAdapter(child: FriendsReadTodaySection()),
+                const SliverToBoxAdapter(child: OverlapSection()),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 112,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

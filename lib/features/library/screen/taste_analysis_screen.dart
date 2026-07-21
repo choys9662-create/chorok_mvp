@@ -54,27 +54,29 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
         child: booksAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, _) => const _TasteEmpty(message: '독서 취향을 불러오지 못했어요'),
-          data: (books) => ChorokRefresh(
-            onRefresh: () => _refresh(ref),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _tasteHorizontalPadding,
-                      AppTheme.sectionGap,
-                      _tasteHorizontalPadding,
-                      AppTheme.spaceXL,
-                    ),
-                    child: _TasteHeader(
-                      onBack: () => Navigator.of(context).pop(),
-                    ),
-                  ),
+          data: (books) => Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  _tasteHorizontalPadding,
+                  AppTheme.sectionGap,
+                  _tasteHorizontalPadding,
+                  AppTheme.spaceXL,
                 ),
-                ..._buildContent(context, books, sessionGroupsAsync),
-              ],
-            ),
+                child: _TasteHeader(onBack: () => Navigator.of(context).pop()),
+              ),
+              Expanded(
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  slivers: [
+                    ChorokSliverRefreshControl(onRefresh: () => _refresh(ref)),
+                    ..._buildContent(context, books, sessionGroupsAsync),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -82,12 +84,20 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
   }
 
   Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(_tasteSessionGroupsProvider(widget.userId));
+    final sessionGroupsProvider = _mode == _TasteMode.time
+        ? _tasteSessionGroupsProvider(widget.userId)
+        : null;
+    if (sessionGroupsProvider != null) {
+      ref.invalidate(sessionGroupsProvider);
+    }
     if (widget.userId == null) {
       await ref.read(libraryProvider.notifier).reload();
     } else {
       ref.invalidate(userBooksProvider(widget.userId!));
       await ref.read(userBooksProvider(widget.userId!).future);
+    }
+    if (sessionGroupsProvider != null) {
+      await ref.read(sessionGroupsProvider.future);
     }
   }
 

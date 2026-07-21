@@ -256,12 +256,18 @@ class AppTheme {
   static const double space3XL = 30.0;
   static const double screenPadding = 16.0;
   static const double sectionGap = 30.0;
+  static const double recommendedBookGridGap = 6.0;
+
   /// 바깥 카드 안에 중첩된 inner 박스의 여백.
   static const double cardPaddingInner = 6.0;
   static const double cardPaddingLG = 16.0;
   static const double cardPaddingMD = 16.0;
   static const double touchTarget = 48.0;
   static const double iconMD = 20.0;
+
+  /// 책 정보 화면 히어로 표지. 접힌 헤더 안에서 크기와 위치를 보간한다.
+  static const Size bookInfoCoverExpandedSize = Size(168, 244);
+  static const Size bookInfoCoverCollapsedSize = Size(28, 40);
 
   // ─── 타이포그래피 토큰 ───────────────────────────────────────────
   // 일반 타입 스케일은 30 / 18 / 16 / 14 / 12 / 10의 여섯 단계다.

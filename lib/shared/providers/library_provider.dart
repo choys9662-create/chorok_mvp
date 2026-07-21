@@ -49,10 +49,13 @@ class LibraryNotifier extends Notifier<List<Book>> {
         book.isbn!.isNotEmpty &&
         state.any((b) => b.isbn == book.isbn);
     if (isDuplicate) return false;
-    state = [...state, book];
+    final addedBook = book.addedAt == null
+        ? book.copyWith(addedAt: DateTime.now())
+        : book;
+    state = [...state, addedBook];
     if (kUseMock) return true;
     // fire-and-forget — UX는 즉시 반영, Supabase 저장은 백그라운드
-    ref.read(supabaseBookRepositoryProvider).saveFromBook(book);
+    ref.read(supabaseBookRepositoryProvider).saveFromBook(addedBook);
     return true;
   }
 

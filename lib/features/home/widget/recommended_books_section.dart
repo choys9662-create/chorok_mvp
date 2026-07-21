@@ -45,8 +45,8 @@ class RecommendedBooksSection extends ConsumerWidget {
               itemCount: books.length > 8 ? 8 : books.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
-                crossAxisSpacing: AppTheme.spaceMD,
-                mainAxisSpacing: AppTheme.spaceMD,
+                crossAxisSpacing: AppTheme.recommendedBookGridGap,
+                mainAxisSpacing: AppTheme.recommendedBookGridGap,
                 childAspectRatio: 0.66,
               ),
               itemBuilder: (_, i) => RecommendedBookCover(book: books[i]),
@@ -194,8 +194,8 @@ class RecommendedBooksSection extends ConsumerWidget {
         itemCount: 8,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
-          crossAxisSpacing: AppTheme.spaceMD,
-          mainAxisSpacing: AppTheme.spaceMD,
+          crossAxisSpacing: AppTheme.recommendedBookGridGap,
+          mainAxisSpacing: AppTheme.recommendedBookGridGap,
           childAspectRatio: 0.66,
         ),
         itemBuilder: (_, _) => const ChorokCard(

@@ -251,50 +251,51 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
               ],
             ),
-      body: ChorokRefresh(
-        // 본인 서재는 스크롤 뷰가 화면 최상단까지 차오르므로 인디케이터를 인셋만큼
-        // 내린다. 남의 서재는 위에 AppBar 가 있어 0 이면 그 아래에 뜬다.
-        edgeOffset: _isOwner ? topPad : 0,
-        onRefresh: _refresh,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          controller: _isOwner
-              ? ref.read(tabScrollControllersProvider)[3]
-              : null,
-          child: Column(
-            children: [
-              if (_isOwner) SizedBox(height: topPad),
-              // ── 프로필 헤더 ──────────────────────────────────────
-              if (_isOwner)
-                Consumer(
-                  builder: (context, ref, _) {
-                    final streak =
-                        ref
-                            .watch(readingStreakProvider)
-                            .whenOrNull(data: (v) => v) ??
-                        0;
-                    return ProfileHeader(
-                      onSettingsTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push(AppConstants.routeSettings);
-                      },
-                      streak: streak,
-                    );
+      body: Column(
+        children: [
+          if (_isOwner) SizedBox(height: topPad),
+          // ── 프로필 헤더는 고정하고, 새로고침은 아래 콘텐츠에서만 연다. ──
+          if (_isOwner)
+            Consumer(
+              builder: (context, ref, _) {
+                final streak =
+                    ref
+                        .watch(readingStreakProvider)
+                        .whenOrNull(data: (v) => v) ??
+                    0;
+                return ProfileHeader(
+                  onSettingsTap: () {
+                    HapticFeedback.selectionClick();
+                    context.push(AppConstants.routeSettings);
                   },
-                )
-              else
-                _ViewerProfileHeader(
-                  profile: widget.viewedUser!,
-                  isBlocked: isBlocked,
+                  streak: streak,
+                );
+              },
+            )
+          else
+            _ViewerProfileHeader(
+              profile: widget.viewedUser!,
+              isBlocked: isBlocked,
+            ),
+          Expanded(
+            child: CustomScrollView(
+              controller: _isOwner
+                  ? ref.read(tabScrollControllersProvider)[3]
+                  : null,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                ChorokSliverRefreshControl(onRefresh: _refresh),
+                SliverToBoxAdapter(
+                  child: isLocked
+                      ? const _PrivateLibraryLock()
+                      : _buildOverviewTab(viewerData),
                 ),
-
-              if (isLocked)
-                const _PrivateLibraryLock()
-              else
-                _buildOverviewTab(viewerData),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -302,11 +303,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Future<void> _refresh() async {
     if (_isOwner) {
       ref.invalidate(readingLogsProvider);
-      await ref.read(libraryProvider.notifier).reload();
+      await Future.wait<void>([
+        ref.read(libraryProvider.notifier).reload(),
+        ref.read(readingLogsProvider.future).then<void>((_) {}),
+      ]);
     } else {
       ref.invalidate(userProfileProvider(_uid!));
       ref.invalidate(userBooksProvider(_uid!));
-      await ref.read(userProfileProvider(_uid!).future);
+      await Future.wait<void>([
+        ref.read(userProfileProvider(_uid!).future).then<void>((_) {}),
+        ref.read(userBooksProvider(_uid!).future).then<void>((_) {}),
+      ]);
     }
   }
 
@@ -1261,6 +1268,7 @@ class _ReadingNowCard extends StatelessWidget {
     final visible = reading.take(3).toList();
     return _SectionBand(
       title: '읽고 있는 책',
+      titleColor: context.appPrimaryAccent,
       child: ChorokCard(
         padding: const EdgeInsets.all(AppTheme.cardPaddingInner),
         showBorder: false,
@@ -1480,20 +1488,33 @@ class _StatTilesRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tiles = <({String label, int value, VoidCallback onTap})>[
-      (
-        label: '독서중',
-        value: reading,
-        onTap: () => onOpenStatus(ReadingStatus.reading),
-      ),
-      (
-        label: '완독',
-        value: completed,
-        onTap: () => onOpenStatus(ReadingStatus.completed),
-      ),
-      (label: '문장·생각', value: sentenceCount, onTap: onOpenSentences),
-      (label: '겹문장', value: overlapCount, onTap: onOpenOverlaps),
-    ];
+    final tiles =
+        <({String label, int value, VoidCallback onTap, bool active})>[
+          (
+            label: '완독',
+            value: completed,
+            onTap: () => onOpenStatus(ReadingStatus.completed),
+            active: false,
+          ),
+          (
+            label: '문장',
+            value: sentenceCount,
+            onTap: onOpenSentences,
+            active: false,
+          ),
+          (
+            label: '겹문장',
+            value: overlapCount,
+            onTap: onOpenOverlaps,
+            active: false,
+          ),
+          (
+            label: '모두의 문장',
+            value: reading,
+            onTap: () => onOpenStatus(ReadingStatus.reading),
+            active: true,
+          ),
+        ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Row(
@@ -1509,7 +1530,7 @@ class _StatTilesRow extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  final ({String label, int value, VoidCallback onTap}) item;
+  final ({String label, int value, VoidCallback onTap, bool active}) item;
 
   const _StatTile({required this.item});
 
@@ -1526,7 +1547,12 @@ class _StatTile extends StatelessWidget {
         child: SizedBox(
           height: 76,
           child: ChorokCard(
-            borderColor: context.appBorderSubtle,
+            backgroundColor: item.active
+                ? context.appPrimaryAccent
+                : context.appCard,
+            borderColor: item.active
+                ? context.appPrimaryAccent
+                : context.appBorderSubtle,
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.spaceSM,
               vertical: AppTheme.spaceMD,
@@ -1540,7 +1566,9 @@ class _StatTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.caption.copyWith(
-                    color: context.appTextTertiary,
+                    color: item.active
+                        ? AppTheme.primary
+                        : context.appTextTertiary,
                     letterSpacing: 0,
                   ),
                 ),
@@ -1549,7 +1577,9 @@ class _StatTile extends StatelessWidget {
                   child: Text(
                     '${item.value}',
                     style: AppTheme.sectionTitle.copyWith(
-                      color: context.appTextPrimary,
+                      color: item.active
+                          ? AppTheme.primary
+                          : context.appTextPrimary,
                       letterSpacing: 0,
                     ),
                   ),
@@ -1993,8 +2023,14 @@ class _SectionBand extends StatelessWidget {
   final String title;
   final Widget child;
   final Widget? trailing;
+  final Color? titleColor;
 
-  const _SectionBand({required this.title, required this.child, this.trailing});
+  const _SectionBand({
+    required this.title,
+    required this.child,
+    this.trailing,
+    this.titleColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2009,7 +2045,11 @@ class _SectionBand extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: AppTheme.spaceMD,
         children: [
-          ChorokSectionHeader(title: title, trailing: trailing),
+          ChorokSectionHeader(
+            title: title,
+            trailing: trailing,
+            titleColor: titleColor,
+          ),
           child,
         ],
       ),

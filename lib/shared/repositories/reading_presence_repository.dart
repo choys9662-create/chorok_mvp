@@ -34,19 +34,28 @@ class ReadingPresenceRepository {
       'book_title': bookTitle,
       'book_author': bookAuthor,
       'book_cover_url': bookCoverUrl,
-      'location_lat': latitude,
-      'location_lng': longitude,
     }, onConflict: 'user_id');
+
+    // 위치 좌표는 맞팔에게도 직접 읽힐 수 없도록 SELECT 권한을 막아 둔다.
+    // PostgreSQL upsert는 conflict update에 포함한 컬럼의 SELECT 권한도 요구하므로,
+    // 공개 가능한 presence 필드를 먼저 저장한 뒤 좌표만 별도 갱신한다.
+    await _client
+        .from('reading_presence')
+        .update({'location_lat': latitude, 'location_lng': longitude})
+        .eq('user_id', me);
   }
 
   /// 진행 중 — last_heartbeat_at 갱신.
+  ///
+  /// 인증 복원보다 화면 진입이 먼저 끝나 [start]가 행을 만들지 못한 경우에도
+  /// heartbeat가 presence를 복구할 수 있도록 upsert한다.
   Future<void> heartbeat() async {
     final me = _meId;
     if (me == null) return;
-    await _client
-        .from('reading_presence')
-        .update({'last_heartbeat_at': DateTime.now().toUtc().toIso8601String()})
-        .eq('user_id', me);
+    await _client.from('reading_presence').upsert({
+      'user_id': me,
+      'last_heartbeat_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id');
   }
 
   /// 세션 종료 — presence 행 삭제.

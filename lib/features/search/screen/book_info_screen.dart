@@ -638,6 +638,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     final gradientIndex =
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
     final showBackButton = Navigator.of(context).canPop();
+    final heroTitleHeight = _bookInfoHeroTitleHeight(context, book.title);
 
     final globalBookId = isbn.isEmpty
         ? null
@@ -650,77 +651,14 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
       body: CustomScrollView(
         slivers: [
           // ── 히어로: 뒤로가기 + 표지 + 제목 + 저자 ─────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.screenPadding,
-                topPad + AppTheme.spaceSM,
-                AppTheme.screenPadding,
-                AppTheme.spaceXL,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showBackButton)
-                    Semantics(
-                      button: true,
-                      label: '뒤로가기',
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          alignment: Alignment.topCenter,
-                          padding: const EdgeInsets.only(top: AppTheme.spaceXS),
-                          child: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: context.appTextSecondary,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(width: 44, height: 44),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        BookCover(
-                          coverUrl: book.coverUrl,
-                          gradientIndex: gradientIndex,
-                          width: 132,
-                          height: 192,
-                          radius: AppTheme.radiusOuter,
-                        ),
-                        const SizedBox(height: AppTheme.spaceXL),
-                        Text(
-                          book.title,
-                          style: AppTheme.sectionTitle.copyWith(
-                            color: context.appTextPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppTheme.spaceSM),
-                        Text(
-                          book.author,
-                          style: AppTheme.body.copyWith(
-                            color: context.appTextSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 44, height: 44),
-                ],
-              ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _BookInfoHeroDelegate(
+              book: book,
+              gradientIndex: gradientIndex,
+              topPadding: topPad,
+              showBackButton: showBackButton,
+              titleHeight: heroTitleHeight,
             ),
           ),
 
@@ -926,6 +864,275 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
   }
 }
 
+double _bookInfoHeroTitleHeight(BuildContext context, String title) {
+  final titlePainter =
+      TextPainter(
+        text: TextSpan(
+          text: title,
+          style: DefaultTextStyle.of(context).style.merge(
+            AppTheme.sectionTitle.copyWith(color: context.appTextPrimary),
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: _BookInfoHeroDelegate._titleMaxLines,
+        ellipsis: '…',
+      )..layout(
+        maxWidth: MediaQuery.sizeOf(context).width - AppTheme.screenPadding * 2,
+      );
+  return titlePainter.height;
+}
+
+class _BookInfoHeroDelegate extends SliverPersistentHeaderDelegate {
+  static const Size _expandedCoverSize = AppTheme.bookInfoCoverExpandedSize;
+  static const Size _collapsedCoverSize = AppTheme.bookInfoCoverCollapsedSize;
+  static const int _titleMaxLines = 3;
+
+  final AladinBook book;
+  final int gradientIndex;
+  final double topPadding;
+  final bool showBackButton;
+  final double titleHeight;
+
+  const _BookInfoHeroDelegate({
+    required this.book,
+    required this.gradientIndex,
+    required this.topPadding,
+    required this.showBackButton,
+    required this.titleHeight,
+  });
+
+  double get _authorHeight => AppTheme.body.fontSize! * AppTheme.body.height!;
+
+  double get _collapsedMetadataHeight =>
+      (AppTheme.body.fontSize! * AppTheme.body.height! +
+              AppTheme.spaceXS +
+              AppTheme.supportingText.fontSize! *
+                  AppTheme.supportingText.height!)
+          .ceilToDouble();
+
+  double get _collapsedContentHeight =>
+      _collapsedMetadataHeight > AppTheme.touchTarget
+      ? _collapsedMetadataHeight
+      : AppTheme.touchTarget;
+
+  @override
+  double get minExtent =>
+      topPadding +
+      AppTheme.spaceXS +
+      _collapsedContentHeight +
+      AppTheme.spaceXS;
+
+  @override
+  double get maxExtent =>
+      topPadding +
+      AppTheme.spaceSM +
+      _expandedCoverSize.height +
+      AppTheme.spaceXL +
+      titleHeight +
+      AppTheme.spaceSM +
+      _authorHeight +
+      AppTheme.spaceSM;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final collapseProgress = _clamp01(shrinkOffset / (maxExtent - minExtent));
+    final coverWidth = _lerp(
+      _expandedCoverSize.width,
+      _collapsedCoverSize.width,
+      collapseProgress,
+    );
+    final coverHeight = _lerp(
+      _expandedCoverSize.height,
+      _collapsedCoverSize.height,
+      collapseProgress,
+    );
+    final expandedContentTop = topPadding + AppTheme.spaceSM;
+    final collapsedContentTop = topPadding + AppTheme.spaceXS;
+    final collapsedCoverTop =
+        collapsedContentTop +
+        (_collapsedContentHeight - _collapsedCoverSize.height) / 2;
+    final coverTop = _lerp(
+      expandedContentTop,
+      collapsedCoverTop,
+      collapseProgress,
+    );
+    final backButtonTop = _lerp(
+      expandedContentTop,
+      collapsedContentTop +
+          (_collapsedContentHeight - AppTheme.touchTarget) / 2,
+      collapseProgress,
+    );
+    final collapsedMetadataTop =
+        collapsedContentTop +
+        (_collapsedContentHeight - _collapsedMetadataHeight) / 2;
+    final expandedTextOpacity = _clamp01(1 - collapseProgress * 1.5);
+    final collapsedTextOpacity = _clamp01((collapseProgress - 0.45) / 0.55);
+
+    return ColoredBox(
+      key: const ValueKey('book-info-hero-header'),
+      color: context.appBg,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final expandedCoverLeft = (constraints.maxWidth - coverWidth) / 2;
+          final collapsedCoverLeft =
+              constraints.maxWidth -
+              AppTheme.screenPadding -
+              _collapsedCoverSize.width;
+          final coverLeft = _lerp(
+            expandedCoverLeft,
+            collapsedCoverLeft,
+            collapseProgress,
+          );
+
+          return Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned(
+                left: coverLeft,
+                top: coverTop,
+                child: BookCover(
+                  key: const ValueKey('book-info-cover'),
+                  coverUrl: book.coverUrl,
+                  gradientIndex: gradientIndex,
+                  width: coverWidth,
+                  height: coverHeight,
+                  radius: AppTheme.radiusOuter,
+                ),
+              ),
+              if (showBackButton)
+                Positioned(
+                  left: AppTheme.screenPadding,
+                  top: backButtonTop,
+                  width: AppTheme.touchTarget,
+                  height: AppTheme.touchTarget,
+                  child: Semantics(
+                    button: true,
+                    label: '뒤로가기',
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.of(context).pop();
+                      },
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: context.appTextSecondary,
+                        size: AppTheme.iconMD,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: coverTop + _expandedCoverSize.height + AppTheme.spaceXL,
+                left: AppTheme.screenPadding,
+                right: AppTheme.screenPadding,
+                child: IgnorePointer(
+                  ignoring: expandedTextOpacity == 0,
+                  child: Opacity(
+                    opacity: expandedTextOpacity,
+                    child: Column(
+                      children: [
+                        Text(
+                          book.title,
+                          key: const ValueKey('book-info-expanded-title'),
+                          style: AppTheme.sectionTitle.copyWith(
+                            color: context.appTextPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: _titleMaxLines,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppTheme.spaceSM),
+                        Text(
+                          book.author,
+                          key: const ValueKey('book-info-expanded-author'),
+                          style: AppTheme.body.copyWith(
+                            color: context.appTextSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left:
+                    AppTheme.screenPadding +
+                    AppTheme.touchTarget +
+                    AppTheme.spaceSM,
+                right:
+                    AppTheme.screenPadding +
+                    AppTheme.touchTarget +
+                    AppTheme.spaceSM,
+                top: collapsedMetadataTop,
+                height: _collapsedMetadataHeight,
+                child: IgnorePointer(
+                  ignoring: collapsedTextOpacity == 0,
+                  child: Opacity(
+                    opacity: collapsedTextOpacity,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              book.title,
+                              key: const ValueKey('book-info-collapsed-title'),
+                              style: AppTheme.body.copyWith(
+                                color: context.appTextPrimary,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: AppTheme.spaceXS),
+                            Text(
+                              book.author,
+                              key: const ValueKey('book-info-collapsed-author'),
+                              style: AppTheme.supportingText.copyWith(
+                                color: context.appTextSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _BookInfoHeroDelegate oldDelegate) {
+    return oldDelegate.book != book ||
+        oldDelegate.gradientIndex != gradientIndex ||
+        oldDelegate.topPadding != topPadding ||
+        oldDelegate.showBackButton != showBackButton ||
+        oldDelegate.titleHeight != titleHeight;
+  }
+
+  static double _clamp01(double value) => value.clamp(0.0, 1.0).toDouble();
+
+  static double _lerp(double start, double end, double progress) =>
+      start + (end - start) * progress;
+}
+
 // ─── CTA 버튼 ────────────────────────────────────────────────────────────────
 
 class _ContinueReadingButton extends StatelessWidget {
@@ -956,17 +1163,22 @@ class _ContinueReadingButton extends StatelessWidget {
           gradient: AppTheme.greenGradient,
           showBorder: false,
           padding: EdgeInsets.zero,
-          child: const Center(
+          child: Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.play_arrow_rounded,
                   size: 15,
                   color: AppTheme.darkBg,
                 ),
-                SizedBox(width: AppTheme.spaceXS),
-                Text('이어 읽기', style: AppTheme.supportingText),
+                const SizedBox(width: AppTheme.spaceXS),
+                Text(
+                  '이어 읽기',
+                  style: AppTheme.supportingText.copyWith(
+                    color: AppTheme.darkBg,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1242,9 +1454,20 @@ class _MyRecordsSection extends ConsumerWidget {
     required this.globalBookId,
   });
 
-  void _openChoseoList(BuildContext context) {
+  void _openBookRecords(BuildContext context) {
     HapticFeedback.selectionClick();
-    context.push(AppConstants.routeChoseoList);
+    context.push(
+      AppConstants.routeBookSentences,
+      extra:
+          libraryBook ??
+          Book(
+            id: book.isbn13 ?? '${book.title}_${book.author}',
+            title: book.title,
+            author: book.author,
+            coverUrl: book.coverUrl,
+            isbn: book.isbn13,
+          ),
+    );
   }
 
   @override
@@ -1264,17 +1487,29 @@ class _MyRecordsSection extends ConsumerWidget {
       children: [
         _SectionHeader(
           title: '나의 문장·생각',
-          onSeeAll: () => _openChoseoList(context),
+          onSeeAll: () => _openBookRecords(context),
         ),
         state.when(
           loading: () => const Row(
             children: [
               Expanded(
-                child: ChorokShimmer(width: double.infinity, height: 72),
+                child: ChorokShimmer(
+                  width: double.infinity,
+                  height:
+                      AppTheme.touchTarget +
+                      AppTheme.spaceXL +
+                      AppTheme.spaceXS,
+                ),
               ),
               SizedBox(width: 10),
               Expanded(
-                child: ChorokShimmer(width: double.infinity, height: 72),
+                child: ChorokShimmer(
+                  width: double.infinity,
+                  height:
+                      AppTheme.touchTarget +
+                      AppTheme.spaceXL +
+                      AppTheme.spaceXS,
+                ),
               ),
             ],
           ),
@@ -1292,9 +1527,9 @@ class _MyRecordsSection extends ConsumerWidget {
           child: _CountCard(
             label: '문장',
             count: counts.sentences,
-            background: context.appCard,
-            foreground: AppTheme.darkBg,
-            onTap: () => _openChoseoList(context),
+            background: context.appTextPrimary,
+            foreground: context.appBg,
+            onTap: () => _openBookRecords(context),
           ),
         ),
         const SizedBox(width: 10),
@@ -1304,7 +1539,7 @@ class _MyRecordsSection extends ConsumerWidget {
             count: counts.thoughts,
             background: context.appPrimaryAccent,
             foreground: AppTheme.darkBg,
-            onTap: () => _openChoseoList(context),
+            onTap: () => _openBookRecords(context),
           ),
         ),
       ],
@@ -1338,7 +1573,7 @@ class _CountCard extends StatelessWidget {
           onTap();
         },
         child: SizedBox(
-          height: 72,
+          height: AppTheme.touchTarget + AppTheme.spaceXL + AppTheme.spaceXS,
           child: ChorokCard(
             backgroundColor: background,
             showBorder: false,
@@ -1761,29 +1996,32 @@ class _EmptyCommunityState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChorokCard(
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 32,
-            color: context.appTextTertiary.withValues(alpha: 0.45),
-          ),
-          const SizedBox(height: AppTheme.spaceSM),
-          Text(
-            title,
-            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppTheme.spaceXS),
-          Text(
-            body,
-            style: AppTheme.supportingText.copyWith(
-              color: context.appTextTertiary,
+    return SizedBox(
+      width: double.infinity,
+      child: ChorokCard(
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: context.appTextTertiary.withValues(alpha: 0.45),
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(
+              title,
+              style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppTheme.spaceXS),
+            Text(
+              body,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextTertiary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

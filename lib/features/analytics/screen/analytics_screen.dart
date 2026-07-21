@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/analytics_provider.dart';
 import '../widgets/heatmap_calendar_widget.dart';
@@ -164,7 +165,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
     final asyncA = kUseMock ? null : ref.watch(analyticsProvider);
     final AnalyticsState? a = kUseMock
         ? null
@@ -224,31 +224,56 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     }
 
     return Scaffold(
-      body: RefreshIndicator(
-        color: context.appAccentColor,
-        onRefresh: () => ref.read(analyticsProvider.notifier).refresh(),
-        child: ListView(
-          controller: _scrollCtrl,
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            AppTheme.screenPadding,
-            topPad + 8,
-            AppTheme.screenPadding,
-            40,
-          ),
+      backgroundColor: context.appBg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            const _AnalyticsHeader(),
-            const SizedBox(height: AppTheme.spaceLG),
-            TabSelector(
-              selected: _tab,
-              onChanged: (i) => setState(() => _tab = i),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.screenPadding,
+                AppTheme.spaceSM,
+                AppTheme.screenPadding,
+                0,
+              ),
+              child: _AnalyticsHeader(),
             ),
-            const SizedBox(height: AppTheme.spaceXL),
-            ...(_tab == 0
-                ? _buildWeekContent(a, weekSubtitle, now)
-                : _tab == 1
-                ? _buildMonthContent(a, now)
-                : _buildYearContent(a, now)),
+            Expanded(
+              child: CustomScrollView(
+                controller: _scrollCtrl,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  ChorokSliverRefreshControl(
+                    onRefresh: () =>
+                        ref.read(analyticsProvider.notifier).refresh(),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceLG,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceXL + AppTheme.spaceLG,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        TabSelector(
+                          selected: _tab,
+                          onChanged: (i) => setState(() => _tab = i),
+                        ),
+                        const SizedBox(height: AppTheme.spaceXL),
+                        ...(_tab == 0
+                            ? _buildWeekContent(a, weekSubtitle, now)
+                            : _tab == 1
+                            ? _buildMonthContent(a, now)
+                            : _buildYearContent(a, now)),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

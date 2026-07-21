@@ -60,6 +60,9 @@ class _FakeLibraryNotifier extends LibraryNotifier {
 }
 
 class _FakePresenceRepository implements ReadingPresenceRepository {
+  int startCount = 0;
+  int heartbeatCount = 0;
+
   @override
   Future<void> start({
     String? bookTitle,
@@ -67,10 +70,14 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
     String? bookCoverUrl,
     double? latitude,
     double? longitude,
-  }) async {}
+  }) async {
+    startCount++;
+  }
 
   @override
-  Future<void> heartbeat() async {}
+  Future<void> heartbeat() async {
+    heartbeatCount++;
+  }
 
   @override
   Future<void> end() async {}
@@ -93,6 +100,7 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
 
 Widget _buildScreen({
   List<Map<String, dynamic>> promptCandidates = const [],
+  ReadingPresenceRepository? presenceRepository,
   List<Override> overrides = const [],
 }) {
   const selectedBook = Book(
@@ -121,7 +129,7 @@ Widget _buildScreen({
         () => _FakeLibraryNotifier([firstReadingBook, selectedBook]),
       ),
       readingPresenceRepositoryProvider.overrideWithValue(
-        _FakePresenceRepository(),
+        presenceRepository ?? _FakePresenceRepository(),
       ),
       sessionFireflyProvider.overrideWith(
         (ref) async => (
@@ -151,6 +159,75 @@ Widget _buildScreen({
 }
 
 void main() {
+  test('반딧불이는 독서 시간에 따라 최대 3단까지 성장한다', () {
+    expect(fireflyVisualForElapsed(Duration.zero), (
+      radius: 10,
+      layers: 1,
+      pulseAmplitude: 0,
+    ));
+    expect(fireflyVisualForElapsed(const Duration(minutes: 10)), (
+      radius: 14,
+      layers: 2,
+      pulseAmplitude: 0,
+    ));
+    expect(fireflyVisualForElapsed(const Duration(minutes: 30)), (
+      radius: 18,
+      layers: 3,
+      pulseAmplitude: 0.04,
+    ));
+    expect(fireflyVisualForElapsed(const Duration(minutes: 60)), (
+      radius: 22,
+      layers: 3,
+      pulseAmplitude: 0.06,
+    ));
+  });
+
+  test('동시 접속자 수에 따라 반딧불이 밀도를 조절한다', () {
+    expect(fireflyDensityScale(5), 1);
+    expect(fireflyDensityScale(6), 0.9);
+    expect(fireflyDensityScale(10), 0.9);
+    expect(fireflyDensityScale(11), 0.8);
+  });
+
+  testWidgets('라이브 포레스트 진입만으로 presence를 시작한다', (tester) async {
+    final presence = _FakePresenceRepository();
+
+    await tester.pumpWidget(_buildScreen(presenceRepository: presence));
+    await tester.pump();
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ReadingSessionScreen)),
+    );
+    expect(container.read(timerProvider).isIdle, isTrue);
+    expect(presence.startCount, 1);
+  });
+
+  testWidgets('진입 직후 presence 복구 heartbeat를 보낸다', (tester) async {
+    final presence = _FakePresenceRepository();
+
+    await tester.pumpWidget(_buildScreen(presenceRepository: presence));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(presence.heartbeatCount, 1);
+  });
+
+  testWidgets('앱 복귀 직후 presence heartbeat와 숲 갱신을 시작한다', (tester) async {
+    final presence = _FakePresenceRepository();
+
+    await tester.pumpWidget(_buildScreen(presenceRepository: presence));
+    await tester.pump();
+    await tester.pump();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(presence.heartbeatCount, 1);
+  });
+
   testWidgets('선택한 책이 첫 번째 reading 책으로 대체되지 않는다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
@@ -187,6 +264,33 @@ void main() {
     // horizontal padding, _SessionStartOverlay 참고) — screenPadding(16)이
     // 아니라 이 화면 전용 sectionGap 여백을 따른다.
     expect(buttonSize.width, lessThanOrEqualTo(402 - AppTheme.sectionGap * 2));
+  });
+
+  testWidgets('세션 진입의 초록점은 지금 읽는 맞팔 수를 표시한다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _buildScreen(
+        overrides: [
+          sessionFireflyProvider.overrideWith(
+            (ref) async => (
+              mutualCount: 1,
+              nearbyCount: 0,
+              mutuals: <UserProfile>[],
+              books: const <String, ReadingPresenceInfo>{},
+            ),
+          ),
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    final activeCount = tester.widget<Text>(find.text('1'));
+    expect(activeCount.style?.color, AppTheme.primaryLight);
   });
 
   testWidgets('긴 세션 시작 질문은 잘리지 않고 박스 높이를 늘린다', (tester) async {
@@ -319,6 +423,42 @@ void main() {
     expect(find.text('지금 함께 읽는 친구가 없어요'), findsOneWidget);
     expect(find.text('익명의 나뭇잎'), findsNothing);
     expect(find.text('용기리기리'), findsNothing);
+  });
+
+  testWidgets('독자 시트 필터는 좌우로 전환된다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump();
+    ScaffoldMessenger.of(
+      tester.element(find.byType(ReadingSessionScreen)),
+    ).hideCurrentSnackBar();
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump();
+    await tester.tap(find.byType(ReadingSessionScreen));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('함께 읽는 초록 확인'));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final filter = find.byKey(const ValueKey('readers-sheet-filter'));
+    final gesture = tester.widget<GestureDetector>(filter);
+    gesture.onHorizontalDragEnd!(
+      DragEndDetails(
+        velocity: const Velocity(pixelsPerSecond: Offset(-120, 0)),
+        primaryVelocity: -120,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.bySemanticsLabel('책 필터, 친구로 전환'), findsOneWidget);
   });
 
   testWidgets('iOS Screen Time 권한이 거절되면 디톡스 세션을 시작하지 않는다', (tester) async {

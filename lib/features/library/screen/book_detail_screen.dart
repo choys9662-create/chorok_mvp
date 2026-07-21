@@ -32,6 +32,7 @@ const _detailAccent = AppTheme.primaryLight;
 const _detailCard = AppTheme.darkCard;
 const _detailText = AppTheme.textPrimary;
 const _detailMuted = AppTheme.textSecondary;
+const _detailNavButtonSize = AppTheme.spaceLG + AppTheme.spaceXL;
 
 typedef _BookSentenceQuery = ({
   String bookId,
@@ -478,122 +479,135 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         onContinue: () => _startSession(book),
         onAddSentence: () => _showSentenceMethodSheet(book),
       ),
-      body: ChorokRefresh(
-        // 히어로 섹션이 화면 최상단까지 차오르므로 인디케이터를 인셋만큼 내린다.
-        edgeOffset: MediaQuery.paddingOf(context).top,
-        onRefresh: () async {
-          ref.invalidate(_bookChoseoProvider(sentenceQuery));
-          ref.invalidate(bookDetailSocialProvider(_socialQueryFor(book)));
-          await ref.read(libraryProvider.notifier).reload();
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // ── 히어로 섹션 ────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Builder(
-                builder: (context) {
-                  final sessions =
-                      ref
-                          .watch(_bookSessionStatsProvider(widget.bookId))
-                          .valueOrNull
-                          ?.sessions ??
-                      0;
-                  return _HeroSection(
-                    book: book,
-                    sessionCount: sessions,
-                    sentenceCount: heroSentenceCount,
-                  );
-                },
+      body: Column(
+        children: [
+          _BookDetailTopBar(onBack: () => context.pop()),
+          Expanded(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
               ),
-            ),
-
-            // ── 현재 페이지 조절 ──────────────────────────────────────
-            SliverToBoxAdapter(
-              child: _CurrentPageControl(
-                key: ValueKey('${book.id}_${book.totalPages}'),
-                currentPage: _currentPage,
-                totalPages: book.totalPages,
-                onPreviewPage: (page) => setState(() => _currentPage = page),
-                onCommitPage: _savePage,
-                onEditTotalPages: () => _showSetTotalPages(book.totalPages),
-              ),
-            ),
-
-            // ── 독서 통계 ──────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Builder(
-                builder: (context) {
-                  final stats = ref
-                      .watch(_bookSessionStatsProvider(widget.bookId))
-                      .valueOrNull;
-                  return _StatsRow(
-                    sessions: stats?.sessions ?? 0,
-                    totalHours: stats?.totalHours ?? 0.0,
-                    progress: kUseMock && book.id == '1'
-                        ? 0.70
-                        : book.readingProgress,
-                    sentenceCount: detailSentenceCount,
-                  );
-                },
-              ),
-            ),
-
-            // ── 내 수집 문장 리스트 ─────────────────────────────────────
-            SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: '내가 수집한 문장',
-                onTap: sentences.isEmpty
-                    ? null
-                    : () {
-                        HapticFeedback.selectionClick();
-                        context.push(
-                          AppConstants.routeBookSentences,
-                          extra: book,
-                        );
-                      },
-              ),
-            ),
-            if (sentences.isEmpty)
-              SliverToBoxAdapter(
-                child: isLoadingSentences
-                    ? const _SentenceLoadingState()
-                    : _SentenceEmptyState(
-                        onAdd: () => _showSentenceMethodSheet(book),
-                        hasError: hasSentenceError,
-                      ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _SentenceItem(
-                    sentence: sentences[index],
-                    onEditThought: () =>
-                        _showEditThoughtSheet(sentences[index], book),
-                  ),
-                  childCount: sentences.length,
+              slivers: [
+                ChorokSliverRefreshControl(
+                  onRefresh: () async {
+                    final socialQuery = _socialQueryFor(book);
+                    ref.invalidate(_bookChoseoProvider(sentenceQuery));
+                    ref.invalidate(bookDetailSocialProvider(socialQuery));
+                    await Future.wait([
+                      ref.read(_bookChoseoProvider(sentenceQuery).future),
+                      ref.read(bookDetailSocialProvider(socialQuery).future),
+                      ref.read(libraryProvider.notifier).reload(),
+                    ]);
+                  },
                 ),
-              ),
+                // ── 히어로 섹션 ──────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Builder(
+                    builder: (context) {
+                      final sessions =
+                          ref
+                              .watch(_bookSessionStatsProvider(widget.bookId))
+                              .valueOrNull
+                              ?.sessions ??
+                          0;
+                      return _HeroSection(
+                        book: book,
+                        sessionCount: sessions,
+                        sentenceCount: heroSentenceCount,
+                      );
+                    },
+                  ),
+                ),
 
-            _DiscussedPassagesSection(book: book),
+                // ── 현재 페이지 조절 ──────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _CurrentPageControl(
+                    key: ValueKey('${book.id}_${book.totalPages}'),
+                    currentPage: _currentPage,
+                    totalPages: book.totalPages,
+                    onPreviewPage: (page) =>
+                        setState(() => _currentPage = page),
+                    onCommitPage: _savePage,
+                    onEditTotalPages: () => _showSetTotalPages(book.totalPages),
+                  ),
+                ),
 
-            _FollowingHighlightsSection(book: book),
+                // ── 독서 통계 ──────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Builder(
+                    builder: (context) {
+                      final stats = ref
+                          .watch(_bookSessionStatsProvider(widget.bookId))
+                          .valueOrNull;
+                      return _StatsRow(
+                        sessions: stats?.sessions ?? 0,
+                        totalHours: stats?.totalHours ?? 0.0,
+                        progress: kUseMock && book.id == '1'
+                            ? 0.70
+                            : book.readingProgress,
+                        sentenceCount: detailSentenceCount,
+                      );
+                    },
+                  ),
+                ),
 
-            _PopularThoughtsSection(book: book),
+                // ── 내 수집 문장 리스트 ─────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: '내가 수집한 문장',
+                    onTap: sentences.isEmpty
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            context.push(
+                              AppConstants.routeBookSentences,
+                              extra: book,
+                            );
+                          },
+                  ),
+                ),
+                if (sentences.isEmpty)
+                  SliverToBoxAdapter(
+                    child: isLoadingSentences
+                        ? const _SentenceLoadingState()
+                        : _SentenceEmptyState(
+                            onAdd: () => _showSentenceMethodSheet(book),
+                            hasError: hasSentenceError,
+                          ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _SentenceItem(
+                        sentence: sentences[index],
+                        onEditThought: () =>
+                            _showEditThoughtSheet(sentences[index], book),
+                      ),
+                      childCount: sentences.length,
+                    ),
+                  ),
 
-            _ThoughtExplorerSection(book: book),
+                _DiscussedPassagesSection(book: book),
 
-            _ReviewsSummarySection(book: book),
+                _FollowingHighlightsSection(book: book),
 
-            SliverToBoxAdapter(child: _BookInfoSection(book: book)),
+                _PopularThoughtsSection(book: book),
 
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: MediaQuery.of(context).padding.bottom + 110,
-              ),
+                _ThoughtExplorerSection(book: book),
+
+                _ReviewsSummarySection(book: book),
+
+                SliverToBoxAdapter(child: _BookInfoSection(book: book)),
+
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: MediaQuery.of(context).padding.bottom + 110,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -922,6 +936,44 @@ class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
   }
 }
 
+class _BookDetailTopBar extends StatelessWidget {
+  final VoidCallback onBack;
+
+  const _BookDetailTopBar({required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          AppTheme.spaceLG,
+          AppTheme.screenPadding,
+          0,
+        ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Semantics(
+            label: '뒤로 가기',
+            button: true,
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
+              color: _detailAccent,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: _detailNavButtonSize,
+                height: _detailNavButtonSize,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── 히어로 섹션 ──────────────────────────────────────────────────────────
 
 class _HeroSection extends StatelessWidget {
@@ -939,35 +991,19 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradientIndex =
         book.title.hashCode.abs() % AppTheme.coverGradients.length;
-    final topPad = MediaQuery.of(context).padding.top;
     final meta = book.title.contains('채식주의자')
         ? '${book.author} | 창비 | 2022'
         : book.author;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
-        topPad + AppTheme.spaceLG,
+        AppTheme.spaceMD,
         AppTheme.screenPadding,
         AppTheme.spaceXL,
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
-                color: _detailAccent,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 40,
-                  height: 40,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
           Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,

@@ -18,11 +18,19 @@ class _FakeFollowRepository extends FollowRepository {
 }
 
 class _FakePresenceRepository implements ReadingPresenceRepository {
+  _FakePresenceRepository({Set<String>? activeIds}) : _activeIds = activeIds;
+
+  final Set<String>? _activeIds;
+
   @override
   Future<Map<String, ReadingPresenceInfo>> activeReaders(
     List<String> candidateIds,
   ) async {
-    return {for (final id in candidateIds) id: const ReadingPresenceInfo()};
+    final activeIds = _activeIds ?? candidateIds.toSet();
+    return {
+      for (final id in candidateIds)
+        if (activeIds.contains(id)) id: const ReadingPresenceInfo(),
+    };
   }
 
   @override
@@ -75,5 +83,35 @@ void main() {
     expect(result.mutualCount, 1);
     expect(result.mutuals, const [friend]);
     expect(result.nearbyCount, 0);
+  });
+
+  test('지금 읽는 맞팔만 초록점 집계에 포함한다', () async {
+    const idleFriend = UserProfile(
+      id: 'friend-1',
+      username: 'idle',
+      displayName: '안 읽는 친구',
+    );
+    const activeFriend = UserProfile(
+      id: 'friend-2',
+      username: 'active',
+      displayName: '읽는 친구',
+    );
+    final container = ProviderContainer(
+      overrides: [
+        followRepositoryProvider.overrideWithValue(
+          _FakeFollowRepository(const [idleFriend, activeFriend]),
+        ),
+        readingPresenceRepositoryProvider.overrideWithValue(
+          _FakePresenceRepository(activeIds: const {'friend-2'}),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container.read(sessionFireflyProvider.future);
+
+    expect(result.mutualCount, 1);
+    expect(result.mutuals, const [activeFriend]);
+    expect(result.books.keys, {'friend-2'});
   });
 }

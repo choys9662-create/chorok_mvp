@@ -16,12 +16,16 @@ class ChorokSectionHeader extends StatelessWidget {
   /// 오른쪽 끝 액션. 추가 버튼·전체보기처럼 누를 수 있는 것만 넣는다.
   final Widget? trailing;
 
+  /// 현재 진행 중인 독서처럼 활성 상태를 나타낼 때만 쓰는 제목 색상이다.
+  final Color? titleColor;
+
   const ChorokSectionHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.count,
     this.trailing,
+    this.titleColor,
   });
 
   @override
@@ -32,7 +36,9 @@ class ChorokSectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AppTheme.sectionTitle.copyWith(color: context.appTextPrimary),
+          style: AppTheme.sectionTitle.copyWith(
+            color: titleColor ?? context.appTextPrimary,
+          ),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: AppTheme.spaceXS),

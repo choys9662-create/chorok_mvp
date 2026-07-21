@@ -11,6 +11,7 @@ import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_back_button.dart';
 import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/feed_activity_provider.dart';
@@ -41,9 +42,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     HapticFeedback.mediumImpact();
     ref.invalidate(feedActivityProvider(_scope));
     ref.invalidate(followOverlapProvider);
-    await ref
-        .read(feedActivityProvider(_scope).future)
-        .catchError((_) => <FeedActivity>[]);
+    try {
+      await Future.wait<void>([
+        ref.read(feedActivityProvider(_scope).future).then<void>((_) {}),
+        ref.read(followOverlapProvider.future).then<void>((_) {}),
+      ]);
+    } catch (_) {
+      // 기존 데이터는 유지하고 다음 새로고침을 허용한다.
+    }
   }
 
   @override
@@ -83,69 +89,67 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ),
           const SizedBox(height: AppTheme.spaceSM),
           Expanded(
-            child: RefreshIndicator(
-              color: context.appPrimaryAccent,
-              backgroundColor: context.appCard,
-              onRefresh: _onRefresh,
-              child: CustomScrollView(
-                controller: scrollCtrl,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  if (isLoading)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppTheme.screenPadding,
-                        AppTheme.spaceMD,
-                        AppTheme.screenPadding,
-                        AppTheme.spaceMD,
-                      ),
-                      sliver: SliverList.separated(
-                        itemCount: 4,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppTheme.spaceMD),
-                        itemBuilder: (_, _) => const ChorokShimmer(
-                          width: double.infinity,
-                          height: 120,
-                          radius: AppTheme.radiusLG,
-                        ),
-                      ),
-                    )
-                  else if (async.hasError)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _ErrorState(
-                        onRetry: () =>
-                            ref.invalidate(feedActivityProvider(_scope)),
-                      ),
-                    )
-                  else if (feedItems.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: const _EmptyState(),
-                    )
-                  else
-                    // ── 겹문장 알림 + 활동 소식 (최신순 통합) ──────
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppTheme.screenPadding,
-                        AppTheme.spaceMD,
-                        AppTheme.screenPadding,
-                        AppTheme.spaceXL,
-                      ),
-                      sliver: SliverList.separated(
-                        itemCount: feedItems.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppTheme.spaceMD),
-                        itemBuilder: (_, i) {
-                          final item = feedItems[i];
-                          return item.overlap != null
-                              ? _OverlapNotificationCard(overlap: item.overlap!)
-                              : _ActivityCard(activity: item.activity!);
-                        },
+            child: CustomScrollView(
+              controller: scrollCtrl,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                ChorokSliverRefreshControl(onRefresh: _onRefresh),
+                if (isLoading)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceMD,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceMD,
+                    ),
+                    sliver: SliverList.separated(
+                      itemCount: 4,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppTheme.spaceMD),
+                      itemBuilder: (_, _) => const ChorokShimmer(
+                        width: double.infinity,
+                        height: 120,
+                        radius: AppTheme.radiusLG,
                       ),
                     ),
-                ],
-              ),
+                  )
+                else if (async.hasError)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _ErrorState(
+                      onRetry: () =>
+                          ref.invalidate(feedActivityProvider(_scope)),
+                    ),
+                  )
+                else if (feedItems.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: const _EmptyState(),
+                  )
+                else
+                  // ── 겹문장 알림 + 활동 소식 (최신순 통합) ──────
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceMD,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceXL,
+                    ),
+                    sliver: SliverList.separated(
+                      itemCount: feedItems.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppTheme.spaceMD),
+                      itemBuilder: (_, i) {
+                        final item = feedItems[i];
+                        return item.overlap != null
+                            ? _OverlapNotificationCard(overlap: item.overlap!)
+                            : _ActivityCard(activity: item.activity!);
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

@@ -12,7 +12,6 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../../shared/widgets/sheet_handle.dart';
-import '../../home/widget/reading_books_section.dart' show compareReadingBooks;
 
 // 책 카드 1장의 고정 높이(패딩 14*2 + 표지 64) — 진행바 유무와 무관하게 동일하다.
 const double _bookCardHeight = 92;
@@ -24,6 +23,15 @@ const double _footerHeight = 8 + 40 + 8;
 const double _threeBooksHeight =
     _headerHeight + 3 * _bookCardHeight + 2 * _bookListGap + _footerHeight;
 
+int _compareRecentlyAdded(Book a, Book b) {
+  final aAdded = a.addedAt;
+  final bAdded = b.addedAt;
+  if (aAdded == null && bAdded == null) return 0;
+  if (aAdded == null) return 1;
+  if (bAdded == null) return -1;
+  return bAdded.compareTo(aAdded);
+}
+
 class BookPickerSheet extends ConsumerWidget {
   const BookPickerSheet({super.key});
 
@@ -34,7 +42,7 @@ class BookPickerSheet extends ConsumerWidget {
         allBooks.isEmpty && ref.read(libraryProvider.notifier).isLoading;
     final readingBooks =
         allBooks.where((b) => b.status == ReadingStatus.reading).toList()
-          ..sort(compareReadingBooks);
+          ..sort(_compareRecentlyAdded);
 
     if (isLoading && readingBooks.isEmpty) {
       return _SheetShell(child: _LoadingState());
@@ -75,6 +83,7 @@ class _ExpandableBookSheet extends StatefulWidget {
 }
 
 class _ExpandableBookSheetState extends State<_ExpandableBookSheet> {
+  static const double _minFraction = 0;
   static const double _maxFraction = 0.9;
   static const double _triggerRatio = 0.2;
 
@@ -89,6 +98,18 @@ class _ExpandableBookSheetState extends State<_ExpandableBookSheet> {
   }
 
   void _settle() {
+    // 아래로 끈 경우에는 초기 높이로 강제 복귀시키지 않는다. 충분히 내리면
+    // 최소 높이까지 이어서 내려 부모 모달을 닫고, 짧은 드래그만 복귀시킨다.
+    if (_extent < widget.initialFraction) {
+      final closeThreshold = widget.initialFraction * (1 - _triggerRatio);
+      final target = _extent < closeThreshold
+          ? _minFraction
+          : widget.initialFraction;
+      _isExpanded = false;
+      _animateTo(target);
+      return;
+    }
+
     // 펼치기/접기 둘 다 전체 구간의 20%만 움직여도 전환되도록, 현재 상태를
     // 기준으로 기준선을 반대쪽 끝에서 20% 지점에 둔다(히스테리시스).
     final range = _maxFraction - widget.initialFraction;
@@ -98,6 +119,11 @@ class _ExpandableBookSheetState extends State<_ExpandableBookSheet> {
     final expand = _isExpanded ? _extent >= threshold : _extent > threshold;
     final target = expand ? _maxFraction : widget.initialFraction;
     _isExpanded = expand;
+
+    _animateTo(target);
+  }
+
+  void _animateTo(double target) {
     if ((_extent - target).abs() < 0.001) return;
     _controller.animateTo(
       target,
@@ -118,11 +144,10 @@ class _ExpandableBookSheetState extends State<_ExpandableBookSheet> {
         child: DraggableScrollableSheet(
           controller: _controller,
           initialChildSize: widget.initialFraction,
-          minChildSize: widget.initialFraction,
+          minChildSize: _minFraction,
           maxChildSize: _maxFraction,
-          // 기본값(true)이면 시트가 minChildSize(3권 상태)에 닿는 순간 모달
-          // 전체가 닫힌다 — 여기선 그 지점이 그냥 "축소된 상태"여야 한다.
-          shouldCloseOnMinExtent: false,
+          // 아래로 끝까지 내리면 부모 모달도 함께 닫힌다.
+          shouldCloseOnMinExtent: true,
           expand: false,
           builder: (context, scrollController) => _SheetShell(
             expand: true,
@@ -240,6 +265,11 @@ class _BookList extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           const _SheetHeader(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+            child: searchButton,
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
           for (final book in books) ...[
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -249,11 +279,6 @@ class _BookList extends StatelessWidget {
             ),
             const SizedBox(height: AppTheme.spaceSM),
           ],
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
-            child: searchButton,
-          ),
-          const SizedBox(height: AppTheme.spaceSM),
         ],
       );
     }
@@ -262,6 +287,7 @@ class _BookList extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: AppTheme.spaceSM,
       children: [
+        searchButton,
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -272,7 +298,6 @@ class _BookList extends StatelessWidget {
           separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceSM),
           itemBuilder: (context, index) => _BookCard(book: books[index]),
         ),
-        searchButton,
       ],
     );
   }

@@ -1,36 +1,64 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../core/theme/app_theme.dart';
 
-/// 당겨서 새로고침 공통 래퍼. 색만 앱 토큰으로 맞춘 [RefreshIndicator] 다.
+/// 홈과 같은 스크롤 영역 점유형 새로고침 컨트롤.
 ///
-/// [edgeOffset] 은 인디케이터가 나타나는 위치를 화면 위에서부터 얼마나 내릴지다.
-/// - 스크롤 뷰 위에 헤더/앱바가 있으면 0 (기본값) — 헤더 바로 아래에 뜬다.
-/// - 스크롤 뷰가 화면 최상단까지 차오르면 `MediaQuery.paddingOf(context).top`
-///   을 넘겨 다이나믹 아일랜드·노치 아래로 내린다. iOS 가 기기별 실제 인셋을
-///   주므로 기종별 하드코딩은 필요 없다.
+/// 화면 상단 헤더가 있으면 헤더는 [CustomScrollView] 밖에 고정하고, 이
+/// 컨트롤은 그 아래 콘텐츠 스크롤의 첫 sliver로 둔다.
 ///
-/// child 스크롤 뷰에는 `physics: AlwaysScrollableScrollPhysics()` 가 있어야
-/// 내용이 짧을 때도 당길 수 있다.
-class ChorokRefresh extends StatelessWidget {
+/// 새로고침 [Future]가 끝날 때까지 자신의 높이를 유지하므로, 인디케이터가
+/// 본문과 겹치지 않고 완료된 뒤에만 화면이 제자리로 돌아간다.
+class ChorokSliverRefreshControl extends StatelessWidget {
   final Future<void> Function() onRefresh;
-  final Widget child;
-  final double edgeOffset;
 
-  const ChorokRefresh({
-    super.key,
-    required this.onRefresh,
-    required this.child,
-    this.edgeOffset = 0,
-  });
+  const ChorokSliverRefreshControl({super.key, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      color: context.appPrimaryAccent,
-      backgroundColor: context.appCard,
-      edgeOffset: edgeOffset,
+    return CupertinoSliverRefreshControl(
+      builder: _buildIndicator,
       onRefresh: onRefresh,
-      child: child,
+    );
+  }
+
+  static Widget _buildIndicator(
+    BuildContext context,
+    RefreshIndicatorMode refreshState,
+    double pulledExtent,
+    double refreshTriggerPullDistance,
+    double refreshIndicatorExtent,
+  ) {
+    final progress = (pulledExtent / refreshTriggerPullDistance).clamp(
+      0.0,
+      1.0,
+    );
+    final indicator = switch (refreshState) {
+      RefreshIndicatorMode.drag => CupertinoActivityIndicator.partiallyRevealed(
+        color: context.appPrimaryAccent,
+        radius: AppTheme.spaceMD,
+        progress: progress,
+      ),
+      RefreshIndicatorMode.armed ||
+      RefreshIndicatorMode.refresh => CupertinoActivityIndicator(
+        color: context.appPrimaryAccent,
+        radius: AppTheme.spaceMD,
+      ),
+      RefreshIndicatorMode.done => Transform.scale(
+        scale: progress,
+        child: CupertinoActivityIndicator(
+          color: context.appPrimaryAccent,
+          radius: AppTheme.spaceMD,
+        ),
+      ),
+      RefreshIndicatorMode.inactive => const SizedBox.shrink(),
+    };
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppTheme.spaceLG),
+        child: indicator,
+      ),
     );
   }
 }
