@@ -28,6 +28,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # pubspec assets에 .env가 포함돼 있으므로 analyze/test보다 먼저 생성한다.
+      - name: Create .env from secrets
+        run: |
+          test -n "${{ secrets.SUPABASE_URL }}" || { echo "Missing SUPABASE_URL secret"; exit 1; }
+          test -n "${{ secrets.SUPABASE_ANON_KEY }}" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
       # 배포 전 게이트 — analyze/test 실패 시 이후 배포 단계로 진행하지 않는다.
       - name: Analyze
         run: flutter analyze
@@ -60,13 +68,6 @@ jobs:
             --project-ref "$SUPABASE_PROJECT_ID"
           supabase functions deploy gemini-ocr \
             --project-ref "$SUPABASE_PROJECT_ID"
-
-      - name: Create .env from secrets
-        run: |
-          test -n "${{ secrets.SUPABASE_URL }}" || { echo "Missing SUPABASE_URL secret"; exit 1; }
-          test -n "${{ secrets.SUPABASE_ANON_KEY }}" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
       - name: Build Flutter Web (real)
         # 웹 Google 로그인은 Supabase OAuth redirect로 처리. Google client ID는
