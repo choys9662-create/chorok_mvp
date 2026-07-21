@@ -20,8 +20,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate website config
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
+          test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
+          node <<'NODE'
+          const fs = require('fs');
+          const config = {
+            supabaseUrl: process.env.SUPABASE_URL,
+            supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+          };
+          fs.writeFileSync(
+            'website/config.js',
+            `window.CHOROK_CONFIG = ${JSON.stringify(config)};\n`,
+          );
+          NODE
+
       - name: Check JS syntax
-        run: node --check website/app.js
+        run: |
+          node --check website/config.js
+          node --check website/app.js
 
       - name: Deploy to Firebase Hosting (site)
         uses: FirebaseExtended/action-hosting-deploy@v0
