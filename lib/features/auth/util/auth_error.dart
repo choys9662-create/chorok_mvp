@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 /// Supabase Auth 에러 → 한국어 사용자 메시지
 String localizeAuthError(String msg) {
   final lower = msg.toLowerCase();
@@ -23,17 +25,18 @@ void showAuthError(BuildContext context, String rawMessage) {
       SnackBar(
         content: Text(
           localizeAuthError(rawMessage),
-          style: const TextStyle(
-            fontFamily: 'ChosunGu',
+          style: AppTheme.supportingText.copyWith(
+            fontFamily: AppTheme.fontFamily,
             color: Colors.white,
-            fontSize: 12,
             height: 1.5,
           ),
         ),
-        backgroundColor: const Color(0xFFB00020),
+        backgroundColor: AppTheme.warningColor,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
+        ),
         duration: const Duration(seconds: 4),
       ),
     );

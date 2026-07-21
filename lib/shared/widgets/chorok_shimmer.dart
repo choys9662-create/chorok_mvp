@@ -11,7 +11,7 @@ class ChorokShimmer extends StatefulWidget {
     super.key,
     required this.width,
     required this.height,
-    this.radius = 12,
+    this.radius = AppTheme.radiusOuter,
   });
 
   @override
@@ -46,13 +46,13 @@ class _ChorokShimmerState extends State<ChorokShimmer>
       builder: (_, _) => Container(
         width: widget.width,
         height: widget.height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(widget.radius),
+        decoration: AppTheme.smoothBox(
           color: Color.lerp(
             context.appCardElevated,
             context.appCard,
             _anim.value,
           ),
+          radius: widget.radius,
         ),
       ),
     );

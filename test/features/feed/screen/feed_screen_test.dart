@@ -23,6 +23,7 @@ void main() {
       (index) => FeedActivitySentence(
         id: 'sentence-$index',
         content: '기록한 문장 ${index + 1}',
+        thought: index == 0 ? '기록한 생각' : null,
         pageNumber: index + 1,
       ),
     ),
@@ -102,6 +103,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('기록한 문장 1'), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.text('기록한 생각')).style?.color,
+      AppTheme.primaryLight,
+    );
     expect(find.text('기록한 문장 2'), findsOneWidget);
     expect(find.text('기록한 문장 3'), findsNothing);
     expect(find.text('11개 더보기'), findsOneWidget);

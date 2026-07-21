@@ -7,6 +7,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/overlap_group.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/utils/overlap_detector.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import '../controller/overlap_provider.dart';
 
 /// 작성자 프로필(서재)로 이동. id가 없으면 아무 동작도 하지 않는다.
@@ -96,14 +98,15 @@ class _SplitHighlightWidgetState extends State<SplitHighlightWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var index = 0; index < visibleCards.length; index++)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: index == visibleCards.length - 1 ? 0 : 8,
+          if (index == visibleCards.length - 1)
+            visibleCards[index]
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+              child: visibleCards[index],
             ),
-            child: visibleCards[index],
-          ),
         if (!_showAll && cards.length > _initialVisibleCount) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Semantics(
             button: true,
             label: '서로 다른 생각 더 보기',
@@ -125,7 +128,7 @@ class _SplitHighlightWidgetState extends State<SplitHighlightWidget> {
                         color: context.appPrimaryAccent,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppTheme.spaceXS),
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 18,
@@ -184,122 +187,119 @@ class _OverlapThoughtCard extends StatelessWidget {
           );
         },
         behavior: HitTestBehavior.opaque,
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
-          padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: AppTheme.radiusLG,
-            side: isCollector
-                ? BorderSide(
-                    color: context.appPrimaryAccent.withValues(alpha: 0.35),
-                  )
-                : BorderSide.none,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: profileTappable
-                    ? () => _openProfile(
-                        context,
-                        userId: userId,
-                        username: rawUsername ?? username,
-                        displayName: displayName,
-                        avatarUrl: avatarUrl,
-                      )
-                    : null,
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: isCollector
-                          ? context.appPrimaryAccent.withValues(alpha: 0.15)
-                          : context.appSurface,
-                      backgroundImage:
-                          (avatarUrl != null && avatarUrl!.isNotEmpty)
-                          ? NetworkImage(avatarUrl!)
-                          : null,
-                      child: (avatarUrl == null || avatarUrl!.isEmpty)
-                          ? Text(
-                              username.isNotEmpty
-                                  ? username[0].toUpperCase()
-                                  : '?',
-                              style: AppTheme.captionSmall.copyWith(
-                                color: isCollector
-                                    ? context.appPrimaryAccent
-                                    : context.appTextTertiary,
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.captionLarge.copyWith(
-                          color: isCollector
-                              ? context.appPrimaryAccent
-                              : context.appTextSecondary,
-                        ),
+          child: ChorokCard(
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+            showBorder: isCollector,
+            borderColor: isCollector
+                ? context.appPrimaryAccent.withValues(alpha: 0.35)
+                : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: profileTappable
+                      ? () => _openProfile(
+                          context,
+                          userId: userId,
+                          username: rawUsername ?? username,
+                          displayName: displayName,
+                          avatarUrl: avatarUrl,
+                        )
+                      : null,
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      // 원형 아바타는 사용자 식별 렌더링 예외다.
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor: isCollector
+                            ? context.appPrimaryAccent.withValues(alpha: 0.15)
+                            : context.appSurface,
+                        backgroundImage:
+                            (avatarUrl != null && avatarUrl!.isNotEmpty)
+                            ? NetworkImage(avatarUrl!)
+                            : null,
+                        child: (avatarUrl == null || avatarUrl!.isEmpty)
+                            ? Text(
+                                username.isNotEmpty
+                                    ? username[0].toUpperCase()
+                                    : '?',
+                                style: AppTheme.captionSmall.copyWith(
+                                  color: isCollector
+                                      ? context.appPrimaryAccent
+                                      : context.appTextTertiary,
+                                ),
+                              )
+                            : null,
                       ),
-                    ),
-                    if (rawUsername != null &&
-                        rawUsername!.isNotEmpty &&
-                        rawUsername != username) ...[
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppTheme.spaceSM),
                       Flexible(
                         child: Text(
-                          '@$rawUsername',
+                          username,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTheme.captionSmall.copyWith(
-                            color: context.appTextTertiary,
+                          style: AppTheme.captionLarge.copyWith(
+                            color: isCollector
+                                ? context.appPrimaryAccent
+                                : context.appTextSecondary,
                           ),
                         ),
                       ),
+                      if (rawUsername != null &&
+                          rawUsername!.isNotEmpty &&
+                          rawUsername != username) ...[
+                        const SizedBox(width: AppTheme.spaceXS),
+                        Flexible(
+                          child: Text(
+                            '@$rawUsername',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.captionSmall.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (thought != null && thought!.trim().isNotEmpty)
-                Text(
-                  thought!.trim(),
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextPrimary,
-                    height: 1.6,
-                  ),
-                )
-              else
-                Text(
-                  '아직 생각을 남기지 않았어요',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: context.appTextTertiary,
-                    fontStyle: FontStyle.italic,
                   ),
                 ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
+                const SizedBox(height: AppTheme.spaceMD),
+                if (thought != null && thought!.trim().isNotEmpty)
                   Text(
-                    '기록한 문장 보기',
-                    style: AppTheme.captionSmall.copyWith(
+                    thought!.trim(),
+                    style: AppTheme.bodySmall.copyWith(
+                      color: context.appTextPrimary,
+                      height: 1.6,
+                    ),
+                  )
+                else
+                  Text(
+                    '아직 생각을 남기지 않았어요',
+                    style: AppTheme.captionLarge.copyWith(
                       color: context.appTextTertiary,
                     ),
                   ),
-                  const Spacer(),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: context.appTextTertiary,
-                  ),
-                ],
-              ),
-            ],
+                const SizedBox(height: AppTheme.spaceMD),
+                Row(
+                  children: [
+                    Text(
+                      '기록한 문장 보기',
+                      style: AppTheme.captionSmall.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: context.appTextTertiary,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -325,7 +325,7 @@ void showRecordedSentenceDetails(
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: context.appBg.withValues(alpha: 0),
     builder: (sheetContext) => _RecordedSentenceSheet(
       recordedText: recordedText,
       highlight: highlight,
@@ -351,7 +351,7 @@ class _RecordedSentenceSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final textStyle = AppTheme.bodySmall.copyWith(
+    final textStyle = AppTheme.bodyMedium.copyWith(
       color: context.appTextPrimary,
       height: 1.7,
     );
@@ -363,95 +363,93 @@ class _RecordedSentenceSheet extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.78,
-        ),
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          12,
-          AppTheme.screenPadding,
-          bottomInset + AppTheme.spaceLG,
-        ),
-        decoration: BoxDecoration(
-          color: context.appBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.appBorder,
-                    borderRadius: BorderRadius.circular(99),
+      child: SizedBox(
+        width: double.infinity,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.78,
+          ),
+          child: ChorokCard(
+            backgroundColor: context.appBg,
+            showBorder: false,
+            padding: EdgeInsets.only(
+              left: AppTheme.screenPadding,
+              top: AppTheme.spaceMD,
+              right: AppTheme.screenPadding,
+              bottom: bottomInset + AppTheme.spaceLG,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ChorokSheetHandle(),
+                  const SizedBox(height: AppTheme.spaceLG),
+                  Text(
+                    '$username님이 기록한 문장',
+                    style: AppTheme.rowText.copyWith(
+                      color: context.appTextPrimary,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: AppTheme.spaceMD),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ChorokCard(
+                      inner: true,
+                      borderColor: context.appBorderSubtle,
+                      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                      child: Text.rich(
+                        TextSpan(
+                          style: textStyle,
+                          children: validHighlight
+                              ? [
+                                  TextSpan(
+                                    text: recordedText.substring(
+                                      0,
+                                      highlight!.start,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: recordedText.substring(
+                                      highlight!.start,
+                                      highlight!.end,
+                                    ),
+                                    style: textStyle.copyWith(
+                                      color: context.appPrimaryAccent,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: recordedText.substring(
+                                      highlight!.end,
+                                    ),
+                                  ),
+                                ]
+                              : [TextSpan(text: recordedText)],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (thought != null && thought!.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppTheme.spaceLG),
+                    Text(
+                      '$username님의 생각',
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceSM),
+                    Text(
+                      thought!.trim(),
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextPrimary,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: AppTheme.spaceLG),
-              Text(
-                '$username님이 기록한 문장',
-                style: AppTheme.headingSmall.copyWith(
-                  color: context.appTextPrimary,
-                ),
-              ),
-              const SizedBox(height: AppTheme.spaceMD),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-                decoration: AppTheme.smoothBox(
-                  color: context.appCard,
-                  radius: AppTheme.radiusLG,
-                  side: BorderSide(color: context.appBorderSubtle),
-                ),
-                child: Text.rich(
-                  TextSpan(
-                    style: textStyle,
-                    children: validHighlight
-                        ? [
-                            TextSpan(
-                              text: recordedText.substring(0, highlight!.start),
-                            ),
-                            TextSpan(
-                              text: recordedText.substring(
-                                highlight!.start,
-                                highlight!.end,
-                              ),
-                              style: textStyle.copyWith(
-                                color: context.appPrimaryAccent,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            TextSpan(
-                              text: recordedText.substring(highlight!.end),
-                            ),
-                          ]
-                        : [TextSpan(text: recordedText)],
-                  ),
-                ),
-              ),
-              if (thought != null && thought!.trim().isNotEmpty) ...[
-                const SizedBox(height: AppTheme.spaceLG),
-                Text(
-                  '$username님의 생각',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: context.appTextSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  thought!.trim(),
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextPrimary,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),

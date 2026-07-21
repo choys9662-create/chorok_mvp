@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,15 +9,13 @@ import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/providers/follow_overlap_provider.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_back_button.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/feed_activity_provider.dart';
 import '../model/feed_activity.dart';
 import 'sentence_detail_screen.dart';
-
-// Figma(CHOROK-PITCH 피드, node 1557:1690) 매칭 색상 — AppTheme 토큰에 없는 강조 박스 전용 값.
-const _kQuoteHighlightBg = Color(0xFF222422);
-const _kThoughtBorder = Color(0xFF222422);
 
 /// 겹문장 알림과 활동 소식을 하나의 시간순 타임라인으로 합치기 위한 항목.
 /// 정확히 [overlap], [activity] 중 하나만 채워진다.
@@ -27,25 +24,6 @@ typedef _FeedItem = ({
   FollowOverlap? overlap,
   FeedActivity? activity,
 });
-
-List<BoxShadow>? _feedCardShadow(BuildContext context) {
-  if (Theme.of(context).brightness == Brightness.dark) {
-    return [
-      BoxShadow(
-        color: Colors.black.withValues(alpha: 0.28),
-        blurRadius: 14,
-        offset: const Offset(0, 8),
-      ),
-    ];
-  }
-  return [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.08),
-      blurRadius: 18,
-      offset: const Offset(0, 8),
-    ),
-  ];
-}
 
 /// 피드 스크린: 친구·이웃의 독서 활동(소식) 피드.
 class FeedScreen extends ConsumerStatefulWidget {
@@ -56,8 +34,6 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
-  static const Color _feedBg = Colors.black;
-
   // 피드는 친구 범위만 보여준다. FeedScope.all 은 아직 쓰는 화면이 없다.
   static const _scope = FeedScope.friends;
 
@@ -91,18 +67,21 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     ]..sort((a, b) => b.time.compareTo(a.time));
 
     return Scaffold(
-      backgroundColor: _feedBg,
+      backgroundColor: context.appBg,
       body: Column(
         children: [
-          SizedBox(height: topPad + 8),
+          SizedBox(height: topPad + AppTheme.spaceSM),
           if (canGoBack)
-            _FeedBackButton(
-              onBack: () {
-                HapticFeedback.selectionClick();
-                Navigator.of(context).pop();
-              },
+            Padding(
+              padding: const EdgeInsets.only(left: AppTheme.screenPadding),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ChorokBackButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Expanded(
             child: RefreshIndicator(
               color: context.appPrimaryAccent,
@@ -114,10 +93,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 slivers: [
                   if (isLoading)
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        AppTheme.spaceMD,
+                        AppTheme.screenPadding,
+                        AppTheme.spaceMD,
+                      ),
                       sliver: SliverList.separated(
                         itemCount: 4,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppTheme.spaceMD),
                         itemBuilder: (_, _) => const ChorokShimmer(
                           width: double.infinity,
                           height: 120,
@@ -141,10 +126,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                   else
                     // ── 겹문장 알림 + 활동 소식 (최신순 통합) ──────
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.screenPadding,
+                        AppTheme.spaceMD,
+                        AppTheme.screenPadding,
+                        AppTheme.spaceXL,
+                      ),
                       sliver: SliverList.separated(
                         itemCount: feedItems.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppTheme.spaceMD),
                         itemBuilder: (_, i) {
                           final item = feedItems[i];
                           return item.overlap != null
@@ -163,37 +154,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 }
 
-// ─── 뒤로가기 (push 로 열렸을 때만) ───────────────────────────────────────────
-class _FeedBackButton extends StatelessWidget {
-  final VoidCallback onBack;
-
-  const _FeedBackButton({required this.onBack});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: Row(
-        children: [
-          const SizedBox(width: AppTheme.screenPadding),
-          Semantics(
-            label: '뒤로 가기',
-            button: true,
-            child: IconButton(
-              onPressed: onBack,
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 20,
-                color: context.appTextSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── 활동 카드 ────────────────────────────────────────────────────────────────
 class _ActivityCard extends StatelessWidget {
   final FeedActivity activity;
@@ -201,14 +161,9 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 8,
-        side: BorderSide(color: context.appBorderSubtle),
-        shadows: _feedCardShadow(context),
-      ),
-      padding: const EdgeInsets.all(16),
+    return ChorokCard(
+      borderColor: context.appBorderSubtle,
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -223,7 +178,7 @@ class _ActivityCard extends StatelessWidget {
     switch (activity.type) {
       case FeedActivityType.sentenceBatch:
         return [
-          const SizedBox(height: 13),
+          const SizedBox(height: AppTheme.spaceMD),
           _SentenceBatchBody(activity: activity),
         ];
       case FeedActivityType.sessionComplete:
@@ -271,15 +226,8 @@ class _OverlapNotificationCard extends StatelessWidget {
     final o = overlap;
     return GestureDetector(
       onTap: () => _open(context),
-      child: Container(
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: AppTheme.radiusLG,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.55),
-          ),
-          shadows: _feedCardShadow(context),
-        ),
+      child: ChorokCard(
+        borderColor: context.appPrimaryAccent.withValues(alpha: 0.55),
         padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,10 +237,11 @@ class _OverlapNotificationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Avatar(username: o.neighborName, avatarUrl: o.neighborAvatar),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppTheme.spaceSM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AppTheme.spaceXS,
                     children: [
                       RichText(
                         maxLines: 2,
@@ -322,7 +271,6 @@ class _OverlapNotificationCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 3),
                       Text(
                         time_fmt.formatRelative(o.neighborCreatedAt),
                         style: AppTheme.captionSmall.copyWith(
@@ -332,7 +280,7 @@ class _OverlapNotificationCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppTheme.spaceSM),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 96),
                   child: Text(
@@ -345,7 +293,7 @@ class _OverlapNotificationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 BookCover(
                   coverUrl: o.coverUrl,
                   gradientIndex:
@@ -353,30 +301,24 @@ class _OverlapNotificationCard extends StatelessWidget {
                       AppTheme.coverGradients.length,
                   width: 38,
                   height: 50,
-                  radius: 8,
+                  radius: AppTheme.radiusInner,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             _MergedOverlapParagraph(
               content: o.mergedContent,
               highlight: o.mergedHighlight,
             ),
             if (o.neighborThought != null && o.neighborThought!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: ShapeDecoration(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.06),
-                  shape: SmoothRectangleBorder(
-                    smoothness: 0.6,
-                    side: BorderSide(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.55),
-                    ),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  ),
+              const SizedBox(height: AppTheme.spaceSM),
+              ChorokCard(
+                inner: true,
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.06,
                 ),
+                borderColor: context.appPrimaryAccent.withValues(alpha: 0.55),
+                padding: const EdgeInsets.all(AppTheme.spaceMD),
                 child: Text(
                   o.neighborThought!,
                   style: AppTheme.bodySmall.copyWith(
@@ -415,14 +357,10 @@ class _MergedOverlapParagraph extends StatelessWidget {
       height: 1.55,
     );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: AppTheme.smoothBox(
-        color: context.appCardElevated,
-        radius: AppTheme.radiusMD,
-        side: BorderSide(color: context.appBorderSubtle),
-      ),
+    return ChorokCard(
+      inner: true,
+      borderColor: context.appBorderSubtle,
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
       child: Text.rich(
         TextSpan(
           style: baseStyle,
@@ -431,10 +369,7 @@ class _MergedOverlapParagraph extends StatelessWidget {
                   TextSpan(text: content.substring(0, highlight.start)),
                   TextSpan(
                     text: content.substring(highlight.start, highlight.end),
-                    style: baseStyle.copyWith(
-                      color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: baseStyle.copyWith(color: context.appPrimaryAccent),
                   ),
                   TextSpan(text: content.substring(highlight.end)),
                 ]
@@ -457,13 +392,13 @@ class _ActivityHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Avatar(username: a.username, avatarUrl: a.avatarUrl),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppTheme.spaceSM),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _titleText(context, a),
-              const SizedBox(height: 3),
+              const SizedBox(height: AppTheme.spaceXS),
               Text(
                 time_fmt.formatRelative(a.occurredAt),
                 style: AppTheme.captionLarge.copyWith(
@@ -472,7 +407,7 @@ class _ActivityHeader extends StatelessWidget {
               ),
               if (a.type == FeedActivityType.sessionComplete ||
                   a.type == FeedActivityType.bookComplete) ...[
-                const SizedBox(height: 30),
+                const SizedBox(height: AppTheme.sectionGap),
                 _MetricRow(
                   icon: a.type == FeedActivityType.sessionComplete
                       ? Icons.schedule_rounded
@@ -485,7 +420,7 @@ class _ActivityHeader extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppTheme.spaceSM),
         Semantics(
           button: true,
           label: '${a.bookTitle} 책 정보 보기',
@@ -497,6 +432,7 @@ class _ActivityHeader extends StatelessWidget {
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 76),
@@ -511,7 +447,6 @@ class _ActivityHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 76),
                       child: Text(
@@ -526,7 +461,7 @@ class _ActivityHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 BookCover(
                   coverUrl: a.coverUrl,
                   gradientIndex:
@@ -534,7 +469,7 @@ class _ActivityHeader extends StatelessWidget {
                       AppTheme.coverGradients.length,
                   width: 53,
                   height: 87,
-                  radius: 4,
+                  radius: AppTheme.radiusInner,
                 ),
               ],
             ),
@@ -559,8 +494,7 @@ class _ActivityHeader extends StatelessWidget {
   }
 
   Widget _titleText(BuildContext context, FeedActivity a) {
-    final base = AppTheme.bodySmall.copyWith(
-      fontSize: 14,
+    final base = AppTheme.body.copyWith(
       color: context.appTextSecondary,
       height: 1.35,
     );
@@ -648,7 +582,7 @@ class _MetricRow extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 18, color: context.appTextSecondary),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.spaceXS),
         Flexible(
           child: FittedBox(
             fit: BoxFit.scaleDown,
@@ -713,14 +647,14 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (int i = 0; i < visibleSentences.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
+          if (i > 0) const SizedBox(height: AppTheme.spaceSM),
           _SentencePreview(
             sentence: visibleSentences[i],
             onTap: () => _openSentence(context, visibleSentences[i]),
           ),
         ],
         if (hiddenCount > 0 && allSentences.length > 2) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppTheme.spaceSM),
           Semantics(
             button: true,
             label: _expanded ? '문장 접기' : '문장 $hiddenCount개 더보기',
@@ -730,15 +664,19 @@ class _SentenceBatchBodyState extends State<_SentenceBatchBody> {
                 setState(() => _expanded = !_expanded);
               },
               behavior: HitTestBehavior.opaque,
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  _expanded ? '접기' : '$hiddenCount개 더보기',
-                  style: AppTheme.captionLarge.copyWith(
-                    fontSize: 14,
-                    color: context.appTextTertiary,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spaceSM,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _expanded ? '접기' : '$hiddenCount개 더보기',
+                      style: AppTheme.body.copyWith(
+                        color: context.appTextTertiary,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -764,35 +702,26 @@ class _SentencePreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 문장 (페이지 배지 + 본문)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: AppTheme.smoothBox(
-              color: _kQuoteHighlightBg,
-              radius: 6,
-              side: BorderSide(color: context.appTextSecondary),
-            ),
+          ChorokCard(
+            inner: true,
+            borderColor: context.appTextSecondary,
+            padding: const EdgeInsets.all(AppTheme.spaceMD),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (s.pageNumber != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 1),
-                    child: Text(
-                      '${s.pageNumber}',
-                      style: AppTheme.bodySmall.copyWith(
-                        fontSize: 14,
-                        color: context.appTextSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
+                  Text(
+                    '${s.pageNumber}',
+                    style: AppTheme.body.copyWith(
+                      color: context.appTextSecondary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppTheme.spaceMD),
                 ],
                 Expanded(
                   child: Text(
                     s.content,
-                    style: AppTheme.bodySmall.copyWith(
+                    style: AppTheme.bodyMedium.copyWith(
                       color: context.appTextPrimary,
                       height: 1.55,
                     ),
@@ -803,21 +732,15 @@ class _SentencePreview extends StatelessWidget {
           ),
           // 생각 (강조 박스)
           if (s.thought != null && s.thought!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: ShapeDecoration(
-                color: context.appCard,
-                shape: SmoothRectangleBorder(
-                  smoothness: 0.6,
-                  side: const BorderSide(color: _kThoughtBorder),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
+            const SizedBox(height: AppTheme.spaceSM),
+            ChorokCard(
+              inner: true,
+              backgroundColor: context.appCard,
+              borderColor: context.appBorder,
+              padding: const EdgeInsets.all(AppTheme.spaceMD),
               child: Text(
                 s.thought!,
-                style: AppTheme.bodySmall.copyWith(
+                style: AppTheme.bodyMedium.copyWith(
                   color: context.appPrimaryAccent,
                   height: 1.55,
                 ),
@@ -841,13 +764,13 @@ class _EmptyState extends StatelessWidget {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        spacing: AppTheme.spaceMD,
         children: [
           Icon(
             Icons.auto_stories_outlined,
             size: 48,
             color: context.appTextTertiary,
           ),
-          const SizedBox(height: 12),
           Text(
             '팔로우한 친구의 독서 활동이 여기 모여요',
             style: AppTheme.bodyMedium.copyWith(
@@ -869,6 +792,7 @@ class _ErrorState extends StatelessWidget {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        spacing: AppTheme.spaceMD,
         children: [
           Text(
             '피드를 불러오지 못했어요',
@@ -876,7 +800,6 @@ class _ErrorState extends StatelessWidget {
               color: context.appTextSecondary,
             ),
           ),
-          const SizedBox(height: 12),
           TextButton(
             onPressed: onRetry,
             child: Text(

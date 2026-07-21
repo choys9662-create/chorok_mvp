@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/user_library_providers.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../widget/library_calendar_view.dart';
 import 'library_screen.dart' show readingLogsProvider;
 
@@ -44,9 +45,9 @@ class ReadingHistoryScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppTheme.screenPadding,
-                18,
+                AppTheme.spaceLG,
                 AppTheme.screenPadding,
-                16,
+                AppTheme.spaceLG,
               ),
               child: Row(
                 children: [
@@ -58,29 +59,28 @@ class ReadingHistoryScreen extends ConsumerWidget {
                         HapticFeedback.selectionClick();
                         Navigator.of(context).pop();
                       },
-                      child: Container(
+                      child: SizedBox(
                         width: 54,
                         height: 54,
-                        alignment: Alignment.center,
-                        decoration: AppTheme.smoothBox(
-                          color: context.appCard,
-                          radius: 27,
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: context.appTextSecondary,
-                          size: 22,
+                        child: ChorokCard(
+                          inner: true,
+                          padding: EdgeInsets.zero,
+                          child: Center(
+                            child: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: context.appTextSecondary,
+                              size: AppTheme.spaceXL,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 18),
+                  const SizedBox(width: AppTheme.spaceLG),
                   Text(
                     '독서 기록',
-                    style: AppTheme.headingLarge.copyWith(
+                    style: AppTheme.screenTitle.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0,
                     ),
                   ),
                 ],

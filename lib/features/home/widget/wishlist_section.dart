@@ -34,16 +34,10 @@ class WishlistSection extends ConsumerWidget {
           ),
           child: ChorokSectionHeader(
             title: '다음에 읽을 책',
-            trailing: Text(
-              '${wishlistBooks.length}권',
-              style: AppTheme.captionLarge.copyWith(
-                color: context.appPrimaryAccent,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+            count: wishlistBooks.length,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         SizedBox(
           height: 200,
           child: ListView.builder(
@@ -104,7 +98,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
           clipBehavior: Clip.antiAlias,
           decoration: AppTheme.smoothBox(
             color: context.appCardElevated,
-            radius: 10,
+            radius: AppTheme.radiusOuter,
             side: isDark
                 ? BorderSide(
                     color: Colors.white.withValues(alpha: 0.07),
@@ -141,13 +135,15 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 7,
-                          vertical: 3,
+                          vertical: AppTheme.spaceXS,
                         ),
                         decoration: ShapeDecoration(
                           color: context.appSurface.withValues(alpha: 0.75),
                           shape: SmoothRectangleBorder(
                             smoothness: 0.6,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusOuter,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -225,7 +221,7 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                                 ? context.appPrimaryAccent
                                 : Colors.white,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppTheme.spaceXS),
                           Text(
                             '읽기',
                             style: AppTheme.captionLarge.copyWith(

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/book_genre.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../analytics/widgets/book_treemap_widget.dart';
 import '../../analytics/widgets/waffle_chart_widget.dart';
@@ -89,9 +90,21 @@ List<({String name, Color color, int cells})> buildWaffleItems(
   BuildContext context,
 ) => [
   (name: '소설', color: context.appPrimaryAccent, cells: 60),
-  (name: '문학', color: const Color(0xFF81C784), cells: 22),
-  (name: '인문', color: const Color(0xFF2E7D32), cells: 11),
-  (name: '자기계발', color: const Color(0xFFCCFF90), cells: 7),
+  (
+    name: '문학',
+    color: context.appPrimaryAccent.withValues(alpha: 0.72),
+    cells: 22,
+  ),
+  (
+    name: '인문',
+    color: context.appPrimaryAccent.withValues(alpha: 0.48),
+    cells: 11,
+  ),
+  (
+    name: '자기계발',
+    color: context.appPrimaryAccent.withValues(alpha: 0.28),
+    cells: 7,
+  ),
 ];
 
 // ─── 통계 탭 — 책별 비중 · 장르 비율 ──────────────────────────────────────
@@ -139,7 +152,10 @@ class LibraryStatsView extends ConsumerWidget {
       controller: scrollController,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(top: 16, bottom: 40),
+      padding: const EdgeInsets.only(
+        top: AppTheme.spaceLG,
+        bottom: AppTheme.sectionGap,
+      ),
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
@@ -175,7 +191,7 @@ class LibraryStatsView extends ConsumerWidget {
 }
 
 class _EmbeddedGenreMosaic extends StatelessWidget {
-  static const _gap = 8.0;
+  static const _gap = AppTheme.spaceSM;
 
   final List<({String label, double hours})> items;
 
@@ -184,13 +200,17 @@ class _EmbeddedGenreMosaic extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 300,
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 8),
-        child: Text(
-          '아직 독서 기록이 없어요',
-          style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+        child: ChorokCard(
+          child: Center(
+            child: Text(
+              '아직 독서 기록이 없어요',
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextTertiary,
+              ),
+            ),
+          ),
         ),
       );
     }
@@ -214,19 +234,19 @@ class _EmbeddedGenreMosaic extends StatelessWidget {
     int weight(({String label, double hours}) i) =>
         math.max(1, (math.sqrt(i.hours * 60) * 10).round());
 
-    const colors = [
-      Color(0xFF8DFF54),
-      Color(0xFFF0FAF0),
-      Color(0xFFA5B9A7),
-      Color(0xFF808A80),
-      Color(0xFF4F574F),
+    final colors = [
+      context.appPrimaryAccent,
+      context.appTextPrimary,
+      context.appTextSecondary,
+      context.appCardElevated,
+      context.appCard,
     ];
-    const textColors = [
-      Colors.black,
-      Colors.black,
-      Colors.black,
-      Colors.white,
-      Colors.white,
+    final textColors = [
+      AppTheme.primary,
+      AppTheme.primary,
+      AppTheme.primary,
+      context.appTextPrimary,
+      context.appTextPrimary,
     ];
     const percentAlphas = [0.22, 0.22, 0.24, 0.22, 0.28];
 
@@ -235,7 +255,7 @@ class _EmbeddedGenreMosaic extends StatelessWidget {
       totalMinutes: totalMinutes,
       color: colors[i],
       textColor: textColors[i],
-      percentColor: Colors.black.withValues(alpha: percentAlphas[i]),
+      percentColor: textColors[i].withValues(alpha: percentAlphas[i]),
     );
 
     Widget row(List<int> idxs) => Row(
@@ -264,9 +284,9 @@ class _EmbeddedGenreMosaic extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1.11,
       child: Column(
+        spacing: _gap,
         children: [
           Expanded(flex: topWeight, child: row([0, 1])),
-          const SizedBox(height: _gap),
           // 하단 줄 최소 높이 ~30% 보장 — 폰트가 뭉개지지 않는 하한
           Expanded(
             flex: math.max(
@@ -292,8 +312,8 @@ class _EmbeddedGenreCard extends StatelessWidget {
     required this.item,
     required this.totalMinutes,
     required this.color,
+    required this.textColor,
     required this.percentColor,
-    this.textColor = Colors.black,
   });
 
   @override
@@ -309,18 +329,15 @@ class _EmbeddedGenreCard extends StatelessWidget {
         final tight = constraints.maxWidth < 120;
         // 최소 노출 비중(3%) 카드 기준으로 확정한 크기.
         // 카드가 그보다 작아지면 FittedBox가 비율 그대로 축소한다.
-        const titleSize = 30.0;
-        const timeSize = 16.0;
-        const percentSize = 30.0;
-
-        return Container(
+        return ChorokCard(
+          showBorder: false,
+          backgroundColor: color,
           padding: EdgeInsets.fromLTRB(
-            tight ? 14 : 20,
-            compact ? 14 : 20,
-            tight ? 12 : 16,
-            compact ? 12 : 16,
+            tight ? AppTheme.spaceMD : AppTheme.spaceLG,
+            compact ? AppTheme.spaceMD : AppTheme.spaceLG,
+            tight ? AppTheme.spaceMD : AppTheme.spaceLG,
+            compact ? AppTheme.spaceMD : AppTheme.spaceLG,
           ),
-          decoration: AppTheme.smoothBox(color: color, radius: 18),
           // 제목·시간(위) / 퍼센트(아래) 영역 분리 — 텍스트 겹침 원천 차단
           child: Column(
             children: [
@@ -337,22 +354,18 @@ class _EmbeddedGenreCard extends StatelessWidget {
                       children: [
                         Text(
                           item.label,
-                          style: TextStyle(
-                            fontSize: titleSize,
+                          style: AppTheme.screenTitle.copyWith(
                             height: 0.95,
-                            letterSpacing: 0,
-                            fontWeight: FontWeight.w400,
                             color: textColor,
                           ),
                         ),
-                        SizedBox(height: compact ? 8 : 12),
+                        SizedBox(
+                          height: compact ? AppTheme.spaceSM : AppTheme.spaceMD,
+                        ),
                         Text(
                           _formatGenreMinutes(minutes),
-                          style: TextStyle(
-                            fontSize: timeSize,
+                          style: AppTheme.rowText.copyWith(
                             height: 1.0,
-                            letterSpacing: 0,
-                            fontWeight: FontWeight.w400,
                             color: textColor.withValues(alpha: 0.88),
                           ),
                         ),
@@ -369,11 +382,8 @@ class _EmbeddedGenreCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       '$percent%',
-                      style: TextStyle(
-                        fontSize: percentSize,
+                      style: AppTheme.screenTitle.copyWith(
                         height: 1.0,
-                        letterSpacing: 0,
-                        fontWeight: FontWeight.w400,
                         color: percentColor,
                       ),
                     ),
@@ -415,18 +425,17 @@ class _GenreReadingTimesList extends StatelessWidget {
         AppTheme.screenPadding,
         0,
         AppTheme.screenPadding,
-        MediaQuery.paddingOf(context).bottom + 32,
+        MediaQuery.paddingOf(context).bottom + AppTheme.sectionGap,
       ),
       itemCount: sorted.length + 1,
-      separatorBuilder: (_, index) =>
-          index == 0 ? const SizedBox(height: 16) : const SizedBox(height: 10),
+      separatorBuilder: (_, index) => index == 0
+          ? const SizedBox(height: AppTheme.spaceLG)
+          : const SizedBox(height: AppTheme.spaceSM),
       itemBuilder: (context, index) {
         if (index == 0) {
           return Text(
             '읽은 시간 기준',
-            style: AppTheme.captionSmall.copyWith(
-              color: context.appTextTertiary,
-            ),
+            style: AppTheme.caption.copyWith(color: context.appTextTertiary),
           );
         }
 
@@ -459,22 +468,16 @@ class _GenreReadingTimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide(color: context.appBorderSubtle),
-      ),
+    return ChorokCard(
+      borderColor: context.appBorderSubtle,
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       child: Row(
         children: [
           SizedBox(
-            width: 24,
+            width: AppTheme.spaceXL,
             child: Text(
               '$rank',
-              style: AppTheme.captionSmall.copyWith(
-                color: context.appTextTertiary,
-              ),
+              style: AppTheme.caption.copyWith(color: context.appTextTertiary),
             ),
           ),
           Expanded(
@@ -482,23 +485,21 @@ class _GenreReadingTimeRow extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: AppTheme.spaceXS,
             children: [
               Text(
                 _formatGenreMinutes(minutes),
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextPrimary,
-                ),
+                style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
               ),
-              const SizedBox(height: 3),
               Text(
                 '${percent.toStringAsFixed(1)}%',
-                style: AppTheme.captionSmall.copyWith(
+                style: AppTheme.caption.copyWith(
                   color: context.appTextTertiary,
                 ),
               ),
@@ -520,7 +521,7 @@ class _GenreReadingTimesEmpty extends StatelessWidget {
     return Center(
       child: Text(
         message,
-        style: AppTheme.bodySmall.copyWith(color: context.appTextTertiary),
+        style: AppTheme.supportingText.copyWith(color: context.appTextTertiary),
       ),
     );
   }

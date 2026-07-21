@@ -22,7 +22,7 @@ class MainScaffold extends ConsumerWidget {
     }
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: context.appSurface.withValues(alpha: 0),
       isScrollControlled: true,
       builder: (_) => const BookPickerSheet(),
     );
@@ -96,13 +96,13 @@ class _ChorokBottomBar extends StatelessWidget {
         shape: const CircularNotchedRectangle(),
         notchMargin: 6,
         color: context.appSurface,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.black.withValues(alpha: 0.22),
+        surfaceTintColor: context.appSurface.withValues(alpha: 0),
+        shadowColor: AppTheme.primary.withValues(alpha: 0.22),
         elevation: 10,
         height: 92,
         padding: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          padding: const EdgeInsets.all(AppTheme.spaceSM),
           child: Row(
             children: [
               Expanded(
@@ -194,7 +194,7 @@ class _NavItem extends StatelessWidget {
           onTap: () => onTap(index),
           behavior: HitTestBehavior.opaque,
           child: Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: AppTheme.spaceXS),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -206,7 +206,7 @@ class _NavItem extends StatelessWidget {
                   decoration: AppTheme.smoothPill(
                     color: isActive
                         ? context.appPrimaryAccent.withValues(alpha: 0.14)
-                        : Colors.transparent,
+                        : context.appPrimaryAccent.withValues(alpha: 0),
                   ),
                   child: Icon(
                     isActive ? activeIcon : icon,
@@ -214,13 +214,11 @@ class _NavItem extends StatelessWidget {
                     size: 21,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTheme.supportingText.copyWith(
                     color: color,
-                    fontWeight: FontWeight.w400,
                     height: 1,
                   ),
                 ),
@@ -252,7 +250,7 @@ class _ForestOrbFab extends StatelessWidget {
         height: 62,
         child: FloatingActionButton(
           onPressed: onTap,
-          backgroundColor: Colors.transparent,
+          backgroundColor: accent.withValues(alpha: 0),
           elevation: 0,
           focusElevation: 0,
           hoverElevation: 0,
@@ -275,9 +273,7 @@ class _ForestOrbFab extends StatelessWidget {
             child: Center(
               child: Icon(
                 isInSession ? Icons.play_arrow_rounded : Icons.timer_rounded,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
                 size: 24,
               ),
             ),

@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import 'web_keyboard_inset.dart';
 
 const _chosuSheetPadding = 41.0;
@@ -108,7 +108,7 @@ class _ChosuSheetState extends State<ChosuSheet> {
     // 키보드 높이에 따라 위치를 계산하면 키보드가 나타나거나 전환될 때마다
     // 카드가 아래위로 출렁이므로, 키보드가 열려도 가리지 않는 상단 고정 위치를 쓴다.
     return Material(
-      color: Colors.transparent,
+      color: context.appBg.withValues(alpha: 0),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.maybePop(context),
@@ -232,7 +232,7 @@ class _SentenceStep extends StatelessWidget {
                   letterSpacing: 0,
                 ),
                 filled: false,
-                fillColor: Colors.transparent,
+                fillColor: context.appBg.withValues(alpha: 0),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -267,7 +267,7 @@ class _SentenceStep extends StatelessWidget {
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Wrap(
-                    spacing: 11,
+                    spacing: AppTheme.spaceMD,
                     children: [
                       _CardIconButton(
                         tooltip: '생각 쓰기',
@@ -304,16 +304,15 @@ class _InputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ChorokCard(
       clipBehavior: Clip.antiAlias,
-      padding: const EdgeInsets.fromLTRB(17, 14, 17, 15),
-      decoration: ShapeDecoration(
-        color: context.appCard.withValues(alpha: 0.96),
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.circular(7),
-          side: BorderSide.none,
-        ),
+      showBorder: false,
+      backgroundColor: context.appCard.withValues(alpha: 0.96),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceMD,
+        AppTheme.screenPadding,
+        AppTheme.spaceLG,
       ),
       child: child,
     );
@@ -342,7 +341,7 @@ class _CardIconButton extends StatelessWidget {
     final background = primary || saved
         ? context.appPrimaryAccent
         : context.appTextTertiary;
-    final foreground = primary || saved ? Colors.black : context.appBg;
+    final foreground = primary || saved ? AppTheme.darkBg : context.appBg;
 
     return Tooltip(
       message: tooltip,
@@ -357,9 +356,7 @@ class _CardIconButton extends StatelessWidget {
                 : background.withValues(alpha: 0.36),
             foregroundColor: foreground,
             disabledForegroundColor: foreground.withValues(alpha: 0.52),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
-            ),
+            shape: AppTheme.smoothShape(radius: AppTheme.radiusInner),
           ),
           onPressed: enabled ? onPressed : null,
           icon: Icon(icon, size: 18),
@@ -376,18 +373,18 @@ class _ChosuTimerPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: context.appPrimaryAccent, width: 1),
+    return ChorokCard(
+      inner: true,
+      backgroundColor: context.appBg,
+      borderColor: context.appPrimaryAccent,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceMD,
+        vertical: AppTheme.spaceSM,
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: AppTheme.rowText.copyWith(
           color: context.appPrimaryAccent,
-          fontSize: 17,
           height: 1,
           fontWeight: FontWeight.w400,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -411,7 +408,7 @@ class _ChosuOverlayBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.black);
+    canvas.drawRect(Offset.zero & size, Paint()..color = AppTheme.darkBg);
     _drawGlow(canvas, size, 0.79, 0.19, 27);
     _drawGlow(canvas, size, 0.50, 0.62, 20);
     _drawGlow(canvas, size, 0.77, 0.82, 8);
@@ -475,7 +472,7 @@ class _ThoughtStep extends StatelessWidget {
                 sentence,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppTheme.bodySmall.copyWith(
+                style: AppTheme.bodyMedium.copyWith(
                   color: context.appTextTertiary,
                   height: 1.5,
                   letterSpacing: 0,
@@ -503,7 +500,7 @@ class _ThoughtStep extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
-              padding: const EdgeInsets.only(top: 9),
+              padding: const EdgeInsets.only(top: AppTheme.spaceSM),
               child: _CardIconButton(
                 tooltip: '저장하기',
                 icon: saved ? Icons.check_rounded : Icons.add_rounded,
@@ -645,7 +642,7 @@ class _ChosuTextFieldState extends State<_ChosuTextField> {
           letterSpacing: 0,
         ),
         filled: false,
-        fillColor: Colors.transparent,
+        fillColor: context.appBg.withValues(alpha: 0),
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,

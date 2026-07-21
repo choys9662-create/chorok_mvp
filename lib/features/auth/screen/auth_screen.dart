@@ -18,8 +18,10 @@ import '../util/auth_error.dart';
 
 // ─── 디자인 토큰 (AppTheme 기반) ─────────────────────────────────────────────
 const _kBg = AppTheme.darkBg;
-const _kAuthControlFill = Color(0xFF111811);
-const _kAuthControlBorder = Color(0x3D8DFF54);
+// 기존 #111811은 darkCard(#141614)와 3 이내로 차이 나는 눈대중 값이라
+// 토큰으로 통일한다 — 검은 화면 위에 뜨는 버튼이라 카드와 같은 역할.
+const _kAuthControlFill = AppTheme.darkCard;
+final _kAuthControlBorder = AppTheme.primaryLight.withValues(alpha: 0.24);
 const _authRedirectUri = 'com.chorok.chorokapp://login-callback/';
 const _naverProvider = OAuthProvider('custom:naver');
 
@@ -202,7 +204,9 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
               const SizedBox(height: 40),
               // ── 소셜 로그인 ──
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.space2XL,
+                ),
                 child: Column(
                   children: [
                     _SocialButton(
@@ -210,7 +214,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                       icon: _googleIcon,
                       label: 'Google로 계속하기',
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceMD),
                     _SocialButton(
                       onTap: _loading ? null : _signInWithNaver,
                       icon: _naverIcon,
@@ -220,8 +224,9 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                     // 아직 프로비저닝되지 않아 항상 실패한다(유료 Apple Developer
                     // Program 가입 전까지). 웹 OAuth 경로는 entitlement가 필요
                     // 없으므로 그대로 노출한다.
-                    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) ...[
-                      const SizedBox(height: 12),
+                    if (kIsWeb ||
+                        defaultTargetPlatform != TargetPlatform.iOS) ...[
+                      const SizedBox(height: AppTheme.spaceMD),
                       _SocialButton(
                         onTap: _loading ? null : _signInWithApple,
                         icon: _appleIcon,
@@ -242,7 +247,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                     Text(
                       '계속하면 ',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTheme.fsSupporting,
                         height: 1.5,
                         color: Colors.white.withValues(alpha: 0.3),
                       ),
@@ -255,7 +260,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                       child: Text(
                         '이용약관',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppTheme.fsSupporting,
                           height: 1.5,
                           color: Colors.white.withValues(alpha: 0.5),
                           decoration: TextDecoration.underline,
@@ -265,7 +270,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                     Text(
                       ' 및 ',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTheme.fsSupporting,
                         height: 1.5,
                         color: Colors.white.withValues(alpha: 0.3),
                       ),
@@ -278,7 +283,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                       child: Text(
                         '개인정보처리방침',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppTheme.fsSupporting,
                           height: 1.5,
                           color: Colors.white.withValues(alpha: 0.5),
                           decoration: TextDecoration.underline,
@@ -288,7 +293,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                     Text(
                       '에\n동의하는 것으로 간주됩니다.',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTheme.fsSupporting,
                         height: 1.5,
                         color: Colors.white.withValues(alpha: 0.3),
                       ),
@@ -296,7 +301,7 @@ class _AuthScreenState extends State<AuthScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceXL),
             ],
           ),
         ),
@@ -331,28 +336,28 @@ class _Logo extends StatelessWidget {
             child: Text(
               '초',
               style: TextStyle(
-                fontSize: 30,
+                fontSize: AppTheme.fsScreenTitle,
                 fontWeight: FontWeight.w400,
                 color: Colors.white,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spaceLG),
         const Text(
           '초록',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: AppTheme.fsScreenTitle,
             fontWeight: FontWeight.w400,
             color: Colors.white,
             letterSpacing: 4,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTheme.spaceSM),
         Text(
           '독서 몰입 플랫폼',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: AppTheme.fsSupporting,
             fontWeight: FontWeight.w400,
             color: AppTheme.textSecondary,
             letterSpacing: 1.5,
@@ -391,18 +396,18 @@ class _SocialButton extends StatelessWidget {
           height: 52,
           decoration: AppTheme.smoothBox(
             color: dark ? Colors.white : _kAuthControlFill,
-            radius: 10,
+            radius: AppTheme.radiusOuter,
             side: BorderSide(color: dark ? Colors.white : _kAuthControlBorder),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: 20, height: 20, child: icon),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   fontWeight: FontWeight.w400,
                   color: dark ? Colors.black : Colors.white,
                 ),
@@ -436,6 +441,7 @@ class _GooglePainter extends CustomPainter {
     final radius = size.width / 2;
 
     // G 모양 간략 표현 — 색상 호
+    // 구조상 예외: Google 로고 브랜드 고정 색상 — AppTheme 팔레트 토큰 대상 아님
     const colors = [
       Color(0xFF4285F4),
       Color(0xFF34A853),
@@ -460,6 +466,7 @@ class _GooglePainter extends CustomPainter {
       start += sweeps[i];
     }
     // 가로 막대
+    // 구조상 예외: Google 로고 브랜드 고정 색상 — AppTheme 팔레트 토큰 대상 아님
     final linePaint = Paint()
       ..color = const Color(0xFF4285F4)
       ..strokeWidth = size.width * 0.18
@@ -491,15 +498,16 @@ class _NaverIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        // 구조상 예외: Naver 로고 브랜드 고정 색상 — AppTheme 팔레트 토큰 대상 아님
         color: const Color(0xFF03C75A),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusInner),
       ),
       alignment: Alignment.center,
       child: const Text(
         'N',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 14,
+          fontSize: AppTheme.fsBody,
           fontWeight: FontWeight.w900,
           height: 1,
         ),

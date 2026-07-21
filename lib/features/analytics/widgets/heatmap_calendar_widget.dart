@@ -3,10 +3,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
+// 구조상 예외: 히트맵 강도 스케일 — 6색 팔레트로는 3단계 이상의 연속 강도를
+// 구분할 수 없어 차트 전용 그린 램프를 쓴다. book_treemap_widget.dart의
+// 저강도 색과 동일 계열.
 const Color _kLv1 = Color(0xFF0F6E56);
 const Color _kLv2 = Color(0xFF1D9E75);
 const Color _kLv3 = Color(0xFF3BC49A);
-const Color _kLabel = Color(0xFF7A8597);
 
 /// 월간 독서 캘린더 히트맵 — 이전/다음 달 이동 가능
 class HeatmapCalendarWidget extends StatefulWidget {
@@ -40,6 +42,8 @@ class _HeatmapCalendarWidgetState extends State<HeatmapCalendarWidget> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 구조상 예외: 히트맵 "없음" 단계 — 위 그린 램프와 짝을 이루는
+    // 무채색 0단계 톤(라이트/다크 대비 확보용).
     final emptyColor = isDark
         ? const Color(0xFF2A2D2A)
         : const Color(0xFFE2EDE9);
@@ -92,7 +96,7 @@ class _MonthHeader extends StatelessWidget {
           iconSize: 20,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          color: _kLabel,
+          color: context.appTextSecondary,
         ),
         Text(
           '${month.year}년 ${month.month}월',
@@ -104,7 +108,7 @@ class _MonthHeader extends StatelessWidget {
           iconSize: 20,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          color: _kLabel,
+          color: context.appTextSecondary,
         ),
       ],
     );
@@ -124,8 +128,8 @@ class _DayOfWeekRow extends StatelessWidget {
                 child: Text(
                   d,
                   style: AppTheme.captionSmall.copyWith(
-                    color: _kLabel,
-                    fontSize: 12,
+                    color: context.appTextSecondary,
+                    fontSize: AppTheme.fsSupporting,
                   ),
                 ),
               ),
@@ -225,7 +229,7 @@ class _DayCell extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusInner),
         border: isToday
             ? Border.all(color: context.appPrimaryAccent, width: 1.5)
             : null,
@@ -234,11 +238,13 @@ class _DayCell extends StatelessWidget {
         child: Text(
           '$day',
           style: AppTheme.captionSmall.copyWith(
-            fontSize: 12,
+            fontSize: AppTheme.fsSupporting,
+            // 구조상 예외: 위 emptyColor 두 값과 동일한 리터럴로 "빈 칸인가"
+            // 식별 — 클래스가 달라 emptyColor 참조 대신 값을 직접 비교한다.
             color:
                 color == const Color(0xFF2A2D2A) ||
                     color == const Color(0xFFE2EDE9)
-                ? _kLabel
+                ? context.appTextSecondary
                 : Colors.white,
             fontWeight: isToday ? FontWeight.w400 : FontWeight.w400,
           ),
@@ -267,8 +273,13 @@ class _Legend extends StatelessWidget {
     ];
     return Row(
       children: [
-        Text('독서량', style: AppTheme.captionSmall.copyWith(color: _kLabel)),
-        const SizedBox(width: 8),
+        Text(
+          '독서량',
+          style: AppTheme.captionSmall.copyWith(
+            color: context.appTextSecondary,
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceSM),
         ...levels.map(
           (l) => Padding(
             padding: const EdgeInsets.only(right: 6),
@@ -277,17 +288,19 @@ class _Legend extends StatelessWidget {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(
+                  // 완전한 원형 점 인디케이터 — radius 규칙 예외(design.md §5).
+                  decoration: const BoxDecoration(shape: BoxShape.circle),
+                  foregroundDecoration: BoxDecoration(
                     color: l.color,
-                    borderRadius: BorderRadius.circular(10),
+                    shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 3),
                 Text(
                   l.label,
                   style: AppTheme.captionSmall.copyWith(
-                    color: _kLabel,
-                    fontSize: 10,
+                    color: context.appTextSecondary,
+                    fontSize: AppTheme.fsCaption,
                   ),
                 ),
               ],

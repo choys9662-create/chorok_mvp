@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/theme/app_theme.dart';
-import 'package:smooth_corner/smooth_corner.dart';
-import '../../../shared/models/reading_session.dart';
-import '../../../shared/providers/library_provider.dart';
+import '../../../shared/providers/profile_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/recommended_books_provider.dart';
 
 class RecommendedBooksSection extends ConsumerWidget {
@@ -15,33 +17,39 @@ class RecommendedBooksSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(recommendedBooksProvider);
+    // 이름을 아직 못 불러왔으면 이름 없는 제목으로 먼저 보여준다.
+    final myName = ref.watch(myDisplayNameProvider).valueOrNull;
+    final title = myName != null ? '$myName님 맞춤 추천 책' : '맞춤 추천 책';
 
     return async.when(
-      loading: () => _scaffold(context, child: _shimmer(context)),
+      loading: () => _scaffold(context, title: title, child: _shimmer(context)),
       error: (_, _) => const SizedBox.shrink(),
       data: (books) {
         if (books.isEmpty) {
-          return _scaffold(context, child: _emptyCard(context));
+          return _scaffold(context, title: title, child: _emptyCard(context));
         }
+        // 4열 × 2행 = 8권. 탐색 화면의 맞춤 추천 그리드와 같은 배치다.
+        // 표지만 보이므로 제목·저자·추천 이유는 화살표를 눌러 시트에서 본다.
         return _scaffold(
           context,
-          child: SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.screenPadding,
+          title: title,
+          onShowAll: () => _showAll(context, title, books),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: books.length > 8 ? 8 : books.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: AppTheme.spaceMD,
+                mainAxisSpacing: AppTheme.spaceMD,
+                childAspectRatio: 0.66,
               ),
-              itemCount: books.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index < books.length - 1 ? 12 : 0,
-                  ),
-                  child: RecommendedBookCard(book: books[index]),
-                );
-              },
+              itemBuilder: (_, i) => RecommendedBookCover(book: books[i]),
             ),
           ),
         );
@@ -49,90 +57,150 @@ class RecommendedBooksSection extends ConsumerWidget {
     );
   }
 
-  Widget _scaffold(BuildContext context, {required Widget child}) {
+  Widget _scaffold(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+    VoidCallback? onShowAll,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 28),
+        const SizedBox(height: AppTheme.sectionGap),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '내 문장이 이끄는 책',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextPrimary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '기록한 문장을 분석해 취향에 맞는 책을 추천해요',
-                      style: AppTheme.captionLarge.copyWith(
+          child: ChorokSectionHeader(
+            title: title,
+            trailing: onShowAll == null
+                ? null
+                : Semantics(
+                    button: true,
+                    label: '$title 전체 보기',
+                    child: GestureDetector(
+                      onTap: onShowAll,
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: AppTheme.spaceXL,
                         color: context.appTextTertiary,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: ShapeDecoration(
-                  color: context.primaryBg(0.08),
-                  shape: SmoothRectangleBorder(
-                    smoothness: 0.6,
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_rounded,
-                      size: 12,
-                      color: context.appPrimaryAccent,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'AI',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spaceLG),
         child,
       ],
     );
   }
 
-  Widget _shimmer(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-        itemCount: 2,
-        itemBuilder: (context, index) => Padding(
-          padding: EdgeInsets.only(right: index == 0 ? 12 : 0),
-          child: Container(
-            width: 240,
-            decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
+  /// 그리드에는 표지만 나오므로, 제목·저자·추천 이유는 여기서 보여준다.
+  void _showAll(
+    BuildContext context,
+    String title,
+    List<RecommendedBook> books,
+  ) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.appCard,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusOuter),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.72,
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  0,
+                  AppTheme.screenPadding,
+                  AppTheme.spaceMD,
+                ),
+                child: ChorokSectionHeader(title: title),
+              ),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.screenPadding,
+                    0,
+                    AppTheme.screenPadding,
+                    AppTheme.spaceLG,
+                  ),
+                  itemCount: books.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppTheme.spaceMD),
+                  itemBuilder: (_, i) {
+                    final b = books[i];
+                    return ChorokListRow(
+                      leading: BookCover(
+                        coverUrl: b.coverUrl.isEmpty ? null : b.coverUrl,
+                        gradientIndex: b.gradientIndex,
+                        width: 40,
+                        height: 60,
+                        radius: AppTheme.radiusInner,
+                      ),
+                      title: Text(
+                        b.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextPrimary,
+                        ),
+                      ),
+                      supporting: Text(
+                        '${b.author} · ${b.reason}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.supportingText.copyWith(
+                          color: context.appTextSecondary,
+                        ),
+                      ),
+                      trailing: Text(
+                        '${(b.matchScore * 100).round()}%',
+                        style: AppTheme.supportingText.copyWith(
+                          color: context.appPrimaryAccent,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _shimmer(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: 8,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: AppTheme.spaceMD,
+          mainAxisSpacing: AppTheme.spaceMD,
+          childAspectRatio: 0.66,
+        ),
+        itemBuilder: (_, _) => const ChorokCard(
+          padding: EdgeInsets.zero,
+          child: SizedBox.expand(),
         ),
       ),
     );
@@ -141,273 +209,65 @@ class RecommendedBooksSection extends ConsumerWidget {
   Widget _emptyCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
+      child: ChorokCard(
         child: Text(
           '문장을 더 기록하면 취향에 맞는 책을 추천해드려요',
-          style: AppTheme.bodySmall.copyWith(color: context.appTextSecondary),
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextSecondary,
+          ),
         ),
       ),
     );
   }
 }
 
-class RecommendedBookCard extends ConsumerStatefulWidget {
+/// 맞춤 추천 그리드의 한 칸 — 표지 + 일치율 배지.
+///
+/// 4열 그리드에 들어가므로 폭은 그리드 칸이 정하고, 세로 비율만 표지가 맡는다.
+class RecommendedBookCover extends StatelessWidget {
   final RecommendedBook book;
-  const RecommendedBookCard({super.key, required this.book});
-
-  @override
-  ConsumerState<RecommendedBookCard> createState() =>
-      RecommendedBookCardState();
-}
-
-class RecommendedBookCardState extends ConsumerState<RecommendedBookCard> {
-  bool _isPressed = false;
+  const RecommendedBookCover({super.key, required this.book});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final b = widget.book;
-    final library = ref.watch(libraryProvider);
-    final isAdded = library.any(
-      (book) => book.title.trim().toLowerCase() == b.title.trim().toLowerCase(),
-    );
-
     return GestureDetector(
-      onTapDown: (_) {
+      onTap: () async {
         HapticFeedback.selectionClick();
-        setState(() => _isPressed = true);
-      },
-      onTapUp: (_) async {
-        setState(() => _isPressed = false);
-        final query = Uri.encodeQueryComponent('${b.title} ${b.author}');
+        final query = Uri.encodeQueryComponent('${book.title} ${book.author}');
         final url = Uri.parse(
-          'https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=$query',
+          'https://www.aladin.co.kr/search/wsearchresult.aspx'
+          '?SearchTarget=Book&SearchWord=$query',
         );
         if (await canLaunchUrl(url)) {
           await launchUrl(url, mode: LaunchMode.externalApplication);
         }
       },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOutCubic,
-        child: Container(
-          width: 240,
-          clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(color: context.appCard, radius: 10),
-          child: Row(
-            children: [
-              BookCover(
-                coverUrl: b.coverUrl,
-                gradientIndex: b.gradientIndex,
-                width: 88,
-                radius: 0,
-                fallbackIcon: Positioned(
-                  right: -8,
-                  bottom: -8,
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    size: 48,
-                    color: context.primaryBg(0.08),
-                  ),
-                ),
-                child: Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: context.appSurface.withValues(alpha: 0.8),
-                      shape: SmoothRectangleBorder(
-                        smoothness: 0.6,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      '${(b.matchScore * 100).round()}%',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
+      child: Semantics(
+        button: true,
+        label: '${book.title} 알라딘에서 보기',
+        child: BookCover(
+          coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
+          gradientIndex: book.gradientIndex,
+          width: double.infinity,
+          radius: AppTheme.radiusOuter,
+          child: Positioned(
+            top: AppTheme.spaceXS,
+            left: AppTheme.spaceXS,
+            child: ChorokCard(
+              inner: true,
+              showBorder: false,
+              backgroundColor: context.appSurface.withValues(alpha: 0.8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceXS,
+                vertical: 2,
+              ),
+              child: Text(
+                '${(book.matchScore * 100).round()}%',
+                style: AppTheme.caption.copyWith(
+                  color: context.appPrimaryAccent,
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        b.title,
-                        style: AppTheme.bodySmall.copyWith(
-                          color: context.appTextPrimary,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        b.author,
-                        style: AppTheme.captionSmall.copyWith(
-                          color: context.appTextSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: ShapeDecoration(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.06,
-                          ),
-                          shape: SmoothRectangleBorder(
-                            smoothness: 0.6,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 1),
-                              child: Icon(
-                                Icons.format_quote_rounded,
-                                size: 12,
-                                color: context.appPrimaryAccent,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                b.reason,
-                                style: AppTheme.captionSmall.copyWith(
-                                  color: context.appTextSecondary,
-                                  height: 1.4,
-                                ),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
-                      Semantics(
-                        label: isAdded
-                            ? '${b.title} 서재에서 제거'
-                            : '${b.title} 서재에 추가',
-                        button: true,
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            final notifier = ref.read(libraryProvider.notifier);
-                            if (isAdded) {
-                              final existing = ref
-                                  .read(libraryProvider)
-                                  .firstWhere(
-                                    (book) =>
-                                        book.title.trim().toLowerCase() ==
-                                        b.title.trim().toLowerCase(),
-                                  );
-                              notifier.deleteBook(existing.id);
-                            } else {
-                              notifier.addBook(
-                                Book(
-                                  id: 'rec_${b.title.hashCode.abs()}',
-                                  title: b.title,
-                                  author: b.author,
-                                  coverUrl: b.coverUrl.isEmpty
-                                      ? null
-                                      : b.coverUrl,
-                                  status: ReadingStatus.wantToRead,
-                                ),
-                              );
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isAdded
-                                      ? '${b.title}을(를) 서재에서 제거했어요'
-                                      : '${b.title}을(를) 읽고 싶은 책에 추가했어요',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                backgroundColor: AppTheme.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: AppTheme.smoothShape(
-                                  radius: AppTheme.radiusMD,
-                                ),
-                                margin: const EdgeInsets.fromLTRB(
-                                  20,
-                                  0,
-                                  20,
-                                  16,
-                                ),
-                              ),
-                            );
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOutCubic,
-                            height: 32,
-                            alignment: Alignment.center,
-                            decoration: ShapeDecoration(
-                              color: isAdded
-                                  ? context.appPrimaryAccent.withValues(
-                                      alpha: 0.15,
-                                    )
-                                  : isDark
-                                  ? AppTheme.primary.withValues(alpha: 0.4)
-                                  : AppTheme.lightPrimaryAccent,
-                              shape: SmoothRectangleBorder(
-                                smoothness: 0.6,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isAdded
-                                      ? Icons.check_rounded
-                                      : Icons.add_rounded,
-                                  size: 14,
-                                  color: isAdded
-                                      ? context.appPrimaryAccent
-                                      : isDark
-                                      ? context.appPrimaryAccent
-                                      : Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isAdded ? '추가됨' : '서재에 추가',
-                                  style: AppTheme.captionSmall.copyWith(
-                                    color: isAdded
-                                        ? context.appPrimaryAccent
-                                        : isDark
-                                        ? context.appPrimaryAccent
-                                        : Colors.white,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

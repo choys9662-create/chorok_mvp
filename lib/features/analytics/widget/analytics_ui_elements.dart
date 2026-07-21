@@ -24,7 +24,7 @@ class TabSelector extends StatelessWidget {
           color: context.appCard,
           side: BorderSide.none,
         ),
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(AppTheme.spaceXS),
         child: Row(
           children: tabs.asMap().entries.map((e) {
             final isSelected = e.key == selected;
@@ -36,11 +36,13 @@ class TabSelector extends StatelessWidget {
                     HapticFeedback.selectionClick();
                     onChanged(e.key);
                   },
-                  customBorder: AppTheme.smoothShape(radius: 10),
+                  customBorder: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spaceSM,
+                    ),
                     decoration: AppTheme.smoothPill(
                       color: isSelected ? AppTheme.primary : Colors.transparent,
                     ),
@@ -48,7 +50,7 @@ class TabSelector extends StatelessWidget {
                     child: Text(
                       e.value,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppTheme.fsSupporting,
                         fontWeight: isSelected
                             ? FontWeight.w400
                             : FontWeight.w400,

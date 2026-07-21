@@ -7,6 +7,9 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../controller/friends_read_today_provider.dart';
 
 const _sideMargin = AppTheme.screenPadding;
@@ -27,30 +30,21 @@ class FriendsReadTodaySection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 30),
+            const SizedBox(height: AppTheme.sectionGap),
             _Header(count: friends.length),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: AppTheme.smoothBox(
-                  color: context.appCard,
-                  radius: 8,
-                  side: BorderSide.none,
-                ),
+              child: ChorokCard(
+                padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
                 child: Column(
                   children: [
                     for (var i = 0; i < visible.length; i++) ...[
                       _FriendRow(item: visible[i]),
                       if (i < visible.length - 1)
                         Divider(
-                          height: 22,
-                          thickness: 1,
-                          color: context.appDivider.withValues(alpha: 0.35),
+                          height: AppTheme.space2XL,
+                          color: context.appDivider,
                         ),
                     ],
                   ],
@@ -72,37 +66,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-      child: Row(
-        children: [
-          Text(
-            '오늘 읽은 친구',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextTertiary,
-              fontWeight: FontWeight.w400,
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '|',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextTertiary.withValues(alpha: 0.35),
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appPrimaryAccent,
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
-      ),
+      child: ChorokSectionHeader(title: '오늘 읽은 친구', count: count),
     );
   }
 }
@@ -125,54 +89,33 @@ class _FriendRow extends StatelessWidget {
         },
         child: SizedBox(
           height: 46,
-          child: Row(
-            children: [
-              BookCover(
-                coverUrl: item.coverUrl,
-                gradientIndex: item.bookTitle.hashCode.abs(),
-                width: 32,
-                height: 44,
-                radius: 4,
+          child: ChorokListRow(
+            leading: BookCover(
+              coverUrl: item.coverUrl,
+              gradientIndex: item.bookTitle.hashCode.abs(),
+              width: 32,
+              height: 44,
+              radius: AppTheme.radiusInner,
+            ),
+            title: Text(
+              item.friend.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
+            ),
+            supporting: Text(
+              item.bookTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.caption.copyWith(color: context.appTextSecondary),
+            ),
+            trailing: Text(
+              time_fmt.formatDurationSeconds(item.seconds),
+              style: AppTheme.sectionTitle.copyWith(
+                color: context.appPrimaryAccent,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      item.friend.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextPrimary,
-                        fontSize: 18,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.bookTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: context.appTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                time_fmt.formatDurationSeconds(item.seconds),
-                style: AppTheme.bodyMedium.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontSize: 18,
-                  letterSpacing: 0,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -4,6 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../search/model/aladin_book.dart';
 
+// 내 표시 이름은 홈에서도 쓰므로 shared 로 옮겼다.
+export '../../../shared/providers/profile_provider.dart'
+    show myDisplayNameProvider;
+
 /// 검색 탭 디스커버리(검색어 없을 때) 데이터.
 ///
 /// 검색 로그 테이블이 아직 없어 "인기"는 기존 데이터로 근사한다:
@@ -18,6 +22,22 @@ final popularBooksProvider = FutureProvider.autoDispose<List<AladinBook>>((
 ) async {
   if (kUseMock) {
     return const [
+      AladinBook(
+        title: '채식주의자 (리마스터링)',
+        author: '한강',
+        rawAuthor: '한강 (지은이), 김한강 (옮긴이)',
+        publisher: '창비',
+        coverUrl:
+            'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+        isbn13: '9788936434595',
+        description:
+            '2016년 인터내셔널 부커상을 수상하며 한국문학의 입지를 한 단계 확장시킨 한강의 장편소설. '
+            '출간 15년 만에 새로운 장정으로 선보인다. 상처받은 영혼의 고통과 식물적 상상력, '
+            '그리고 인간의 폭력성을 섬세하고 강렬하게 그려낸 작품이다.',
+        totalPages: 276,
+        genre: '소설',
+        pubDate: '2022-03-28',
+      ),
       AladinBook(
         title: '안녕이라 그랬어',
         author: '김애란',
@@ -85,19 +105,4 @@ final popularAuthorsProvider = FutureProvider.autoDispose<List<PopularAuthor>>((
     final titles = (m['titles'] as List?)?.cast<String>() ?? const <String>[];
     return (name: m['author'] as String? ?? '', titles: titles);
   }).toList();
-});
-
-/// 맞춤 추천 헤더에 쓸 내 표시 이름. 없으면 null.
-final myDisplayNameProvider = FutureProvider.autoDispose<String?>((ref) async {
-  if (kUseMock) return '준돌돔';
-
-  final uid = Supabase.instance.client.auth.currentUser?.id;
-  if (uid == null) return null;
-  final res = await Supabase.instance.client
-      .from('profiles')
-      .select('display_name')
-      .eq('id', uid)
-      .maybeSingle();
-  final name = res?['display_name'] as String?;
-  return (name != null && name.isNotEmpty) ? name : null;
 });

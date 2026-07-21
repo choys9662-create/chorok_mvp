@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-const Color _kLabel = Color(0xFF7A8597);
-
 /// 스택드 에리어 차트 — 주간/월간 독서 시간을 장르별로 층층이 쌓기
 ///
 /// [labels]  x축 레이블 (주 또는 날짜)
@@ -121,8 +119,8 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                       getTitlesWidget: (v, _) => Text(
                         '${v.round()}h',
                         style: AppTheme.captionSmall.copyWith(
-                          color: _kLabel,
-                          fontSize: 10,
+                          color: context.appTextSecondary,
+                          fontSize: AppTheme.fsCaption,
                         ),
                       ),
                     ),
@@ -142,8 +140,8 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                         return Text(
                           widget.labels[idx],
                           style: AppTheme.captionSmall.copyWith(
-                            color: _kLabel,
-                            fontSize: 10,
+                            color: context.appTextSecondary,
+                            fontSize: AppTheme.fsCaption,
                           ),
                         );
                       },
@@ -152,6 +150,8 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                 ),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
+                    // 구조상 예외: 차트 툴팁은 테마와 무관하게 항상 어두운
+                    // 배경 유지(라이트 모드에서도 흰 텍스트 대비 확보).
                     getTooltipColor: (_) => const Color(0xFF1A1A1A),
                     tooltipRoundedRadius: 9999,
                     getTooltipItems: (spots) => spots.map((s) {
@@ -173,7 +173,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
           const SizedBox(height: AppTheme.spaceMD),
           // 범례
           Wrap(
-            spacing: 8,
+            spacing: AppTheme.spaceSM,
             runSpacing: 6,
             children: List.generate(widget.series.length, (i) {
               final sp = widget.series[i];
@@ -184,13 +184,13 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
-                    vertical: 4,
+                    vertical: AppTheme.spaceXS,
                   ),
                   decoration: ShapeDecoration(
                     color: active
                         ? sp.color.withValues(alpha: 0.15)
-                        : const Color(0xFF1A1A1A),
-                    shape: AppTheme.smoothShape(radius: 10),
+                        : context.appCardElevated,
+                    shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -199,7 +199,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                         width: 8,
                         height: 8,
                         decoration: ShapeDecoration(
-                          color: active ? sp.color : _kLabel,
+                          color: active ? sp.color : context.appTextSecondary,
                           shape: const CircleBorder(),
                         ),
                       ),
@@ -207,7 +207,7 @@ class _StackedAreaChartWidgetState extends State<StackedAreaChartWidget> {
                       Text(
                         sp.name,
                         style: AppTheme.captionSmall.copyWith(
-                          color: active ? sp.color : _kLabel,
+                          color: active ? sp.color : context.appTextSecondary,
                         ),
                       ),
                     ],

@@ -1,23 +1,16 @@
 import 'dart:async';
 
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/chorok_card.dart';
+import '../../shared/widgets/chorok_snackbar.dart';
 import '../search/controller/book_search_controller.dart';
 import '../search/util/add_book_flow.dart';
 import '../search/widget/add_to_library_sheet.dart';
-
-// ─── 색상 토큰 ────────────────────────────────────────────────────────────────
-const _kBg = AppTheme.darkBg;
-const _kGreen = AppTheme.primaryLight;
-const _kSurface = AppTheme.darkCard;
-const _kTextPrimary = AppTheme.textPrimary;
-const _kTextSecondary = AppTheme.textTertiary;
-const _kOverlay = Color(0xCC000000);
 
 // ─── 스캐너 화면 ──────────────────────────────────────────────────────────────
 
@@ -135,37 +128,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   SnackBar _buildSnackBar(String message, bool success) {
-    return SnackBar(
-      content: Row(
-        children: [
-          Icon(
-            success ? Icons.check_circle_rounded : Icons.info_rounded,
-            color: success ? _kGreen : _kTextSecondary,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: _kTextPrimary,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: _kSurface,
-      behavior: SnackBarBehavior.floating,
-      shape: SmoothRectangleBorder(
-        smoothness: 0.6,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      duration: const Duration(seconds: 3),
-    );
+    return chorokSnackBar(context, message, success: success);
   }
 
   // ── 빌드 ────────────────────────────────────────────────────────────────────
@@ -173,7 +136,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: context.appBg,
       body: Stack(
         children: [
           // ── 카메라 뷰 ────────────────────────────────────────────────
@@ -234,6 +197,7 @@ class _ScanOverlay extends StatelessWidget {
     return CustomPaint(
       painter: _OverlayPainter(
         frameRect: Rect.fromLTWH(frameLeft, frameTop, frameW, frameH),
+        overlayColor: context.appBg.withValues(alpha: 0.8),
       ),
       child: Stack(
         children: [
@@ -251,9 +215,9 @@ class _ScanOverlay extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _kGreen.withValues(alpha: 0),
-                        _kGreen,
-                        _kGreen.withValues(alpha: 0),
+                        context.appPrimaryAccent.withValues(alpha: 0),
+                        context.appPrimaryAccent,
+                        context.appPrimaryAccent.withValues(alpha: 0),
                       ],
                     ),
                   ),
@@ -263,21 +227,24 @@ class _ScanOverlay extends StatelessWidget {
           ),
 
           // 코너 마커 4개
-          ..._corners(frameLeft, frameTop, frameW, frameH),
+          ..._corners(
+            frameLeft,
+            frameTop,
+            frameW,
+            frameH,
+            context.appPrimaryAccent,
+          ),
 
           // 안내 텍스트
           Positioned(
-            left: 24,
-            right: 24,
-            top: frameTop + frameH + 32,
-            child: const Text(
+            left: AppTheme.spaceXL,
+            right: AppTheme.spaceXL,
+            top: frameTop + frameH + AppTheme.spaceXL + AppTheme.spaceSM,
+            child: Text(
               '책 뒷면의 바코드를 네모 안에 맞춰주세요\nISBN-13 (978, 979로 시작하는 13자리)',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: _kTextSecondary,
-                height: 1.6,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextSecondary,
               ),
             ),
           ),
@@ -286,23 +253,41 @@ class _ScanOverlay extends StatelessWidget {
     );
   }
 
-  static List<Widget> _corners(double l, double t, double w, double h) {
+  static List<Widget> _corners(
+    double l,
+    double t,
+    double w,
+    double h,
+    Color color,
+  ) {
     const cs = 24.0; // corner size
     const ct = 3.0; // corner thickness
 
     return [
       // 좌상
-      _corner(left: l, top: t, width: cs, height: ct),
-      _corner(left: l, top: t, width: ct, height: cs),
+      _corner(left: l, top: t, width: cs, height: ct, color: color),
+      _corner(left: l, top: t, width: ct, height: cs, color: color),
       // 우상
-      _corner(left: l + w - cs, top: t, width: cs, height: ct),
-      _corner(left: l + w - ct, top: t, width: ct, height: cs),
+      _corner(left: l + w - cs, top: t, width: cs, height: ct, color: color),
+      _corner(left: l + w - ct, top: t, width: ct, height: cs, color: color),
       // 좌하
-      _corner(left: l, top: t + h - ct, width: cs, height: ct),
-      _corner(left: l, top: t + h - cs, width: ct, height: cs),
+      _corner(left: l, top: t + h - ct, width: cs, height: ct, color: color),
+      _corner(left: l, top: t + h - cs, width: ct, height: cs, color: color),
       // 우하
-      _corner(left: l + w - cs, top: t + h - ct, width: cs, height: ct),
-      _corner(left: l + w - ct, top: t + h - cs, width: ct, height: cs),
+      _corner(
+        left: l + w - cs,
+        top: t + h - ct,
+        width: cs,
+        height: ct,
+        color: color,
+      ),
+      _corner(
+        left: l + w - ct,
+        top: t + h - cs,
+        width: ct,
+        height: cs,
+        color: color,
+      ),
     ];
   }
 
@@ -311,11 +296,12 @@ class _ScanOverlay extends StatelessWidget {
     required double top,
     required double width,
     required double height,
+    required Color color,
   }) {
     return Positioned(
       left: left,
       top: top,
-      child: Container(width: width, height: height, color: _kGreen),
+      child: Container(width: width, height: height, color: color),
     );
   }
 }
@@ -323,22 +309,29 @@ class _ScanOverlay extends StatelessWidget {
 // 반투명 오버레이 (프레임 제외)
 class _OverlayPainter extends CustomPainter {
   final Rect frameRect;
+  final Color overlayColor;
 
-  const _OverlayPainter({required this.frameRect});
+  const _OverlayPainter({required this.frameRect, required this.overlayColor});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = _kOverlay;
+    final paint = Paint()..color = overlayColor;
     final fullRect = Rect.fromLTWH(0, 0, size.width, size.height);
     final path = Path()
       ..addRect(fullRect)
-      ..addRRect(RRect.fromRectAndRadius(frameRect, const Radius.circular(8)))
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          frameRect,
+          const Radius.circular(AppTheme.radiusInner),
+        ),
+      )
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(_OverlayPainter old) => old.frameRect != frameRect;
+  bool shouldRepaint(_OverlayPainter old) =>
+      old.frameRect != frameRect || old.overlayColor != overlayColor;
 }
 
 // ─── 상단 바 ─────────────────────────────────────────────────────────────────
@@ -357,7 +350,11 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      padding: const EdgeInsets.only(
+        left: AppTheme.spaceSM,
+        top: AppTheme.spaceSM,
+        right: AppTheme.spaceSM,
+      ),
       child: Row(
         children: [
           // 뒤로가기
@@ -366,17 +363,18 @@ class _TopBar extends StatelessWidget {
             label: '뒤로가기',
             child: GestureDetector(
               onTap: onBack,
+              // 카메라 위 원형 제어는 카드 계층이 아닌 조작 affordance다.
               child: Container(
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: _kOverlay,
+                  color: context.appBg.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: _kTextPrimary,
+                  color: context.appTextPrimary,
                   size: 20,
                 ),
               ),
@@ -386,20 +384,17 @@ class _TopBar extends StatelessWidget {
           const Spacer(),
 
           // 타이틀
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: ShapeDecoration(
-              color: _kOverlay,
-              shape: AppTheme.smoothShape(radius: 10),
+          ChorokCard(
+            inner: true,
+            showBorder: false,
+            backgroundColor: context.appBg.withValues(alpha: 0.8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceLG,
+              vertical: AppTheme.spaceSM,
             ),
-            child: const Text(
+            child: Text(
               'ISBN 바코드 스캔',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: _kTextPrimary,
-                height: 1.4,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
             ),
           ),
 
@@ -411,18 +406,22 @@ class _TopBar extends StatelessWidget {
             label: torchOn ? '플래시 끄기' : '플래시 켜기',
             child: GestureDetector(
               onTap: onTorch,
+              // 카메라 플래시의 on/off 상태는 원형 제어로 유지한다.
               child: Container(
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: torchOn ? _kGreen.withValues(alpha: 0.2) : _kOverlay,
+                  color: torchOn
+                      ? context.appPrimaryAccent.withValues(alpha: 0.2)
+                      : context.appBg.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
-                  border: null,
                 ),
                 child: Icon(
                   torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-                  color: torchOn ? _kGreen : _kTextPrimary,
+                  color: torchOn
+                      ? context.appPrimaryAccent
+                      : context.appTextPrimary,
                   size: 22,
                 ),
               ),
@@ -457,49 +456,48 @@ class _BottomStatus extends StatelessWidget {
         ),
       ),
       child: processing || statusMessage != null
-          ? Container(
+          ? Padding(
               key: const ValueKey('status'),
-              margin: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: ShapeDecoration(
-                color: _kSurface,
-                shape: SmoothRectangleBorder(
-                  smoothness: 0.6,
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide.none,
-                ),
+              padding: const EdgeInsets.only(
+                left: AppTheme.spaceXL,
+                right: AppTheme.spaceXL,
+                bottom: AppTheme.sectionGap,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (processing)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: _kGreen,
+              child: ChorokCard(
+                showBorder: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceXL,
+                  vertical: AppTheme.spaceLG,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (processing)
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: context.appPrimaryAccent,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: context.appTextSecondary,
                       ),
-                    )
-                  else
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: _kTextSecondary,
-                    ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      statusMessage ?? '잠시 기다려주세요…',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: _kTextPrimary,
-                        height: 1.4,
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Flexible(
+                      child: Text(
+                        statusMessage ?? '잠시 기다려주세요…',
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             )
           : const SizedBox.shrink(key: ValueKey('empty')),

@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +9,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../home/widget/reading_books_section.dart' show compareReadingBooks;
@@ -149,14 +149,9 @@ class _SheetShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
+    return ChorokCard(
+      showBorder: false,
+      padding: EdgeInsets.zero,
       child: SafeArea(
         top: false,
         child: expand
@@ -166,7 +161,7 @@ class _SheetShell extends StatelessWidget {
                 children: [
                   const _SheetHeader(),
                   child,
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.spaceSM),
                 ],
               ),
       ),
@@ -182,18 +177,19 @@ class _SheetHeader extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         const ChorokSheetHandle(),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spaceLG),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceXL,
+            0,
+            AppTheme.spaceXL,
+            AppTheme.spaceSM,
+          ),
           child: Text(
             '오늘은 어떤 책을 읽을까요?',
-            style: TextStyle(
-              color: context.appTextPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
           ),
         ),
       ],
@@ -215,21 +211,21 @@ class _BookList extends StatelessWidget {
         Navigator.of(context).pop();
         context.push(AppConstants.routeSearch);
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: AppTheme.smoothBox(
-          color: context.appCardElevated,
-          radius: 10,
-          side: BorderSide(color: context.appBorderSubtle),
+      child: ChorokCard(
+        inner: true,
+        borderColor: context.appBorderSubtle,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: AppTheme.spaceSM,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.search, size: 18, color: context.appTextSecondary),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppTheme.spaceXS),
             Text(
               '다른 책 검색',
-              style: TextStyle(color: context.appTextSecondary, fontSize: 16),
+              style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
             ),
           ],
         ),
@@ -246,32 +242,36 @@ class _BookList extends StatelessWidget {
           const _SheetHeader(),
           for (final book in books) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
+              ),
               child: _BookCard(book: book),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
           ],
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
             child: searchButton,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
         ],
       );
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      spacing: AppTheme.spaceSM,
       children: [
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
           itemCount: books.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceSM),
           itemBuilder: (context, index) => _BookCard(book: books[index]),
         ),
-        const SizedBox(height: 8),
         searchButton,
       ],
     );
@@ -303,71 +303,47 @@ class _BookCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 10,
-          side: BorderSide(color: context.appBorderSubtle),
-        ),
+      child: ChorokCard(
+        borderColor: context.appBorderSubtle,
         child: Row(
           children: [
             BookCover(
               coverUrl: book.coverUrl,
               width: 48,
               height: 64,
-              radius: 10,
+              radius: AppTheme.radiusInner,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     book.title,
-                    style: TextStyle(
+                    style: AppTheme.rowText.copyWith(
                       color: context.appTextPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppTheme.spaceXS),
                   Text(
                     book.author,
-                    style: TextStyle(
+                    style: AppTheme.supportingText.copyWith(
                       color: context.appTextSecondary,
-                      fontSize: 12,
                     ),
                   ),
                   if (book.totalPages > 0) ...[
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) => Stack(
-                          children: [
-                            Container(
-                              height: 4,
-                              width: double.infinity,
-                              color: context.appProgressTrack,
-                            ),
-                            Container(
-                              height: 4,
-                              width:
-                                  constraints.maxWidth * progress.clamp(0, 1),
-                              color: context.appPrimaryAccent,
-                            ),
-                          ],
-                        ),
-                      ),
+                    const SizedBox(height: AppTheme.spaceSM),
+                    ChorokProgressBar(
+                      value: progress,
+                      valueColor: context.appPrimaryAccent,
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Icon(
               Icons.chevron_right,
               color: context.appTextSecondary,
@@ -384,12 +360,25 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        0,
+        AppTheme.screenPadding,
+        AppTheme.spaceSM,
+      ),
       child: Column(
+        spacing: AppTheme.spaceSM,
         children: [
-          ChorokShimmer(width: double.infinity, height: 80, radius: 10),
-          const SizedBox(height: 8),
-          ChorokShimmer(width: double.infinity, height: 80, radius: 10),
+          ChorokShimmer(
+            width: double.infinity,
+            height: 80,
+            radius: AppTheme.radiusOuter,
+          ),
+          ChorokShimmer(
+            width: double.infinity,
+            height: 80,
+            radius: AppTheme.radiusOuter,
+          ),
         ],
       ),
     );
@@ -400,7 +389,10 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppTheme.sectionGap,
+        horizontal: AppTheme.spaceXL,
+      ),
       child: Column(
         children: [
           Icon(
@@ -408,30 +400,30 @@ class _EmptyState extends StatelessWidget {
             size: 48,
             color: context.appTextSecondary,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Text(
             '읽는 중인 책이 없어요',
-            style: TextStyle(color: context.appTextSecondary, fontSize: 16),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
               Navigator.of(context).pop();
               context.go(AppConstants.routeLibrary);
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: AppTheme.smoothBox(
-                color: context.appActiveFill,
-                radius: 10,
+            child: ChorokCard(
+              inner: true,
+              backgroundColor: context.appActiveFill,
+              showBorder: false,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceXL,
+                vertical: AppTheme.spaceSM,
               ),
               child: Text(
                 '라이브러리 가기',
-                style: TextStyle(
+                style: AppTheme.rowText.copyWith(
                   color: context.appPrimaryAccent,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),

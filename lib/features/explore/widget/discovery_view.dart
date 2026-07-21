@@ -102,7 +102,9 @@ class DiscoveryView extends ConsumerWidget {
       context: context,
       backgroundColor: context.appCard,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusOuter),
+        ),
       ),
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
@@ -162,13 +164,13 @@ class DiscoveryView extends ConsumerWidget {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          spacing: AppTheme.spaceLG,
           children: [
             Icon(
               Icons.search_rounded,
               size: 52,
               color: context.appTextTertiary,
             ),
-            const SizedBox(height: 16),
             Text(
               '책, 작가, 유저를 검색해보세요',
               style: AppTheme.headingSmall.copyWith(
@@ -197,7 +199,7 @@ class DiscoveryView extends ConsumerWidget {
               title: '지금 가장 많이 검색되는 책',
               onTap: () => _showPopularBooks(context, books),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             _PopularBooksRow(books: books, onTap: onBookNavigate),
             const SizedBox(height: 28),
           ],
@@ -206,7 +208,7 @@ class DiscoveryView extends ConsumerWidget {
               title: '지금 가장 많이 검색되는 작가',
               onTap: () => _showPopularAuthors(context, authors),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             _PopularAuthorsCard(
               authors: authors,
               onTap: onAuthorTap,
@@ -220,7 +222,7 @@ class DiscoveryView extends ConsumerWidget {
               onTap: () =>
                   _showRecommendations(context, recommendationTitle, recs),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             _RecommendedGrid(books: recs, onTap: onTitleTap),
           ],
         ],
@@ -245,9 +247,9 @@ class _SectionHeader extends StatelessWidget {
         button: true,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXS),
             child: Row(
               children: [
                 Expanded(
@@ -328,7 +330,7 @@ class _PopularBookItem extends StatelessWidget {
               gradientIndex: rank - 1,
               width: 112,
               height: 160,
-              radius: 10,
+              radius: AppTheme.radiusOuter,
               child: Positioned(
                 top: 8,
                 left: 8,
@@ -338,7 +340,7 @@ class _PopularBookItem extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: ShapeDecoration(
                     color: Colors.black.withValues(alpha: 0.55),
-                    shape: AppTheme.smoothShape(radius: 6),
+                    shape: AppTheme.smoothShape(radius: AppTheme.radiusInner),
                   ),
                   child: Text(
                     '$rank',
@@ -350,7 +352,7 @@ class _PopularBookItem extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               book.title,
               style: AppTheme.bodySmall.copyWith(
@@ -396,10 +398,10 @@ class _PopularAuthorsCard extends StatelessWidget {
       child: Container(
         decoration: AppTheme.smoothBox(
           color: context.appCard,
-          radius: 10,
+          radius: AppTheme.radiusOuter,
           side: BorderSide.none,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
         child: Column(
           children: [
             for (var i = 0; i < authors.length; i++) ...[
@@ -452,7 +454,7 @@ class _AuthorRow extends StatelessWidget {
         onTap();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
         child: Row(
           children: [
             Text(
@@ -462,7 +464,7 @@ class _AuthorRow extends StatelessWidget {
                 fontWeight: FontWeight.w400,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Text(
                 author.titles.join('  |  '),
@@ -515,7 +517,7 @@ class _RecommendedGrid extends StatelessWidget {
               coverUrl: b.coverUrl.isEmpty ? null : b.coverUrl,
               gradientIndex: b.gradientIndex,
               width: double.infinity,
-              radius: 8,
+              radius: AppTheme.radiusOuter,
             ),
           );
         },

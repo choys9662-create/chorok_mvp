@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
 import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/repositories/profile_repository.dart';
@@ -30,8 +31,8 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
   static final _modalShape = SmoothRectangleBorder(
     smoothness: 0.6,
     borderRadius: BorderRadius.only(
-      topLeft: Radius.circular(10),
-      topRight: Radius.circular(10),
+      topLeft: Radius.circular(AppTheme.radiusOuter),
+      topRight: Radius.circular(AppTheme.radiusOuter),
     ),
   );
   static final _buttonBorderRadius = BorderRadius.circular(AppTheme.radiusMD);
@@ -164,7 +165,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Semantics(
               label: '프로필 편집',
@@ -180,23 +181,21 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
                         _name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
+                        style: AppTheme.sectionTitle.copyWith(
                           color: context.appTextPrimary,
                           height: 1.2,
                         ),
                       ),
                     ),
                     if (widget.onSettingsTap != null) ...[
-                      const SizedBox(width: 5),
+                      const SizedBox(width: AppTheme.spaceXS),
                       Semantics(
                         label: '설정',
                         button: true,
                         child: GestureDetector(
                           onTap: widget.onSettingsTap,
                           child: Padding(
-                            padding: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(AppTheme.spaceXS),
                             child: Icon(
                               Icons.settings_outlined,
                               size: 17,
@@ -216,7 +215,7 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
             count: _following,
             onTap: () => _showFollowList(context, isFollower: false),
           ),
-          const SizedBox(width: 22),
+          const SizedBox(width: AppTheme.space2XL),
           _StatItem(
             label: '팔로워',
             count: _followers,
@@ -342,21 +341,18 @@ class _StatItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
+            spacing: AppTheme.spaceXS,
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 10,
+                style: AppTheme.caption.copyWith(
                   color: context.appTextTertiary,
                   height: 1.2,
                 ),
               ),
-              const SizedBox(height: 4),
               Text(
                 '$count',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
+                style: AppTheme.rowText.copyWith(
                   color: context.appTextPrimary,
                   height: 1.2,
                 ),
@@ -443,7 +439,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppTheme.space2XL),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,22 +447,23 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           const ChorokSheetHandle(),
           const SizedBox(height: 20),
           Text(
+            // 24→섹션 제목(18) 스냅(§3)
             '프로필 편집',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w400,
+            style: AppTheme.sectionTitle.copyWith(
               color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 20),
           _SheetField(controller: _nameCtrl, label: '이름', maxLines: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           _SheetField(controller: _bioCtrl, label: '자기소개', maxLines: 3),
           if (_error != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               _error!,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444)),
+              style: AppTheme.supportingText.copyWith(
+                color: AppTheme.warningColor,
+              ),
             ),
           ],
           const SizedBox(height: 20),
@@ -492,13 +489,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                         color: isDark ? Colors.black : Colors.white,
                       ),
                     )
-                  : const Text(
-                      '저장',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
+                  : Text('저장', style: AppTheme.rowText),
             ),
           ),
         ],
@@ -530,10 +521,12 @@ class _SheetField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: TextStyle(fontSize: 16, color: context.appTextPrimary),
+      style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: context.appTextTertiary, fontSize: 12),
+        labelStyle: AppTheme.supportingText.copyWith(
+          color: context.appTextTertiary,
+        ),
         filled: true,
         fillColor: context.appCardElevated,
         border: OutlineInputBorder(
@@ -569,7 +562,7 @@ class _FollowListScreenState extends ConsumerState<_FollowListScreen> {
   late final Future<List<UserRecommendation>> _recommendations;
   final Set<String> _followedRecommendationIds = {};
 
-  static final _cardRadius = BorderRadius.circular(8);
+  static final _cardRadius = BorderRadius.circular(AppTheme.radiusInner);
 
   @override
   void initState() {
@@ -664,7 +657,7 @@ class _FollowListScreenState extends ConsumerState<_FollowListScreen> {
                         cardRadius: _cardRadius,
                         onTap: () => _openProfile(profile),
                       ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppTheme.spaceLG),
                   FutureBuilder<List<UserRecommendation>>(
                     future: _recommendations,
                     builder: (context, snapshot) {
@@ -767,75 +760,63 @@ class _FollowUserTile extends StatelessWidget {
               borderRadius: cardRadius,
             ),
           ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: context.appCardElevated,
-                backgroundImage: avatar,
-                child: avatar == null
-                    ? Text(
-                        initial,
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: context.appTextSecondary,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profile.displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          child: ChorokListRow(
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: context.appCardElevated,
+              backgroundImage: avatar,
+              child: avatar == null
+                  ? Text(
+                      initial,
                       style: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextPrimary,
-                        fontWeight: FontWeight.w400,
-                        height: 1.15,
+                        color: context.appTextSecondary,
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTheme.captionLarge.copyWith(
-                        color: context.appTextTertiary,
-                        height: 1.15,
-                      ),
-                    ),
-                  ],
-                ),
+                    )
+                  : null,
+            ),
+            title: Text(
+              profile.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextPrimary,
+                fontWeight: FontWeight.w400,
+                height: 1.15,
               ),
-              GestureDetector(
-                onTap: onButtonTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 6,
-                  ),
-                  decoration: ShapeDecoration(
-                    color: context.appCardElevated,
-                    shape: SmoothRectangleBorder(
-                      smoothness: 0.6,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                  child: Text(
-                    buttonLabel,
-                    style: AppTheme.captionLarge.copyWith(
-                      color: context.appTextTertiary,
-                      fontWeight: FontWeight.w400,
-                      height: 1,
-                    ),
+            ),
+            supporting: Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.captionLarge.copyWith(
+                color: context.appTextTertiary,
+                height: 1.15,
+              ),
+            ),
+            trailing: GestureDetector(
+              onTap: onButtonTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: 6,
+                ),
+                decoration: ShapeDecoration(
+                  color: context.appCardElevated,
+                  shape: SmoothRectangleBorder(
+                    smoothness: 0.6,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusInner),
                   ),
                 ),
+                child: Text(
+                  buttonLabel,
+                  style: AppTheme.captionLarge.copyWith(
+                    color: context.appTextTertiary,
+                    fontWeight: FontWeight.w400,
+                    height: 1,
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -864,16 +845,19 @@ class _FollowEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: AppTheme.space2XL,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          spacing: AppTheme.spaceMD,
           children: [
             Icon(
               Icons.people_outline_rounded,
               size: 40,
               color: context.appTextTertiary,
             ),
-            const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,

@@ -11,6 +11,8 @@ class IsarChoseo {
   final int? pageNumber;
   final String? reflection; // 나중에 추가한 리플렉션 메모
   final DateTime createdAt;
+  final int likeCount; // 소셜 지표 (표시용, 로컬 미영속)
+  final int commentCount;
 
   const IsarChoseo({
     this.isarId,
@@ -24,6 +26,8 @@ class IsarChoseo {
     this.pageNumber,
     this.reflection,
     required this.createdAt,
+    this.likeCount = 0,
+    this.commentCount = 0,
   });
 
   IsarChoseo copyWith({String? reflection}) {
@@ -39,6 +43,8 @@ class IsarChoseo {
       pageNumber: pageNumber,
       reflection: reflection ?? this.reflection,
       createdAt: createdAt,
+      likeCount: likeCount,
+      commentCount: commentCount,
     );
   }
 

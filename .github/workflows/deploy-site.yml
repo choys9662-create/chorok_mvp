@@ -1,0 +1,33 @@
+name: Deploy SITE to Firebase Hosting
+
+# 정적 홍보 사이트 + 법적 문서 — chorok-web.web.app
+# website/ 폴더를 그대로 배포한다(Flutter 빌드 아님). Flutter 앱과 무관한 정적 파일이라
+# analyze/test 게이트 없이 JS 구문 검사만 거친다.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to chorok-web (site)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check JS syntax
+        run: node --check website/app.js
+
+      - name: Deploy to Firebase Hosting (site)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          target: site

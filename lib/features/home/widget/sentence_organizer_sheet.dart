@@ -85,7 +85,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
   int _justMergedCount = 0;
   bool _capturing = false;
 
-  static const _red = Color(0xFFE5484D);
+  static const _red = AppTheme.warningColor;
 
   String get _headerText {
     if (_justMergedCount > 0) return '$_justMergedCount개의 문장을 합쳤어요';
@@ -182,7 +182,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _Handle(),
-              const SizedBox(height: 22),
+              const SizedBox(height: AppTheme.space2XL),
               Row(
                 children: [
                   Expanded(
@@ -225,7 +225,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spaceLG),
               Row(
                 children: [
                   _CircleAction(
@@ -234,7 +234,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                     tooltip: '되돌리기',
                     onTap: _blocks.length == _initial.length ? null : _reset,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppTheme.spaceMD),
                   // 같은 문단의 여러 문장 선택 → 합치기, 그 외(한 문장·합친 뒤) → 추가.
                   Expanded(
                     child: canMerge
@@ -252,7 +252,7 @@ class _SentenceOrganizerSheetState extends State<SentenceOrganizerSheet> {
                           ),
                   ),
                   if (widget.onCapture != null) ...[
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppTheme.spaceMD),
                     _CircleAction(
                       icon: Icons.add_a_photo_outlined,
                       color: context.appPrimaryAccent,
@@ -296,7 +296,7 @@ class _SentenceCard extends StatelessWidget {
               : context.appCard.withValues(alpha: 0.78),
           shape: SmoothRectangleBorder(
             smoothness: 0.6,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             side: BorderSide(
               color: selected ? accent : context.appBorderSubtle,
               width: selected ? 1.6 : 1.2,
@@ -341,7 +341,7 @@ class _Checkbox extends StatelessWidget {
         color: selected ? accent : Colors.transparent,
         shape: SmoothRectangleBorder(
           smoothness: 0.6,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppTheme.radiusInner),
           side: BorderSide(
             color: selected ? accent : context.appTextTertiary,
             width: 1.5,
@@ -380,7 +380,7 @@ class _MainButton extends StatelessWidget {
           color: context.appCardElevated.withValues(alpha: enabled ? 0.9 : 0.5),
           shape: SmoothRectangleBorder(
             smoothness: 0.6,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             side: BorderSide(
               color: enabled
                   ? context.appPrimaryAccent.withValues(alpha: 0.5)
@@ -393,7 +393,7 @@ class _MainButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 18, color: fg),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Text(
               label,
               style: AppTheme.bodyMedium.copyWith(
@@ -445,7 +445,7 @@ class _CircleAction extends StatelessWidget {
             color: bg,
             shape: SmoothRectangleBorder(
               smoothness: 0.6,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             ),
           ),
           child: Icon(icon, size: 24, color: fg),
@@ -464,7 +464,7 @@ class _Handle extends StatelessWidget {
         height: 6,
         decoration: BoxDecoration(
           color: context.appPrimaryAccent.withValues(alpha: 0.34),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
         ),
       ),
     );

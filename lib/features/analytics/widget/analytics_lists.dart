@@ -57,7 +57,7 @@ class SessionTile extends StatelessWidget {
               color: AppTheme.primary.withValues(alpha: 0.2),
               shape: SmoothRectangleBorder(
                 smoothness: 0.6,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusInner),
               ),
             ),
             child: const Icon(
@@ -70,6 +70,7 @@ class SessionTile extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
               children: [
                 Text(
                   title,
@@ -78,7 +79,6 @@ class SessionTile extends StatelessWidget {
                     color: context.appTextPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   author,
                   style: AppTheme.captionLarge.copyWith(
@@ -90,6 +90,7 @@ class SessionTile extends StatelessWidget {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: 2,
             children: [
               Text(
                 duration,
@@ -98,7 +99,6 @@ class SessionTile extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-              const SizedBox(height: 2),
               Text(
                 date,
                 style: AppTheme.captionSmall.copyWith(
@@ -140,7 +140,9 @@ class FinishedBookList extends StatelessWidget {
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
                           smoothness: 0.6,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusInner,
+                          ),
                           side: BorderSide.none,
                         ),
                       ),
@@ -154,6 +156,7 @@ class FinishedBookList extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
                         children: [
                           Text(
                             b.title,
@@ -162,7 +165,6 @@ class FinishedBookList extends StatelessWidget {
                               color: context.appTextPrimary,
                             ),
                           ),
-                          const SizedBox(height: 2),
                           Text(
                             b.author,
                             style: AppTheme.captionLarge.copyWith(
@@ -174,6 +176,7 @@ class FinishedBookList extends StatelessWidget {
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      spacing: 2,
                       children: [
                         Text(
                           b.date,
@@ -182,7 +185,6 @@ class FinishedBookList extends StatelessWidget {
                             fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
                           '${b.pages}p',
                           style: AppTheme.captionSmall.copyWith(

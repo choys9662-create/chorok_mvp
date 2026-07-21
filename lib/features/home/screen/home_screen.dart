@@ -44,9 +44,13 @@ class HomeScreen extends ConsumerWidget {
                 controller: scrollCtrl,
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.spaceLG),
+                  ),
                   const SliverToBoxAdapter(child: HomeStatCards()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppTheme.sectionGap),
+                  ),
                   const SliverToBoxAdapter(child: ReadingBooksSection()),
                   const SliverToBoxAdapter(child: RecommendedBooksSection()),
                   // ponytail: 아래 세 섹션은 비면 통째로 숨는다. 간격을 각 섹션이

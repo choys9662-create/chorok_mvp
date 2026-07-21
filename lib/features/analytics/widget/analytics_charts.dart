@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
-import '../../../shared/widgets/gradient_text.dart';
 import 'package:flutter/foundation.dart';
 
 class BarChart extends StatelessWidget {
@@ -46,7 +45,7 @@ class BarChart extends StatelessWidget {
                       color: AppTheme.accent,
                     ),
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppTheme.spaceXS),
                 Container(
                   width: double.infinity,
                   height: _kBarMaxH * ratio,
@@ -54,6 +53,8 @@ class BarChart extends StatelessWidget {
                     color: isHighlight
                         ? context.appPrimaryAccent
                         : AppTheme.primary.withValues(alpha: 0.35),
+                    // 구조상 예외: 막대그래프 기둥의 미세 라운딩 —
+                    // analytics_screen.dart 얇은 막대와 동일 계열.
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(5),
                     ),
@@ -63,7 +64,7 @@ class BarChart extends StatelessWidget {
                 Text(
                   '${labels[i]}$labelSuffix',
                   style: AppTheme.captionSmall.copyWith(
-                    fontSize: labels.length > 8 ? 10 : null,
+                    fontSize: labels.length > 8 ? AppTheme.fsCaption : null,
                     color: isHighlight
                         ? context.appPrimaryAccent
                         : context.appTextTertiary,
@@ -98,6 +99,7 @@ class LineRhythmChart extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 6,
       children: [
         SizedBox(
           height: 120,
@@ -112,7 +114,6 @@ class LineRhythmChart extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 6),
         Row(
           children: List.generate(labels.length, (i) {
             final isHighlight = i == highlightIndex;
@@ -274,17 +275,17 @@ class TimeOfDayChart extends StatelessWidget {
                       Text(
                         s.range,
                         style: AppTheme.captionSmall.copyWith(
-                          fontSize: 10,
+                          fontSize: AppTheme.fsCaption,
                           color: context.appTextTertiary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.spaceMD),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 8,
@@ -299,7 +300,7 @@ class TimeOfDayChart extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 SizedBox(
                   width: 32,
                   child: Text(
@@ -352,7 +353,7 @@ class GenreChart extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 SizedBox(
                   width: 56,
                   child: Text(
@@ -364,7 +365,7 @@ class GenreChart extends StatelessWidget {
                 ),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 8,
@@ -373,7 +374,7 @@ class GenreChart extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 SizedBox(
                   width: 28,
                   child: Text(
@@ -451,6 +452,7 @@ class YearMonthDials extends StatelessWidget {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
+            spacing: AppTheme.spaceXS,
             children: [
               SizedBox(
                 width: 52,
@@ -470,7 +472,7 @@ class YearMonthDials extends StatelessWidget {
                     Text(
                       _monthLabels[i],
                       style: AppTheme.captionSmall.copyWith(
-                        fontSize: 10,
+                        fontSize: AppTheme.fsCaption,
                         fontWeight: isCurrent
                             ? FontWeight.w400
                             : FontWeight.w400,
@@ -484,7 +486,6 @@ class YearMonthDials extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: AppTheme.spaceXS),
               Text(
                 isFuture || mins == 0
                     ? '—'
@@ -492,7 +493,7 @@ class YearMonthDials extends StatelessWidget {
                     ? '${mins ~/ 60}h'
                     : '${mins}m',
                 style: AppTheme.captionSmall.copyWith(
-                  fontSize: 10,
+                  fontSize: AppTheme.fsCaption,
                   color: isCurrent ? AppTheme.accent : context.appTextTertiary,
                   fontWeight: isCurrent ? FontWeight.w400 : FontWeight.w400,
                 ),
@@ -535,6 +536,7 @@ class ReadingDensityCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       '독서한 날',
@@ -542,14 +544,14 @@ class ReadingDensityCard extends StatelessWidget {
                         color: context.appTextTertiary,
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        GradientText(
+                        Text(
                           '$readDays',
-                          style: AppTheme.displaySmall,
-                          gradient: AppTheme.greenGradientVertical,
+                          style: AppTheme.displaySmall.copyWith(
+                            color: context.appPrimaryAccent,
+                          ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4, left: 4),
@@ -567,6 +569,7 @@ class ReadingDensityCard extends StatelessWidget {
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: AppTheme.spaceXS,
                 children: [
                   Text(
                     '최장 연속',
@@ -574,7 +577,6 @@ class ReadingDensityCard extends StatelessWidget {
                       color: context.appTextTertiary,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     '$maxStreak일',
                     style: AppTheme.headingSmall.copyWith(
@@ -587,7 +589,7 @@ class ReadingDensityCard extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spaceMD),
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 8,
@@ -604,7 +606,10 @@ class ReadingDensityCard extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.spaceMD),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceSM,
+            ),
             decoration: AppTheme.smoothBox(
               color: AppTheme.primary.withValues(alpha: 0.2),
               side: BorderSide.none,
@@ -644,12 +649,14 @@ class GoalProgressCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceMD,
         children: [
           Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       '연간 독서 목표',
@@ -657,14 +664,14 @@ class GoalProgressCard extends StatelessWidget {
                         color: context.appTextTertiary,
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        GradientText(
+                        Text(
                           '$current',
-                          style: AppTheme.displaySmall,
-                          gradient: AppTheme.greenGradientVertical,
+                          style: AppTheme.displaySmall.copyWith(
+                            color: context.appPrimaryAccent,
+                          ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4, left: 4),
@@ -682,7 +689,7 @@ class GoalProgressCard extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: AppTheme.spaceMD,
                   vertical: 6,
                 ),
                 decoration: AppTheme.smoothPill(
@@ -698,9 +705,8 @@ class GoalProgressCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceMD),
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
@@ -708,7 +714,6 @@ class GoalProgressCard extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
             ),
           ),
-          const SizedBox(height: AppTheme.spaceMD),
           Text(
             remaining > 0
                 ? '목표까지 $remaining권 남았어요. 이 속도라면 충분히 달성할 수 있어요!'

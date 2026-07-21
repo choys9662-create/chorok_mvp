@@ -12,9 +12,6 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../feed/screen/sentence_detail_screen.dart';
 
-const _kQuoteHighlightBg = Color(0xFF222422);
-const _kThoughtBorder = Color(0xFF222422);
-
 typedef _BookSentenceQuery = ({
   String bookId,
   String title,
@@ -186,9 +183,15 @@ class BookSentencesScreen extends ConsumerWidget {
                 data: (cards) => cards.isEmpty
                     ? const _EmptyView()
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppTheme.screenPadding,
+                          AppTheme.spaceSM,
+                          AppTheme.screenPadding,
+                          AppTheme.sectionGap,
+                        ),
                         itemCount: cards.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppTheme.spaceSM),
                         itemBuilder: (_, i) =>
                             _SentenceCardView(book: book, card: cards[i]),
                       ),
@@ -212,7 +215,12 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceSM,
+        AppTheme.spaceSM,
+        AppTheme.spaceSM,
+        AppTheme.spaceLG,
+      ),
       child: Column(
         children: [
           Stack(
@@ -239,22 +247,15 @@ class _TopBar extends StatelessWidget {
               ),
               Text(
                 '나의 문장·생각',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: context.appTextPrimary,
-                  height: 1.3,
-                ),
+                style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             bookTitle,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTheme.supportingText.copyWith(
               color: context.appTextTertiary,
-              height: 1.4,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -272,6 +273,9 @@ class _SentenceCardView extends StatelessWidget {
   final _SentenceCard card;
 
   const _SentenceCardView({required this.book, required this.card});
+
+  static const double _gutter = 26;
+  static const double _gutterGap = AppTheme.spaceMD;
 
   bool get _hasThought =>
       card.thought != null && card.thought!.trim().isNotEmpty;
@@ -293,83 +297,70 @@ class _SentenceCardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final quoteContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: _gutter,
+          child: Text(
+            card.pageNumber?.toString() ?? '',
+            textAlign: TextAlign.center,
+            style: AppTheme.body.copyWith(color: context.appTextSecondary),
+          ),
+        ),
+        const SizedBox(width: _gutterGap),
+        Expanded(
+          child: Text(
+            card.content,
+            style: AppTheme.body.copyWith(
+              height: 1.6,
+              color: context.appTextPrimary,
+            ),
+          ),
+        ),
+      ],
+    );
+    final quote = _hasThought
+        ? ChorokCard(
+            inner: true,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceMD,
+            ),
+            child: quoteContent,
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceMD,
+            ),
+            child: quoteContent,
+          );
     return GestureDetector(
       onTap: () => _open(context),
       child: ChorokCard(
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: AppTheme.smoothBox(
-                color: _hasThought ? _kQuoteHighlightBg : context.appCard,
-                radius: 6,
-                side: _hasThought
-                    ? BorderSide(color: context.appTextSecondary)
-                    : BorderSide.none,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 26,
-                    child: Text(
-                      card.pageNumber?.toString() ?? '',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: context.appTextSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      card.content,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: context.appTextPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            quote,
             if (_hasThought) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
+              const SizedBox(height: AppTheme.spaceSM),
+              ChorokCard(
+                inner: true,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+                  horizontal: AppTheme.spaceMD,
+                  vertical: AppTheme.spaceMD,
                 ),
-                decoration: AppTheme.smoothBox(
-                  color: context.appCard,
-                  radius: 6,
-                  side: const BorderSide(color: _kThoughtBorder),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(width: 26 + 12),
-                    Expanded(
-                      child: Text(
-                        card.thought!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.6,
-                          color: context.appPrimaryAccent,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  card.thought!,
+                  style: AppTheme.bodyMedium.copyWith(
+                    height: 1.6,
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
               ),
             ],
-            const SizedBox(height: 6),
+            const SizedBox(height: AppTheme.spaceSM),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -378,21 +369,21 @@ class _SentenceCardView extends StatelessWidget {
                   size: 14,
                   color: context.appPrimaryAccent,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppTheme.spaceXS),
                 Text(
                   '${card.likeCount}',
-                  style: TextStyle(fontSize: 14, color: context.appTextPrimary),
+                  style: AppTheme.body.copyWith(color: context.appTextPrimary),
                 ),
-                const SizedBox(width: 22),
+                const SizedBox(width: AppTheme.spaceXL),
                 Icon(
                   Icons.chat_bubble_rounded,
                   size: 13,
                   color: context.appTextSecondary,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppTheme.spaceXS),
                 Text(
                   '${card.commentCount}',
-                  style: TextStyle(fontSize: 14, color: context.appTextPrimary),
+                  style: AppTheme.body.copyWith(color: context.appTextPrimary),
                 ),
               ],
             ),
@@ -419,10 +410,10 @@ class _EmptyView extends StatelessWidget {
             size: 48,
             color: context.appTextTertiary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             '아직 기록한 문장이 없어요',
-            style: TextStyle(fontSize: 16, color: context.appTextSecondary),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
         ],
       ),

@@ -45,16 +45,12 @@ class BulletGraphWidget extends StatelessWidget {
           SizedBox(
             height: 20,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
               child: Stack(
                 clipBehavior: Clip.antiAlias,
                 fit: StackFit.expand,
                 children: [
-                  Container(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF1A1A1A)
-                        : context.appBg,
-                  ),
+                  Container(color: context.appBg),
                   FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: progress,

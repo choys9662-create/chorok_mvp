@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/chorok_card.dart';
 
 class TodayGoalBanner extends StatelessWidget {
   final int todayMinutes;
@@ -28,65 +29,67 @@ class TodayGoalBanner extends StatelessWidget {
 
     if (isCompleted) {
       // 달성 상태
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: AppTheme.smoothBox(
-          color: context.primaryBg(0.10),
-          radius: AppTheme.radiusLG,
-          side: BorderSide(
-            color: context.appPrimaryAccent.withValues(alpha: 0.34),
-          ),
+      return ChorokCard(
+        backgroundColor: context.primaryBg(0.10),
+        borderColor: context.appPrimaryAccent.withValues(alpha: 0.34),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: AppTheme.spaceMD,
         ),
         child: Row(
           children: [
-            Container(
+            SizedBox(
               width: 36,
               height: 36,
-              decoration: AppTheme.smoothBox(
-                color: context.primaryBg(0.14),
-                radius: 10,
-              ),
-              child: Icon(
-                Icons.local_fire_department_rounded,
-                size: 20,
-                color: context.appPrimaryAccent,
+              child: ChorokCard(
+                inner: true,
+                showBorder: false,
+                padding: EdgeInsets.zero,
+                backgroundColor: context.primaryBg(0.14),
+                child: Icon(
+                  Icons.local_fire_department_rounded,
+                  size: AppTheme.spaceLG,
+                  color: context.appPrimaryAccent,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppTheme.spaceXS,
                 children: [
                   Text(
                     '오늘 목표 달성!',
-                    style: AppTheme.bodySmall.copyWith(
+                    style: AppTheme.rowText.copyWith(
                       color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 2),
                   Text(
                     '${time_fmt.formatMinutes(todayMinutes)} 독서했어요 · 목표 $goalMinutes분',
-                    style: AppTheme.captionSmall.copyWith(
+                    style: AppTheme.caption.copyWith(
                       color: context.appPrimaryAccent,
                     ),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: AppTheme.smoothPill(
-                color: isDark
-                    ? AppTheme.primary.withValues(alpha: 0.5)
-                    : AppTheme.lightPrimaryAccent,
-                side: BorderSide.none,
+            ChorokCard(
+              inner: true,
+              showBorder: false,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceSM,
+                vertical: AppTheme.spaceXS,
               ),
+              backgroundColor: isDark
+                  ? AppTheme.primary.withValues(alpha: 0.5)
+                  : AppTheme.lightPrimaryAccent,
               child: Text(
                 '완료',
-                style: AppTheme.captionSmall.copyWith(
-                  color: isDark ? AppTheme.primaryLight : Colors.white,
-                  fontWeight: FontWeight.w400,
+                style: AppTheme.caption.copyWith(
+                  color: isDark
+                      ? AppTheme.primaryLight
+                      : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -114,44 +117,43 @@ class TodayGoalBanner extends StatelessWidget {
                   ),
                 );
               },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: 10,
-            side: BorderSide(color: context.appBorderSubtle),
+        child: ChorokCard(
+          borderColor: context.appBorderSubtle,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spaceLG,
+            vertical: AppTheme.spaceMD,
           ),
           child: Row(
             children: [
-              Container(
+              SizedBox(
                 width: 36,
                 height: 36,
-                decoration: AppTheme.smoothBox(
-                  color: context.appCardElevated,
-                  radius: 10,
-                ),
-                child: Icon(
-                  Icons.timer_outlined,
-                  size: 20,
-                  color: context.appTextTertiary,
+                child: ChorokCard(
+                  inner: true,
+                  showBorder: false,
+                  padding: EdgeInsets.zero,
+                  child: Icon(
+                    Icons.timer_outlined,
+                    size: AppTheme.spaceLG,
+                    color: context.appTextTertiary,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       '오늘 독서를 시작해보세요',
-                      style: AppTheme.bodySmall.copyWith(
+                      style: AppTheme.rowText.copyWith(
                         color: context.appTextPrimary,
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 2),
                     Text(
                       '오늘 목표 $goalMinutes분',
-                      style: AppTheme.captionSmall.copyWith(
+                      style: AppTheme.caption.copyWith(
                         color: context.appTextTertiary,
                       ),
                     ),
@@ -162,7 +164,7 @@ class TodayGoalBanner extends StatelessWidget {
                 Icon(
                   Icons.play_circle_outline_rounded,
                   color: context.appPrimaryAccent,
-                  size: 24,
+                  size: AppTheme.spaceXL,
                 ),
             ],
           ),
@@ -188,47 +190,48 @@ class TodayGoalBanner extends StatelessWidget {
                 ),
               );
             },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 10,
-          side: BorderSide(color: context.appBorderSubtle),
+      child: ChorokCard(
+        borderColor: context.appBorderSubtle,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: AppTheme.spaceMD,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppTheme.spaceSM,
           children: [
             Row(
               children: [
-                Container(
+                SizedBox(
                   width: 36,
                   height: 36,
-                  decoration: AppTheme.smoothBox(
-                    color: context.primaryBg(0.12),
-                    radius: 10,
-                  ),
-                  child: Icon(
-                    Icons.auto_stories_rounded,
-                    size: 18,
-                    color: context.appPrimaryAccent,
+                  child: ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    padding: EdgeInsets.zero,
+                    backgroundColor: context.primaryBg(0.12),
+                    child: Icon(
+                      Icons.auto_stories_rounded,
+                      size: AppTheme.sectionTitle.fontSize,
+                      color: context.appPrimaryAccent,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.spaceMD),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: AppTheme.spaceXS,
                     children: [
                       Text(
                         '오늘 ${time_fmt.formatMinutes(todayMinutes)} 독서했어요',
-                        style: AppTheme.bodySmall.copyWith(
+                        style: AppTheme.rowText.copyWith(
                           color: context.appTextPrimary,
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         '목표까지 ${time_fmt.formatMinutes(goalMinutes - todayMinutes)} 남았어요',
-                        style: AppTheme.captionSmall.copyWith(
+                        style: AppTheme.caption.copyWith(
                           color: context.appTextTertiary,
                         ),
                       ),
@@ -237,22 +240,16 @@ class TodayGoalBanner extends StatelessWidget {
                 ),
                 Text(
                   '${(progress * 100).toInt()}%',
-                  style: AppTheme.captionLarge.copyWith(
+                  style: AppTheme.supportingText.copyWith(
                     color: context.appPrimaryAccent,
-                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: context.appCardElevated,
-                valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-                minHeight: 4,
-              ),
+            ChorokProgressBar(
+              value: progress,
+              trackColor: context.appCardElevated,
+              valueColor: context.appPrimaryAccent,
             ),
           ],
         ),

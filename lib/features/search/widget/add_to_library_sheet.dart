@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import '../model/aladin_book.dart';
 
 /// 서재 추가 바텀 시트 표시 헬퍼
@@ -14,7 +16,7 @@ Future<ReadingStatus?> showAddToLibrarySheet(
 ) {
   return showModalBottomSheet<ReadingStatus>(
     context: context,
-    backgroundColor: Colors.transparent,
+    backgroundColor: context.appBg.withValues(alpha: 0),
     isScrollControlled: true,
     builder: (_) => _AddToLibrarySheet(book: book),
   );
@@ -28,97 +30,86 @@ class _AddToLibrarySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: AppTheme.radiusXL,
-          side: BorderSide.none,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: AppTheme.spaceMD,
+          right: AppTheme.spaceMD,
+          bottom: AppTheme.spaceMD,
         ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 드래그 핸들
-            Container(
-              width: 36,
-              height: 4,
-              decoration: ShapeDecoration(
-                color: context.appTextTertiary,
-                shape: AppTheme.smoothShape(radius: 10),
-              ),
-            ),
-            const SizedBox(height: 24),
+        child: ChorokCard(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceXL,
+            AppTheme.spaceMD,
+            AppTheme.spaceXL,
+            AppTheme.spaceLG,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ChorokSheetHandle(),
+              const SizedBox(height: AppTheme.spaceXL),
 
-            // 헤더
-            Text(
-              '서재에 추가',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w400,
-                color: context.appTextPrimary,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              book.title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appTextSecondary,
-                height: 1.5,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-
-            // 읽는 중
-            _StatusTile(
-              icon: Icons.auto_stories_rounded,
-              label: '읽는 중',
-              sublabel: '지금 이 책을 읽고 있어요',
-              status: ReadingStatus.reading,
-            ),
-            const SizedBox(height: 12),
-
-            // 읽고 싶어요
-            _StatusTile(
-              icon: Icons.bookmark_rounded,
-              label: '읽고 싶어요',
-              sublabel: '나중에 읽을 책으로 저장할게요',
-              status: ReadingStatus.wantToRead,
-            ),
-            const SizedBox(height: 12),
-
-            // 읽었어요
-            _StatusTile(
-              icon: Icons.check_circle_rounded,
-              label: '읽었어요',
-              sublabel: '이미 읽은 책으로 기록할게요',
-              status: ReadingStatus.completed,
-            ),
-            const SizedBox(height: 16),
-
-            // 취소
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: context.appTextTertiary,
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
+              // 헤더
+              Text(
+                '서재에 추가',
+                style: AppTheme.sectionTitle.copyWith(
+                  color: context.appTextPrimary,
                 ),
-                child: const Text('취소'),
               ),
-            ),
-          ],
+              const SizedBox(height: AppTheme.spaceXS),
+              Text(
+                book.title,
+                style: AppTheme.rowText.copyWith(
+                  color: context.appTextSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppTheme.spaceXL),
+
+              // 읽는 중
+              _StatusTile(
+                icon: Icons.auto_stories_rounded,
+                label: '읽는 중',
+                sublabel: '지금 이 책을 읽고 있어요',
+                status: ReadingStatus.reading,
+              ),
+              const SizedBox(height: AppTheme.spaceMD),
+
+              // 읽고 싶어요
+              _StatusTile(
+                icon: Icons.bookmark_rounded,
+                label: '읽고 싶어요',
+                sublabel: '나중에 읽을 책으로 저장할게요',
+                status: ReadingStatus.wantToRead,
+              ),
+              const SizedBox(height: AppTheme.spaceMD),
+
+              // 읽었어요
+              _StatusTile(
+                icon: Icons.check_circle_rounded,
+                label: '읽었어요',
+                sublabel: '이미 읽은 책으로 기록할게요',
+                status: ReadingStatus.completed,
+              ),
+              const SizedBox(height: AppTheme.spaceLG),
+
+              // 취소
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: context.appTextTertiary,
+                    textStyle: AppTheme.rowText,
+                  ),
+                  child: const Text('취소'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -164,61 +155,60 @@ class _StatusTileState extends State<_StatusTile> {
           scale: _pressed ? 0.97 : 1.0,
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOutCubic,
-          child: Container(
+          child: SizedBox(
             height: 68,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: AppTheme.smoothBox(
-              color: context.appCardElevated,
-              radius: AppTheme.radiusMD,
-              side: BorderSide.none,
-            ),
-            child: Row(
-              children: [
-                // 아이콘 뱃지
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: AppTheme.smoothBox(
-                    gradient: context.appReadingGradient,
-                    radius: AppTheme.radiusSM,
+            child: ChorokCard(
+              inner: true,
+              showBorder: false,
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+              child: Row(
+                children: [
+                  // 아이콘 뱃지
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: ChorokCard(
+                      inner: true,
+                      showBorder: false,
+                      padding: EdgeInsets.zero,
+                      gradient: context.appReadingGradient,
+                      child: Icon(
+                        widget.icon,
+                        color: AppTheme.darkBg,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                  child: Icon(widget.icon, color: AppTheme.darkBg, size: 20),
-                ),
-                const SizedBox(width: 16),
+                  const SizedBox(width: AppTheme.spaceLG),
 
-                // 레이블
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.label,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: context.appTextPrimary,
-                          height: 1.4,
+                  // 레이블
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.label,
+                          style: AppTheme.rowText.copyWith(
+                            color: context.appTextPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        widget.sublabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appTextSecondary,
-                          height: 1.5,
+                        Text(
+                          widget.sublabel,
+                          style: AppTheme.supportingText.copyWith(
+                            color: context.appTextSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: context.appTextTertiary,
-                  size: 20,
-                ),
-              ],
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: context.appTextTertiary,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

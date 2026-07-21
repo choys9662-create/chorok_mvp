@@ -283,7 +283,14 @@ void main() {
 
     expect(find.text('이 대목에 남겨진 생각'), findsOneWidget);
     expect(find.text('4명의 독자가 이 부분에 머물렀어요'), findsOneWidget);
-    await tester.drag(find.byType(ListView).last, const Offset(0, -300));
+    // 카드 padding/간격이 토큰(cardPaddingMD 등)으로 통일되며 카드 높이가
+    // 늘어나 고정 -300 드래그로는 4번째 항목에 닿지 않는다. 고정 거리 대신
+    // 목표 위젯이 보일 때까지 스크롤한다(위 passageCard 스크롤과 동일 패턴).
+    await tester.scrollUntilVisible(
+      find.text('긴 이름의 독자 4'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     expect(find.text('긴 이름의 독자 4'), findsOneWidget);
     expect(tester.takeException(), isNull);

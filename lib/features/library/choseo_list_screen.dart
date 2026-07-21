@@ -1,14 +1,14 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../shared/models/isar/isar_choseo.dart';
+import '../../shared/widgets/chorok_card.dart';
+import '../../shared/widgets/chorok_list_row.dart';
 import 'controller/choseo_list_controller.dart';
 import '../../shared/widgets/chorok_refresh.dart';
-
-// ─── 색상 토큰 ────────────────────────────────────────────────────────────────
+import '../../shared/widgets/chorok_shimmer.dart';
 
 // ─── 화면 ────────────────────────────────────────────────────────────────────
 
@@ -82,7 +82,7 @@ class _ChoseoListScreenState extends ConsumerState<ChoseoListScreen>
 
           // ── 탭 바 ─────────────────────────────────────────────────
           _ChoseoTabBar(controller: _tabCtrl),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppTheme.spaceXS),
 
           // ── 콘텐츠 ───────────────────────────────────────────────
           Expanded(
@@ -135,7 +135,12 @@ class _TopBar extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceSM,
+        AppTheme.spaceSM,
+        AppTheme.spaceMD,
+        AppTheme.spaceSM,
+      ),
       child: Row(
         children: [
           // 뒤로가기
@@ -174,20 +179,14 @@ class _TopBar extends StatelessWidget {
                       children: [
                         Text(
                           '내 문장',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
+                          style: AppTheme.screenTitle.copyWith(
                             color: context.appTextPrimary,
-                            height: 1.3,
                           ),
                         ),
                         Text(
                           '총 $totalCount개',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
+                          style: AppTheme.supportingText.copyWith(
                             color: context.appTextTertiary,
-                            height: 1.4,
                           ),
                         ),
                       ],
@@ -240,39 +239,30 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 40,
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          side: BorderSide.none,
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        onChanged: onChanged,
-        style: TextStyle(
-          fontSize: 16,
-          color: context.appTextPrimary,
-          height: 1.4,
-        ),
-        decoration: InputDecoration(
-          hintText: '문장 내용, 책 제목, 저자 검색',
-          hintStyle: TextStyle(
-            fontSize: 16,
-            color: context.appTextTertiary,
-            height: 1.4,
+      child: ChorokCard(
+        inner: true,
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          onChanged: onChanged,
+          style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
+          decoration: InputDecoration(
+            hintText: '문장 내용, 책 제목, 저자 검색',
+            hintStyle: AppTheme.rowText.copyWith(
+              color: context.appTextTertiary,
+            ),
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: AppTheme.spaceSM,
+            ),
           ),
-          border: InputBorder.none,
-          isDense: true,
-          contentPadding: EdgeInsets.symmetric(vertical: 10),
+          cursorColor: context.appPrimaryAccent,
+          cursorWidth: 1.5,
         ),
-        cursorColor: context.appPrimaryAccent,
-        cursorWidth: 1.5,
       ),
     );
   }
@@ -286,39 +276,28 @@ class _ChoseoTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      height: 44,
-      decoration: BoxDecoration(
-        color: context.appCard,
-        borderRadius: BorderRadius.circular(10),
-        border: null,
-      ),
-      child: TabBar(
-        controller: controller,
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicator: BoxDecoration(
-          color: AppTheme.primary,
-          borderRadius: BorderRadius.circular(10),
-          border: null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
+      child: ChorokCard(
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          height: 44,
+          child: TabBar(
+            controller: controller,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: const BoxDecoration(color: AppTheme.primary),
+            dividerColor: Colors.transparent,
+            labelStyle: AppTheme.rowText,
+            unselectedLabelStyle: AppTheme.rowText,
+            labelColor: context.appTextPrimary,
+            unselectedLabelColor: context.appTextSecondary,
+            tabs: const [
+              Tab(text: '책별'),
+              Tab(text: '날짜순'),
+            ],
+          ),
         ),
-        dividerColor: Colors.transparent,
-        labelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          height: 1.4,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          height: 1.4,
-        ),
-        labelColor: Colors.white,
-        unselectedLabelColor: context.appTextSecondary,
-        tabs: const [
-          Tab(text: '책별'),
-          Tab(text: '날짜순'),
-        ],
       ),
     );
   }
@@ -339,7 +318,12 @@ class _ByBookTab extends StatelessWidget {
     return _ChoseoRefresh(
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          AppTheme.spaceSM,
+          AppTheme.screenPadding,
+          AppTheme.sectionGap,
+        ),
         itemCount: books.length,
         itemBuilder: (_, i) {
           final title = books[i];
@@ -382,146 +366,98 @@ class _BookGroupState extends State<_BookGroup> {
   Widget build(BuildContext context) {
     final author = widget.items.first.bookAuthor;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        ),
-      ),
-      child: Column(
-        children: [
-          // ── 책 헤더 (탭으로 접기/펼치기) ─────────────────────────
-          Semantics(
-            button: true,
-            label: '${widget.title} ${_expanded ? "접기" : "펼치기"}',
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _expanded = !_expanded);
-              },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                child: Row(
-                  children: [
-                    // 책 표지 썸네일
-                    Container(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+      child: ChorokCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            // ── 책 헤더 (탭으로 접기/펼치기) ─────────────────────────
+            Semantics(
+              button: true,
+              label: '${widget.title} ${_expanded ? "접기" : "펼치기"}',
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _expanded = !_expanded);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                  child: ChorokListRow(
+                    leading: _LetterBookCover(
+                      letter: widget.title.isNotEmpty ? widget.title[0] : '?',
                       width: 44,
                       height: 56,
-                      decoration: ShapeDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            context.appPrimaryAccent,
-                            context.appAccentColor,
-                          ],
-                        ),
-                        shape: SmoothRectangleBorder(
-                          smoothness: 0.6,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          widget.title.isNotEmpty ? widget.title[0] : '?',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      textStyle: AppTheme.sectionTitle,
                     ),
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: context.appTextPrimary,
-                              height: 1.4,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            author,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.appTextTertiary,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
+                    title: Text(
+                      widget.title,
+                      style: AppTheme.rowText.copyWith(
+                        color: context.appTextPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-
-                    // 개수 뱃지
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.appCardElevated,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${widget.items.length}개',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: context.appPrimaryAccent,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    AnimatedRotation(
-                      turns: _expanded ? 0 : -0.25,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
+                    supporting: Text(
+                      author,
+                      style: AppTheme.supportingText.copyWith(
                         color: context.appTextTertiary,
-                        size: 20,
                       ),
                     ),
-                  ],
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ChorokCard(
+                          inner: true,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceMD,
+                            vertical: AppTheme.spaceXS,
+                          ),
+                          child: Text(
+                            '${widget.items.length}개',
+                            style: AppTheme.supportingText.copyWith(
+                              color: context.appPrimaryAccent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppTheme.spaceSM),
+                        AnimatedRotation(
+                          turns: _expanded ? 0 : -0.25,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: context.appTextTertiary,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // ── 초서 카드 목록 ────────────────────────────────────────
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: _expanded
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstCurve: Curves.easeOutCubic,
-            secondCurve: Curves.easeOutCubic,
-            firstChild: Column(
-              children: [
-                ...widget.items.map(
-                  (c) => _ChoseoCard(item: c, showBookInfo: false),
-                ),
-                const SizedBox(height: 8),
-              ],
+            // ── 초서 카드 목록 ────────────────────────────────────────
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 250),
+              crossFadeState: _expanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstCurve: Curves.easeOutCubic,
+              secondCurve: Curves.easeOutCubic,
+              firstChild: Column(
+                children: [
+                  ...widget.items.map(
+                    (c) => _ChoseoCard(item: c, showBookInfo: false),
+                  ),
+                  const SizedBox(height: AppTheme.spaceSM),
+                ],
+              ),
+              secondChild: const SizedBox.shrink(),
             ),
-            secondChild: const SizedBox.shrink(),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -546,9 +482,14 @@ class _ByDateTab extends ConsumerWidget {
     return _ChoseoRefresh(
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          AppTheme.spaceSM,
+          AppTheme.screenPadding,
+          AppTheme.sectionGap,
+        ),
         itemCount: itemCount,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
         itemBuilder: (_, i) {
           if (i >= items.length) {
             return _LoadMoreRow(
@@ -572,7 +513,7 @@ class _LoadMoreRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
+        padding: EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
         child: Center(
           child: SizedBox(
             width: 20,
@@ -584,7 +525,7 @@ class _LoadMoreRow extends StatelessWidget {
     }
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSM),
         child: TextButton(onPressed: onTap, child: const Text('더 보기')),
       ),
     );
@@ -599,6 +540,13 @@ class _ChoseoCard extends StatelessWidget {
 
   const _ChoseoCard({required this.item, required this.showBookInfo});
 
+  // 거터(페이지 번호 열) 폭 — 인용구와 생각 블록 들여쓰기를 맞춘다
+  static const double _gutter = 26;
+  static const double _gutterGap = AppTheme.spaceMD;
+
+  bool get _hasThought =>
+      item.myThought != null && item.myThought!.trim().isNotEmpty;
+
   String _relativeDate(DateTime dt) {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 1) return '방금';
@@ -611,174 +559,189 @@ class _ChoseoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+    final quoteContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: _gutter,
+          child: Text(
+            item.pageNumber?.toString() ?? '',
+            textAlign: TextAlign.center,
+            style: AppTheme.body.copyWith(color: context.appTextSecondary),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 상단: 책 정보 + 날짜 ─────────────────────────────────
-          if (showBookInfo)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: Row(
-                children: [
-                  // 미니 책 표지
-                  Container(
-                    width: 28,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          context.appPrimaryAccent,
-                          context.appAccentColor,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.bookTitle.isNotEmpty ? item.bookTitle[0] : '?',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.bookTitle,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: context.appTextPrimary,
-                            height: 1.4,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          item.bookAuthor,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appTextTertiary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Text(
-                    _relativeDate(item.createdAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextTertiary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (item.pageNumber != null)
-                    Text(
-                      'p. ${item.pageNumber}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextTertiary,
-                        height: 1.4,
-                      ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  Text(
-                    _relativeDate(item.createdAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextTertiary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+        const SizedBox(width: _gutterGap),
+        Expanded(
+          child: Text(
+            item.content,
+            style: AppTheme.body.copyWith(
+              height: 1.6,
+              color: context.appTextPrimary,
             ),
+          ),
+        ),
+      ],
+    );
+    final quote = _hasThought
+        ? ChorokCard(
+            inner: true,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceMD,
+            ),
+            child: quoteContent,
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceMD,
+            ),
+            child: quoteContent,
+          );
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // ── 상단: 책 정보 + 날짜 (날짜순 탭 전용) ──────────────────
+        if (showBookInfo) _bookHeader(context),
 
-          // ── 인용구 ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        // ── 인용구 (생각 있으면 하이라이트 박스) ────────────────────
+        quote,
+
+        // ── 내 생각 (초록색 블록) ──────────────────────────────────
+        if (_hasThought) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          ChorokCard(
+            inner: true,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceMD,
+              vertical: AppTheme.spaceMD,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(width: _gutter + _gutterGap),
                 Expanded(
                   child: Text(
-                    item.content,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: context.appTextPrimary,
+                    item.myThought!,
+                    style: AppTheme.bodyMedium.copyWith(
                       height: 1.6,
+                      color: context.appPrimaryAccent,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-
-          // ── 내 생각 ──────────────────────────────────────────────
-          if (item.myThought != null && item.myThought!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline_rounded,
-                    size: 13,
-                    color: context.appTextTertiary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      item.myThought!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextSecondary,
-                        height: 1.5,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 14),
         ],
+
+        // ── 좋아요 · 댓글 지표 ─────────────────────────────────────
+        const SizedBox(height: AppTheme.spaceSM),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.favorite_rounded,
+              size: 14,
+              color: context.appPrimaryAccent,
+            ),
+            const SizedBox(width: AppTheme.spaceXS),
+            Text(
+              '${item.likeCount}',
+              style: AppTheme.body.copyWith(color: context.appTextPrimary),
+            ),
+            const SizedBox(width: AppTheme.spaceXL),
+            Icon(
+              Icons.chat_bubble_rounded,
+              size: 13,
+              color: context.appTextSecondary,
+            ),
+            const SizedBox(width: AppTheme.spaceXS),
+            Text(
+              '${item.commentCount}',
+              style: AppTheme.body.copyWith(color: context.appTextPrimary),
+            ),
+          ],
+        ),
+      ],
+    );
+    return showBookInfo
+        ? ChorokCard(child: content)
+        : Padding(
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+            child: content,
+          );
+  }
+
+  // 날짜순 탭: 미니 책표지 + 제목·저자 + 상대 날짜
+  Widget _bookHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+      child: ChorokListRow(
+        leading: _LetterBookCover(
+          letter: item.bookTitle.isNotEmpty ? item.bookTitle[0] : '?',
+          width: 28,
+          height: 36,
+          textStyle: AppTheme.supportingText,
+        ),
+        title: Text(
+          item.bookTitle,
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextPrimary,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        supporting: Text(
+          item.bookAuthor,
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextTertiary,
+          ),
+        ),
+        trailing: Text(
+          _relativeDate(item.createdAt),
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextTertiary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 표지 이미지가 없는 초서 항목의 그라디언트 표지.
+class _LetterBookCover extends StatelessWidget {
+  final String letter;
+  final double width;
+  final double height;
+  final TextStyle textStyle;
+
+  const _LetterBookCover({
+    required this.letter,
+    required this.width,
+    required this.height,
+    required this.textStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: ChorokCard(
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [context.appPrimaryAccent, context.appAccentColor],
+        ),
+        child: Center(
+          child: Text(
+            letter,
+            style: textStyle.copyWith(color: AppTheme.primary),
+          ),
+        ),
       ),
     );
   }
@@ -800,24 +763,17 @@ class _EmptyView extends StatelessWidget {
             size: 48,
             color: context.appTextTertiary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             '아직 기록한 문장이 없어요',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.appTextSecondary,
-              height: 1.5,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '독서 세션 중 마음에 드는 문장을\n저장해보세요',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTheme.supportingText.copyWith(
               color: context.appTextTertiary,
-              height: 1.6,
             ),
           ),
         ],
@@ -835,23 +791,17 @@ class _ErrorView extends StatelessWidget {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        spacing: AppTheme.spaceLG,
         children: [
           Icon(
             Icons.error_outline_rounded,
             size: 48,
             color: context.appTextTertiary,
           ),
-          const SizedBox(height: 16),
           Text(
             '초서를 불러오지 못했어요',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.appTextSecondary,
-              height: 1.5,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 16),
           OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
         ],
       ),
@@ -861,57 +811,22 @@ class _ErrorView extends StatelessWidget {
 
 // ─── 로딩 시머 ────────────────────────────────────────────────────────────────
 
-class _LoadingShimmer extends StatefulWidget {
+class _LoadingShimmer extends StatelessWidget {
   const _LoadingShimmer();
-
-  @override
-  State<_LoadingShimmer> createState() => _LoadingShimmerState();
-}
-
-class _LoadingShimmerState extends State<_LoadingShimmer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      itemCount: 5,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, _) => AnimatedBuilder(
-        animation: _anim,
-        builder: (_, _) => Container(
-          height: 110,
-          decoration: ShapeDecoration(
-            color: Color.lerp(
-              context.appCard,
-              context.appCardElevated,
-              _anim.value,
-            ),
-            shape: ContinuousRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG * 1.35),
-              side: BorderSide.none,
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceSM,
+        AppTheme.screenPadding,
+        AppTheme.sectionGap,
       ),
+      itemCount: 5,
+      separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
+      itemBuilder: (_, _) =>
+          const ChorokShimmer(width: double.infinity, height: 110),
     );
   }
 }

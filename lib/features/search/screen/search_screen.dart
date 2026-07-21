@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +13,8 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/utils/follow_relationship_text.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../controller/book_search_controller.dart';
 import '../controller/user_search_controller.dart';
@@ -192,7 +193,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.warningColor,
+              ),
               child: const Text('제거'),
             ),
           ],
@@ -252,10 +255,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     context.push(AppConstants.routeBarcode);
                   },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           _TabBar(current: _tab, onChanged: _onTabChanged),
           if (_tab == _SearchTab.user) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             _UserScopeChips(
               current: _userScope,
               onChanged: _onUserScopeChanged,
@@ -292,31 +295,33 @@ class _TabBar extends StatelessWidget {
       (_SearchTab.user, '유저'),
     ];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Row(
         children: items.map((e) {
           final isSelected = e.$1 == current;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: AppTheme.spaceSM),
             child: GestureDetector(
               onTap: () => onChanged(e.$1),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                alignment: Alignment.center,
-                decoration: AppTheme.smoothPill(
-                  color: isSelected
+              child: SizedBox(
+                height: AppTheme.spaceXL + AppTheme.spaceMD,
+                child: ChorokCard(
+                  showBorder: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceLG,
+                  ),
+                  backgroundColor: isSelected
                       ? context.appPrimaryAccent
                       : context.appCard,
-                ),
-                child: Text(
-                  e.$2,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
-                    color: isSelected ? Colors.white : context.appTextSecondary,
+                  child: Center(
+                    child: Text(
+                      e.$2,
+                      style: AppTheme.supportingText.copyWith(
+                        color: isSelected
+                            ? AppTheme.darkBg
+                            : context.appTextSecondary,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -344,31 +349,34 @@ class _UserScopeChips extends StatelessWidget {
       (UserSearchScope.followers, '팔로워'),
     ];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Row(
         children: items.map((e) {
           final isSelected = e.$1 == current;
           return Padding(
-            padding: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.only(right: AppTheme.spaceXS),
             child: GestureDetector(
               onTap: () => onChanged(e.$1),
-              child: Container(
-                height: 28,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                alignment: Alignment.center,
-                decoration: AppTheme.smoothPill(
-                  color: isSelected
+              child: SizedBox(
+                height: AppTheme.spaceXL + AppTheme.spaceXS,
+                child: ChorokCard(
+                  inner: true,
+                  showBorder: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceMD,
+                  ),
+                  backgroundColor: isSelected
                       ? context.appPrimaryAccent.withValues(alpha: 0.12)
-                      : Colors.transparent,
-                ),
-                child: Text(
-                  e.$2,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
-                    color: isSelected
-                        ? context.appPrimaryAccent
-                        : context.appTextSecondary,
+                      : context.appBg,
+                  child: Center(
+                    child: Text(
+                      e.$2,
+                      style: AppTheme.supportingText.copyWith(
+                        color: isSelected
+                            ? context.appPrimaryAccent
+                            : context.appTextSecondary,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -451,9 +459,14 @@ class _UserResultList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceMD,
+        AppTheme.screenPadding,
+        AppTheme.sectionGap,
+      ),
       itemCount: users.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceSM),
       itemBuilder: (_, i) => _UserCard(profile: users[i]),
     );
   }
@@ -516,99 +529,81 @@ class _UserCardState extends ConsumerState<_UserCard> {
     final p = widget.profile;
     final me = Supabase.instance.client.auth.currentUser?.id;
     final isMe = me == p.id;
+    final hint = followRelationshipHint(
+      _relationship ?? FollowRelationship.none,
+    );
 
     return GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
         context.push(AppConstants.routeUserProfile, extra: p);
       },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          side: BorderSide.none,
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: context.appCardElevated,
-              backgroundImage: (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
-                  ? NetworkImage(p.avatarUrl!)
-                  : null,
-              child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
-                  ? Icon(
-                      Icons.person_rounded,
-                      color: context.appTextTertiary,
-                      size: 22,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.displayName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: context.appTextPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '@${p.username}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextTertiary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (followRelationshipHint(
-                        _relationship ?? FollowRelationship.none,
-                      )
-                      case final hint?) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      hint,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.appPrimaryAccent,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  if (p.bio != null && p.bio!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      p.bio!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextSecondary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+      child: ChorokCard(
+        child: ChorokListRow(
+          leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: context.appCardElevated,
+            backgroundImage: (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
+                ? NetworkImage(p.avatarUrl!)
+                : null,
+            child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
+                ? Icon(
+                    Icons.person_rounded,
+                    color: context.appTextTertiary,
+                    size: 22,
+                  )
+                : null,
+          ),
+          title: Text(
+            p.displayName,
+            style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          supporting: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '@${p.username}',
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextTertiary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            if (!isMe) ...[
-              const SizedBox(width: 8),
-              _FollowButton(
-                relationship: _relationship ?? FollowRelationship.none,
-                loaded: _relationship != null,
-                busy: _busy,
-                onTap: _toggleFollow,
-              ),
+              if (hint != null) ...[
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  hint,
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (p.bio != null && p.bio!.isNotEmpty) ...[
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  p.bio!,
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
-          ],
+          ),
+          trailing: isMe
+              ? null
+              : _FollowButton(
+                  relationship: _relationship ?? FollowRelationship.none,
+                  loaded: _relationship != null,
+                  busy: _busy,
+                  onTap: _toggleFollow,
+                ),
         ),
       ),
     );
@@ -640,22 +635,22 @@ class _FollowButton extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: busy ? null : onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+        child: SizedBox(
           height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          decoration: AppTheme.smoothBox(
-            color: filled ? context.appPrimaryAccent : context.appCardElevated,
-            radius: AppTheme.radiusSM,
-            side: BorderSide.none,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: filled ? Colors.white : context.appTextSecondary,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+            backgroundColor: filled
+                ? context.appPrimaryAccent
+                : context.appCardElevated,
+            child: Center(
+              child: Text(
+                label,
+                style: AppTheme.supportingText.copyWith(
+                  color: filled ? AppTheme.darkBg : context.appTextSecondary,
+                ),
+              ),
             ),
           ),
         ),
@@ -680,19 +675,17 @@ class _UserIdlePrompt extends StatelessWidget {
             color: context.appTextTertiary,
             size: 48,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             '유저를 검색해보세요',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.appTextSecondary,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '닉네임 · 사용자 이름으로 찾을 수 있어요',
-            style: TextStyle(fontSize: 12, color: context.appTextTertiary),
+            style: AppTheme.supportingText.copyWith(
+              color: context.appTextTertiary,
+            ),
           ),
         ],
       ),
@@ -724,7 +717,7 @@ class _UserEmptyResult extends StatelessWidget {
     };
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.sectionGap),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -733,20 +726,18 @@ class _UserEmptyResult extends StatelessWidget {
               color: context.appTextTertiary,
               size: 48,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appTextPrimary,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               sub,
-              style: TextStyle(fontSize: 12, color: context.appTextSecondary),
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -776,7 +767,11 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.only(
+        left: AppTheme.screenPadding,
+        top: AppTheme.spaceSM,
+        right: AppTheme.screenPadding,
+      ),
       child: Row(
         children: [
           // 뒤로가기
@@ -788,113 +783,107 @@ class _SearchBar extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 Navigator.of(context).pop();
               },
-              child: Container(
+              child: SizedBox(
                 width: 48,
                 height: 48,
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: context.appTextSecondary,
-                  size: 20,
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: context.appTextSecondary,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.spaceXS),
 
           // 검색 필드
           Expanded(
-            child: Container(
+            child: SizedBox(
               height: 48,
-              decoration: AppTheme.smoothBox(
-                color: context.appCard,
-                radius: AppTheme.radiusMD,
-                side: BorderSide.none,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    color: context.appTextTertiary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      onChanged: onChanged,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextPrimary,
-                        height: 1.5,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '제목, 저자, 키워드 검색',
-                        hintStyle: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: context.appTextTertiary,
-                          height: 1.5,
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 8,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.search,
-                      cursorColor: context.appPrimaryAccent,
+              child: ChorokCard(
+                showBorder: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceLG,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search_rounded,
+                      color: context.appTextTertiary,
+                      size: 20,
                     ),
-                  ),
-                  // 지우기 버튼
-                  ValueListenableBuilder(
-                    valueListenable: controller,
-                    builder: (_, value, _) {
-                      if (value.text.isEmpty) return const SizedBox.shrink();
-                      return GestureDetector(
-                        onTap: onClear,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Icon(
-                            Icons.cancel_rounded,
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onChanged: onChanged,
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextPrimary,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '제목, 저자, 키워드 검색',
+                          hintStyle: AppTheme.rowText.copyWith(
                             color: context.appTextTertiary,
-                            size: 18,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: AppTheme.spaceSM,
+                            horizontal: AppTheme.spaceSM,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ],
+                        textInputAction: TextInputAction.search,
+                        cursorColor: context.appPrimaryAccent,
+                      ),
+                    ),
+                    // 지우기 버튼
+                    ValueListenableBuilder(
+                      valueListenable: controller,
+                      builder: (_, value, _) {
+                        if (value.text.isEmpty) return const SizedBox.shrink();
+                        return GestureDetector(
+                          onTap: onClear,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: AppTheme.spaceSM,
+                            ),
+                            child: Icon(
+                              Icons.cancel_rounded,
+                              color: context.appTextTertiary,
+                              size: 18,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           if (onBarcode != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Semantics(
               button: true,
               label: 'ISBN 바코드 스캔',
               child: GestureDetector(
                 onTap: onBarcode,
-                child: Container(
+                child: SizedBox(
                   width: 48,
                   height: 48,
-                  alignment: Alignment.center,
-                  decoration: ShapeDecoration(
-                    color: context.appCard,
-                    shape: SmoothRectangleBorder(
-                      smoothness: 0.6,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      side: BorderSide.none,
+                  child: ChorokCard(
+                    showBorder: false,
+                    padding: EdgeInsets.zero,
+                    child: Center(
+                      child: Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: context.appTextSecondary,
+                        size: 22,
+                      ),
                     ),
-                  ),
-                  child: Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: context.appTextSecondary,
-                    size: 22,
                   ),
                 ),
               ),
@@ -922,10 +911,15 @@ class _ResultList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.screenPadding,
+        AppTheme.screenPadding,
+        AppTheme.sectionGap,
+      ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       itemCount: books.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
       itemBuilder: (_, index) =>
           _BookCard(book: books[index], onAdd: onAdd, onNavigate: onNavigate),
     );
@@ -962,55 +956,40 @@ class _BookCard extends ConsumerWidget {
       label: '${book.title}, ${book.author}',
       child: GestureDetector(
         onTap: () => onNavigate(book),
-        child: Container(
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            side: BorderSide.none,
-          ),
-          padding: const EdgeInsets.all(16),
+        child: ChorokCard(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // 표지 이미지
               _CoverImage(coverUrl: book.coverUrl, title: book.title),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppTheme.spaceLG),
 
               // 책 정보
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       book.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
+                      style: AppTheme.rowText.copyWith(
                         color: context.appTextPrimary,
-                        height: 1.4,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       book.author,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                      style: AppTheme.supportingText.copyWith(
                         color: context.appTextSecondary,
-                        height: 1.5,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
                     Text(
                       book.publisher,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                      style: AppTheme.supportingText.copyWith(
                         color: context.appTextTertiary,
-                        height: 1.5,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1018,7 +997,7 @@ class _BookCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
 
               // + / ✓ 아이콘 버튼
               _AddButton(isInLibrary: isInLibrary, onTap: () => onAdd(book)),
@@ -1041,25 +1020,27 @@ class _CoverImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = normalizedCoverUrl(coverUrl);
-    return Container(
+    return SizedBox(
       width: 72,
       height: 104,
-      decoration: AppTheme.smoothBox(
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [context.appPrimaryAccent, context.appAccentColor],
         ),
-        radius: AppTheme.radiusSM,
+        child: url != null && url.isNotEmpty
+            ? Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _PlaceholderCover(title: title),
+              )
+            : _PlaceholderCover(title: title),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: url != null && url.isNotEmpty
-          ? Image.network(
-              url,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _PlaceholderCover(title: title),
-            )
-          : _PlaceholderCover(title: title),
     );
   }
 }
@@ -1072,15 +1053,10 @@ class _PlaceholderCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppTheme.spaceSM),
       child: Text(
         title.length > 6 ? '${title.substring(0, 6)}...' : title,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: context.appTextPrimary,
-          height: 1.4,
-        ),
+        style: AppTheme.supportingText.copyWith(color: context.appTextPrimary),
         maxLines: 4,
         overflow: TextOverflow.clip,
       ),
@@ -1121,27 +1097,25 @@ class _AddButtonState extends State<_AddButton> {
           scale: _pressed ? 0.88 : 1.0,
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
+          child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            width: 34,
-            height: 34,
-            decoration: AppTheme.smoothBox(
-              gradient: isIn ? null : AppTheme.greenGradient,
-              color: isIn ? context.appCardElevated : null,
-              radius: AppTheme.radiusSM,
-              side: BorderSide.none,
-            ),
-            alignment: Alignment.center,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
-              child: Icon(
-                isIn ? Icons.check_rounded : Icons.add_rounded,
-                key: ValueKey(isIn),
-                size: 18,
-                color: isIn ? context.appPrimaryAccent : AppTheme.darkBg,
+            transitionBuilder: (child, anim) =>
+                ScaleTransition(scale: anim, child: child),
+            child: SizedBox(
+              key: ValueKey(isIn),
+              width: 34,
+              height: 34,
+              child: ChorokCard(
+                inner: true,
+                showBorder: false,
+                padding: EdgeInsets.zero,
+                backgroundColor: isIn ? context.appCardElevated : null,
+                gradient: isIn ? null : AppTheme.greenGradient,
+                child: Icon(
+                  isIn ? Icons.check_rounded : Icons.add_rounded,
+                  size: 18,
+                  color: isIn ? context.appPrimaryAccent : AppTheme.darkBg,
+                ),
               ),
             ),
           ),
@@ -1188,9 +1162,14 @@ class _ShimmerListState extends State<_ShimmerList>
       builder: (_, _) {
         final opacity = 0.3 + _anim.value * 0.3;
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            AppTheme.screenPadding,
+            AppTheme.screenPadding,
+            AppTheme.sectionGap,
+          ),
           itemCount: 6,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spaceMD),
           itemBuilder: (_, _) => _ShimmerCard(opacity: opacity),
         );
       },
@@ -1205,62 +1184,59 @@ class _ShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 136,
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: AppTheme.radiusLG,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 표지 플레이스홀더
-          _ShimmerBox(
-            width: 72,
-            height: 104,
-            opacity: opacity,
-            radius: AppTheme.radiusSM,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _ShimmerBox(
-                  width: double.infinity,
-                  height: 16,
-                  opacity: opacity,
-                  radius: 10,
-                ),
-                const SizedBox(height: 8),
-                _ShimmerBox(
-                  width: 120,
-                  height: 13,
-                  opacity: opacity,
-                  radius: 10,
-                ),
-                const SizedBox(height: 6),
-                _ShimmerBox(
-                  width: 80,
-                  height: 12,
-                  opacity: opacity,
-                  radius: 10,
-                ),
-                const Spacer(),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _ShimmerBox(
-                    width: 88,
-                    height: 32,
-                    opacity: opacity,
-                    radius: AppTheme.radiusSM,
-                  ),
-                ),
-              ],
+      child: ChorokCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 표지 플레이스홀더
+            _ShimmerBox(
+              width: 72,
+              height: 104,
+              opacity: opacity,
+              radius: AppTheme.radiusSM,
             ),
-          ),
-        ],
+            const SizedBox(width: AppTheme.spaceLG),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ShimmerBox(
+                    width: double.infinity,
+                    height: 16,
+                    opacity: opacity,
+                    radius: AppTheme.radiusOuter,
+                  ),
+                  const SizedBox(height: AppTheme.spaceSM),
+                  _ShimmerBox(
+                    width: 120,
+                    height: 13,
+                    opacity: opacity,
+                    radius: AppTheme.radiusOuter,
+                  ),
+                  const SizedBox(height: AppTheme.spaceXS),
+                  _ShimmerBox(
+                    width: 80,
+                    height: 12,
+                    opacity: opacity,
+                    radius: AppTheme.radiusOuter,
+                  ),
+                  const Spacer(),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _ShimmerBox(
+                      width: 88,
+                      height: 32,
+                      opacity: opacity,
+                      radius: AppTheme.radiusSM,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1281,12 +1257,15 @@ class _ShimmerBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: context.appCardElevated.withValues(alpha: opacity),
-        borderRadius: BorderRadius.circular(radius),
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        backgroundColor: context.appCardElevated.withValues(alpha: opacity),
+        child: const SizedBox.expand(),
       ),
     );
   }
@@ -1304,24 +1283,16 @@ class _IdlePrompt extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.search_rounded, color: context.appTextTertiary, size: 48),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             '읽고 싶은 책을 검색해보세요',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.appTextSecondary,
-              height: 1.5,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '제목, 저자, 키워드로 찾을 수 있어요',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+            style: AppTheme.supportingText.copyWith(
               color: context.appTextTertiary,
-              height: 1.5,
             ),
           ),
         ],
@@ -1341,7 +1312,7 @@ class _EmptyResult extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space2XL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1350,26 +1321,16 @@ class _EmptyResult extends StatelessWidget {
               color: context.appTextTertiary,
               size: 48,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               '"$query"',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appTextPrimary,
-                height: 1.4,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               '검색 결과가 없어요\n다른 키워드로 찾아보세요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appTextSecondary,
-                height: 1.6,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1391,7 +1352,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space2XL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1400,30 +1361,22 @@ class _ErrorView extends StatelessWidget {
               color: context.appTextTertiary,
               size: 48,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               '검색에 실패했어요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: context.appTextPrimary,
-                height: 1.4,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+              style: AppTheme.supportingText.copyWith(
                 color: context.appTextSecondary,
-                height: 1.5,
               ),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
             Semantics(
               button: true,
               label: '다시 시도',
@@ -1432,21 +1385,21 @@ class _ErrorView extends StatelessWidget {
                   HapticFeedback.mediumImpact();
                   onRetry();
                 },
-                child: Container(
+                child: SizedBox(
                   height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  decoration: AppTheme.smoothBox(
+                  child: ChorokCard(
+                    showBorder: false,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceXL,
+                    ),
                     gradient: AppTheme.greenGradient,
-                    radius: AppTheme.radiusMD,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    '다시 시도',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: AppTheme.darkBg,
-                      height: 1.4,
+                    child: Center(
+                      child: Text(
+                        '다시 시도',
+                        style: AppTheme.rowText.copyWith(
+                          color: AppTheme.darkBg,
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -9,6 +9,8 @@ import '../../../shared/models/overlap_group.dart';
 import '../../../shared/repositories/comment_repository.dart';
 import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../search/model/aladin_book.dart';
 import '../controller/overlap_provider.dart';
 import '../widget/split_highlight_widget.dart';
@@ -416,19 +418,19 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: AppTheme.spaceXS),
                 child: Text(
                   '같은 문장, 다른 생각',
-                  style: AppTheme.headingSmall.copyWith(
+                  style: AppTheme.sectionTitle.copyWith(
                     color: context.appTextPrimary,
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
                 child: Text(
                   '${matches.length}명이 이 문장을 함께 수집했어요',
-                  style: AppTheme.captionLarge.copyWith(
+                  style: AppTheme.supportingText.copyWith(
                     color: context.appTextTertiary,
                   ),
                 ),
@@ -536,7 +538,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
                         AppTheme.screenPadding,
-                        8,
+                        AppTheme.spaceSM,
                         AppTheme.screenPadding,
                         0,
                       ),
@@ -550,25 +552,26 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                                 HapticFeedback.selectionClick();
                                 context.pop();
                               },
-                              child: Container(
+                              child: SizedBox(
                                 width: 40,
                                 height: 40,
-                                alignment: Alignment.center,
-                                decoration: AppTheme.smoothBox(
-                                  color: context.appSurface.withValues(
-                                    alpha: 0.5,
+                                child: ChorokCard(
+                                  showBorder: false,
+                                  padding: EdgeInsets.zero,
+                                  backgroundColor: context.appSurface
+                                      .withValues(alpha: 0.5),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.arrow_back_ios_rounded,
+                                      size: AppTheme.sectionTitle.fontSize,
+                                      color: context.appTextPrimary,
+                                    ),
                                   ),
-                                  radius: AppTheme.radiusSM,
-                                ),
-                                child: Icon(
-                                  Icons.arrow_back_ios_rounded,
-                                  size: 18,
-                                  color: context.appTextPrimary,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppTheme.spaceMD),
                           Expanded(
                             child: Semantics(
                               label: '${d.bookTitle} 책 정보 보기',
@@ -585,9 +588,9 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                                           AppTheme.coverGradients.length,
                                       width: 38,
                                       height: 52,
-                                      radius: 7,
+                                      radius: AppTheme.radiusInner,
                                     ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: AppTheme.spaceMD),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
@@ -602,7 +605,9 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(height: 2),
+                                          const SizedBox(
+                                            height: AppTheme.spaceXS,
+                                          ),
                                           Text(
                                             d.bookAuthor,
                                             style: AppTheme.captionSmall
@@ -616,7 +621,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: AppTheme.spaceSM),
                                     Icon(
                                       Icons.chevron_right_rounded,
                                       size: 22,
@@ -628,26 +633,27 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                             ),
                           ),
                           if (!kUseMock && d.sentenceId != null) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spaceSM),
                             Semantics(
                               label: '문장 신고하기',
                               button: true,
                               child: GestureDetector(
                                 onTap: _reportSentence,
-                                child: Container(
+                                child: SizedBox(
                                   width: 40,
                                   height: 40,
-                                  alignment: Alignment.center,
-                                  decoration: AppTheme.smoothBox(
-                                    color: context.appSurface.withValues(
-                                      alpha: 0.5,
+                                  child: ChorokCard(
+                                    showBorder: false,
+                                    padding: EdgeInsets.zero,
+                                    backgroundColor: context.appSurface
+                                        .withValues(alpha: 0.5),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.flag_outlined,
+                                        size: AppTheme.sectionTitle.fontSize,
+                                        color: context.appTextTertiary,
+                                      ),
                                     ),
-                                    radius: AppTheme.radiusSM,
-                                  ),
-                                  child: Icon(
-                                    Icons.flag_outlined,
-                                    size: 18,
-                                    color: context.appTextTertiary,
                                   ),
                                 ),
                               ),
@@ -673,43 +679,42 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                           // 페이지 번호
                           if (d.page != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Container(
+                              padding: const EdgeInsets.only(
+                                bottom: AppTheme.spaceMD,
+                              ),
+                              child: ChorokCard(
+                                inner: true,
+                                showBorder: false,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
+                                  horizontal: AppTheme.spaceSM,
+                                  vertical: AppTheme.spaceXS,
                                 ),
-                                decoration: AppTheme.smoothPill(
-                                  color: AppTheme.primary.withValues(
-                                    alpha: 0.25,
-                                  ),
+                                backgroundColor: context.appBg.withValues(
+                                  alpha: 0.25,
                                 ),
                                 child: Text(
                                   'p.${d.page}',
-                                  style: AppTheme.captionLarge.copyWith(
+                                  style: AppTheme.supportingText.copyWith(
                                     color: context.appPrimaryAccent,
-                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
                             ),
 
                           // 원문 인용
-                          Container(
+                          SizedBox(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(AppTheme.spaceLG),
-                            decoration: BoxDecoration(
-                              color: context.appCard,
-                              borderRadius: BorderRadius.circular(10),
+                            child: ChorokCard(
+                              showBorder: false,
+                              child: _SentenceHeroText(data: d),
                             ),
-                            child: _SentenceHeroText(data: d),
                           ),
 
                           // 수집자 본인 생각 — 문장과 함께 노출 (겹문장 그룹은
                           // 아래 목록에서 따로 보여주므로 여기선 제외).
                           if (!d.isOverlapGroup &&
                               (collectorThought?.isNotEmpty ?? false)) ...[
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppTheme.spaceMD),
                             _CollectorThought(
                               username: d.collectorUsername ?? '독자',
                               thought: collectorThought!,
@@ -729,17 +734,13 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                         AppTheme.screenPadding,
                         AppTheme.spaceLG,
                       ),
-                      child: Container(
+                      child: ChorokCard(
+                        showBorder: false,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: AppTheme.spaceLG,
+                          vertical: AppTheme.spaceMD,
                         ),
-                        decoration: AppTheme.smoothBox(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.08,
-                          ),
-                          radius: AppTheme.radiusMD,
-                        ),
+                        backgroundColor: context.primaryBg(0.08),
                         child: Row(
                           children: [
                             Icon(
@@ -747,7 +748,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                               size: 18,
                               color: context.appPrimaryAccent,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spaceSM),
                             RichText(
                               text: TextSpan(
                                 style: AppTheme.captionLarge.copyWith(
@@ -793,12 +794,7 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                         AppTheme.screenPadding,
                         AppTheme.spaceMD,
                       ),
-                      child: Text(
-                        '다른 독자들의 생각',
-                        style: AppTheme.headingSmall.copyWith(
-                          color: context.appTextPrimary,
-                        ),
-                      ),
+                      child: const ChorokSectionHeader(title: '다른 독자들의 생각'),
                     ),
                   ),
 
@@ -809,13 +805,13 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          spacing: AppTheme.spaceMD,
                           children: [
                             Icon(
                               Icons.chat_bubble_outline_rounded,
                               size: 48,
                               color: context.appTextTertiary,
                             ),
-                            const SizedBox(height: 12),
                             Text(
                               '아직 남겨진 생각이 없어요\n첫 번째 생각을 남겨보세요!',
                               textAlign: TextAlign.center,
@@ -886,26 +882,26 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
           Container(
             padding: EdgeInsets.fromLTRB(
               AppTheme.screenPadding,
-              10,
+              AppTheme.spaceMD,
               AppTheme.screenPadding,
-              bottomPad + 10,
+              bottomPad + AppTheme.spaceMD,
             ),
-            decoration: BoxDecoration(color: context.appBg),
+            color: context.appBg,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // ── 답글 모드 배너 ──────────────────────────
                 if (_replyingTo != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
                     child: Row(
                       children: [
                         Icon(
                           Icons.reply_rounded,
-                          size: 15,
+                          size: AppTheme.spaceLG,
                           color: context.appPrimaryAccent,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: AppTheme.spaceSM),
                         Expanded(
                           child: Text(
                             '${_replyingTo!.username}님에게 답글 남기는 중',
@@ -931,67 +927,72 @@ class _SentenceDetailScreenState extends ConsumerState<SentenceDetailScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         height: 44,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: AppTheme.smoothBox(
-                          color: context.appCard,
-                          radius: 10,
-                          side: BorderSide.none,
-                        ),
-                        child: TextField(
-                          controller: _myThoughtController,
-                          focusNode: _focusNode,
-                          style: AppTheme.bodySmall.copyWith(
-                            color: context.appTextPrimary,
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceLG,
                           ),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: _replyingTo != null
-                                ? '${_replyingTo!.username}님에게 답글...'
-                                : '이 문장에 대한 나의 생각...',
-                            hintStyle: AppTheme.bodySmall.copyWith(
-                              color: context.appTextTertiary,
+                          child: TextField(
+                            controller: _myThoughtController,
+                            focusNode: _focusNode,
+                            style: AppTheme.rowText.copyWith(
+                              color: context.appTextPrimary,
                             ),
-                            isCollapsed: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: _replyingTo != null
+                                  ? '${_replyingTo!.username}님에게 답글...'
+                                  : '이 문장에 대한 나의 생각...',
+                              hintStyle: AppTheme.rowText.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                              isCollapsed: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: AppTheme.spaceMD,
+                              ),
                             ),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _submitThought(),
                           ),
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _submitThought(),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppTheme.spaceMD),
                     Semantics(
                       label: '생각 남기기',
                       button: true,
                       child: GestureDetector(
                         onTap: _submitThought,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
+                        child: SizedBox(
                           width: 44,
                           height: 44,
-                          alignment: Alignment.center,
-                          decoration: AppTheme.smoothBox(
-                            gradient: context.appReadingGradient,
-                            radius: 10,
+                          child: DecoratedBox(
+                            decoration: ShapeDecoration(
+                              gradient: context.appReadingGradient,
+                              shape: AppTheme.smoothShape(
+                                radius: AppTheme.radiusOuter,
+                              ),
+                            ),
+                            child: Center(
+                              child: _isSubmitting
+                                  ? const SizedBox(
+                                      width: AppTheme.spaceLG,
+                                      height: AppTheme.spaceLG,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.primary,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.arrow_upward_rounded,
+                                      size: AppTheme.sectionTitle.fontSize,
+                                      color: AppTheme.primary,
+                                    ),
+                            ),
                           ),
-                          child: _isSubmitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.arrow_upward_rounded,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
                         ),
                       ),
                     ),
@@ -1015,45 +1016,41 @@ class _CollectorThought extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: AppTheme.smoothBox(
-        color: context.appPrimaryAccent.withValues(alpha: 0.06),
-        radius: 10,
-        side: BorderSide(
-          color: context.appPrimaryAccent.withValues(alpha: 0.4),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.edit_note_rounded,
-                size: 18,
-                color: context.appPrimaryAccent,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '$username의 생각',
-                style: AppTheme.captionLarge.copyWith(
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+        backgroundColor: context.primaryBg(0.06),
+        borderColor: context.appPrimaryAccent.withValues(alpha: 0.4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppTheme.spaceMD,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.edit_note_rounded,
+                  size: AppTheme.sectionTitle.fontSize,
                   color: context.appPrimaryAccent,
-                  fontWeight: FontWeight.w400,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            thought,
-            style: AppTheme.bodyMedium.copyWith(
-              color: context.appTextPrimary,
-              height: 1.6,
+                const SizedBox(width: AppTheme.spaceSM),
+                Text(
+                  '$username의 생각',
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            Text(
+              thought,
+              style: AppTheme.bodyMedium.copyWith(
+                color: context.appTextPrimary,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1066,8 +1063,7 @@ class _SentenceHeroText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = AppTheme.headingSmall.copyWith(
-      fontStyle: FontStyle.italic,
+    final style = AppTheme.bodyMedium.copyWith(
       color: context.appTextPrimary,
       height: 1.7,
       fontWeight: FontWeight.w400,
@@ -1136,13 +1132,9 @@ class _ThoughtCard extends StatelessWidget {
           : ValueKey('recorded-thought-card-${t.username}'),
       onTap: onOpenRecordedSentence,
       behavior: HitTestBehavior.opaque,
-      child: Container(
+      child: ChorokCard(
+        showBorder: false,
         padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: AppTheme.radiusLG,
-          side: BorderSide.none,
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1160,13 +1152,13 @@ class _ThoughtCard extends StatelessWidget {
 
             // ── 액션 행: 좋아요 + 답글 ───────────────────────
             if (onToggleLike != null || onReply != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               Row(
                 children: [
                   if (onToggleLike != null)
                     _LikeToggle(thought: t, onTap: onToggleLike!),
                   if (onToggleLike != null && onReply != null)
-                    const SizedBox(width: 18),
+                    const SizedBox(width: AppTheme.spaceLG),
                   if (onReply != null)
                     GestureDetector(
                       onTap: onReply,
@@ -1179,7 +1171,7 @@ class _ThoughtCard extends StatelessWidget {
                             size: 15,
                             color: context.appTextTertiary,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppTheme.spaceXS),
                           Text(
                             '답글',
                             style: AppTheme.captionLarge.copyWith(
@@ -1196,9 +1188,12 @@ class _ThoughtCard extends StatelessWidget {
             // ── 답글 목록 (1단계) ────────────────────────────
             if (t.replies.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 12, left: 8),
+                padding: const EdgeInsets.only(
+                  top: AppTheme.spaceMD,
+                  left: AppTheme.spaceSM,
+                ),
                 child: Container(
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: const EdgeInsets.only(left: AppTheme.spaceMD),
                   decoration: BoxDecoration(
                     border: Border(
                       left: BorderSide(color: context.appBorder, width: 2),
@@ -1210,7 +1205,7 @@ class _ThoughtCard extends StatelessWidget {
                       for (final r in t.replies)
                         Padding(
                           padding: EdgeInsets.only(
-                            top: r == t.replies.first ? 0 : 14,
+                            top: r == t.replies.first ? 0 : AppTheme.spaceLG,
                           ),
                           child: GestureDetector(
                             onTap: (r.userId != null && r.userId!.isNotEmpty)
@@ -1228,7 +1223,7 @@ class _ThoughtCard extends StatelessWidget {
                                       r.userId != null && r.userId!.isNotEmpty,
                                 ),
                                 if (r.id != null) ...[
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: AppTheme.spaceSM),
                                   _LikeToggle(
                                     thought: r,
                                     onTap: () => onToggleReplyLike(r),
@@ -1268,6 +1263,7 @@ class _ThoughtContent extends StatelessWidget {
     final t = thought;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppTheme.spaceMD,
       children: [
         Row(
           children: [
@@ -1282,7 +1278,7 @@ class _ThoughtContent extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1312,7 +1308,7 @@ class _ThoughtContent extends StatelessWidget {
             ),
             if (showChevron)
               Padding(
-                padding: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.only(right: AppTheme.spaceXS),
                 child: Icon(
                   Icons.chevron_right_rounded,
                   size: 16,
@@ -1327,7 +1323,6 @@ class _ThoughtContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
         Text(
           t.thought,
           style: AppTheme.bodyMedium.copyWith(
@@ -1361,7 +1356,7 @@ class _LikeToggle extends StatelessWidget {
             size: 16,
             color: t.isLiked ? AppTheme.empathyColor : context.appTextTertiary,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.spaceXS),
           Text(
             '${t.empathyCount + (t.isLiked ? 1 : 0)}',
             style: AppTheme.captionLarge.copyWith(

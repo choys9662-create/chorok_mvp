@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -103,7 +102,7 @@ class _ShimmerCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       decoration: AppTheme.smoothBox(
         color: color,
-        radius: 10,
+        radius: AppTheme.radiusOuter,
         side: BorderSide.none,
       ),
       child: Column(
@@ -113,12 +112,9 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 14,
             width: double.infinity,
-            decoration: ShapeDecoration(
+            decoration: AppTheme.smoothBox(
               color: context.appBorder,
-              shape: SmoothRectangleBorder(
-                smoothness: 0.6,
-                borderRadius: BorderRadius.circular(10),
-              ),
+              radius: AppTheme.radiusInner,
             ),
           ),
           const SizedBox(height: AppTheme.spaceSM),
@@ -126,12 +122,9 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.75,
-            decoration: ShapeDecoration(
+            decoration: AppTheme.smoothBox(
               color: context.appBorder,
-              shape: SmoothRectangleBorder(
-                smoothness: 0.6,
-                borderRadius: BorderRadius.circular(10),
-              ),
+              radius: AppTheme.radiusInner,
             ),
           ),
           const SizedBox(height: AppTheme.spaceXS),
@@ -139,12 +132,9 @@ class _ShimmerCard extends StatelessWidget {
           Container(
             height: 12,
             width: MediaQuery.sizeOf(context).width * 0.55,
-            decoration: ShapeDecoration(
+            decoration: AppTheme.smoothBox(
               color: context.appBorder,
-              shape: SmoothRectangleBorder(
-                smoothness: 0.6,
-                borderRadius: BorderRadius.circular(10),
-              ),
+              radius: AppTheme.radiusInner,
             ),
           ),
         ],
@@ -246,7 +236,7 @@ class _ErrorState extends StatelessWidget {
                       ),
                       backgroundColor: AppTheme.primary.withValues(alpha: 0.3),
                       shape: AppTheme.smoothShape(
-                        radius: 10,
+                        radius: AppTheme.radiusOuter,
                         side: BorderSide.none,
                       ),
                     ),

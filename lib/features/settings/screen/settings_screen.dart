@@ -354,6 +354,7 @@ class _ThemeChip extends StatelessWidget {
             ),
           ),
           child: Column(
+            spacing: AppTheme.spaceXS,
             children: [
               Icon(
                 icon,
@@ -362,7 +363,6 @@ class _ThemeChip extends StatelessWidget {
                     ? context.appPrimaryAccent
                     : context.appTextSecondary,
               ),
-              const SizedBox(height: 4),
               Text(
                 label,
                 style: AppTheme.captionLarge.copyWith(
@@ -580,7 +580,10 @@ class _ToggleTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: 14,
+        ),
         child: Row(
           children: [
             Icon(icon, size: 18, color: context.appPrimaryAccent),
@@ -664,16 +667,16 @@ class _AccountSection extends ConsumerWidget {
         _InfoTile(
           icon: Icons.logout_rounded,
           label: '로그아웃',
-          iconColor: const Color(0xFFFF4F4F),
-          labelColor: const Color(0xFFFF4F4F),
+          iconColor: AppTheme.warningColor,
+          labelColor: AppTheme.warningColor,
           onTap: () => _showLogoutConfirm(context),
         ),
 
         _InfoTile(
           icon: Icons.no_accounts_rounded,
           label: '탈퇴하기',
-          iconColor: const Color(0xFFFF4F4F),
-          labelColor: const Color(0xFFFF4F4F),
+          iconColor: AppTheme.warningColor,
+          labelColor: AppTheme.warningColor,
           onTap: () => _showDeleteAccountConfirm(context),
         ),
       ],
@@ -725,7 +728,9 @@ void _showLogoutConfirm(BuildContext context) {
     context: context,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusOuter),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Padding(
@@ -738,18 +743,18 @@ void _showLogoutConfirm(BuildContext context) {
               height: 4,
               decoration: BoxDecoration(
                 color: context.appBorder,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               '로그아웃',
               style: AppTheme.headingSmall.copyWith(
-                color: const Color(0xFFFF4F4F),
+                color: AppTheme.warningColor,
                 fontWeight: FontWeight.w400,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               '로그아웃하면 다음에 다시 로그인해야 해요.',
               style: AppTheme.captionLarge.copyWith(
@@ -757,7 +762,7 @@ void _showLogoutConfirm(BuildContext context) {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
             Row(
               children: [
                 Expanded(
@@ -765,12 +770,12 @@ void _showLogoutConfirm(BuildContext context) {
                     onPressed: () => Navigator.pop(ctx),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: AppTheme.smoothShape(radius: 10),
+                      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                     ),
                     child: const Text('취소'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.spaceMD),
                 Expanded(
                   child: FilledButton(
                     onPressed: () async {
@@ -779,9 +784,9 @@ void _showLogoutConfirm(BuildContext context) {
                       // GoRouter refreshListenable이 signOut을 감지해서 /auth로 리다이렉트
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF4F4F),
+                      backgroundColor: AppTheme.warningColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: AppTheme.smoothShape(radius: 10),
+                      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                     ),
                     child: const Text('로그아웃'),
                   ),
@@ -801,7 +806,9 @@ void _showDeleteAccountConfirm(BuildContext context) {
     context: context,
     backgroundColor: Theme.of(context).cardColor,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusOuter),
+      ),
     ),
     builder: (ctx) {
       var isDeleting = false;
@@ -818,18 +825,18 @@ void _showDeleteAccountConfirm(BuildContext context) {
                   height: 4,
                   decoration: BoxDecoration(
                     color: context.appBorder,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   '탈퇴하기',
                   style: AppTheme.headingSmall.copyWith(
-                    color: const Color(0xFFFF4F4F),
+                    color: AppTheme.warningColor,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   '계정과 모든 독서 기록·초서·소셜 활동이 영구적으로 삭제돼요.\n이 작업은 되돌릴 수 없어요.',
                   style: AppTheme.captionLarge.copyWith(
@@ -838,16 +845,16 @@ void _showDeleteAccountConfirm(BuildContext context) {
                   textAlign: TextAlign.center,
                 ),
                 if (errorMessage != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.spaceMD),
                   Text(
                     errorMessage!,
                     style: AppTheme.captionLarge.copyWith(
-                      color: const Color(0xFFFF4F4F),
+                      color: AppTheme.warningColor,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppTheme.spaceXL),
                 Row(
                   children: [
                     Expanded(
@@ -855,12 +862,12 @@ void _showDeleteAccountConfirm(BuildContext context) {
                         onPressed: isDeleting ? null : () => Navigator.pop(ctx),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: AppTheme.smoothShape(radius: 10),
+                          shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                         ),
                         child: const Text('취소'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppTheme.spaceMD),
                     Expanded(
                       child: FilledButton(
                         onPressed: isDeleting
@@ -893,9 +900,9 @@ void _showDeleteAccountConfirm(BuildContext context) {
                                 if (ctx.mounted) Navigator.pop(ctx);
                               },
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF4F4F),
+                          backgroundColor: AppTheme.warningColor,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: AppTheme.smoothShape(radius: 10),
+                          shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                         ),
                         child: isDeleting
                             ? const SizedBox(
@@ -942,7 +949,10 @@ class _InfoTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: 14,
+        ),
         child: Row(
           children: [
             Icon(icon, size: 18, color: iconColor ?? context.appTextSecondary),

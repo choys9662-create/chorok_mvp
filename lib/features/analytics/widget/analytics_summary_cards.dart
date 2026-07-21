@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_stat_cell.dart';
-import '../../../shared/widgets/forest_accent_card.dart';
-import '../../../shared/widgets/gradient_text.dart';
 
 class SummaryCard extends StatelessWidget {
   final String mainValue;
@@ -19,30 +17,37 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ForestAccentCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ChorokCard(
+      backgroundColor: context.appBg,
+      borderColor: isDark
+          ? context.appPrimaryAccent
+          : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45),
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceLG,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              GradientText(
+              Text(
                 mainValue,
-                style: AppTheme.displayLarge,
-                gradient: AppTheme.greenGradientVertical,
+                style: AppTheme.displayLarge.copyWith(
+                  color: context.appPrimaryAccent,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 6, left: 4),
-                child: GradientText(
+                child: Text(
                   mainUnit,
-                  style: AppTheme.headingMedium,
-                  gradient: AppTheme.greenGradient,
+                  style: AppTheme.headingMedium.copyWith(
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceLG),
           Row(
             children: stats
                 .asMap()
@@ -99,6 +104,7 @@ class FocusCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceLG,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -133,6 +139,7 @@ class FocusCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       label,
@@ -140,7 +147,6 @@ class FocusCard extends StatelessWidget {
                         color: context.appTextPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       description,
                       style: AppTheme.captionLarge.copyWith(
@@ -152,7 +158,6 @@ class FocusCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceLG),
           Row(
             children: [
               Expanded(

@@ -42,7 +42,7 @@ class WaffleChartWidget extends StatelessWidget {
               itemBuilder: (_, i) => Container(
                 decoration: BoxDecoration(
                   color: cellColors[i],
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusInner),
                 ),
               ),
             ),
@@ -50,17 +50,17 @@ class WaffleChartWidget extends StatelessWidget {
           const SizedBox(height: AppTheme.spaceMD),
           // 장르별 범례 Pill
           Wrap(
-            spacing: 8,
+            spacing: AppTheme.spaceSM,
             runSpacing: 6,
             children: genres.map((g) {
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
-                  vertical: 4,
+                  vertical: AppTheme.spaceXS,
                 ),
                 decoration: ShapeDecoration(
                   color: g.color.withValues(alpha: 0.15),
-                  shape: AppTheme.smoothShape(radius: 10),
+                  shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

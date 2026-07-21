@@ -9,11 +9,12 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/user_library_providers.dart';
 import '../../../shared/utils/book_genre.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_refresh.dart';
 
 enum _TasteMode { time, completed }
 
-const _tasteHorizontalPadding = 16.0;
+const _tasteHorizontalPadding = AppTheme.screenPadding;
 
 final _tasteSessionGroupsProvider = FutureProvider.autoDispose
     .family<List<_TasteGroup>, String?>((ref, userId) async {
@@ -47,7 +48,7 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
         : null;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appBg,
       body: SafeArea(
         bottom: false,
         child: booksAsync.when(
@@ -62,9 +63,9 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       _tasteHorizontalPadding,
-                      38,
+                      AppTheme.sectionGap,
                       _tasteHorizontalPadding,
-                      22,
+                      AppTheme.spaceXL,
                     ),
                     child: _TasteHeader(
                       onBack: () => Navigator.of(context).pop(),
@@ -142,23 +143,27 @@ class _TasteAnalysisScreenState extends ConsumerState<TasteAnalysisScreen> {
                       : _TasteMode.time;
                 }),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               _TasteHeroCard(group: groups.first, mode: _mode),
-              const SizedBox(height: 26),
+              const SizedBox(height: AppTheme.sectionGap),
             ],
           ),
         ),
       ),
       SliverPadding(
-        padding: EdgeInsets.fromLTRB(
-          _tasteHorizontalPadding,
-          0,
-          _tasteHorizontalPadding,
-          MediaQuery.paddingOf(context).bottom + 112,
+        padding: EdgeInsets.only(
+          left: _tasteHorizontalPadding,
+          right: _tasteHorizontalPadding,
+          bottom:
+              MediaQuery.paddingOf(context).bottom +
+              AppTheme.sectionGap +
+              AppTheme.spaceXL * 3 +
+              AppTheme.spaceMD,
         ),
         sliver: SliverList.separated(
           itemCount: groups.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 40),
+          separatorBuilder: (_, _) =>
+              const SizedBox(height: AppTheme.sectionGap),
           itemBuilder: (context, index) {
             final group = groups[index];
             return _TasteGenreSection(
@@ -214,11 +219,8 @@ class _TasteHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 '나의 독서 취향',
-                style: AppTheme.headingLarge.copyWith(
+                style: AppTheme.screenTitle.copyWith(
                   color: context.appTextPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0,
                 ),
               ),
             ),
@@ -243,11 +245,7 @@ class _TasteModeRow extends StatelessWidget {
         Expanded(
           child: Text(
             mode == _TasteMode.time ? '읽은 시간 기준' : '완독 기준',
-            style: AppTheme.bodyLarge.copyWith(
-              color: const Color(0xFF758076),
-              fontSize: 13,
-              letterSpacing: 0,
-            ),
+            style: AppTheme.body.copyWith(color: context.appTextSecondary),
           ),
         ),
         Semantics(
@@ -259,31 +257,35 @@ class _TasteModeRow extends StatelessWidget {
               HapticFeedback.selectionClick();
               onToggle();
             },
-            child: Container(
+            child: SizedBox(
               width: 46,
               height: 24,
-              alignment: mode == _TasteMode.time
-                  ? Alignment.centerLeft
-                  : Alignment.centerRight,
-              padding: const EdgeInsets.all(3),
-              decoration: AppTheme.smoothBox(
-                color: const Color(0xFF171C18),
-                radius: 3,
-              ),
-              child: Container(
-                width: 18,
-                height: 18,
-                alignment: Alignment.center,
-                decoration: AppTheme.smoothBox(
-                  color: const Color(0xFF97A49A),
-                  radius: 3,
-                ),
-                child: Icon(
-                  mode == _TasteMode.time
-                      ? Icons.watch_later_rounded
-                      : Icons.menu_book_rounded,
-                  size: 13,
-                  color: AppTheme.darkCard,
+              child: ChorokCard(
+                inner: true,
+                showBorder: false,
+                padding: EdgeInsets.zero,
+                clipBehavior: Clip.antiAlias,
+                child: Align(
+                  alignment: mode == _TasteMode.time
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: ChorokCard(
+                      inner: true,
+                      backgroundColor: context.appTextSecondary,
+                      showBorder: false,
+                      padding: EdgeInsets.zero,
+                      child: Icon(
+                        mode == _TasteMode.time
+                            ? Icons.watch_later_rounded
+                            : Icons.menu_book_rounded,
+                        size: 13,
+                        color: context.appCard,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -305,40 +307,36 @@ class _TasteHeroCard extends StatelessWidget {
     final suffix = mode == _TasteMode.time ? '책벌레' : '도서관';
     final action = mode == _TasteMode.time ? '가장 오래 읽었어요!' : '가장 많이 읽었어요!';
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-      decoration: AppTheme.smoothBox(
-        color: AppTheme.darkCard,
-        radius: 5,
-        side: const BorderSide(color: Color(0xFF273027)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            '${group.genre} $suffix',
-            textAlign: TextAlign.center,
-            style: AppTheme.headingLarge.copyWith(
-              color: AppTheme.primaryLight,
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '전체 이용자 중에서 ${group.genre}을 $action',
+      child: ChorokCard(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: AppTheme.spaceMD,
+        ),
+        child: Column(
+          spacing: AppTheme.spaceSM,
+          children: [
+            Text(
+              '${group.genre} $suffix',
               textAlign: TextAlign.center,
-              maxLines: 1,
-              style: AppTheme.bodySmall.copyWith(
-                color: AppTheme.primaryLight,
-                fontSize: 13,
-                letterSpacing: 0,
+              style: AppTheme.sectionTitle.copyWith(
+                color: context.appPrimaryAccent,
               ),
             ),
-          ),
-        ],
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '전체 이용자 중에서 ${group.genre}을 $action',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appPrimaryAccent,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -364,16 +362,15 @@ class _TasteGenreSection extends StatelessWidget {
     final visibleBooks = expanded ? group.books : group.books.take(6).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppTheme.spaceMD,
       children: [
         Row(
           children: [
             Expanded(
               child: Text(
                 '$rank | ${group.genre}',
-                style: AppTheme.headingSmall.copyWith(
-                  color: const Color(0xFFDDE5DC),
-                  fontSize: 17,
-                  letterSpacing: 0,
+                style: AppTheme.sectionTitle.copyWith(
+                  color: context.appTextPrimary,
                 ),
               ),
             ),
@@ -381,27 +378,28 @@ class _TasteGenreSection extends StatelessWidget {
               mode == _TasteMode.time
                   ? _formatMinutes(group.totalMinutes)
                   : '${group.completedCount}권',
-              style: AppTheme.headingLarge.copyWith(
-                color: const Color(0xFFDDE5DC),
-                fontSize: 17,
-                letterSpacing: 0,
+              style: AppTheme.sectionTitle.copyWith(
+                color: context.appTextPrimary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          decoration: AppTheme.smoothBox(color: AppTheme.darkCard, radius: 7),
+        ChorokCard(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.cardPaddingMD,
+            AppTheme.cardPaddingMD,
+            AppTheme.cardPaddingMD,
+            AppTheme.spaceXS,
+          ),
           child: Column(
             children: [
               for (final entry in visibleBooks.indexed) ...[
                 _TasteBookRow(book: entry.$2),
                 if (entry.$1 != visibleBooks.length - 1)
-                  const Divider(height: 31, color: Color(0xFF242B24)),
+                  const Divider(height: AppTheme.sectionGap),
               ],
               if (group.books.length > visibleBooks.length) ...[
-                const Divider(height: 31, color: Color(0xFF242B24)),
+                const Divider(height: AppTheme.sectionGap),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -413,16 +411,15 @@ class _TasteGenreSection extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '전체보기',
-                        style: AppTheme.headingSmall.copyWith(
-                          color: const Color(0xFF7F8B81),
-                          letterSpacing: 0,
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextSecondary,
                         ),
                       ),
                     ),
                   ),
                 ),
               ] else if (expanded && group.books.length > 6) ...[
-                const Divider(height: 31, color: Color(0xFF242B24)),
+                const Divider(height: AppTheme.sectionGap),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -434,16 +431,15 @@ class _TasteGenreSection extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '접기',
-                        style: AppTheme.headingSmall.copyWith(
-                          color: const Color(0xFF7F8B81),
-                          letterSpacing: 0,
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextSecondary,
                         ),
                       ),
                     ),
                   ),
                 ),
               ] else
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.spaceLG),
             ],
           ),
         ),
@@ -469,28 +465,22 @@ class _TasteBookRow extends StatelessWidget {
               book.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.headingSmall.copyWith(
-                color: const Color(0xFF879187),
-                fontSize: 16,
-                letterSpacing: 0,
-              ),
+              style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             flex: 2,
             child: Text(
               book.author,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.bodyLarge.copyWith(
-                color: const Color(0xFF879187),
-                fontSize: 12,
-                letterSpacing: 0,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextSecondary,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           SizedBox(
             width: 82,
             child: Text(
@@ -498,11 +488,7 @@ class _TasteBookRow extends StatelessWidget {
               maxLines: 1,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.bodyLarge.copyWith(
-                color: const Color(0xFF879187),
-                fontSize: 14,
-                letterSpacing: 0,
-              ),
+              style: AppTheme.body.copyWith(color: context.appTextSecondary),
             ),
           ),
         ],
@@ -522,11 +508,7 @@ class _TasteEmpty extends StatelessWidget {
       alignment: const Alignment(0, -0.06),
       child: Text(
         message,
-        style: AppTheme.bodyLarge.copyWith(
-          color: const Color(0xFF6F786F),
-          fontSize: 18,
-          letterSpacing: 0,
-        ),
+        style: AppTheme.sectionTitle.copyWith(color: context.appTextSecondary),
       ),
     );
   }

@@ -202,7 +202,7 @@ const _kChallenges = <_Challenge>[
     progress: 0.6,
     progressLabel: '3/5일',
     deadline: '3일 남음',
-    color: Color(0xFF009B58),
+    color: Color(0xFF009B58), // 구조상 예외: 챌린지 구분용 데이터 팔레트 (6색 팔레트 외)
   ),
   _Challenge(
     title: '초서 100개 달성',
@@ -210,7 +210,7 @@ const _kChallenges = <_Challenge>[
     progress: 0.62,
     progressLabel: '62/100개',
     deadline: '이번 달',
-    color: Color(0xFF5C6BC0),
+    color: Color(0xFF5C6BC0), // 구조상 예외: 챌린지 구분용 데이터 팔레트 (6색 팔레트 외)
   ),
   _Challenge(
     title: '이번 달 10시간 독서',
@@ -218,7 +218,7 @@ const _kChallenges = <_Challenge>[
     progress: 0.78,
     progressLabel: '7.8/10시간',
     deadline: '11일 남음',
-    color: Color(0xFFEF6C00),
+    color: Color(0xFFEF6C00), // 구조상 예외: 챌린지 구분용 데이터 팔레트 (6색 팔레트 외)
   ),
 ];
 
@@ -363,7 +363,8 @@ class _BadgesTab extends StatelessWidget {
                 horizontal: AppTheme.screenPadding,
               ),
               itemCount: categories.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              separatorBuilder: (context, index) =>
+                  const SizedBox(width: AppTheme.spaceSM),
               itemBuilder: (_, i) {
                 final cat = categories[i];
                 final selected = cat.value == selectedCategory;
@@ -374,7 +375,7 @@ class _BadgesTab extends StatelessWidget {
                     curve: Curves.easeOutCubic,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 8,
+                      vertical: AppTheme.spaceSM,
                     ),
                     decoration: AppTheme.smoothBox(
                       gradient: selected
@@ -461,14 +462,14 @@ class _LevelHeader extends StatelessWidget {
               child: Text(
                 'Lv.$_level',
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   fontWeight: FontWeight.w400,
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppTheme.spaceLG),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,22 +477,21 @@ class _LevelHeader extends StatelessWidget {
                 Text(
                   '독서 레벨 $_level',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: AppTheme.fsRowText,
                     fontWeight: FontWeight.w400,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   '$unlockedCount / $totalCount 뱃지 획득',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTheme.captionLarge.copyWith(
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 10),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   child: LinearProgressIndicator(
                     value: _xpProgress,
                     backgroundColor: Colors.white.withValues(alpha: 0.3),
@@ -499,11 +499,10 @@ class _LevelHeader extends StatelessWidget {
                     minHeight: 6,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   '다음 레벨까지 ${3 - (unlockedCount % 3)}개',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTheme.captionLarge.copyWith(
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
@@ -570,7 +569,10 @@ class _BadgeTile extends StatelessWidget {
                   : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
               child: Text(
                 badge.emoji,
-                style: TextStyle(fontSize: 32, color: locked ? null : null),
+                style: TextStyle(
+                  fontSize: AppTheme.fsScreenTitle,
+                  color: locked ? null : null,
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -589,9 +591,11 @@ class _BadgeTile extends StatelessWidget {
             if (inProgress) ...[
               const SizedBox(height: 6),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceMD,
+                ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   child: LinearProgressIndicator(
                     value: badge.progress,
                     backgroundColor: context.appBorder,
@@ -604,7 +608,7 @@ class _BadgeTile extends StatelessWidget {
               ),
             ],
             if (badge.unlocked) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: AppTheme.spaceXS),
               Icon(
                 Icons.check_circle_rounded,
                 size: 14,
@@ -622,7 +626,9 @@ class _BadgeTile extends StatelessWidget {
       context: context,
       backgroundColor: context.appCard,
       shape: SmoothRectangleBorderCompat.fromBorderRadius(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusOuter),
+        ),
       ),
       builder: (_) => _BadgeDetailSheet(badge: badge),
     );
@@ -647,21 +653,24 @@ class _BadgeDetailSheet extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.space2XL),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const ChorokSheetHandle(),
-            const SizedBox(height: 24),
-            Text(badge.emoji, style: const TextStyle(fontSize: 56)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceXL),
+            Text(
+              badge.emoji,
+              style: const TextStyle(fontSize: AppTheme.fsScreenTitle),
+            ),
+            const SizedBox(height: AppTheme.spaceMD),
             Text(
               badge.title,
               style: AppTheme.headingMedium.copyWith(
                 color: context.appTextPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               badge.description,
               style: AppTheme.bodyMedium.copyWith(
@@ -675,7 +684,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                       child: LinearProgressIndicator(
                         value: badge.progress,
                         backgroundColor: context.appCardElevated,
@@ -686,7 +695,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppTheme.spaceMD),
                   Text(
                     '${(badge.progress * 100).round()}%',
                     style: AppTheme.bodyMedium.copyWith(
@@ -698,11 +707,11 @@ class _BadgeDetailSheet extends StatelessWidget {
               ),
             ],
             if (badge.unlocked) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spaceLG),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: AppTheme.spaceLG,
+                  vertical: AppTheme.spaceSM,
                 ),
                 decoration: AppTheme.smoothPill(
                   color: context.appPrimaryAccent.withValues(alpha: 0.12),
@@ -727,7 +736,7 @@ class _BadgeDetailSheet extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
           ],
         ),
       ),
@@ -765,7 +774,7 @@ class _ChallengesTab extends StatelessWidget {
               description: '5월 한 달 동안 8권 읽기',
               startDate: '5월 1일 시작',
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             _UpcomingChallengeTile(
               emoji: '☀️',
               title: '여름 독서 챌린지',
@@ -805,7 +814,7 @@ class _ChallengeSection extends StatelessWidget {
               ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Text(
                 subtitle!,
                 style: AppTheme.captionLarge.copyWith(
@@ -815,7 +824,7 @@ class _ChallengeSection extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         ...children,
       ],
     );
@@ -831,7 +840,7 @@ class _ChallengeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
@@ -852,7 +861,10 @@ class _ChallengeTile extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: AppTheme.spaceXS,
+                ),
                 decoration: AppTheme.smoothPill(
                   color: challenge.color.withValues(alpha: 0.12),
                 ),
@@ -866,19 +878,19 @@ class _ChallengeTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppTheme.spaceXS),
           Text(
             challenge.description,
             style: AppTheme.captionLarge.copyWith(
               color: context.appTextSecondary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Row(
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   child: LinearProgressIndicator(
                     value: challenge.progress,
                     backgroundColor: context.appBorder,
@@ -919,7 +931,7 @@ class _UpcomingChallengeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
       decoration: AppTheme.smoothBox(
         color: context.appCard,
         radius: AppTheme.radiusLG,
@@ -927,8 +939,8 @@ class _UpcomingChallengeTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 30)),
-          const SizedBox(width: 12),
+          Text(emoji, style: const TextStyle(fontSize: AppTheme.fsScreenTitle)),
+          const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

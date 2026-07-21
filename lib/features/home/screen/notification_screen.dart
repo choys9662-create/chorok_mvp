@@ -276,7 +276,10 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         ),
         backgroundColor: context.appCardElevated,
         behavior: SnackBarBehavior.floating,
-        shape: AppTheme.smoothShape(radius: 10, side: BorderSide.none),
+        shape: AppTheme.smoothShape(
+          radius: AppTheme.radiusOuter,
+          side: BorderSide.none,
+        ),
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         duration: const Duration(seconds: 2),
       ),
@@ -327,15 +330,15 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                   ),
                 ),
                 if (unread > 0) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppTheme.spaceSM),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                      horizontal: AppTheme.spaceSM,
+                      vertical: AppTheme.spaceXS,
                     ),
                     decoration: AppTheme.smoothBox(
                       color: context.appPrimaryAccent.withValues(alpha: 0.15),
-                      radius: 10,
+                      radius: AppTheme.radiusOuter,
                     ),
                     child: Text(
                       '$unread 새로운',
@@ -361,7 +364,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
 
           // ─── 알림 목록 (새로운 / 이전 그룹) ────────────────
           Expanded(
@@ -491,7 +494,10 @@ class _NotiTile extends StatelessWidget {
         color: item.isRead
             ? Colors.transparent
             : context.appPrimaryAccent.withValues(alpha: 0.04),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: AppTheme.spaceLG,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -505,11 +511,12 @@ class _NotiTile extends StatelessWidget {
               ),
               child: Icon(icon, size: 20, color: color),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             // 텍스트
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppTheme.spaceXS,
                 children: [
                   Text(
                     item.title,
@@ -521,7 +528,6 @@ class _NotiTile extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     item.body,
                     maxLines: 2,
@@ -531,7 +537,6 @@ class _NotiTile extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     item.time,
                     style: AppTheme.captionSmall.copyWith(

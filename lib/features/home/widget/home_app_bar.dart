@@ -30,23 +30,26 @@ class HomeAppBar extends ConsumerWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 34, 20, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.sectionGap,
+        AppTheme.screenPadding,
+        AppTheme.spaceSM,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
               message,
-              style: AppTheme.headingLarge.copyWith(
+              style: AppTheme.sectionTitle.copyWith(
                 color: context.appTextSecondary,
-                fontSize: 18,
-                letterSpacing: 0,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppTheme.spaceSM),
           // 알림 버튼
           Semantics(
             label: '알림',

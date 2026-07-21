@@ -27,6 +27,7 @@ class HighlightPreview extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: AppTheme.spaceSM,
                           children: [
                             Text(
                               '\u201c${h.text}\u201d',
@@ -37,7 +38,6 @@ class HighlightPreview extends StatelessWidget {
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: AppTheme.spaceSM),
                             Text(
                               '— ${h.book}',
                               style: AppTheme.captionSmall.copyWith(
@@ -51,7 +51,8 @@ class HighlightPreview extends StatelessWidget {
                   ),
                 ),
               ),
-              if (i < highlights.length - 1) const SizedBox(height: 4),
+              if (i < highlights.length - 1)
+                const SizedBox(height: AppTheme.spaceXS),
             ],
           );
         }),
@@ -83,6 +84,7 @@ class SentenceReactionsCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: AppTheme.spaceXS,
                         children: [
                           Text(
                             '\u201c${s.text}\u201d',
@@ -93,7 +95,6 @@ class SentenceReactionsCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
                           Text(
                             '— ${s.book}',
                             style: AppTheme.captionSmall.copyWith(
@@ -121,11 +122,11 @@ class SentenceReactionsCard extends StatelessWidget {
                               style: AppTheme.captionSmall.copyWith(
                                 color: Colors.black,
                                 fontWeight: FontWeight.w400,
-                                fontSize: 10,
+                                fontSize: AppTheme.fsCaption,
                               ),
                             ),
                           ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppTheme.spaceXS),
                         Row(
                           children: [
                             Icon(
@@ -133,7 +134,7 @@ class SentenceReactionsCard extends StatelessWidget {
                               size: 12,
                               color: context.appPrimaryAccent,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: AppTheme.spaceXS),
                             Text(
                               '${s.reactions}',
                               style: AppTheme.captionSmall.copyWith(
@@ -148,7 +149,8 @@ class SentenceReactionsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (i < sentences.length - 1) const SizedBox(height: 4),
+              if (i < sentences.length - 1)
+                const SizedBox(height: AppTheme.spaceXS),
             ],
           );
         }),
@@ -188,7 +190,9 @@ class CommunityHighlightsCard extends StatelessWidget {
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         shape: SmoothRectangleBorder(
                           smoothness: 0.6,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusInner,
+                          ),
                         ),
                       ),
                       child: Center(
@@ -205,6 +209,7 @@ class CommunityHighlightsCard extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 6,
                         children: [
                           Text(
                             '\u201c${h.text}\u201d',
@@ -215,7 +220,6 @@ class CommunityHighlightsCard extends StatelessWidget {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 6),
                           Row(
                             children: [
                               Text(
@@ -230,7 +234,7 @@ class CommunityHighlightsCard extends StatelessWidget {
                                 size: 11,
                                 color: AppTheme.accent,
                               ),
-                              const SizedBox(width: 3),
+                              const SizedBox(width: AppTheme.spaceXS),
                               Text(
                                 _formatReactions(h.reactions),
                                 style: AppTheme.captionSmall.copyWith(
@@ -246,7 +250,8 @@ class CommunityHighlightsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (i < highlights.length - 1) const SizedBox(height: 4),
+              if (i < highlights.length - 1)
+                const SizedBox(height: AppTheme.spaceXS),
             ],
           );
         }),

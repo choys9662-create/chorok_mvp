@@ -8,6 +8,8 @@ import '../../../shared/models/user_profile.dart';
 import '../../../shared/repositories/moderation_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/chorok_refresh.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
 
 final _blockedUsersProvider = FutureProvider.autoDispose<List<UserProfile>>((
   ref,
@@ -110,41 +112,33 @@ class _BlockedUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: AppTheme.radiusLG,
-        side: BorderSide.none,
+    return ChorokCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceMD,
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: context.appCardElevated,
-            backgroundImage:
-                (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
-                ? NetworkImage(profile.avatarUrl!)
-                : null,
-            child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
-                ? Icon(
-                    Icons.person_rounded,
-                    color: context.appTextTertiary,
-                    size: 18,
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              profile.displayName,
-              style: AppTheme.bodyMedium.copyWith(
-                color: context.appTextPrimary,
-              ),
-            ),
-          ),
-          TextButton(onPressed: onUnblock, child: const Text('차단 해제')),
-        ],
+      showBorder: false,
+      child: ChorokListRow(
+        leading: CircleAvatar(
+          radius: 18,
+          backgroundColor: context.appCardElevated,
+          backgroundImage:
+              (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
+              ? NetworkImage(profile.avatarUrl!)
+              : null,
+          child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
+              ? Icon(
+                  Icons.person_rounded,
+                  color: context.appTextTertiary,
+                  size: 18,
+                )
+              : null,
+        ),
+        title: Text(
+          profile.displayName,
+          style: AppTheme.bodyMedium.copyWith(color: context.appTextPrimary),
+        ),
+        trailing: TextButton(onPressed: onUnblock, child: const Text('차단 해제')),
       ),
     );
   }

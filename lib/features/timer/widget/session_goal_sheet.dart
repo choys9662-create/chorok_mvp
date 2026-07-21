@@ -1,10 +1,10 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 
 /// 독서 세션 목표 설정 바텀 시트
@@ -76,28 +76,24 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final canSubmit = _buildGoal() != null;
 
-    return Container(
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(10),
-            topRight: Radius.circular(10),
-          ),
-        ),
-      ),
+    return ChorokCard(
+      showBorder: false,
       padding: EdgeInsets.only(bottom: bottomInset),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.spaceXL,
+            AppTheme.spaceLG,
+            AppTheme.spaceXL,
+            AppTheme.spaceXL,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const ChorokSheetHandle(),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spaceXL),
 
               // ── 헤더 ───────────────────────────────────────────
               Text(
@@ -106,14 +102,14 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                   color: context.appTextPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppTheme.spaceXS),
               Text(
                 widget.bookTitle,
                 style: AppTheme.bodySmall.copyWith(
                   color: context.appTextTertiary,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spaceXL),
 
               // ── 탭 선택 (시간 / 페이지) ────────────────────────
               _GoalTypeSelector(
@@ -123,7 +119,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                   _customTimeMode = false;
                 }),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.spaceXL),
 
               // ── 목표 입력 영역 ─────────────────────────────────
               AnimatedSize(
@@ -157,7 +153,7 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                         onChanged: () => setState(() {}),
                       ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceXL),
 
               // ── 시작 버튼 ──────────────────────────────────────
               Semantics(
@@ -165,12 +161,10 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                 button: true,
                 child: GestureDetector(
                   onTap: canSubmit ? _submit : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
+                  child: SizedBox(
                     height: 52,
-                    alignment: Alignment.center,
-                    decoration: AppTheme.smoothBox(
+                    child: ChorokCard(
+                      showBorder: false,
                       gradient: canSubmit
                           ? context.appReadingGradient
                           : LinearGradient(
@@ -179,21 +173,22 @@ class _SessionGoalSheetState extends State<SessionGoalSheet> {
                                 context.appCardElevated,
                               ],
                             ),
-                      radius: AppTheme.radiusMD,
-                    ),
-                    child: Text(
-                      '독서 시작하기',
-                      style: AppTheme.bodyLarge.copyWith(
-                        color: canSubmit
-                            ? context.appBg
-                            : context.appTextTertiary,
-                        fontWeight: FontWeight.w400,
+                      child: Center(
+                        child: Text(
+                          '독서 시작하기',
+                          style: AppTheme.bodyLarge.copyWith(
+                            color: canSubmit
+                                ? context.appBg
+                                : context.appTextTertiary,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
 
               // ── 자유 독서 버튼 ─────────────────────────────────
               Center(
@@ -234,30 +229,31 @@ class _GoalTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 44,
-      padding: const EdgeInsets.all(4),
-      decoration: AppTheme.smoothBox(
-        color: context.appControlBg,
-        radius: AppTheme.radiusMD,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _TabButton(
-              label: '시간 목표',
-              isSelected: isTimeGoal,
-              onTap: () => onChanged(true),
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        backgroundColor: context.appControlBg,
+        padding: const EdgeInsets.all(AppTheme.spaceXS),
+        child: Row(
+          children: [
+            Expanded(
+              child: _TabButton(
+                label: '시간 목표',
+                isSelected: isTimeGoal,
+                onTap: () => onChanged(true),
+              ),
             ),
-          ),
-          Expanded(
-            child: _TabButton(
-              label: '페이지 목표',
-              isSelected: !isTimeGoal,
-              onTap: () => onChanged(false),
+            Expanded(
+              child: _TabButton(
+                label: '페이지 목표',
+                isSelected: !isTimeGoal,
+                onTap: () => onChanged(false),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -278,18 +274,23 @@ class _TabButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothPill(
-          color: isSelected ? context.appPrimaryAccent : Colors.transparent,
-        ),
-        child: Text(
-          label,
-          style: AppTheme.bodySmall.copyWith(
-            color: isSelected ? Colors.white : context.appTextTertiary,
-            fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
+      child: SizedBox(
+        height: 36,
+        child: ChorokCard(
+          inner: isSelected,
+          showBorder: false,
+          backgroundColor: isSelected
+              ? context.appPrimaryAccent
+              : context.appBg.withValues(alpha: 0),
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: Text(
+              label,
+              style: AppTheme.bodySmall.copyWith(
+                color: isSelected ? AppTheme.darkBg : context.appTextTertiary,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
           ),
         ),
       ),
@@ -322,8 +323,8 @@ class _TimeGoalSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: AppTheme.spaceSM,
+          runSpacing: AppTheme.spaceSM,
           children: [
             ...presets.map(
               (min) => _PresetChip(
@@ -340,35 +341,36 @@ class _TimeGoalSection extends StatelessWidget {
           ],
         ),
         if (customMode) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Row(
             children: [
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCardElevated,
-                    radius: AppTheme.radiusMD,
-                    side: BorderSide.none,
-                  ),
-                  child: TextField(
-                    controller: customController,
-                    keyboardType: TextInputType.number,
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: context.appTextPrimary,
+                  child: ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceLG,
                     ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '분 단위로 입력',
-                      hintStyle: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextTertiary,
+                    child: TextField(
+                      controller: customController,
+                      keyboardType: TextInputType.number,
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '분 단위로 입력',
+                        hintStyle: AppTheme.bodyMedium.copyWith(
+                          color: context.appTextTertiary,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Text(
                 '분',
                 style: AppTheme.bodyMedium.copyWith(
@@ -401,25 +403,25 @@ class _PresetChip extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
+        child: SizedBox(
           height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          alignment: Alignment.center,
-          decoration: AppTheme.smoothPill(
-            color: isSelected
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            backgroundColor: isSelected
                 ? context.appAccentColor.withValues(alpha: 0.15)
                 : context.appControlBg,
-            side: BorderSide.none,
-          ),
-          child: Text(
-            label,
-            style: AppTheme.bodySmall.copyWith(
-              color: isSelected
-                  ? context.appAccentColor
-                  : context.appTextSecondary,
-              fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+            child: Center(
+              child: Text(
+                label,
+                style: AppTheme.bodySmall.copyWith(
+                  color: isSelected
+                      ? context.appAccentColor
+                      : context.appTextSecondary,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ),
           ),
         ),
@@ -460,39 +462,40 @@ class _PageGoalSection extends StatelessWidget {
             color: context.appTextSecondary,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
 
         // 입력 필드
         Row(
           children: [
             Expanded(
-              child: Container(
+              child: SizedBox(
                 height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: AppTheme.smoothBox(
-                  color: context.appControlBg,
-                  radius: AppTheme.radiusMD,
-                  side: BorderSide.none,
-                ),
-                child: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => onChanged(),
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: context.appTextPrimary,
+                child: ChorokCard(
+                  inner: true,
+                  showBorder: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceLG,
                   ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText:
-                        '목표 페이지 (예: ${(currentPage + 30).clamp(0, totalPages)})',
-                    hintStyle: AppTheme.bodyMedium.copyWith(
-                      color: context.appTextTertiary,
+                  child: TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => onChanged(),
+                    style: AppTheme.bodyMedium.copyWith(
+                      color: context.appTextPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText:
+                          '목표 페이지 (예: ${(currentPage + 30).clamp(0, totalPages)})',
+                      hintStyle: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextTertiary,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Text(
               '쪽',
               style: AppTheme.bodyMedium.copyWith(
@@ -504,7 +507,7 @@ class _PageGoalSection extends StatelessWidget {
 
         // 남은 쪽수
         if (remaining != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '$remaining쪽 남았어요',
             style: AppTheme.captionLarge.copyWith(

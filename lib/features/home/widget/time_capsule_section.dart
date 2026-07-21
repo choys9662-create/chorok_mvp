@@ -32,8 +32,12 @@ class TimeCapsuleSection extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   children: [
-                    const Text('⏳', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 8),
+                    // 이모지 장식 — 16→행 텍스트(16)
+                    const Text(
+                      '⏳',
+                      style: TextStyle(fontSize: AppTheme.fsRowText),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       '1년 전 오늘, 당신이 붙잡은 문장',
                       style: AppTheme.headingSmall.copyWith(
@@ -49,9 +53,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                   color: context.appCard,
                   shape: SmoothRectangleBorder(
                     smoothness: 0.6,
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.radiusLG * 1.8,
-                    ),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                     side: BorderSide.none,
                   ),
                 ),
@@ -74,7 +76,7 @@ class TimeCapsuleSection extends ConsumerWidget {
                         color: context.appTextTertiary,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceMD),
                     GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();
@@ -83,13 +85,15 @@ class TimeCapsuleSection extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
-                          vertical: 8,
+                          vertical: AppTheme.spaceSM,
                         ),
                         decoration: ShapeDecoration(
                           color: context.appPrimaryAccent.withValues(
                             alpha: 0.08,
                           ),
-                          shape: AppTheme.smoothShape(radius: 10),
+                          shape: AppTheme.smoothShape(
+                            radius: AppTheme.radiusOuter,
+                          ),
                         ),
                         child: Text(
                           '그때의 나는 무슨 생각을 했을까?',

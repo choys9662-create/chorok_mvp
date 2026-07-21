@@ -21,14 +21,17 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/repositories/follow_repository.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/chorok_refresh.dart';
 
 const _detailAccent = AppTheme.primaryLight;
-const _detailCard = Color(0xFF141414);
-const _detailText = Color(0xFFEDEDED);
-const _detailMuted = Color(0xFF8D928D);
+const _detailCard = AppTheme.darkCard;
+const _detailText = AppTheme.textPrimary;
+const _detailMuted = AppTheme.textSecondary;
 
 typedef _BookSentenceQuery = ({
   String bookId,
@@ -208,7 +211,12 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('취소', style: TextStyle(color: ctx.appTextTertiary)),
+            child: Text(
+              '취소',
+              style: AppTheme.supportingText.copyWith(
+                color: ctx.appTextTertiary,
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () {
@@ -222,7 +230,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
             },
             style: FilledButton.styleFrom(
               backgroundColor: ctx.appPrimaryAccent,
-              foregroundColor: Colors.white,
+              foregroundColor: AppTheme.primary,
             ),
             child: const Text('저장'),
           ),
@@ -465,7 +473,7 @@ class _BookDetailScreenState extends ConsumerState<BookDetailScreen> {
         : sentences.length;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appBg,
       bottomNavigationBar: _ContinueReadingBar(
         onContinue: () => _startSession(book),
         onAddSentence: () => _showSentenceMethodSheet(book),
@@ -605,8 +613,13 @@ class _ContinueReadingBar extends StatelessWidget {
     final bottom = MediaQuery.of(context).padding.bottom;
     return Container(
       height: 84 + bottom,
-      padding: EdgeInsets.fromLTRB(16, 20, 16, 12 + bottom),
-      color: const Color(0xFF080808),
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceLG,
+        AppTheme.screenPadding,
+        AppTheme.spaceMD + bottom,
+      ),
+      color: context.appBg,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -615,55 +628,56 @@ class _ContinueReadingBar extends StatelessWidget {
             label: '이어 읽기',
             child: GestureDetector(
               onTap: onContinue,
-              child: Container(
+              child: SizedBox(
                 width: 170,
                 height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.play_arrow_rounded,
-                      size: 16,
-                      color: Colors.black,
+                child: ChorokCard(
+                  padding: EdgeInsets.zero,
+                  backgroundColor: context.appPrimaryAccent,
+                  borderColor: context.appPrimaryAccent,
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.play_arrow_rounded,
+                          size: AppTheme.spaceLG,
+                          color: AppTheme.primary,
+                        ),
+                        const SizedBox(width: AppTheme.spaceXS),
+                        Text(
+                          '이어 읽기',
+                          style: AppTheme.supportingText.copyWith(
+                            color: AppTheme.primary,
+                            height: 1,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '이어 읽기',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w400,
-                        height: 1,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           Semantics(
             button: true,
             label: '문장 추가',
             child: GestureDetector(
               onTap: onAddSentence,
-              child: Container(
+              child: SizedBox(
                 width: 32,
                 height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.primaryLight, width: 1),
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  size: 22,
-                  color: AppTheme.primaryLight,
+                child: ChorokCard(
+                  inner: true,
+                  padding: EdgeInsets.zero,
+                  backgroundColor: context.appBg,
+                  borderColor: context.appPrimaryAccent,
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: AppTheme.sectionTitle.fontSize,
+                    color: AppTheme.primaryLight,
+                  ),
                 ),
               ),
             ),
@@ -693,70 +707,71 @@ class _SentenceMethodSheet extends StatelessWidget {
 
     return Container(
       decoration: ShapeDecoration(
-        color: const Color(0xFF080808),
+        color: context.appSurface,
         shape: SmoothRectangleBorder(
           smoothness: 0.6,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusOuter),
+          ),
         ),
       ),
-      padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 24),
+      padding: EdgeInsets.only(bottom: bottom + AppTheme.spaceXL),
       child: SafeArea(
         top: false,
         bottom: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppTheme.spaceSM,
           children: [
-            const ChorokSheetHandle(),
-            const SizedBox(height: 18),
-            Text(
-              '문장 기록',
-              style: const TextStyle(
-                color: _detailText,
-                fontSize: 20,
-                fontWeight: FontWeight.w400,
-                fontFamily: AppTheme.fontFamily,
+            const ChorokSheetHeader(title: '문장 기록'),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.screenPadding,
               ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _SentenceMethodTile(
-                    icon: Icons.text_fields_rounded,
-                    label: '직접적기',
-                    onTap: onWrite,
+              child: Column(
+                spacing: AppTheme.spaceSM,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SentenceMethodTile(
+                          icon: Icons.text_fields_rounded,
+                          label: '직접적기',
+                          onTap: onWrite,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: _SentenceMethodTile(
+                          icon: Icons.camera_alt_outlined,
+                          label: '사진찍기',
+                          onTap: onCamera,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _SentenceMethodTile(
-                    icon: Icons.camera_alt_outlined,
-                    label: '사진찍기',
-                    onTap: onCamera,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SentenceMethodTile(
+                          icon: Icons.image_outlined,
+                          label: '불러오기',
+                          onTap: onGallery,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: _SentenceMethodTile(
+                          icon: Icons.graphic_eq_rounded,
+                          label: '음성인식',
+                          onTap: onMic,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _SentenceMethodTile(
-                    icon: Icons.image_outlined,
-                    label: '불러오기',
-                    onTap: onGallery,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _SentenceMethodTile(
-                    icon: Icons.graphic_eq_rounded,
-                    label: '음성인식',
-                    onTap: onMic,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -783,32 +798,29 @@ class _SentenceMethodTile extends StatelessWidget {
       label: label,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        child: SizedBox(
           height: 88,
-          decoration: ShapeDecoration(
-            color: const Color(0xFF141414),
-            shape: SmoothRectangleBorder(
-              smoothness: 0.6,
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
-                width: 1,
-              ),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: AppTheme.primaryLight, size: 26),
-              const SizedBox(height: 9),
-              Text(
-                label,
-                style: AppTheme.bodySmall.copyWith(
-                  color: _detailText,
-                  fontWeight: FontWeight.w400,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: EdgeInsets.zero,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: AppTheme.spaceSM,
+              children: [
+                Icon(
+                  icon,
+                  color: context.appPrimaryAccent,
+                  size: AppTheme.spaceXL,
                 ),
-              ),
-            ],
+                Text(
+                  label,
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -851,13 +863,20 @@ class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
 
     return Container(
       decoration: ShapeDecoration(
-        color: const Color(0xFF080808),
+        color: context.appSurface,
         shape: SmoothRectangleBorder(
           smoothness: 0.6,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusOuter),
+          ),
         ),
       ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, bottom + 24),
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.spaceXL,
+        AppTheme.spaceLG,
+        AppTheme.spaceXL,
+        bottom + AppTheme.spaceXL,
+      ),
       child: SafeArea(
         top: false,
         bottom: false,
@@ -865,13 +884,13 @@ class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const ChorokSheetHandle(),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
             const Icon(
               Icons.graphic_eq_rounded,
               color: AppTheme.primaryLight,
-              size: 34,
+              size: AppTheme.space3XL,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               displayText,
               textAlign: TextAlign.center,
@@ -882,7 +901,7 @@ class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceLG),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -890,10 +909,8 @@ class _VoiceCaptureSheetState extends State<_VoiceCaptureSheet> {
                 onPressed: widget.onStop,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.primaryLight,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  foregroundColor: AppTheme.primary,
+                  shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
                 ),
                 child: const Text('중지'),
               ),
@@ -928,7 +945,12 @@ class _HeroSection extends StatelessWidget {
         : book.author;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, topPad + 18, 24, 26),
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        topPad + AppTheme.spaceLG,
+        AppTheme.screenPadding,
+        AppTheme.spaceXL,
+      ),
       child: Column(
         children: [
           Row(
@@ -945,35 +967,29 @@ class _HeroSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _detailAccent.withValues(alpha: 0.28),
-                      blurRadius: 36,
-                      offset: const Offset(0, 18),
-                      spreadRadius: -8,
-                    ),
-                  ],
-                ),
+              ChorokCard(
+                padding: EdgeInsets.zero,
+                showBorder: false,
+                hasShadow: true,
+                clipBehavior: Clip.antiAlias,
                 child: BookCover(
                   coverUrl: book.coverUrl,
                   gradientIndex: gradientIndex,
                   width: 150,
                   height: 230,
-                  radius: 10,
+                  radius: AppTheme.radiusOuter,
                 ),
               ),
               Positioned(
                 right: -48,
                 top: 0,
                 child: Column(
+                  spacing: AppTheme.spaceSM,
                   children: [
                     _StatBadge(
                       icon: Icons.circle,
@@ -981,7 +997,6 @@ class _HeroSection extends StatelessWidget {
                       color: context.appPrimaryAccent,
                       sideColor: context.appPrimaryAccent,
                     ),
-                    const SizedBox(height: 6),
                     _StatBadge(
                       icon: Icons.circle,
                       value: '$sentenceCount',
@@ -993,24 +1008,22 @@ class _HeroSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: AppTheme.sectionGap),
           Text(
             book.title,
-            style: AppTheme.headingMedium.copyWith(
+            style: AppTheme.sectionTitle.copyWith(
               color: _detailAccent,
-              fontSize: 24,
               height: 1.25,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             meta,
-            style: AppTheme.bodySmall.copyWith(
+            style: AppTheme.rowText.copyWith(
               color: _detailAccent.withValues(alpha: 0.92),
-              fontSize: 16,
               height: 1.4,
             ),
             maxLines: 1,
@@ -1116,17 +1129,19 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
         : 100.0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(48, 0, 48, 28),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding * 3,
+        0,
+        AppTheme.screenPadding * 3,
+        AppTheme.sectionGap,
+      ),
       child: Column(
         children: [
           Text(
             '현재 페이지',
-            style: AppTheme.captionSmall.copyWith(
-              color: _detailMuted,
-              fontSize: 12,
-            ),
+            style: AppTheme.supportingText.copyWith(color: _detailMuted),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -1135,17 +1150,16 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
                 icon: Icons.remove_rounded,
                 onTap: () => _setPage(_page - 1),
               ),
-              const SizedBox(width: 32),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 112,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF172017),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _detailAccent, width: 1),
-                  ),
+              const SizedBox(width: AppTheme.sectionGap),
+              SizedBox(
+                width: 112,
+                height: 60,
+                child: ChorokCard(
+                  inner: true,
+                  padding: EdgeInsets.zero,
+                  backgroundColor: context.appControlBg,
+                  borderColor: context.appPrimaryAccent,
+                  clipBehavior: Clip.antiAlias,
                   child: Theme(
                     data: Theme.of(context).copyWith(
                       inputDecorationTheme: const InputDecorationTheme(
@@ -1171,9 +1185,7 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
                               _commitText();
                               _focusNode.unfocus();
                             },
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w400,
+                            style: AppTheme.displayMedium.copyWith(
                               color: _detailAccent,
                               height: 1.05,
                             ),
@@ -1189,11 +1201,16 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
                               focusedErrorBorder: InputBorder.none,
                               disabledBorder: InputBorder.none,
                               isDense: true,
-                              contentPadding: EdgeInsets.fromLTRB(8, 10, 0, 10),
+                              contentPadding: EdgeInsets.fromLTRB(
+                                AppTheme.spaceSM,
+                                AppTheme.spaceMD,
+                                0,
+                                AppTheme.spaceMD,
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppTheme.spaceMD),
                         GestureDetector(
                           onTap: () {
                             _focusNode.requestFocus();
@@ -1208,20 +1225,20 @@ class _CurrentPageControlState extends State<_CurrentPageControl> {
                             color: _detailAccent,
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: AppTheme.spaceLG),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 32),
+              const SizedBox(width: AppTheme.sectionGap),
               _PageStepButton(
                 icon: Icons.add_rounded,
                 onTap: () => _setPage(_page + 1),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppTheme.spaceLG),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 3,
@@ -1308,15 +1325,20 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final progressPct = '${(progress * 100).toInt()}%';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        0,
+        AppTheme.screenPadding,
+        AppTheme.sectionGap,
+      ),
       child: Row(
         children: [
           _StatCard(label: '세션', value: '$sessions'),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppTheme.spaceSM),
           _StatCard(label: '누적 시간', value: '${totalHours.toStringAsFixed(1)}h'),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppTheme.spaceSM),
           _StatCard(label: '진행도', value: progressPct),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppTheme.spaceSM),
           _StatCard(label: '문장', value: '$sentenceCount'),
         ],
       ),
@@ -1331,24 +1353,25 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
+      child: SizedBox(
         height: 118,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: AppTheme.headingSmall.copyWith(color: _detailAccent),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: AppTheme.captionSmall.copyWith(color: _detailMuted),
-            ),
-          ],
+        child: ChorokCard(
+          showBorder: false,
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: AppTheme.spaceMD,
+            children: [
+              Text(
+                value,
+                style: AppTheme.rowText.copyWith(color: _detailAccent),
+              ),
+              Text(
+                label,
+                style: AppTheme.caption.copyWith(color: _detailMuted),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1370,26 +1393,20 @@ class _StatBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: sideColor, width: 1),
+    return ChorokCard(
+      inner: true,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSM,
+        vertical: AppTheme.spaceXS,
       ),
+      backgroundColor: context.appBg,
+      borderColor: sideColor,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 8, color: color),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: color,
-            ),
-          ),
+          Icon(icon, size: AppTheme.spaceSM, color: color),
+          const SizedBox(width: AppTheme.spaceXS),
+          Text(value, style: AppTheme.supportingText.copyWith(color: color)),
         ],
       ),
     );
@@ -1428,9 +1445,12 @@ class _DiscussedPassagesSection extends ConsumerWidget {
               height: 214,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                ),
                 itemCount: passages.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: AppTheme.spaceMD),
                 itemBuilder: (context, index) => _DiscussedPassageCard(
                   passage: passages[index],
                   prominent: index == 0,
@@ -1468,91 +1488,87 @@ class _DiscussedPassageCard extends StatelessWidget {
       child: GestureDetector(
         key: ValueKey('discussed-passage-card-${passage.id}'),
         onTap: onTap,
-        child: Container(
+        child: SizedBox(
           width: prominent ? 286 : 258,
-          padding: const EdgeInsets.all(14),
-          decoration: AppTheme.smoothBox(
-            color: prominent
-                ? _detailAccent.withValues(alpha: 0.08)
-                : _detailCard,
-            radius: 10,
-            side: BorderSide(
-              color: prominent
-                  ? _detailAccent.withValues(alpha: 0.45)
-                  : _detailMuted.withValues(alpha: 0.20),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const _PassageClusterMark(),
-                  const SizedBox(width: 7),
-                  Expanded(
+          child: ChorokCard(
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+            backgroundColor: prominent
+                ? context.primaryBg(0.08)
+                : context.appCard,
+            borderColor: prominent
+                ? context.appPrimaryAccent.withValues(alpha: 0.45)
+                : context.appBorder.withValues(alpha: 0.20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const _PassageClusterMark(),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Expanded(
+                      child: Text(
+                        '${passage.readerCount}명이 이 부분에 생각을 남겼어요',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.caption.copyWith(
+                          color: context.appPrimaryAccent.withValues(
+                            alpha: 0.88,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceSM),
+                Text(
+                  '“${passage.representativeText}”',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.body.copyWith(
+                    color: context.appTextPrimary.withValues(alpha: 0.92),
+                    height: 1.55,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+                if (preview != null)
+                  ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    backgroundColor: context.appBg.withValues(alpha: 0.18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceMD,
+                      vertical: AppTheme.spaceSM,
+                    ),
                     child: Text(
-                      '${passage.readerCount}명이 이 부분에 생각을 남겼어요',
-                      maxLines: 1,
+                      preview.thought,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: _detailAccent.withValues(alpha: 0.88),
+                      style: AppTheme.body.copyWith(
+                        color: context.appTextPrimary.withValues(alpha: 0.70),
+                        height: 1.4,
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '“${passage.representativeText}”',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.captionLarge.copyWith(
-                  color: _detailText.withValues(alpha: 0.92),
-                  height: 1.55,
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (preview != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 7,
-                  ),
-                  decoration: AppTheme.smoothBox(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    radius: 8,
-                    side: BorderSide.none,
-                  ),
-                  child: Text(
-                    preview.thought,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.captionSmall.copyWith(
-                      color: _detailText.withValues(alpha: 0.70),
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              const Spacer(),
-              Row(
-                children: [
-                  if (passage.pageNumber != null)
-                    Text(
-                      'p. ${passage.pageNumber}',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: _detailMuted,
+                const Spacer(),
+                Row(
+                  children: [
+                    if (passage.pageNumber != null)
+                      Text(
+                        'p. ${passage.pageNumber}',
+                        style: AppTheme.caption.copyWith(
+                          color: context.appTextSecondary,
+                        ),
                       ),
+                    const Spacer(),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: AppTheme.spaceMD,
+                      color: context.appTextSecondary.withValues(alpha: 0.72),
                     ),
-                  const Spacer(),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 14,
-                    color: _detailMuted.withValues(alpha: 0.72),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1636,7 +1652,9 @@ class _DiscussedPassageSheet extends StatelessWidget {
           color: context.appSurface,
           shape: SmoothRectangleBorder(
             smoothness: 0.6,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppTheme.radiusOuter),
+            ),
           ),
         ),
         child: SafeArea(
@@ -1645,72 +1663,71 @@ class _DiscussedPassageSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const ChorokSheetHeader(title: '이 대목에 남겨진 생각'),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const ChorokSheetHandle(),
-                    const SizedBox(height: 20),
-                    Text(
-                      '이 대목에 남겨진 생각',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: _detailAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
+                    SizedBox(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(15),
-                      decoration: AppTheme.smoothBox(
-                        color: _detailAccent.withValues(alpha: 0.08),
-                        radius: 10,
-                        side: BorderSide(
-                          color: _detailAccent.withValues(alpha: 0.30),
+                      child: ChorokCard(
+                        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                        backgroundColor: context.primaryBg(0.08),
+                        borderColor: context.appPrimaryAccent.withValues(
+                          alpha: 0.30,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '“${passage.representativeText}”',
+                                style: AppTheme.body.copyWith(
+                                  color: context.appTextPrimary.withValues(
+                                    alpha: 0.90,
+                                  ),
+                                  height: 1.65,
+                                ),
+                              ),
+                            ),
+                            if (passage.pageNumber != null) ...[
+                              const SizedBox(width: AppTheme.spaceMD),
+                              Text(
+                                'p. ${passage.pageNumber}',
+                                style: AppTheme.caption.copyWith(
+                                  color: context.appTextTertiary,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '“${passage.representativeText}”',
-                              style: AppTheme.captionLarge.copyWith(
-                                color: context.appTextPrimary.withValues(
-                                  alpha: 0.90,
-                                ),
-                                height: 1.65,
-                              ),
-                            ),
-                          ),
-                          if (passage.pageNumber != null) ...[
-                            const SizedBox(width: 10),
-                            Text(
-                              'p. ${passage.pageNumber}',
-                              style: AppTheme.captionSmall.copyWith(
-                                color: context.appTextTertiary,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceMD),
                     Text(
                       '${passage.readerCount}명의 독자가 이 부분에 머물렀어요',
-                      style: AppTheme.captionSmall.copyWith(
+                      style: AppTheme.caption.copyWith(
                         color: context.appTextTertiary,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppTheme.spaceLG),
                   ],
                 ),
               ),
               Expanded(
                 child: ListView.separated(
-                  padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 24),
+                  padding: EdgeInsets.fromLTRB(
+                    AppTheme.screenPadding,
+                    0,
+                    AppTheme.screenPadding,
+                    bottom + AppTheme.spaceXL,
+                  ),
                   itemCount: passage.members.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppTheme.spaceMD),
                   itemBuilder: (context, index) =>
                       _PassageThoughtCard(thought: passage.members[index]),
                 ),
@@ -1730,16 +1747,12 @@ class _PassageThoughtCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide(color: context.appBorderSubtle),
-      ),
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+      borderColor: context.appBorderSubtle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceMD,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1778,18 +1791,16 @@ class _PassageThoughtCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
           Text(
             thought.sentence,
-            style: AppTheme.captionSmall.copyWith(
+            style: AppTheme.bodyMedium.copyWith(
               color: context.appTextSecondary,
               height: 1.55,
             ),
           ),
-          const SizedBox(height: 10),
           Text(
             thought.thought,
-            style: AppTheme.captionLarge.copyWith(
+            style: AppTheme.bodyMedium.copyWith(
               color: context.appTextPrimary.withValues(alpha: 0.88),
               height: 1.55,
             ),
@@ -1831,9 +1842,12 @@ class _PopularThoughtsSection extends ConsumerWidget {
               height: 218,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                ),
                 itemCount: thoughts.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: AppTheme.spaceMD),
                 itemBuilder: (context, index) {
                   return _BookThoughtCard(
                     book: book,
@@ -1869,29 +1883,32 @@ class _BookInfoSectionState extends State<_BookInfoSection> {
     final authorIntro = _authorIntro(book.author);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 22),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceXS,
+        AppTheme.screenPadding,
+        AppTheme.spaceXL,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SectionHeader(title: '책 소개'),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+          ChorokCard(
+            showBorder: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   description,
-                  style: AppTheme.captionLarge.copyWith(
+                  style: AppTheme.bodyMedium.copyWith(
                     color: _detailText.withValues(alpha: 0.78),
                     height: 1.65,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppTheme.spaceLG),
                 Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
+                  spacing: AppTheme.spaceSM,
+                  runSpacing: AppTheme.spaceSM,
                   children: [
                     _BookInfoChip(label: book.author),
                     if (book.genre != null) _BookInfoChip(label: book.genre!),
@@ -1901,12 +1918,12 @@ class _BookInfoSectionState extends State<_BookInfoSection> {
                       const _BookInfoChip(label: 'ISBN'),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.spaceLG),
                 Text(
                   '작가',
                   style: AppTheme.captionSmall.copyWith(color: _detailAccent),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   authorIntro,
                   maxLines: _authorExpanded ? null : 2,
@@ -1921,7 +1938,7 @@ class _BookInfoSectionState extends State<_BookInfoSection> {
                     onTap: () =>
                         setState(() => _authorExpanded = !_authorExpanded),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 6),
+                      padding: const EdgeInsets.only(top: AppTheme.spaceSM),
                       child: Text(
                         _authorExpanded ? '접기' : '작가 더보기',
                         style: AppTheme.captionSmall.copyWith(
@@ -1978,9 +1995,12 @@ class _FollowingHighlightsSection extends ConsumerWidget {
               height: 190,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.screenPadding,
+                ),
                 itemCount: thoughts.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: AppTheme.spaceMD),
                 itemBuilder: (context, index) =>
                     _BookThoughtCard(book: book, thought: thoughts[index]),
               ),
@@ -2026,7 +2046,12 @@ class _ThoughtExplorerSectionState
         }
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              AppTheme.spaceLG,
+              AppTheme.screenPadding,
+              AppTheme.spaceSM,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2035,7 +2060,7 @@ class _ThoughtExplorerSectionState
                   value: _mode,
                   onChanged: (value) => setState(() => _mode = value),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppTheme.spaceMD),
                 if (thoughts.isEmpty)
                   _SocialEmptyState(
                     text: _mode == _ThoughtSortMode.following
@@ -2047,7 +2072,9 @@ class _ThoughtExplorerSectionState
                       .take(8)
                       .map(
                         (thought) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(
+                            bottom: AppTheme.spaceMD,
+                          ),
                           child: _BookThoughtListCard(
                             book: widget.book,
                             thought: thought,
@@ -2079,7 +2106,12 @@ class _ReviewsSummarySection extends ConsumerWidget {
         }
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 22),
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              AppTheme.spaceMD,
+              AppTheme.screenPadding,
+              AppTheme.spaceXL,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2088,7 +2120,9 @@ class _ReviewsSummarySection extends ConsumerWidget {
                     .take(3)
                     .map(
                       (review) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.only(
+                          bottom: AppTheme.spaceMD,
+                        ),
                         child: _ReviewSummaryCard(review: review),
                       ),
                     ),
@@ -2116,28 +2150,32 @@ class _SocialSectionShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
+      padding: const EdgeInsets.fromLTRB(
+        0,
+        AppTheme.spaceMD,
+        0,
+        AppTheme.spaceLG,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceMD,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Text(
-                  title,
-                  style: AppTheme.bodySmall.copyWith(color: _detailAccent),
-                ),
-                const Spacer(),
-                if (trailing != null)
-                  Text(
-                    trailing!,
-                    style: AppTheme.captionSmall.copyWith(color: _detailMuted),
-                  ),
-              ],
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
+            ),
+            child: ChorokSectionHeader(
+              title: title,
+              trailing: trailing == null
+                  ? null
+                  : Text(
+                      trailing!,
+                      style: AppTheme.supportingText.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
             ),
           ),
-          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -2154,12 +2192,16 @@ class _SocialSkeletonRow extends StatelessWidget {
       height: 190,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
         itemCount: 2,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (_, _) => Container(
+        separatorBuilder: (_, _) => const SizedBox(width: AppTheme.spaceMD),
+        itemBuilder: (_, _) => SizedBox(
           width: 260,
-          decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+          child: ChorokCard(
+            showBorder: false,
+            padding: EdgeInsets.zero,
+            child: const SizedBox.expand(),
+          ),
         ),
       ),
     );
@@ -2245,110 +2287,107 @@ class _BookThoughtCardState extends ConsumerState<_BookThoughtCard> {
   @override
   Widget build(BuildContext context) {
     final thought = widget.thought;
-    return Container(
+    return SizedBox(
       width: widget.prominent ? 286 : 258,
-      padding: const EdgeInsets.all(14),
-      decoration: AppTheme.smoothBox(
-        color: widget.prominent
-            ? _detailAccent.withValues(alpha: 0.10)
-            : _detailCard,
-        radius: 10,
-        side: BorderSide(
-          color: widget.prominent
-              ? _detailAccent.withValues(alpha: 0.70)
-              : _detailMuted.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: _openProfile,
-                child: _ThoughtAvatar(thought: thought),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+        backgroundColor: widget.prominent
+            ? context.primaryBg(0.10)
+            : context.appCard,
+        borderColor: widget.prominent
+            ? context.appPrimaryAccent.withValues(alpha: 0.70)
+            : context.appBorder.withValues(alpha: 0.25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                GestureDetector(
                   onTap: _openProfile,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        thought.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTheme.captionLarge.copyWith(
-                          color: _detailText,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (thought.username != null &&
-                          thought.username!.isNotEmpty &&
-                          thought.username != thought.displayName)
+                  child: _ThoughtAvatar(thought: thought),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _openProfile,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          '@${thought.username}',
+                          thought.displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTheme.captionSmall.copyWith(
-                            color: _detailMuted,
+                          style: AppTheme.captionLarge.copyWith(
+                            color: _detailText,
                             height: 1.2,
                           ),
                         ),
-                    ],
+                        if (thought.username != null &&
+                            thought.username!.isNotEmpty &&
+                            thought.username != thought.displayName)
+                          Text(
+                            '@${thought.username}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.captionSmall.copyWith(
+                              color: _detailMuted,
+                              height: 1.2,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _FollowMiniButton(
-                isFollowing: _isFollowing,
-                isBusy: _isMutating,
-                onTap: _toggleFollow,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: _openSentence,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    thought.thought,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.captionLarge.copyWith(
-                      color: _detailText.withValues(alpha: 0.88),
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(9),
-                    decoration: AppTheme.smoothBox(
-                      color: Colors.black.withValues(alpha: 0.22),
-                      radius: 8,
-                      side: BorderSide.none,
-                    ),
-                    child: Text(
-                      '“${thought.sentence}”',
-                      maxLines: 2,
+                const SizedBox(width: AppTheme.spaceSM),
+                _FollowMiniButton(
+                  isFollowing: _isFollowing,
+                  isBusy: _isMutating,
+                  onTap: _toggleFollow,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.spaceMD),
+            Expanded(
+              child: GestureDetector(
+                onTap: _openSentence,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceMD,
+                  children: [
+                    Text(
+                      thought.thought,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: _detailMuted,
-                        height: 1.45,
+                      style: AppTheme.captionLarge.copyWith(
+                        color: _detailText.withValues(alpha: 0.88),
+                        height: 1.55,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: ChorokCard(
+                        inner: true,
+                        showBorder: false,
+                        backgroundColor: context.appBg.withValues(alpha: 0.22),
+                        padding: const EdgeInsets.all(AppTheme.spaceSM),
+                        child: Text(
+                          '“${thought.sentence}”',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.caption.copyWith(
+                            color: context.appTextSecondary,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          _ThoughtMetaRow(thought: thought),
-        ],
+            _ThoughtMetaRow(thought: thought),
+          ],
+        ),
       ),
     );
   }
@@ -2381,24 +2420,18 @@ class _BookThoughtListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _openSentence(context),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: AppTheme.smoothBox(
-          color: _detailCard,
-          radius: 10,
-          side: BorderSide(
-            color: thought.isFollowing
-                ? _detailAccent.withValues(alpha: 0.42)
-                : _detailMuted.withValues(alpha: 0.20),
-          ),
-        ),
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+        borderColor: thought.isFollowing
+            ? context.appPrimaryAccent.withValues(alpha: 0.42)
+            : context.appBorder.withValues(alpha: 0.20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 _ThoughtAvatar(thought: thought),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2428,7 +2461,7 @@ class _BookThoughtListCard extends StatelessWidget {
                 if (thought.isFollowing) const _FollowingPill(),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppTheme.spaceMD),
             Text(
               thought.thought,
               maxLines: 3,
@@ -2438,7 +2471,7 @@ class _BookThoughtListCard extends StatelessWidget {
                 height: 1.55,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               '“${thought.sentence}”',
               maxLines: 2,
@@ -2448,7 +2481,7 @@ class _BookThoughtListCard extends StatelessWidget {
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppTheme.spaceMD),
             _ThoughtMetaRow(thought: thought),
           ],
         ),
@@ -2464,23 +2497,25 @@ class _ThoughtAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 30,
       height: 30,
-      alignment: Alignment.center,
-      decoration: AppTheme.smoothBox(
-        color: thought.isFollowing
-            ? _detailAccent.withValues(alpha: 0.18)
-            : Colors.white.withValues(alpha: 0.06),
-        radius: 9,
-        side: BorderSide.none,
-      ),
-      child: Text(
-        thought.displayName.characters.first,
-        style: TextStyle(
-          fontSize: 13,
-          color: thought.isFollowing ? _detailAccent : _detailMuted,
-          fontWeight: FontWeight.w500,
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        backgroundColor: thought.isFollowing
+            ? context.primaryBg(0.18)
+            : context.appTextPrimary.withValues(alpha: 0.06),
+        child: Center(
+          child: Text(
+            thought.displayName.characters.first,
+            style: AppTheme.supportingText.copyWith(
+              color: thought.isFollowing
+                  ? context.appPrimaryAccent
+                  : context.appTextSecondary,
+            ),
+          ),
         ),
       ),
     );
@@ -2502,24 +2537,26 @@ class _FollowMiniButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: isBusy ? null : onTap,
-      child: Container(
+      child: SizedBox(
         height: 28,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(
-          color: isFollowing
-              ? _detailAccent.withValues(alpha: 0.14)
-              : AppTheme.primaryLight,
-          radius: 9,
-          side: isFollowing
-              ? BorderSide(color: _detailAccent.withValues(alpha: 0.48))
-              : BorderSide.none,
-        ),
-        child: Text(
-          isFollowing ? '팔로잉' : '팔로우',
-          style: AppTheme.captionSmall.copyWith(
-            color: isFollowing ? _detailAccent : Colors.black,
-            height: 1.1,
+        child: ChorokCard(
+          inner: true,
+          showBorder: isFollowing,
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+          backgroundColor: isFollowing
+              ? context.primaryBg(0.14)
+              : context.appPrimaryAccent,
+          borderColor: context.appPrimaryAccent.withValues(alpha: 0.48),
+          child: Center(
+            child: Text(
+              isFollowing ? '팔로잉' : '팔로우',
+              style: AppTheme.caption.copyWith(
+                color: isFollowing
+                    ? context.appPrimaryAccent
+                    : AppTheme.primary,
+                height: 1.1,
+              ),
+            ),
           ),
         ),
       ),
@@ -2532,17 +2569,18 @@ class _FollowingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: AppTheme.smoothBox(
-        color: _detailAccent.withValues(alpha: 0.14),
-        radius: 8,
-        side: BorderSide.none,
+    return ChorokCard(
+      inner: true,
+      showBorder: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSM,
+        vertical: AppTheme.spaceXS,
       ),
+      backgroundColor: context.primaryBg(0.14),
       child: Text(
         '팔로잉',
-        style: AppTheme.captionSmall.copyWith(
-          color: _detailAccent,
+        style: AppTheme.caption.copyWith(
+          color: context.appPrimaryAccent,
           height: 1.1,
         ),
       ),
@@ -2564,18 +2602,18 @@ class _ThoughtMetaRow extends StatelessWidget {
           size: 13,
           color: _detailAccent.withValues(alpha: 0.86),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.spaceXS),
         Text(
           '${thought.likeCount}',
           style: AppTheme.captionSmall.copyWith(color: _detailMuted),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppTheme.spaceMD),
         Icon(
           Icons.chat_bubble_rounded,
           size: 12,
           color: _detailMuted.withValues(alpha: 0.72),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppTheme.spaceXS),
         Text(
           '${thought.commentCount}',
           style: AppTheme.captionSmall.copyWith(color: _detailMuted),
@@ -2597,16 +2635,20 @@ class _BookInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: AppTheme.smoothBox(
-        color: Colors.white.withValues(alpha: 0.05),
-        radius: 8,
-        side: BorderSide(color: _detailMuted.withValues(alpha: 0.18)),
+    return ChorokCard(
+      inner: true,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSM,
+        vertical: AppTheme.spaceXS,
       ),
+      backgroundColor: context.appTextPrimary.withValues(alpha: 0.05),
+      borderColor: context.appTextSecondary.withValues(alpha: 0.18),
       child: Text(
         label,
-        style: AppTheme.captionSmall.copyWith(color: _detailMuted, height: 1.1),
+        style: AppTheme.caption.copyWith(
+          color: context.appTextSecondary,
+          height: 1.1,
+        ),
       ),
     );
   }
@@ -2623,28 +2665,31 @@ class _ThoughtSegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 38,
-      padding: const EdgeInsets.all(3),
-      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
-      child: Row(
-        children: [
-          _SegmentButton(
-            label: '인기',
-            selected: value == _ThoughtSortMode.popular,
-            onTap: () => onChanged(_ThoughtSortMode.popular),
-          ),
-          _SegmentButton(
-            label: '최신',
-            selected: value == _ThoughtSortMode.recent,
-            onTap: () => onChanged(_ThoughtSortMode.recent),
-          ),
-          _SegmentButton(
-            label: '팔로잉',
-            selected: value == _ThoughtSortMode.following,
-            onTap: () => onChanged(_ThoughtSortMode.following),
-          ),
-        ],
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        padding: const EdgeInsets.all(AppTheme.spaceXS),
+        child: Row(
+          children: [
+            _SegmentButton(
+              label: '인기',
+              selected: value == _ThoughtSortMode.popular,
+              onTap: () => onChanged(_ThoughtSortMode.popular),
+            ),
+            _SegmentButton(
+              label: '최신',
+              selected: value == _ThoughtSortMode.recent,
+              onTap: () => onChanged(_ThoughtSortMode.recent),
+            ),
+            _SegmentButton(
+              label: '팔로잉',
+              selected: value == _ThoughtSortMode.following,
+              onTap: () => onChanged(_ThoughtSortMode.following),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2666,22 +2711,29 @@ class _SegmentButton extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: selected
-              ? AppTheme.smoothBox(
-                  color: _detailAccent.withValues(alpha: 0.18),
-                  radius: 8,
-                  side: BorderSide.none,
-                )
-              : null,
-          child: Text(
-            label,
-            style: AppTheme.captionSmall.copyWith(
-              color: selected ? _detailAccent : _detailMuted,
-            ),
-          ),
-        ),
+        child: selected
+            ? ChorokCard(
+                inner: true,
+                showBorder: false,
+                padding: EdgeInsets.zero,
+                backgroundColor: context.primaryBg(0.18),
+                child: Center(
+                  child: Text(
+                    label,
+                    style: AppTheme.caption.copyWith(
+                      color: context.appPrimaryAccent,
+                    ),
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  label,
+                  style: AppTheme.caption.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -2694,14 +2746,19 @@ class _SocialEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 22),
-      alignment: Alignment.center,
-      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
-      child: Text(
-        text,
-        style: AppTheme.captionLarge.copyWith(color: _detailMuted),
+      child: ChorokCard(
+        showBorder: false,
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXL),
+        child: Center(
+          child: Text(
+            text,
+            style: AppTheme.supportingText.copyWith(
+              color: context.appTextSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2714,9 +2771,9 @@ class _ReviewSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: AppTheme.smoothBox(color: _detailCard, radius: 10),
+    return ChorokCard(
+      showBorder: false,
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2745,7 +2802,7 @@ class _ReviewSummaryCard extends StatelessWidget {
                 ),
               ),
               if (review.isFollowing) const _FollowingPill(),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Text(
                 '★ ${review.starRating}',
                 style: AppTheme.captionSmall.copyWith(color: _detailAccent),
@@ -2753,7 +2810,7 @@ class _ReviewSummaryCard extends StatelessWidget {
             ],
           ),
           if (review.memorableLine?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppTheme.spaceMD),
             Text(
               '“${review.memorableLine!.trim()}”',
               maxLines: 2,
@@ -2765,7 +2822,7 @@ class _ReviewSummaryCard extends StatelessWidget {
             ),
           ],
           if (review.legacy?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               review.legacy!.trim(),
               maxLines: 3,
@@ -2800,19 +2857,40 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Text(
-      title,
-      style: AppTheme.bodySmall.copyWith(color: _detailAccent),
-    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-      child: Center(
-        child: onTap == null
-            ? text
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spaceSM,
+        AppTheme.screenPadding,
+        AppTheme.spaceLG,
+      ),
+      child: ChorokSectionHeader(
+        title: title,
+        trailing: onTap == null
+            ? null
             : Semantics(
                 button: true,
                 label: '$title 전체보기',
-                child: GestureDetector(onTap: onTap, child: text),
+                child: GestureDetector(
+                  onTap: onTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '전체보기',
+                        style: AppTheme.supportingText.copyWith(
+                          color: context.appPrimaryAccent,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceXS),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: AppTheme.spaceLG,
+                        color: context.appPrimaryAccent,
+                      ),
+                    ],
+                  ),
+                ),
               ),
       ),
     );
@@ -2828,51 +2906,44 @@ class _SentenceEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+        vertical: AppTheme.spaceSM,
+      ),
       child: GestureDetector(
         onTap: onAdd,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 28),
-          decoration: AppTheme.smoothBox(
-            color: _detailCard,
-            radius: 10,
-            side: BorderSide(
-              color: hasError ? Colors.red.shade400 : _detailMuted,
-              width: 1,
-            ),
-          ),
+        child: ChorokCard(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXL),
+          borderColor: hasError
+              ? AppTheme.warningColor
+              : context.appTextSecondary,
           child: Column(
             children: [
               Icon(
                 Icons.format_quote_rounded,
-                size: 28,
-                color: _detailAccent.withValues(alpha: 0.6),
+                size: AppTheme.spaceXL,
+                color: context.appPrimaryAccent.withValues(alpha: 0.6),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppTheme.spaceSM),
               Text(
                 hasError ? '문장을 불러오지 못했어요' : '마음에 남는 문장을 기록해보세요',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: _detailMuted,
-                  fontWeight: FontWeight.w400,
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextSecondary,
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
+              const SizedBox(height: AppTheme.spaceMD),
+              ChorokCard(
+                inner: true,
+                showBorder: false,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 7,
+                  horizontal: AppTheme.spaceMD,
+                  vertical: AppTheme.spaceSM,
                 ),
-                decoration: AppTheme.smoothBox(
-                  color: _detailAccent.withValues(alpha: 0.12),
-                  radius: 10,
-                ),
+                backgroundColor: context.primaryBg(0.12),
                 child: Text(
                   '첫 문장 추가하기',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: _detailAccent,
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appPrimaryAccent,
                   ),
                 ),
               ),
@@ -2894,49 +2965,44 @@ class _SentenceItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasThought = sentence.thought != null && sentence.thought!.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+        vertical: AppTheme.spaceXS,
+      ),
       child: Semantics(
         button: true,
         label: hasThought ? '생각이 기록된 문장' : '문장에 생각 추가',
         child: GestureDetector(
           onTap: onEditThought,
-          child: Container(
+          child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 70),
-            padding: const EdgeInsets.fromLTRB(14, 13, 16, 13),
-            decoration: AppTheme.smoothBox(
-              color: _detailCard,
-              radius: 10,
-              side: hasThought
-                  ? const BorderSide(color: _detailAccent, width: 1)
-                  : BorderSide.none,
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
+            child: ChorokCard(
+              showBorder: hasThought,
+              borderColor: context.appPrimaryAccent,
+              padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: ChorokListRow(
+                  leading: SizedBox(
                     width: 40,
                     child: Text(
                       sentence.pageNumber != null
                           ? '${sentence.pageNumber}p'
                           : '',
-                      style: AppTheme.captionSmall.copyWith(
-                        color: _detailMuted,
+                      style: AppTheme.caption.copyWith(
+                        color: context.appTextSecondary,
                         height: 1.55,
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Text(
-                      sentence.content,
-                      style: AppTheme.captionLarge.copyWith(
-                        height: 1.55,
-                        color: _detailText.withValues(alpha: 0.72),
-                      ),
+                  title: Text(
+                    sentence.content,
+                    style: AppTheme.body.copyWith(
+                      height: 1.55,
+                      color: context.appTextPrimary.withValues(alpha: 0.72),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -2952,21 +3018,23 @@ class _SentenceLoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.screenPadding,
+        vertical: AppTheme.spaceMD,
+      ),
+      child: SizedBox(
         height: 96,
-        alignment: Alignment.center,
-        decoration: AppTheme.smoothBox(
-          color: _detailCard,
-          radius: 10,
-          side: const BorderSide(color: _detailMuted),
-        ),
-        child: const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: _detailAccent,
+        child: ChorokCard(
+          borderColor: context.appTextSecondary,
+          child: const Center(
+            child: SizedBox(
+              width: AppTheme.spaceLG,
+              height: AppTheme.spaceLG,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _detailAccent,
+              ),
+            ),
           ),
         ),
       ),
@@ -3028,7 +3096,9 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboardInset = media.viewInsets.bottom;
-    final bottomPadding = keyboardInset > 0 ? 24.0 : media.padding.bottom + 24;
+    final bottomPadding = keyboardInset > 0
+        ? AppTheme.spaceXL
+        : media.padding.bottom + AppTheme.spaceXL;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
@@ -3039,7 +3109,9 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
           color: context.appSurface,
           shape: SmoothRectangleBorder(
             smoothness: 0.6,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppTheme.radiusOuter),
+            ),
           ),
         ),
         child: SafeArea(
@@ -3047,53 +3119,53 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
           bottom: false,
           child: SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding),
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.spaceXL,
+              AppTheme.spaceLG,
+              AppTheme.spaceXL,
+              bottomPadding,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ChorokSheetHandle(),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppTheme.spaceLG),
                 Row(
                   children: [
                     Icon(
                       Icons.edit_note_rounded,
-                      size: 19,
+                      size: AppTheme.spaceLG,
                       color: context.appPrimaryAccent,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       '내 생각 수정',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w400,
+                      style: AppTheme.sectionTitle.copyWith(
                         color: context.appTextPrimary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Container(
+                const SizedBox(height: AppTheme.spaceLG),
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: AppTheme.smoothBox(
-                    color: context.appCard,
-                    radius: 10,
-                    side: BorderSide.none,
-                  ),
-                  child: Text(
-                    widget.sentence.content,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appTextSecondary,
-                      height: 1.65,
-                      fontStyle: FontStyle.italic,
+                  child: ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+                    child: Text(
+                      widget.sentence.content,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.supportingText.copyWith(
+                        color: context.appTextSecondary,
+                        height: 1.65,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppTheme.spaceLG),
                 _SheetTextField(
                   controller: _thoughtCtrl,
                   focusNode: _focusNode,
@@ -3102,13 +3174,15 @@ class _EditThoughtSheetState extends ConsumerState<_EditThoughtSheet> {
                   maxLines: 8,
                 ),
                 if (_hasError) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.spaceSM),
                   Text(
                     '저장에 실패했어요. 다시 시도해보세요.',
-                    style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                    style: AppTheme.supportingText.copyWith(
+                      color: AppTheme.warningColor,
+                    ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: AppTheme.spaceLG),
                 _SheetActionButton(
                   label: '저장하기',
                   enabled: !_isSaving,
@@ -3231,11 +3305,21 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('계속 작성', style: TextStyle(color: ctx.appTextTertiary)),
+            child: Text(
+              '계속 작성',
+              style: AppTheme.supportingText.copyWith(
+                color: ctx.appTextTertiary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('나가기', style: TextStyle(color: Colors.red)),
+            child: Text(
+              '나가기',
+              style: AppTheme.supportingText.copyWith(
+                color: AppTheme.warningColor,
+              ),
+            ),
           ),
         ],
       ),
@@ -3252,7 +3336,9 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
     final maxSheetHeight = availableHeight
         .clamp(320.0, media.size.height * 0.92)
         .toDouble();
-    final bottomPadding = keyboardInset > 0 ? 24.0 : media.padding.bottom + 24;
+    final bottomPadding = keyboardInset > 0
+        ? AppTheme.spaceXL
+        : media.padding.bottom + AppTheme.spaceXL;
 
     return PopScope(
       canPop: !_hasInput,
@@ -3272,7 +3358,9 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
             color: context.appSurface,
             shape: SmoothRectangleBorder(
               smoothness: 0.6,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppTheme.radiusOuter),
+              ),
             ),
           ),
           child: SafeArea(
@@ -3280,50 +3368,49 @@ class _AddSentenceSheetState extends ConsumerState<_AddSentenceSheet> {
             bottom: false,
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.fromLTRB(24, 16, 24, bottomPadding),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.spaceXL,
+                AppTheme.spaceLG,
+                AppTheme.spaceXL,
+                bottomPadding,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const ChorokSheetHandle(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppTheme.spaceLG),
 
                   // 헤더
                   Row(
                     children: [
-                      Container(
+                      SizedBox(
                         width: 32,
                         height: 32,
-                        decoration: ShapeDecoration(
-                          color: context.appPrimaryAccent.withValues(
-                            alpha: 0.12,
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          padding: EdgeInsets.zero,
+                          backgroundColor: context.primaryBg(0.12),
+                          child: Icon(
+                            Icons.format_quote_rounded,
+                            color: context.appPrimaryAccent,
+                            size: AppTheme.spaceLG,
                           ),
-                          shape: SmoothRectangleBorder(
-                            smoothness: 0.6,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.format_quote_rounded,
-                          color: context.appPrimaryAccent,
-                          size: 17,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AppTheme.spaceMD),
                       Text(
                         '문장 추가',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w400,
+                        style: AppTheme.sectionTitle.copyWith(
                           color: context.appTextPrimary,
-                          letterSpacing: -0.3,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.spaceMD),
                   _SentenceStepHeader(isWritingThought: _isWritingThought),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppTheme.spaceLG),
 
                   if (_isWritingThought)
                     _BookThoughtStep(
@@ -3370,7 +3457,7 @@ class _SentenceStepHeader extends StatelessWidget {
         Expanded(
           child: Container(
             height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
+            margin: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSM),
             color: context.appDivider,
           ),
         ),
@@ -3398,32 +3485,28 @@ class _SentenceStepBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        SizedBox(
           width: 22,
           height: 22,
-          alignment: Alignment.center,
-          decoration: ShapeDecoration(
-            color: active ? context.appPrimaryAccent : context.appCard,
-            shape: AppTheme.smoothShape(radius: 10),
-          ),
-          child: Text(
-            number,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: active ? Colors.black : context.appTextTertiary,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: EdgeInsets.zero,
+            backgroundColor: active
+                ? context.appPrimaryAccent
+                : context.appCard,
+            child: Center(
+              child: Text(
+                number,
+                style: AppTheme.supportingText.copyWith(
+                  color: active ? AppTheme.primary : context.appTextTertiary,
+                ),
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            color: color,
-          ),
-        ),
+        const SizedBox(width: AppTheme.spaceSM),
+        Text(label, style: AppTheme.supportingText.copyWith(color: color)),
       ],
     );
   }
@@ -3464,74 +3547,69 @@ class _BookSentenceStep extends StatelessWidget {
           accentColor: context.appPrimaryAccent,
           onChanged: onChanged,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppTheme.spaceMD),
         Row(
           children: [
-            Container(
+            SizedBox(
               width: 88,
               height: 36,
-              decoration: AppTheme.smoothBox(
-                color: context.appCard,
-                radius: 10,
-                side: BorderSide.none,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                children: [
-                  Text(
-                    'p.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: context.appTextTertiary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: TextField(
-                      controller: pageCtrl,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextPrimary,
+              child: ChorokCard(
+                inner: true,
+                showBorder: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceMD,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'p.',
+                      style: AppTheme.supportingText.copyWith(
+                        color: context.appTextTertiary,
                       ),
-                      decoration: InputDecoration(
-                        hintText: '페이지',
-                        hintStyle: TextStyle(
-                          fontSize: 12,
-                          color: context.appTextTertiary,
+                    ),
+                    const SizedBox(width: AppTheme.spaceXS),
+                    Expanded(
+                      child: TextField(
+                        controller: pageCtrl,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        style: AppTheme.supportingText.copyWith(
+                          color: context.appTextPrimary,
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        decoration: InputDecoration(
+                          hintText: '페이지',
+                          hintStyle: AppTheme.supportingText.copyWith(
+                            color: context.appTextTertiary,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        cursorColor: context.appPrimaryAccent,
+                        cursorWidth: 1.5,
                       ),
-                      cursorColor: context.appPrimaryAccent,
-                      cursorWidth: 1.5,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const Spacer(),
             Text(
               '${contentCtrl.text.length}자',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTheme.supportingText.copyWith(
                 color: context.appTextTertiary,
-                fontWeight: FontWeight.w400,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: AppTheme.spaceLG),
         _SheetActionButton(
           label: '생각 쓰기',
           enabled: hasInput && !isSaving,
           loading: false,
           onTap: onContinue,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTheme.spaceSM),
         SizedBox(
           width: double.infinity,
           height: 42,
@@ -3539,9 +3617,7 @@ class _BookSentenceStep extends StatelessWidget {
             onPressed: (hasInput && !isSaving) ? onSave : null,
             child: Text(
               '문장만 저장',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+              style: AppTheme.rowText.copyWith(
                 color: hasInput ? context.appTextTertiary : context.appBorder,
               ),
             ),
@@ -3578,27 +3654,24 @@ class _BookThoughtStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
+        SizedBox(
           width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: 10,
-            side: BorderSide.none,
-          ),
-          child: Text(
-            sentence,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              color: context.appTextSecondary,
-              height: 1.65,
-              fontStyle: FontStyle.italic,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+            child: Text(
+              sentence,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextSecondary,
+                height: 1.65,
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTheme.spaceSM),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton.icon(
@@ -3607,45 +3680,44 @@ class _BookThoughtStep extends StatelessWidget {
             label: const Text('문장 수정'),
             style: TextButton.styleFrom(
               foregroundColor: context.appTextTertiary,
-              textStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
+              textStyle: AppTheme.supportingText,
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTheme.spaceSM),
         Row(
           children: [
             Icon(
               Icons.edit_note_rounded,
-              size: 13,
+              size: AppTheme.spaceMD,
               color: context.appTextTertiary,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppTheme.spaceXS),
             Text(
               '내 생각',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+              style: AppTheme.supportingText.copyWith(
                 color: context.appTextTertiary,
               ),
             ),
-            const SizedBox(width: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(
-                color: context.appTextTertiary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+            const SizedBox(width: AppTheme.spaceXS),
+            ChorokCard(
+              inner: true,
+              showBorder: false,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceXS,
+                vertical: AppTheme.spaceXS,
               ),
+              backgroundColor: context.appTextTertiary.withValues(alpha: 0.15),
               child: Text(
                 '선택',
-                style: TextStyle(fontSize: 10, color: context.appTextTertiary),
+                style: AppTheme.caption.copyWith(
+                  color: context.appTextTertiary,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppTheme.spaceSM),
         _SheetTextField(
           controller: thoughtCtrl,
           focusNode: thoughtFocus,
@@ -3654,13 +3726,15 @@ class _BookThoughtStep extends StatelessWidget {
           maxLines: 8,
         ),
         if (hasError) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '저장에 실패했어요. 다시 시도해보세요.',
-            style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+            style: AppTheme.supportingText.copyWith(
+              color: AppTheme.warningColor,
+            ),
           ),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: AppTheme.spaceLG),
         _SheetActionButton(
           label: '저장하기',
           enabled: canSave,
@@ -3696,29 +3770,29 @@ class _SheetActionButton extends StatelessWidget {
           color: enabled
               ? null
               : context.appPrimaryAccent.withValues(alpha: 0.2),
-          shape: AppTheme.smoothShape(radius: 10),
+          shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: enabled ? onTap : null,
-            customBorder: AppTheme.smoothShape(radius: 10),
+            customBorder: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
             child: Center(
               child: loading
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                      width: AppTheme.spaceLG,
+                      height: AppTheme.spaceLG,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.black,
+                        color: AppTheme.primary,
                       ),
                     )
                   : Text(
                       label,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: enabled ? Colors.black : context.appTextTertiary,
+                      style: AppTheme.rowText.copyWith(
+                        color: enabled
+                            ? AppTheme.primary
+                            : context.appTextTertiary,
                       ),
                     ),
             ),
@@ -3750,28 +3824,21 @@ class _AccentTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
+    return ChorokCard(
+      inner: true,
+      showBorder: false,
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               width: 3,
-              margin: const EdgeInsets.symmetric(vertical: 14, horizontal: 0),
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                ),
-              ),
+              margin: const EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
+              color: accentColor,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: TextField(
                 controller: controller,
@@ -3781,29 +3848,27 @@ class _AccentTextField extends StatelessWidget {
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 onChanged: onChanged,
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTheme.rowText.copyWith(
                   color: context.appTextPrimary,
                   height: 1.7,
-                  fontStyle: FontStyle.italic,
                 ),
                 decoration: InputDecoration(
                   hintText: hintText,
-                  hintStyle: TextStyle(
-                    fontSize: 16,
+                  hintStyle: AppTheme.rowText.copyWith(
                     color: context.appTextTertiary,
                     height: 1.7,
-                    fontStyle: FontStyle.italic,
                   ),
                   border: InputBorder.none,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spaceLG,
+                  ),
                 ),
                 cursorColor: accentColor,
                 cursorWidth: 1.5,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: AppTheme.spaceLG),
           ],
         ),
       ),
@@ -3828,13 +3893,13 @@ class _SheetTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
+    return ChorokCard(
+      inner: true,
+      showBorder: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceMD,
+        vertical: AppTheme.spaceMD,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
@@ -3842,15 +3907,13 @@ class _SheetTextField extends StatelessWidget {
         maxLines: maxLines,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
-        style: TextStyle(
-          fontSize: 16,
+        style: AppTheme.rowText.copyWith(
           color: context.appTextPrimary,
           height: 1.6,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 16,
+          hintStyle: AppTheme.rowText.copyWith(
             color: context.appTextTertiary,
             height: 1.6,
           ),

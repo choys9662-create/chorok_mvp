@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
 
-const Color _kLabel = Color(0xFF7A8597);
-
 /// 레이더 차트 — 독서 습관 5축 비교 (이번 달 vs 지난 달)
 ///
 /// [current]  이번 달 값 리스트 (0.0 ~ 1.0, 5개)
@@ -40,8 +38,8 @@ class HabitRadarChartWidget extends StatelessWidget {
                 tickBorderData: BorderSide.none,
                 titlePositionPercentageOffset: 0.15,
                 titleTextStyle: AppTheme.captionSmall.copyWith(
-                  color: _kLabel,
-                  fontSize: 12,
+                  color: context.appTextSecondary,
+                  fontSize: AppTheme.fsSupporting,
                 ),
                 getTitle: (index, angle) {
                   return RadarChartTitle(
@@ -51,6 +49,8 @@ class HabitRadarChartWidget extends StatelessWidget {
                 },
                 dataSets: [
                   // 지난 달 (뒤에 그려서 이번 달이 위에 보임)
+                  // 구조상 예외: 이번 달(primaryAccent)과 대비되는 비교
+                  // 시리즈 전용 중립 회색 — 6색 팔레트에 대응 역할 없음.
                   RadarDataSet(
                     fillColor: const Color(0xFF444444).withValues(alpha: 0.15),
                     borderColor: const Color(0xFF444444),
@@ -81,7 +81,8 @@ class HabitRadarChartWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _LegendDot(color: context.appPrimaryAccent, label: '이번 달'),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppTheme.spaceLG),
+              // 구조상 예외: 위 비교 시리즈 색과 동일(지난 달 중립 회색).
               _LegendDot(color: const Color(0xFF444444), label: '지난 달'),
             ],
           ),
@@ -108,7 +109,12 @@ class _LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
-        Text(label, style: AppTheme.captionSmall.copyWith(color: _kLabel)),
+        Text(
+          label,
+          style: AppTheme.captionSmall.copyWith(
+            color: context.appTextSecondary,
+          ),
+        ),
       ],
     );
   }

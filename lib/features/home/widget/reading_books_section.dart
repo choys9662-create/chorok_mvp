@@ -8,10 +8,10 @@ import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/utils/reading_insight_engine.dart';
-import 'package:smooth_corner/smooth_corner.dart';
 
 import '../../search/util/book_info_navigation.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
 /// 최근에 읽은(라이브 포레스트를 켰거나 페이지가 갱신된) 책이 먼저 오고, 그다음은 추가한 순서대로.
@@ -31,7 +31,7 @@ int compareReadingBooks(Book a, Book b) {
 
 const _readingBookCardWidth = 118.0;
 const _readingBookCardHeight = 180.0;
-const _readingBookCardGap = 8.0;
+const _readingBookCardGap = AppTheme.spaceSM;
 
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
@@ -52,60 +52,35 @@ class ReadingBooksSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: Row(
-            children: [
-              Text(
-                '읽고 있는 책',
-                style: AppTheme.headingSmall.copyWith(
-                  color: context.appTextTertiary,
-                  fontWeight: FontWeight.w400,
-                  fontSize: 20,
-                  letterSpacing: 0,
-                ),
-              ),
-              if (!isLoading) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '|',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextTertiary.withValues(alpha: 0.35),
-                    fontSize: 20,
-                    letterSpacing: 0,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${readingBooks.length}',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextTertiary,
-                    fontSize: 20,
-                    letterSpacing: 0,
+          child: ChorokSectionHeader(
+            title: '읽고 있는 책',
+            count: isLoading ? null : readingBooks.length,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  label: '책 추가하기',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push(AppConstants.routeExplore);
+                    },
+                    child: Icon(
+                      Icons.add_rounded,
+                      size: AppTheme.spaceXL,
+                      color: context.appTextTertiary,
+                    ),
                   ),
                 ),
               ],
-              const Spacer(),
-              Semantics(
-                label: '책 추가하기',
-                button: true,
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.push(AppConstants.routeExplore);
-                  },
-                  child: Icon(
-                    Icons.add_rounded,
-                    size: 30,
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
 
         // ── 로딩 중: shimmer 카드 ──────────────────────────────────
         if (isLoading) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           SizedBox(
             height: _readingBookCardHeight,
             child: ListView(
@@ -118,23 +93,23 @@ class ReadingBooksSection extends ConsumerWidget {
                 ChorokShimmer(
                   width: _readingBookCardWidth,
                   height: _readingBookCardHeight,
-                  radius: 8,
+                  radius: AppTheme.radiusOuter,
                 ),
                 SizedBox(width: _readingBookCardGap),
                 ChorokShimmer(
                   width: _readingBookCardWidth,
                   height: _readingBookCardHeight,
-                  radius: 8,
+                  radius: AppTheme.radiusOuter,
                 ),
               ],
             ),
           ),
           // ── 빈 상태: 책이 0권일 때 ─────────────────────────────────
         ] else if (readingBooks.isEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           const EmptyBooksState(),
         ] else ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           // 가로 스크롤 카드 (마지막에 + 추가 카드)
           SizedBox(
             height: _readingBookCardHeight,
@@ -176,31 +151,30 @@ class EmptyBooksState extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
+            SizedBox(
               width: 56,
               height: 56,
-              decoration: ShapeDecoration(
-                color: context.primaryBg(0.08),
-                shape: SmoothRectangleBorder(
-                  smoothness: 0.6,
-                  borderRadius: BorderRadius.circular(10),
+              child: ChorokCard(
+                inner: true,
+                padding: EdgeInsets.zero,
+                borderColor: context.appCardElevated,
+                child: Center(
+                  child: Icon(
+                    Icons.auto_stories_rounded,
+                    size: 28,
+                    color: context.appPrimaryAccent,
+                  ),
                 ),
               ),
-              child: Icon(
-                Icons.auto_stories_rounded,
-                size: 28,
-                color: context.appPrimaryAccent,
-              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               '아직 등록된 책이 없어요',
               style: AppTheme.headingSmall.copyWith(
                 color: context.appTextPrimary,
-                fontWeight: FontWeight.w400,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               '첫 번째 책을 추가하고 독서를 시작해보세요',
               style: AppTheme.captionLarge.copyWith(
@@ -208,7 +182,7 @@ class EmptyBooksState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceXL),
             Semantics(
               label: '책 검색해서 추가하기',
               button: true,
@@ -217,35 +191,37 @@ class EmptyBooksState extends StatelessWidget {
                   HapticFeedback.mediumImpact();
                   context.push(AppConstants.routeExplore);
                 },
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   width: double.infinity,
-                  alignment: Alignment.center,
-                  decoration: AppTheme.smoothPill(
-                    color: isDark
+                  child: ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    padding: EdgeInsets.zero,
+                    backgroundColor: isDark
                         ? AppTheme.primary.withValues(alpha: 0.5)
                         : AppTheme.lightPrimaryAccent,
-                    side: BorderSide.none,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.search_rounded,
-                        size: 18,
-                        color: isDark ? context.appPrimaryAccent : Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '책 검색해서 추가하기',
-                        style: AppTheme.bodySmall.copyWith(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_rounded,
+                          size: AppTheme.sectionTitle.fontSize,
                           color: isDark
                               ? context.appPrimaryAccent
-                              : Colors.white,
-                          fontWeight: FontWeight.w400,
+                              : Theme.of(context).colorScheme.onPrimary,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AppTheme.spaceSM),
+                        Text(
+                          '책 검색해서 추가하기',
+                          style: AppTheme.supportingText.copyWith(
+                            color: isDark
+                                ? context.appPrimaryAccent
+                                : Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -264,17 +240,17 @@ class InsightChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: AppTheme.smoothBox(
-        color: context.appPrimaryAccent.withValues(alpha: 0.08),
-        radius: AppTheme.radiusMD,
-        side: BorderSide.none,
+    return ChorokCard(
+      inner: true,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceMD,
+        vertical: AppTheme.spaceSM,
       ),
+      borderColor: context.appCardElevated,
       child: Row(
         children: [
           Icon(insight.icon, size: 16, color: context.appPrimaryAccent),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppTheme.spaceSM),
           Expanded(
             child: Text(
               insight.message,
@@ -287,7 +263,7 @@ class InsightChip extends StatelessWidget {
             ),
           ),
           if (insight.subMessage != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Text(
               insight.subMessage!,
               style: AppTheme.captionSmall.copyWith(
@@ -323,12 +299,17 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
       SnackBar(
         content: Text(
           '$changedTitle 버전으로 변경했어요',
-          style: const TextStyle(color: Colors.white),
+          style: AppTheme.supportingText.copyWith(color: AppTheme.textPrimary),
         ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          0,
+          AppTheme.screenPadding,
+          AppTheme.spaceLG,
+        ),
       ),
     );
   }
@@ -351,7 +332,7 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.warningColor),
             child: const Text('제거'),
           ),
         ],
@@ -364,12 +345,17 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
       SnackBar(
         content: Text(
           '${book.title}을(를) 서재에서 제거했어요',
-          style: const TextStyle(color: Colors.white),
+          style: AppTheme.supportingText.copyWith(color: AppTheme.textPrimary),
         ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          0,
+          AppTheme.screenPadding,
+          AppTheme.spaceLG,
+        ),
       ),
     );
   }
@@ -399,14 +385,14 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
               b.title.hashCode.abs() % AppTheme.coverGradients.length,
           width: _readingBookCardWidth,
           height: _readingBookCardHeight,
-          radius: 8,
+          radius: AppTheme.radiusOuter,
           fallbackIcon: Positioned(
             right: -12,
             bottom: 32,
             child: Icon(
               Icons.menu_book_rounded,
               size: 72,
-              color: Colors.white.withValues(alpha: 0.10),
+              color: AppTheme.textPrimary.withValues(alpha: 0.10),
             ),
           ),
           child: Stack(
@@ -417,14 +403,14 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
                 alignment: Alignment.bottomCenter,
                 child: Container(
                   height: 116,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.transparent,
-                        Color(0x99000000),
-                        Color(0xE6000000),
+                        AppTheme.primary.withValues(alpha: 0),
+                        AppTheme.primary.withValues(alpha: 0.6),
+                        AppTheme.primary.withValues(alpha: 0.9),
                       ],
                     ),
                   ),
@@ -432,38 +418,33 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
               ),
               // 제목 · 저자 · 진행바
               Positioned(
-                left: 8,
-                right: 8,
-                bottom: 12,
+                left: AppTheme.spaceSM,
+                right: AppTheme.spaceSM,
+                bottom: AppTheme.spaceMD,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       b.title,
-                      style: AppTheme.bodySmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 15,
+                      style: AppTheme.rowText.copyWith(
+                        color: AppTheme.textPrimary,
                         height: 1.2,
-                        letterSpacing: 0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Text(
                       b.author,
-                      style: AppTheme.captionSmall.copyWith(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 14,
+                      style: AppTheme.body.copyWith(
+                        color: AppTheme.textPrimary.withValues(alpha: 0.75),
                         height: 1.2,
-                        letterSpacing: 0,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 7),
-                    ProgressBar(value: progress),
+                    const SizedBox(height: AppTheme.spaceSM),
+                    ChorokProgressBar(value: progress),
                   ],
                 ),
               ),
@@ -478,12 +459,12 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
                     height: 28,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.52),
+                      color: AppTheme.primary.withValues(alpha: 0.52),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.more_horiz_rounded,
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -497,7 +478,7 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
                         return;
                     }
                   },
-                  itemBuilder: (context) => const [
+                  itemBuilder: (context) => [
                     PopupMenuItem(
                       value: _BookCardAction.changeVersion,
                       child: Row(
@@ -515,10 +496,15 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
                           Icon(
                             Icons.delete_outline_rounded,
                             size: 20,
-                            color: Colors.red,
+                            color: AppTheme.warningColor,
                           ),
                           SizedBox(width: 10),
-                          Text('책 삭제', style: TextStyle(color: Colors.red)),
+                          Text(
+                            '책 삭제',
+                            style: AppTheme.supportingText.copyWith(
+                              color: AppTheme.warningColor,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -549,46 +535,17 @@ class AddBookCard extends StatelessWidget {
           HapticFeedback.selectionClick();
           context.push(AppConstants.routeExplore);
         },
-        child: Container(
+        child: SizedBox(
           width: _readingBookCardWidth,
           height: _readingBookCardHeight,
-          alignment: Alignment.center,
-          decoration: AppTheme.smoothBox(
-            color: context.primaryBg(0.04),
-            radius: 8,
-            side: BorderSide(color: context.appBorderSubtle),
-          ),
-          child: Icon(
-            Icons.add_rounded,
-            size: 30,
-            color: context.appTextTertiary.withValues(alpha: 0.6),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ProgressBar extends StatelessWidget {
-  final double value;
-  const ProgressBar({super.key, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, c) => Container(
-        height: 5,
-        decoration: BoxDecoration(
-          color: context.appProgressTrack,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: c.maxWidth * value.clamp(0.0, 1.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: context.appReadingGradient,
+          child: ChorokCard(
+            padding: EdgeInsets.zero,
+            child: Center(
+              child: Icon(
+                Icons.add_rounded,
+                size: 30,
+                color: context.appTextTertiary.withValues(alpha: 0.6),
+              ),
             ),
           ),
         ),

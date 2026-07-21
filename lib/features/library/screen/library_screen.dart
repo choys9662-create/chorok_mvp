@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_flags.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +13,8 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/providers/follow_overlap_provider.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
-import '../../../shared/widgets/forest_accent_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../../home/widget/overlap_section.dart';
@@ -186,10 +185,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       ref.listen(readingLogsProvider, (_, next) {
         if (next.hasError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
                 '독서 기록을 불러오지 못했어요',
-                style: TextStyle(color: Colors.white),
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextPrimary,
+                ),
               ),
               behavior: SnackBarBehavior.floating,
               duration: Duration(seconds: 3),
@@ -227,11 +228,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
               title: Text(
                 '@${widget.viewedUser!.username}',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: context.appTextPrimary,
-                ),
+                style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
               ),
               actions: [
                 if (kUseMock || viewerData != null)
@@ -458,10 +455,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.appBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: context.appCard,
+      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.86,
@@ -482,10 +477,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.appBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: context.appCard,
+      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.86,
@@ -501,10 +494,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.appBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: context.appCard,
+      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.72,
@@ -529,30 +520,13 @@ class _ShelfSheet extends StatelessWidget {
       top: false,
       child: Column(
         children: [
-          const SizedBox(height: 12),
-          const ChorokSheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              children: [
-                Text(
-                  title,
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
-                  color: context.appTextSecondary,
-                ),
-              ],
-            ),
+          ChorokSheetHeader(
+            title: title,
+            onClose: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.only(bottom: AppTheme.spaceXL),
               child: child,
             ),
           ),
@@ -577,33 +551,10 @@ class _SentenceSheet extends StatelessWidget {
       top: false,
       child: Column(
         children: [
-          const SizedBox(height: 12),
-          const ChorokSheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              children: [
-                Text(
-                  '기록한 문장',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${sentences.length}',
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
-                  color: context.appTextSecondary,
-                ),
-              ],
-            ),
+          ChorokSheetHeader(
+            title: '기록한 문장',
+            secondary: '${sentences.length}',
+            onClose: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: sentences.isEmpty
@@ -617,9 +568,15 @@ class _SentenceSheet extends StatelessWidget {
                   )
                 : ListView.separated(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceMD,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceXL,
+                    ),
                     itemCount: sentences.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppTheme.spaceSM),
                     itemBuilder: (_, index) =>
                         _SentenceSheetItem(item: sentences[index]),
                   ),
@@ -637,16 +594,12 @@ class _SentenceSheetItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
+    return ChorokCard(
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+      showBorder: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceMD,
         children: [
           Text(
             item.content,
@@ -655,7 +608,6 @@ class _SentenceSheetItem extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 12),
           Row(
             children: [
               Icon(
@@ -663,7 +615,7 @@ class _SentenceSheetItem extends StatelessWidget {
                 size: 14,
                 color: context.appTextTertiary,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppTheme.spaceXS),
               Expanded(
                 child: Text(
                   item.bookAuthor.isEmpty
@@ -696,33 +648,10 @@ class _OverlapSheet extends StatelessWidget {
       top: false,
       child: Column(
         children: [
-          const SizedBox(height: 12),
-          const ChorokSheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              children: [
-                Text(
-                  '겹문장',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${overlaps.length}',
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
-                  color: context.appTextSecondary,
-                ),
-              ],
-            ),
+          ChorokSheetHeader(
+            title: '겹문장',
+            secondary: '${overlaps.length}',
+            onClose: () => Navigator.of(context).pop(),
           ),
           Expanded(
             child: overlaps.isEmpty
@@ -736,9 +665,15 @@ class _OverlapSheet extends StatelessWidget {
                   )
                 : ListView.separated(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceMD,
+                      AppTheme.screenPadding,
+                      AppTheme.spaceXL,
+                    ),
                     itemCount: overlaps.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppTheme.spaceSM),
                     itemBuilder: (_, index) =>
                         OverlapCard(overlap: overlaps[index]),
                   ),
@@ -766,9 +701,7 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Column(
@@ -819,7 +752,12 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceXL,
+                  AppTheme.spaceXL,
+                  AppTheme.spaceXL,
+                  AppTheme.spaceXL,
+                ),
                 child: Row(
                   children: [
                     _CompletedIconButton(
@@ -834,7 +772,9 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
                           const TextSpan(text: '완독  '),
                           TextSpan(
                             text: '${books.length}',
-                            style: TextStyle(color: context.appPrimaryAccent),
+                            style: AppTheme.screenTitle.copyWith(
+                              color: context.appPrimaryAccent,
+                            ),
                           ),
                         ],
                       ),
@@ -845,14 +785,19 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
                       ),
                     ),
                     const Spacer(),
-                    const SizedBox(width: 40),
+                    const SizedBox(width: AppTheme.spaceXL),
                   ],
                 ),
               ),
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceXL,
+                  0,
+                  AppTheme.spaceXL,
+                  AppTheme.spaceSM,
+                ),
                 child: _CompletedViewSwitch(
                   mode: _viewMode,
                   sortLabel: _sort.label,
@@ -871,10 +816,16 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
               )
             else if (_viewMode == _LibraryViewMode.list)
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 112),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  0,
+                  AppTheme.screenPadding,
+                  AppTheme.spaceXL * 4 + AppTheme.spaceLG,
+                ),
                 sliver: SliverList.separated(
                   itemCount: books.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppTheme.spaceSM),
                   itemBuilder: (_, index) => _CompletedListRow(
                     book: books[index],
                     muted: index % 3 == 2,
@@ -883,14 +834,19 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 112),
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spaceXL,
+                  0,
+                  AppTheme.spaceXL,
+                  AppTheme.spaceXL * 4 + AppTheme.spaceLG,
+                ),
                 sliver: SliverGrid.builder(
                   itemCount: books.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     childAspectRatio: 0.44,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 30,
+                    crossAxisSpacing: AppTheme.spaceSM,
+                    mainAxisSpacing: AppTheme.sectionGap,
                   ),
                   itemBuilder: (_, index) =>
                       _CompletedGridTile(book: books[index]),
@@ -971,7 +927,7 @@ class _CompletedViewSwitch extends StatelessWidget {
                       height: 1,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppTheme.spaceXS),
                   Icon(
                     Icons.sort_rounded,
                     size: 16,
@@ -1046,70 +1002,71 @@ class _CompletedListRow extends StatelessWidget {
         HapticFeedback.selectionClick();
         pushBookInfo(context, book);
       },
-      child: Container(
+      child: SizedBox(
         height: 88,
-        padding: const EdgeInsets.fromLTRB(10, 10, 18, 10),
-        decoration: AppTheme.smoothBox(color: context.appCard, radius: 8),
-        child: Row(
-          children: [
-            BookCover(
-              coverUrl: book.coverUrl,
-              gradientIndex: book.title.hashCode.abs(),
-              width: 50,
-              height: 68,
-              radius: 5,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: context.appTextPrimary,
-                      fontSize: 16,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    book.author,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.bodySmall.copyWith(
-                      color: context.appTextSecondary,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _shortDate(book.completedAt),
-                    style: AppTheme.captionLarge.copyWith(
-                      color: context.appTextTertiary,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                ],
+        child: ChorokCard(
+          padding: const EdgeInsets.all(AppTheme.spaceMD),
+          showBorder: false,
+          child: Row(
+            children: [
+              BookCover(
+                coverUrl: book.coverUrl,
+                gradientIndex: book.title.hashCode.abs(),
+                width: 50,
+                height: 68,
+                radius: AppTheme.radiusInner,
               ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: checkColor,
-                shape: BoxShape.circle,
+              const SizedBox(width: AppTheme.spaceMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.rowText.copyWith(
+                        color: context.appTextPrimary,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spaceXS),
+                    Text(
+                      book.author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.bodySmall.copyWith(
+                        color: context.appTextSecondary,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _shortDate(book.completedAt),
+                      style: AppTheme.captionLarge.copyWith(
+                        color: context.appTextTertiary,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: const Icon(
-                Icons.check_rounded,
-                size: 17,
-                color: Colors.black,
+              const SizedBox(width: AppTheme.spaceSM),
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: checkColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  size: 17,
+                  color: AppTheme.primary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1137,22 +1094,21 @@ class _CompletedGridTile extends StatelessWidget {
             child: BookCover(
               coverUrl: book.coverUrl,
               gradientIndex: book.title.hashCode.abs(),
-              radius: 5,
+              radius: AppTheme.radiusInner,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             book.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.bodyMedium.copyWith(
+            style: AppTheme.body.copyWith(
               color: context.appTextPrimary,
-              fontSize: 15,
               height: 1.18,
               letterSpacing: 0,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppTheme.spaceXS),
           Text(
             book.author,
             maxLines: 2,
@@ -1246,7 +1202,7 @@ class _WatchaLibraryOverview extends StatelessWidget {
           onAddBook: onAddBook,
           onOpenAll: () => onOpenStatus(ReadingStatus.reading),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spaceLG),
         _StatTilesRow(
           reading: reading,
           completed: completed,
@@ -1266,7 +1222,7 @@ class _WatchaLibraryOverview extends StatelessWidget {
           userId: isOwner ? null : userId,
           onTap: onOpenStats,
         ),
-        const SizedBox(height: 96),
+        const SizedBox(height: AppTheme.spaceXL * 4),
       ],
     );
   }
@@ -1279,25 +1235,7 @@ class _HeroProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) => Container(
-        height: 5,
-        decoration: BoxDecoration(
-          color: context.appProgressTrack,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: constraints.maxWidth * value.clamp(0.0, 1.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: context.appReadingGradient,
-            ),
-          ),
-        ),
-      ),
-    );
+    return ChorokProgressBar(value: value);
   }
 }
 
@@ -1323,28 +1261,25 @@ class _ReadingNowCard extends StatelessWidget {
     final visible = reading.take(3).toList();
     return _SectionBand(
       title: '읽고 있는 책',
-      child: ForestAccentCard(
-        radius: 8,
-        padding: const EdgeInsets.all(14),
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingInner),
+        showBorder: false,
         child: reading.isEmpty
             ? _ReadingNowEmpty(isOwner: isOwner, onAddBook: onAddBook)
             : Column(
                 children: [
                   for (var i = 0; i < visible.length; i++) ...[
-                    DecoratedBox(
-                      decoration: AppTheme.smoothBox(
-                        color: context.appCard,
-                        radius: 8,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: _ReadingNowRow(book: visible[i]),
-                      ),
+                    ChorokCard(
+                      inner: true,
+                      showBorder: false,
+                      padding: const EdgeInsets.all(AppTheme.cardPaddingInner),
+                      child: _ReadingNowRow(book: visible[i]),
                     ),
-                    if (i != visible.length - 1) const SizedBox(height: 7),
+                    if (i != visible.length - 1)
+                      const SizedBox(height: AppTheme.spaceSM),
                   ],
                   if (reading.length > visible.length) ...[
-                    const SizedBox(height: 7),
+                    const SizedBox(height: AppTheme.spaceSM),
                     Semantics(
                       button: true,
                       label: '읽고 있는 책 전체보기',
@@ -1356,7 +1291,7 @@ class _ReadingNowCard extends StatelessWidget {
                           child: Center(
                             child: Text(
                               '전체보기',
-                              style: AppTheme.bodyLarge.copyWith(
+                              style: AppTheme.rowText.copyWith(
                                 color: context.appTextTertiary,
                               ),
                             ),
@@ -1382,21 +1317,24 @@ class _ReadingNowEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
+        SizedBox(
           width: 44,
           height: 62,
-          alignment: Alignment.center,
-          decoration: AppTheme.smoothBox(
-            color: context.primaryBg(0.08),
-            radius: 6,
-          ),
-          child: Icon(
-            Icons.auto_stories_rounded,
-            size: 22,
-            color: context.appPrimaryAccent,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            backgroundColor: context.primaryBg(0.08),
+            padding: EdgeInsets.zero,
+            child: Center(
+              child: Icon(
+                Icons.auto_stories_rounded,
+                size: 22,
+                color: context.appPrimaryAccent,
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: AppTheme.spaceMD),
         Expanded(
           child: Text(
             isOwner ? '지금 읽고 있는 책을 담아보세요' : '읽고 있는 책이 없어요',
@@ -1412,20 +1350,20 @@ class _ReadingNowEmpty extends StatelessWidget {
               HapticFeedback.selectionClick();
               onAddBook();
             },
-            child: Container(
+            child: SizedBox(
               width: 38,
               height: 38,
-              alignment: Alignment.center,
-              decoration: AppTheme.smoothBox(
-                color: context.appPrimaryAccent,
-                radius: 8,
-              ),
-              child: Icon(
-                Icons.add_rounded,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
-                size: 18,
+              child: ChorokCard(
+                showBorder: false,
+                backgroundColor: context.appPrimaryAccent,
+                padding: EdgeInsets.zero,
+                child: const Center(
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: AppTheme.primary,
+                    size: 18,
+                  ),
+                ),
               ),
             ),
           ),
@@ -1461,9 +1399,9 @@ class _ReadingNowRow extends StatelessWidget {
               gradientIndex: book.title.hashCode.abs(),
               width: 52,
               height: 72,
-              radius: 6,
+              radius: AppTheme.radiusInner,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1472,12 +1410,12 @@ class _ReadingNowRow extends StatelessWidget {
                     book.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTheme.bodyMedium.copyWith(
+                    style: AppTheme.rowText.copyWith(
                       color: context.appTextPrimary,
                       letterSpacing: 0,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppTheme.spaceXS),
                   Text(
                     book.author,
                     maxLines: 1,
@@ -1487,12 +1425,12 @@ class _ReadingNowRow extends StatelessWidget {
                       letterSpacing: 0,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.spaceMD),
                   Row(
                     children: [
                       Expanded(child: _HeroProgressBar(value: progress)),
                       if (remaining > 0) ...[
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppTheme.spaceSM),
                         Text(
                           '완독까지 $remaining'
                           'P',
@@ -1507,7 +1445,7 @@ class _ReadingNowRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Icon(
               Icons.chevron_right_rounded,
               color: context.appTextTertiary,
@@ -1562,7 +1500,7 @@ class _StatTilesRow extends StatelessWidget {
         children: [
           for (var i = 0; i < tiles.length; i++) ...[
             Expanded(child: _StatTile(item: tiles[i])),
-            if (i != tiles.length - 1) const SizedBox(width: 8),
+            if (i != tiles.length - 1) const SizedBox(width: AppTheme.spaceSM),
           ],
         ],
       ),
@@ -1585,38 +1523,39 @@ class _StatTile extends StatelessWidget {
           HapticFeedback.selectionClick();
           item.onTap();
         },
-        child: Container(
+        child: SizedBox(
           height: 76,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: 8,
-            side: BorderSide(color: context.appBorderSubtle),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
-                  letterSpacing: 0,
-                ),
-              ),
-              const SizedBox(height: 6),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  '${item.value}',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: context.appTextPrimary,
+          child: ChorokCard(
+            borderColor: context.appBorderSubtle,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceSM,
+              vertical: AppTheme.spaceMD,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: AppTheme.spaceSM,
+              children: [
+                Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.caption.copyWith(
+                    color: context.appTextTertiary,
                     letterSpacing: 0,
                   ),
                 ),
-              ),
-            ],
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${item.value}',
+                    style: AppTheme.sectionTitle.copyWith(
+                      color: context.appTextPrimary,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1719,17 +1658,18 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
-        24,
+        AppTheme.spaceXL,
         AppTheme.screenPadding,
         0,
       ),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 8,
-          side: BorderSide.none,
+      child: ChorokCard(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMD,
+          AppTheme.spaceMD,
+          AppTheme.spaceMD,
+          AppTheme.spaceLG,
         ),
+        showBorder: false,
         child: Column(
           children: [
             Row(
@@ -1737,10 +1677,12 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
               children: [
                 _CalNavArrow(icon: Icons.chevron_left_rounded, onTap: _prev),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceLG,
+                  ),
                   child: Text(
                     '${_month.month}월',
-                    style: AppTheme.headingSmall.copyWith(
+                    style: AppTheme.sectionTitle.copyWith(
                       color: context.appPrimaryAccent,
                       letterSpacing: 0,
                     ),
@@ -1749,7 +1691,7 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                 _CalNavArrow(icon: Icons.chevron_right_rounded, onTap: _next),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppTheme.spaceMD),
             Row(
               children: AppConstants.weekdaysSunFirst
                   .map(
@@ -1757,7 +1699,7 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                       child: Center(
                         child: Text(
                           d,
-                          style: AppTheme.captionSmall.copyWith(
+                          style: AppTheme.caption.copyWith(
                             color: context.appTextTertiary,
                           ),
                         ),
@@ -1766,7 +1708,7 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                   )
                   .toList(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppTheme.spaceSM),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -1774,8 +1716,8 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
                 childAspectRatio: 0.74,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 5,
+                mainAxisSpacing: AppTheme.spaceXS,
+                crossAxisSpacing: AppTheme.spaceXS,
               ),
               itemBuilder: (_, index) {
                 final day = cells[index];
@@ -1785,14 +1727,11 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                 return GestureDetector(
                   onTap: widget.onTap,
                   behavior: HitTestBehavior.opaque,
-                  child: DecoratedBox(
-                    decoration: AppTheme.smoothBox(
-                      color: context.appCardElevated,
-                      radius: 4,
-                      side: isToday
-                          ? BorderSide(color: context.appPrimaryAccent)
-                          : BorderSide.none,
-                    ),
+                  child: ChorokCard(
+                    inner: true,
+                    padding: EdgeInsets.zero,
+                    showBorder: isToday,
+                    borderColor: context.appPrimaryAccent,
                     child: summary != null
                         ? Semantics(
                             label: summary.bookCount > 1
@@ -1802,46 +1741,44 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                               fit: StackFit.expand,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.all(2),
+                                  padding: const EdgeInsets.all(
+                                    AppTheme.spaceXS,
+                                  ),
                                   child: BookCover(
                                     coverUrl: summary.representative.coverUrl,
                                     gradientIndex:
                                         summary.representative.gradientIndex,
-                                    radius: 3,
+                                    radius: AppTheme.radiusInner,
                                   ),
                                 ),
                                 if (summary.bookCount > 1)
                                   Positioned(
-                                    top: 4,
-                                    right: 4,
-                                    child: Container(
+                                    top: AppTheme.spaceXS,
+                                    right: AppTheme.spaceXS,
+                                    child: ConstrainedBox(
                                       constraints: const BoxConstraints(
-                                        minWidth: 20,
-                                        minHeight: 20,
+                                        minWidth:
+                                            AppTheme.spaceLG + AppTheme.spaceXS,
+                                        minHeight:
+                                            AppTheme.spaceLG + AppTheme.spaceXS,
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.78,
+                                      child: ChorokCard(
+                                        inner: true,
+                                        backgroundColor: AppTheme.primary
+                                            .withValues(alpha: 0.78),
+                                        borderColor: context.appTextPrimary
+                                            .withValues(alpha: 0.72),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppTheme.spaceXS,
                                         ),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.72,
+                                        child: Center(
+                                          child: Text(
+                                            '+${summary.bookCount - 1}',
+                                            style: AppTheme.caption.copyWith(
+                                              color: context.appTextPrimary,
+                                              height: 1,
+                                            ),
                                           ),
-                                          width: 0.7,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '+${summary.bookCount - 1}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w400,
-                                          height: 1,
                                         ),
                                       ),
                                     ),
@@ -1852,13 +1789,12 @@ class _MonthCalendarCardState extends State<_MonthCalendarCard> {
                         : Center(
                             child: Text(
                               '$day',
-                              style: AppTheme.captionSmall.copyWith(
+                              style: AppTheme.supportingText.copyWith(
                                 color: isToday
                                     ? context.appPrimaryAccent
                                     : context.appTextTertiary.withValues(
                                         alpha: 0.48,
                                       ),
-                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -1911,7 +1847,7 @@ class _DetailLink extends StatelessWidget {
               color: context.appTextTertiary,
             ),
           ),
-          const SizedBox(width: 2),
+          const SizedBox(width: AppTheme.spaceXS),
           Icon(
             Icons.chevron_right_rounded,
             color: context.appTextTertiary,
@@ -1952,29 +1888,26 @@ class _ReadingHabitPreview extends StatelessWidget {
 
     return _SectionBand(
       title: '나의 독서 습관',
-      accentTitle: false,
       trailing: _DetailLink(onTap: onTap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceSM,
         children: [
           _InsightMetricRow(
             icon: Icons.schedule_rounded,
             label: '총 독서 시간',
             value: _formatMinutes(totalMinutes),
           ),
-          const SizedBox(height: 8),
           _InsightMetricRow(
             icon: Icons.calendar_today_outlined,
             label: '독서한 날',
             value: '$activeDays일',
           ),
-          const SizedBox(height: 8),
           _InsightMetricRow(
             icon: Icons.timelapse_rounded,
             label: '일일 평균 독서 시간',
             value: _formatMinutes(averageMinutes),
           ),
-          const SizedBox(height: 8),
           _InsightMetricRow(
             icon: Icons.menu_book_outlined,
             label: '일일 평균 독서 분량',
@@ -1996,7 +1929,6 @@ class _TasteAnalysisPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SectionBand(
       title: '나의 독서 취향',
-      accentTitle: false,
       trailing: _DetailLink(onTap: onTap),
       child: LibraryStatsView(userId: userId, embedded: true),
     );
@@ -2016,33 +1948,34 @@ class _InsightMetricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 70),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: AppTheme.smoothBox(color: context.appCard, radius: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 17, color: context.appTextTertiary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 70),
+        child: ChorokCard(
+          showBorder: false,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.cardPaddingMD,
+            vertical: AppTheme.spaceMD,
+          ),
+          child: ChorokListRow(
+            leading: Icon(icon, size: 17, color: context.appTextTertiary),
+            title: Text(
               label,
-              style: AppTheme.bodySmall.copyWith(
+              style: AppTheme.supportingText.copyWith(
                 color: context.appTextSecondary,
                 letterSpacing: 0,
               ),
             ),
-          ),
-          Text(
-            value,
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextPrimary,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0,
+            trailing: Text(
+              value,
+              style: AppTheme.sectionTitle.copyWith(
+                color: context.appTextPrimary,
+                letterSpacing: 0,
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2060,43 +1993,23 @@ class _SectionBand extends StatelessWidget {
   final String title;
   final Widget child;
   final Widget? trailing;
-  final bool accentTitle;
 
-  const _SectionBand({
-    required this.title,
-    required this.child,
-    this.trailing,
-    this.accentTitle = true,
-  });
+  const _SectionBand({required this.title, required this.child, this.trailing});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
-        24,
+        AppTheme.sectionGap,
         AppTheme.screenPadding,
         0,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppTheme.spaceMD,
         children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: AppTheme.headingSmall.copyWith(
-                  color: accentTitle
-                      ? context.appPrimaryAccent
-                      : context.appTextPrimary,
-                  letterSpacing: 0,
-                ),
-              ),
-              const Spacer(),
-              ?trailing,
-            ],
-          ),
-          const SizedBox(height: 12),
+          ChorokSectionHeader(title: title, trailing: trailing),
           child,
         ],
       ),
@@ -2180,9 +2093,7 @@ class _LibraryTabState extends State<_LibraryTab> {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.appCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
       builder: (_) => _SortSheet(
         current: _sortOption,
         onSelected: (opt) {
@@ -2210,7 +2121,7 @@ class _LibraryTabState extends State<_LibraryTab> {
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         // ── 이번 달 성과 ─────────────────────────────────────────
-        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceMD)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -2219,7 +2130,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             child: _MonthlyAchievementCard(userId: widget.viewedUserId),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLG)),
 
         // ── 전체 서재 섹션 헤더 ──────────────────────────────────
         SliverToBoxAdapter(
@@ -2232,24 +2143,24 @@ class _LibraryTabState extends State<_LibraryTab> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
+                  ChorokCard(
+                    inner: true,
+                    showBorder: false,
+                    backgroundColor: context.appPrimaryAccent.withValues(
+                      alpha: 0.1,
                     ),
-                    decoration: AppTheme.smoothBox(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                      radius: 10,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceSM,
+                      vertical: AppTheme.spaceXS,
                     ),
                     child: Text(
                       '${widget.books.length}권',
-                      style: AppTheme.captionSmall.copyWith(
+                      style: AppTheme.caption.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppTheme.spaceSM),
                   Semantics(
                     label: '정렬 방식 변경',
                     button: true,
@@ -2258,30 +2169,30 @@ class _LibraryTabState extends State<_LibraryTab> {
                         HapticFeedback.selectionClick();
                         _showSortSheet(context);
                       },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
+                      child: SizedBox(
                         width: 32,
                         height: 32,
-                        decoration: AppTheme.smoothBox(
-                          color: _sortOption != _SortOption.recent
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          padding: EdgeInsets.zero,
+                          backgroundColor: _sortOption != _SortOption.recent
                               ? AppTheme.primary.withValues(alpha: 0.3)
                               : context.appCardElevated,
-                          radius: 10,
-                        ),
-                        child: Icon(
-                          Icons.sort_rounded,
-                          size: 16,
-                          color: _sortOption != _SortOption.recent
-                              ? (isDark
-                                    ? AppTheme.primaryLight
-                                    : AppTheme.lightPrimaryAccent)
-                              : context.appTextTertiary,
+                          child: Icon(
+                            Icons.sort_rounded,
+                            size: 16,
+                            color: _sortOption != _SortOption.recent
+                                ? (isDark
+                                      ? AppTheme.primaryLight
+                                      : AppTheme.lightPrimaryAccent)
+                                : context.appTextTertiary,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppTheme.spaceXS),
                   Semantics(
                     label: _viewMode == _LibraryViewMode.grid
                         ? '리스트 보기로 전환'
@@ -2296,21 +2207,20 @@ class _LibraryTabState extends State<_LibraryTab> {
                               : _LibraryViewMode.grid;
                         });
                       },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
+                      child: SizedBox(
                         width: 32,
                         height: 32,
-                        decoration: AppTheme.smoothBox(
-                          color: context.appCardElevated,
-                          radius: 10,
-                        ),
-                        child: Icon(
-                          _viewMode == _LibraryViewMode.grid
-                              ? Icons.view_list_rounded
-                              : Icons.grid_view_rounded,
-                          size: 16,
-                          color: context.appTextSecondary,
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          padding: EdgeInsets.zero,
+                          child: Icon(
+                            _viewMode == _LibraryViewMode.grid
+                                ? Icons.view_list_rounded
+                                : Icons.grid_view_rounded,
+                            size: 16,
+                            color: context.appTextSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -2320,7 +2230,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceMD)),
 
         // ── 필터 칩 + 책 추가 버튼 ─────────────────────────────────
         SliverToBoxAdapter(
@@ -2335,47 +2245,51 @@ class _LibraryTabState extends State<_LibraryTab> {
                   final isSelected = status == _selectedStatus;
                   return Padding(
                     padding: EdgeInsets.only(
-                      right: status != ReadingStatus.values.last ? 8 : 0,
+                      right: status != ReadingStatus.values.last
+                          ? AppTheme.spaceSM
+                          : 0,
                     ),
                     child: GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();
                         setState(() => _selectedStatus = status);
                       },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
+                      child: SizedBox(
                         height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: AppTheme.smoothPill(
-                          color: isSelected
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          backgroundColor: isSelected
                               ? AppTheme.primary
-                              : context.appCard,
-                          side: BorderSide.none,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _statusIcon(status),
-                              size: 14,
-                              color: isSelected
-                                  ? Colors.white
-                                  : context.appTextTertiary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${status.label} $count',
-                              style: AppTheme.captionLarge.copyWith(
+                              : context.appCardElevated,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceLG,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _statusIcon(status),
+                                size: 14,
                                 color: isSelected
-                                    ? Colors.white
+                                    ? (isDark
+                                          ? context.appTextPrimary
+                                          : AppTheme.lightSurface)
                                     : context.appTextTertiary,
-                                fontWeight: isSelected
-                                    ? FontWeight.w400
-                                    : FontWeight.w400,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: AppTheme.spaceXS),
+                              Text(
+                                '${status.label} $count',
+                                style: AppTheme.caption.copyWith(
+                                  color: isSelected
+                                      ? (isDark
+                                            ? context.appTextPrimary
+                                            : AppTheme.lightSurface)
+                                      : context.appTextTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -2398,9 +2312,9 @@ class _LibraryTabState extends State<_LibraryTab> {
                           color: AppTheme.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.add_rounded,
-                          color: Colors.white,
+                          color: context.appTextPrimary,
                           size: 20,
                         ),
                       ),
@@ -2410,7 +2324,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 4)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceXS)),
 
         // ── 책 그리드 / 리스트 / 빈 상태 ─────────────────────────────
         if (_filteredBooks.isEmpty)
@@ -2432,8 +2346,8 @@ class _LibraryTabState extends State<_LibraryTab> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 childAspectRatio: 0.72,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                crossAxisSpacing: AppTheme.spaceMD,
+                mainAxisSpacing: AppTheme.spaceMD,
               ),
               itemCount: _filteredBooks.length,
               itemBuilder: (_, i) =>
@@ -2450,7 +2364,8 @@ class _LibraryTabState extends State<_LibraryTab> {
             ),
             sliver: SliverList.separated(
               itemCount: _filteredBooks.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: AppTheme.spaceSM),
               itemBuilder: (_, i) => _BookListTile(
                 book: _filteredBooks[i],
                 isOwner: widget.isOwner,
@@ -2526,34 +2441,34 @@ class _MonthlyAchievementCard extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      SizedBox(
                         width: 40,
                         height: 40,
-                        decoration: AppTheme.smoothBox(
-                          color: context.appPrimaryAccent.withValues(
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          backgroundColor: context.appPrimaryAccent.withValues(
                             alpha: 0.10,
                           ),
-                          radius: AppTheme.radiusMD,
-                          side: BorderSide.none,
-                        ),
-                        child: Icon(
-                          item.icon,
-                          size: 18,
-                          color: context.appPrimaryAccent,
+                          padding: EdgeInsets.zero,
+                          child: Icon(
+                            item.icon,
+                            size: 18,
+                            color: context.appPrimaryAccent,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppTheme.spaceSM),
                       Text(
                         item.value,
-                        style: AppTheme.headingSmall.copyWith(
+                        style: AppTheme.rowText.copyWith(
                           color: context.appTextPrimary,
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppTheme.spaceXS),
                       Text(
                         item.label,
-                        style: AppTheme.captionSmall.copyWith(
+                        style: AppTheme.caption.copyWith(
                           color: context.appTextTertiary,
                         ),
                         textAlign: TextAlign.center,
@@ -2564,7 +2479,7 @@ class _MonthlyAchievementCard extends ConsumerWidget {
                   ),
                 ),
                 if (e.key < items.length - 1)
-                  Container(width: 1, height: 48, color: Colors.transparent),
+                  const SizedBox(width: AppTheme.spaceXS),
               ];
             }).toList(),
           ),
@@ -2592,99 +2507,83 @@ class _BookCard extends StatelessWidget {
         HapticFeedback.selectionClick();
         pushBookInfo(context, book);
       },
-      child: Container(
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 10,
-          side: BorderSide.none,
-          shadows: isDark ? null : AppTheme.lightCardShadows,
-        ),
+      child: ChorokCard(
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipPath(
-                clipper: ShapeBorderClipper(
-                  shape: SmoothRectangleBorder(
-                    smoothness: 0.6,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // ── 배경 (커버 or 그라디언트 플레이스홀더) ─────
+                  BookCover(
+                    coverUrl: book.coverUrl,
+                    gradientIndex:
+                        book.title.hashCode.abs() %
+                        AppTheme.coverGradients.length,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // ── 배경 (커버 or 그라디언트 플레이스홀더) ─────
-                    BookCover(
-                      coverUrl: book.coverUrl,
-                      gradientIndex:
-                          book.title.hashCode.abs() %
-                          AppTheme.coverGradients.length,
-                      width: double.infinity,
-                      height: double.infinity,
-                      radius: 0,
+                  // ── 완독 배지 ──────────────────────────────────
+                  if (isCompleted)
+                    Positioned(
+                      top: AppTheme.spaceSM,
+                      right: AppTheme.spaceSM,
+                      child: Container(
+                        padding: const EdgeInsets.all(AppTheme.spaceXS),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 12,
+                          color: context.appTextPrimary,
+                        ),
+                      ),
                     ),
-                    // ── 완독 배지 ──────────────────────────────────
-                    if (isCompleted)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppTheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_rounded,
-                            size: 12,
-                            color: Colors.white,
-                          ),
+                  // ── 초서 수 뱃지 ──────────────────────────────
+                  if (book.savedSentences.isNotEmpty)
+                    Positioned(
+                      bottom: AppTheme.spaceSM,
+                      left: AppTheme.spaceSM,
+                      child: ChorokCard(
+                        inner: true,
+                        showBorder: false,
+                        backgroundColor: AppTheme.primary.withValues(
+                          alpha: 0.88,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceSM,
+                          vertical: AppTheme.spaceXS,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.format_quote_rounded,
+                              size: 10,
+                              color: context.appTextPrimary,
+                            ),
+                            const SizedBox(width: AppTheme.spaceXS),
+                            Text(
+                              '${book.savedSentences.length}',
+                              style: AppTheme.caption.copyWith(
+                                color: context.appTextPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    // ── 초서 수 뱃지 ──────────────────────────────
-                    if (book.savedSentences.isNotEmpty)
-                      Positioned(
-                        bottom: 6,
-                        left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 3,
-                          ),
-                          decoration: AppTheme.smoothPill(
-                            color: AppTheme.primary.withValues(alpha: 0.88),
-                            side: BorderSide.none,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.format_quote_rounded,
-                                size: 10,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                '${book.savedSentences.length}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppTheme.spaceMD),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2692,12 +2591,11 @@ class _BookCard extends StatelessWidget {
                     book.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTheme.headingSmall.copyWith(
+                    style: AppTheme.rowText.copyWith(
                       color: context.appTextPrimary,
-                      fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppTheme.spaceXS),
                   Text(
                     book.author,
                     style: AppTheme.captionLarge.copyWith(
@@ -2706,18 +2604,12 @@ class _BookCard extends StatelessWidget {
                   ),
                   if (book.status == ReadingStatus.reading) ...[
                     const SizedBox(height: AppTheme.spaceSM),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: book.readingProgress,
-                        backgroundColor: context.appBorder,
-                        valueColor: AlwaysStoppedAnimation(
-                          context.appPrimaryAccent,
-                        ),
-                        minHeight: 3,
-                      ),
+                    ChorokProgressBar(
+                      value: book.readingProgress,
+                      trackColor: context.appBorder,
+                      valueColor: context.appPrimaryAccent,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Row(
                       children: [
                         Text(
@@ -2727,7 +2619,7 @@ class _BookCard extends StatelessWidget {
                             fontWeight: FontWeight.w400,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppTheme.spaceXS),
                         Text(
                           '${book.currentPage}/${book.totalPages}쪽',
                           style: AppTheme.captionSmall.copyWith(
@@ -2739,17 +2631,16 @@ class _BookCard extends StatelessWidget {
                     // ── 완독 예상일 ──────────────────────────────────
                     if (_estimateCompletion(book) case final est?)
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: AppTheme.spaceXS),
                         child: Text(
                           est,
-                          style: AppTheme.captionSmall.copyWith(
+                          style: AppTheme.caption.copyWith(
                             color: context.appTextTertiary,
-                            fontSize: 10,
                           ),
                         ),
                       ),
                     if (isOwner) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppTheme.spaceSM),
                       // ── 바로 읽기 버튼 ──────────────────────────────
                       Semantics(
                         label: '${book.title} 이어 읽기',
@@ -2770,23 +2661,24 @@ class _BookCard extends StatelessWidget {
                               ),
                             );
                           },
-                          child: Container(
+                          child: SizedBox(
                             height: 48,
-                            alignment: Alignment.center,
-                            decoration: AppTheme.smoothBox(
-                              color: isDark
+                            child: ChorokCard(
+                              inner: true,
+                              showBorder: false,
+                              backgroundColor: isDark
                                   ? AppTheme.primary.withValues(alpha: 0.5)
                                   : AppTheme.lightPrimaryAccent,
-                              radius: AppTheme.radiusMD,
-                            ),
-                            child: Text(
-                              '이어 읽기  ${(book.readingProgress * 100).toInt()}%',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                color: isDark
-                                    ? AppTheme.primaryLight
-                                    : Colors.white,
+                              padding: EdgeInsets.zero,
+                              child: Center(
+                                child: Text(
+                                  '이어 읽기  ${(book.readingProgress * 100).toInt()}%',
+                                  style: AppTheme.rowText.copyWith(
+                                    color: isDark
+                                        ? AppTheme.primaryLight
+                                        : AppTheme.lightSurface,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -2796,7 +2688,7 @@ class _BookCard extends StatelessWidget {
                   ],
                   if (book.status == ReadingStatus.completed &&
                       book.totalReadingHours > 0) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Row(
                       children: [
                         Icon(
@@ -2804,7 +2696,7 @@ class _BookCard extends StatelessWidget {
                           size: 11,
                           color: context.appTextTertiary,
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: AppTheme.spaceXS),
                         Text(
                           '${book.totalReadingHours.toStringAsFixed(1)}시간',
                           style: AppTheme.captionSmall.copyWith(
@@ -2812,13 +2704,13 @@ class _BookCard extends StatelessWidget {
                           ),
                         ),
                         if (book.savedSentences.isNotEmpty) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppTheme.spaceSM),
                           Icon(
                             Icons.format_quote_rounded,
                             size: 11,
                             color: context.appTextTertiary,
                           ),
-                          const SizedBox(width: 3),
+                          const SizedBox(width: AppTheme.spaceXS),
                           Text(
                             '${book.savedSentences.length}',
                             style: AppTheme.captionSmall.copyWith(
@@ -2903,14 +2795,9 @@ class _BookListTile extends StatelessWidget {
           HapticFeedback.selectionClick();
           pushBookInfo(context, book);
         },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: 10,
-            side: BorderSide.none,
-            shadows: isDark ? null : AppTheme.lightCardShadows,
-          ),
+        child: ChorokCard(
+          showBorder: false,
+          padding: const EdgeInsets.all(AppTheme.spaceMD),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2921,9 +2808,9 @@ class _BookListTile extends StatelessWidget {
                     book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 52,
                 height: 72,
-                radius: 10,
+                radius: AppTheme.radiusInner,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               // 정보
               Expanded(
                 child: Column(
@@ -2937,50 +2824,43 @@ class _BookListTile extends StatelessWidget {
                             book.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTheme.bodySmall.copyWith(
+                            style: AppTheme.body.copyWith(
                               color: context.appTextPrimary,
-                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
                         if (isCompleted) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppTheme.spaceXS),
                           Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
+                            padding: const EdgeInsets.all(AppTheme.spaceXS),
+                            decoration: BoxDecoration(
                               color: AppTheme.primary,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check_rounded,
                               size: 10,
-                              color: Colors.white,
+                              color: context.appTextPrimary,
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Text(
                       book.author,
                       style: AppTheme.captionSmall.copyWith(
                         color: context.appTextSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppTheme.spaceSM),
                     if (isReading) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: book.readingProgress,
-                          backgroundColor: context.appBorder,
-                          valueColor: AlwaysStoppedAnimation(
-                            context.appPrimaryAccent,
-                          ),
-                          minHeight: 3,
-                        ),
+                      ChorokProgressBar(
+                        value: book.readingProgress,
+                        trackColor: context.appBorder,
+                        valueColor: context.appPrimaryAccent,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppTheme.spaceXS),
                       Row(
                         children: [
                           Text(
@@ -2990,7 +2870,7 @@ class _BookListTile extends StatelessWidget {
                               fontWeight: FontWeight.w400,
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppTheme.spaceXS),
                           Text(
                             '${book.currentPage}/${book.totalPages}쪽',
                             style: AppTheme.captionSmall.copyWith(
@@ -2998,15 +2878,14 @@ class _BookListTile extends StatelessWidget {
                             ),
                           ),
                           if (_estimateCompletion(book) case final est?) ...[
-                            const SizedBox(width: 4),
+                            const SizedBox(width: AppTheme.spaceXS),
                             Flexible(
                               child: Text(
                                 '· $est',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTheme.captionSmall.copyWith(
+                                style: AppTheme.caption.copyWith(
                                   color: context.appTextTertiary,
-                                  fontSize: 10,
                                 ),
                               ),
                             ),
@@ -3022,7 +2901,7 @@ class _BookListTile extends StatelessWidget {
                               size: 11,
                               color: context.appTextTertiary,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: AppTheme.spaceXS),
                             Text(
                               '${book.totalReadingHours.toStringAsFixed(1)}시간',
                               style: AppTheme.captionSmall.copyWith(
@@ -3031,13 +2910,13 @@ class _BookListTile extends StatelessWidget {
                             ),
                           ],
                           if (book.savedSentences.isNotEmpty) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spaceSM),
                             Icon(
                               Icons.format_quote_rounded,
                               size: 11,
                               color: context.appTextTertiary,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: AppTheme.spaceXS),
                             Text(
                               '${book.savedSentences.length}문장',
                               style: AppTheme.captionSmall.copyWith(
@@ -3053,7 +2932,7 @@ class _BookListTile extends StatelessWidget {
               ),
               // 이어읽기 버튼 (읽는 중, 내 서재 전용)
               if (isReading && isOwner) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spaceSM),
                 Semantics(
                   label: '${book.title} 이어 읽기',
                   button: true,
@@ -3072,20 +2951,23 @@ class _BookListTile extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Container(
+                    child: SizedBox(
                       width: 36,
                       height: 36,
-                      decoration: AppTheme.smoothBox(
-                        color: isDark
+                      child: ChorokCard(
+                        inner: true,
+                        showBorder: false,
+                        backgroundColor: isDark
                             ? AppTheme.primary.withValues(alpha: 0.5)
                             : AppTheme.lightPrimaryAccent,
-                        radius: 10,
-                        side: BorderSide.none,
-                      ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        size: 18,
-                        color: isDark ? AppTheme.primaryLight : Colors.white,
+                        padding: EdgeInsets.zero,
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          size: 18,
+                          color: isDark
+                              ? AppTheme.primaryLight
+                              : AppTheme.lightSurface,
+                        ),
                       ),
                     ),
                   ),
@@ -3110,73 +2992,72 @@ class _SortSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+      padding: const EdgeInsets.only(
+        bottom: AppTheme.spaceXL + AppTheme.spaceLG,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ChorokSheetHandle(),
-          const SizedBox(height: 16),
-          Text(
-            '정렬',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextPrimary,
+          const ChorokSheetHeader(title: '정렬'),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.screenPadding,
             ),
-          ),
-          const SizedBox(height: 12),
-          ...(_SortOption.values.map(
-            (opt) => Semantics(
-              label: opt.label,
-              button: true,
-              selected: opt == current,
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onSelected(opt);
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  decoration: AppTheme.smoothBox(
-                    color: opt == current
-                        ? AppTheme.primary.withValues(alpha: 0.15)
-                        : context.appCardElevated,
-                    radius: 10,
-                    side: BorderSide.none,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          opt.label,
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: opt == current
-                                ? context.appPrimaryAccent
-                                : context.appTextPrimary,
-                            fontWeight: opt == current
-                                ? FontWeight.w400
-                                : FontWeight.w400,
+            child: Column(
+              children: _SortOption.values
+                  .map(
+                    (opt) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                      child: Semantics(
+                        label: opt.label,
+                        button: true,
+                        selected: opt == current,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            onSelected(opt);
+                          },
+                          child: ChorokCard(
+                            inner: true,
+                            showBorder: false,
+                            backgroundColor: opt == current
+                                ? AppTheme.primary.withValues(alpha: 0.15)
+                                : context.appCardElevated,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spaceLG,
+                              vertical: AppTheme.spaceMD,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    opt.label,
+                                    style: AppTheme.body.copyWith(
+                                      color: opt == current
+                                          ? context.appPrimaryAccent
+                                          : context.appTextPrimary,
+                                    ),
+                                  ),
+                                ),
+                                if (opt == current)
+                                  Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                    color: isDark
+                                        ? AppTheme.primaryLight
+                                        : AppTheme.lightPrimaryAccent,
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      if (opt == current)
-                        Icon(
-                          Icons.check_rounded,
-                          size: 18,
-                          color: isDark
-                              ? AppTheme.primaryLight
-                              : AppTheme.lightPrimaryAccent,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                  )
+                  .toList(),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -3260,142 +3141,128 @@ class _ViewerProfileHeaderState extends ConsumerState<_ViewerProfileHeader> {
             height: 16,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: filled ? Colors.white : context.appTextSecondary,
+              color: filled ? AppTheme.primary : context.appTextSecondary,
             ),
           )
-        : Text(
-            label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-          );
+        : Text(label, style: AppTheme.body);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
-        16,
+        AppTheme.spaceLG,
         AppTheme.screenPadding,
         0,
       ),
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: isDark
-                    ? AppTheme.primary.withValues(alpha: 0.4)
-                    : context.primaryBg(0.14),
-                backgroundImage:
-                    (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(p.avatarUrl!)
-                    : null,
-                child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
-                    ? Icon(
-                        Icons.person_rounded,
-                        size: 32,
-                        color: context.appPrimaryAccent,
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p.displayName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: context.appTextPrimary,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '@${p.username}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.appTextSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                    if (followRelationshipHint(relationship)
-                        case final hint?) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        hint,
-                        style: TextStyle(
-                          fontSize: 12,
+      child: ChorokCard(
+        showBorder: false,
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: isDark
+                      ? AppTheme.primary.withValues(alpha: 0.4)
+                      : context.primaryBg(0.14),
+                  backgroundImage:
+                      (p.avatarUrl != null && p.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(p.avatarUrl!)
+                      : null,
+                  child: (p.avatarUrl == null || p.avatarUrl!.isEmpty)
+                      ? Icon(
+                          Icons.person_rounded,
+                          size: 32,
                           color: context.appPrimaryAccent,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: AppTheme.spaceLG),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.displayName,
+                        style: AppTheme.rowText.copyWith(
+                          color: context.appTextPrimary,
                           height: 1.4,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (!widget.isBlocked)
-                SizedBox(
-                  height: 40,
-                  child: filled
-                      ? FilledButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _toggleFollow(relationship),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: context.appPrimaryAccent,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: context.appPrimaryAccent
-                                .withValues(alpha: 0.45),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMD,
-                              ),
-                            ),
-                          ),
-                          child: buttonChild(),
-                        )
-                      : TextButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _toggleFollow(relationship),
-                          style: TextButton.styleFrom(
-                            backgroundColor: context.appCardElevated,
-                            foregroundColor: context.appTextSecondary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMD,
-                              ),
-                            ),
-                          ),
-                          child: buttonChild(),
+                      const SizedBox(height: AppTheme.spaceXS),
+                      Text(
+                        '@${p.username}',
+                        style: AppTheme.supportingText.copyWith(
+                          color: context.appTextSecondary,
+                          height: 1.4,
                         ),
+                      ),
+                      if (followRelationshipHint(relationship)
+                          case final hint?) ...[
+                        const SizedBox(height: AppTheme.spaceXS),
+                        Text(
+                          hint,
+                          style: AppTheme.supportingText.copyWith(
+                            color: context.appPrimaryAccent,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-            ],
-          ),
-          if (p.bio != null && p.bio!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                p.bio!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appTextSecondary,
-                  height: 1.4,
+                const SizedBox(width: AppTheme.spaceSM),
+                if (!widget.isBlocked)
+                  SizedBox(
+                    height: 40,
+                    child: filled
+                        ? FilledButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _toggleFollow(relationship),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: context.appPrimaryAccent,
+                              foregroundColor: AppTheme.primary,
+                              disabledBackgroundColor: context.appPrimaryAccent
+                                  .withValues(alpha: 0.45),
+                              shape: AppTheme.smoothShape(
+                                radius: AppTheme.radiusInner,
+                              ),
+                            ),
+                            child: buttonChild(),
+                          )
+                        : TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => _toggleFollow(relationship),
+                            style: TextButton.styleFrom(
+                              backgroundColor: context.appCardElevated,
+                              foregroundColor: context.appTextSecondary,
+                              shape: AppTheme.smoothShape(
+                                radius: AppTheme.radiusInner,
+                              ),
+                            ),
+                            child: buttonChild(),
+                          ),
+                  ),
+              ],
+            ),
+            if (p.bio != null && p.bio!.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.spaceMD),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  p.bio!,
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextSecondary,
+                    height: 1.4,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -3408,7 +3275,11 @@ class _PrivateLibraryLock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+      padding: const EdgeInsets.only(
+        top: AppTheme.sectionGap * 2,
+        left: AppTheme.spaceXL,
+        right: AppTheme.spaceXL,
+      ),
       child: Column(
         children: [
           Icon(
@@ -3416,19 +3287,17 @@ class _PrivateLibraryLock extends StatelessWidget {
             size: 48,
             color: context.appTextTertiary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             '비공개 계정이에요',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: context.appTextPrimary,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             '팔로우가 수락되면 서재를 볼 수 있어요',
-            style: TextStyle(fontSize: 12, color: context.appTextSecondary),
+            style: AppTheme.supportingText.copyWith(
+              color: context.appTextSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smooth_corner/smooth_corner.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/providers/follow_overlap_provider.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../feed/screen/sentence_detail_screen.dart';
 
 /// 홈 — 전용 겹문장 카드 섹션.
@@ -24,59 +25,37 @@ class OverlapSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 30),
+        const SizedBox(height: AppTheme.sectionGap),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '겹문장',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: context.appTextTertiary,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 20,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '팔로우한 독자와 같은 문장에 멈췄어요',
-                      style: AppTheme.captionLarge.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ],
+          child: ChorokSectionHeader(
+            title: '겹문장',
+            subtitle: '팔로우한 독자와 같은 문장에 멈췄어요',
+            trailing: GestureDetector(
+              onTap: () => context.push(AppConstants.routeFeed),
+              child: Text(
+                '피드 보기 ›',
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextTertiary,
                 ),
               ),
-              GestureDetector(
-                onTap: () => context.push(AppConstants.routeFeed),
-                child: Text(
-                  '피드 보기 ›',
-                  style: AppTheme.captionLarge.copyWith(
-                    color: context.appTextTertiary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (int i = 0; i < items.length; i++)
                 Padding(
                   padding: EdgeInsets.only(
-                    bottom: i < items.length - 1 ? 10 : 0,
+                    bottom: i < items.length - 1 ? AppTheme.spaceSM : 0,
                   ),
                   child: OverlapCard(overlap: items[i]),
                 ),
@@ -122,64 +101,56 @@ class OverlapCard extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: () => _open(context),
-        child: Container(
+        child: ChorokCard(
           clipBehavior: Clip.antiAlias,
-          decoration: AppTheme.smoothBox(
-            color: context.appCard,
-            radius: AppTheme.radiusLG,
-            side: const BorderSide(color: Color(0xFF8DFF54)),
-          ),
-          padding: const EdgeInsets.all(14),
+          borderColor: context.appPrimaryAccent,
+          padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppTheme.spaceSM,
             children: [
               // 겹문장 배지
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: ShapeDecoration(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
-                  shape: SmoothRectangleBorder(
-                    smoothness: 0.6,
-                    borderRadius: BorderRadius.circular(10),
-                    side: BorderSide.none,
-                  ),
+              ChorokCard(
+                inner: true,
+                backgroundColor: context.appPrimaryAccent.withValues(
+                  alpha: 0.08,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: AppTheme.spaceXS,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.join_inner_rounded,
-                      size: 11,
+                      size: AppTheme.spaceMD,
                       color: context.appPrimaryAccent,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppTheme.spaceXS),
                     Text(
                       '겹문장 · ${overlap.neighborName}',
-                      style: AppTheme.captionSmall.copyWith(
+                      style: AppTheme.caption.copyWith(
                         color: context.appPrimaryAccent,
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
               // 공통 문구
               Text(
                 '"${overlap.commonPhrase}"',
-                style: AppTheme.bodySmall.copyWith(
+                style: AppTheme.body.copyWith(
                   color: context.appTextPrimary,
-                  fontStyle: FontStyle.italic,
                   height: 1.6,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 10),
               // 책 정보
               Text(
                 '${overlap.bookTitle} · ${overlap.bookAuthor}',
-                style: AppTheme.captionSmall.copyWith(
+                style: AppTheme.caption.copyWith(
                   color: context.appTextTertiary,
                 ),
                 maxLines: 1,

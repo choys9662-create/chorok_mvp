@@ -192,20 +192,19 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: AppTheme.spaceLG,
                     children: [
                       Icon(
                         Icons.error_outline_rounded,
                         color: context.appTextTertiary,
                         size: 48,
                       ),
-                      const SizedBox(height: 16),
                       Text(
                         '데이터를 불러오지 못했어요',
                         style: AppTheme.bodyMedium.copyWith(
                           color: context.appTextSecondary,
                         ),
                       ),
-                      const SizedBox(height: 16),
                       TextButton(
                         onPressed: () =>
                             ref.read(analyticsProvider.notifier).refresh(),
@@ -239,12 +238,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ),
           children: [
             const _AnalyticsHeader(),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             TabSelector(
               selected: _tab,
               onChanged: (i) => setState(() => _tab = i),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
             ...(_tab == 0
                 ? _buildWeekContent(a, weekSubtitle, now)
                 : _tab == 1
@@ -928,14 +927,14 @@ class _PeriodNavigator extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.arrow_left_rounded, color: context.appTextTertiary),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppTheme.spaceLG),
             Text(
               label,
               style: AppTheme.bodyLarge.copyWith(
                 color: context.appTextSecondary,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppTheme.spaceLG),
             Icon(Icons.arrow_right_rounded, color: context.appTextTertiary),
           ],
         ),
@@ -992,15 +991,15 @@ class _WeeklyReadingCard extends StatelessWidget {
                 highlightIndex: highlightIndex,
               ),
             ),
-            const SizedBox(width: 18),
+            const SizedBox(width: AppTheme.spaceLG),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _StatBlock(label: '누적', value: totalLabel),
-                const SizedBox(height: 18),
+                const SizedBox(height: AppTheme.spaceLG),
                 _StatBlock(label: '평균', value: averageLabel),
-                const SizedBox(height: 18),
+                const SizedBox(height: AppTheme.spaceLG),
                 _StatBlock(label: '지난 주 대비', value: comparisonLabel),
               ],
             ),
@@ -1044,6 +1043,9 @@ class _WeeklyBarChart extends StatelessWidget {
                               : context.appTextSecondary.withValues(
                                   alpha: 0.72,
                                 ),
+                          // 구조상 예외: 16px 얇은 막대그래프 기둥의 미세
+                          // 라운딩 — outer/inner 박스 토큰과 무관한
+                          // 차트 렌더링 디테일.
                           borderRadius: BorderRadius.circular(1),
                         ),
                       ),
@@ -1147,11 +1149,13 @@ class _WeeklyGoalCard extends StatelessWidget {
               _GoalText(label: '주간 독서 목표', value: goalLabel, alignEnd: true),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: AppTheme.space2XL),
           Stack(
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
+                // 구조상 예외: minHeight 18의 얇은 바 — 표준 진행바(radiusOuter)
+                // 보다 미세한 라운딩으로 의도적으로 얇게 유지.
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: clamped,
@@ -1223,12 +1227,12 @@ class _GoalText extends StatelessWidget {
       crossAxisAlignment: alignEnd
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
+      spacing: AppTheme.spaceXS,
       children: [
         Text(
           label,
           style: AppTheme.captionLarge.copyWith(color: context.appTextTertiary),
         ),
-        const SizedBox(height: 4),
         Text(
           value,
           style: AppTheme.headingMedium.copyWith(color: context.appTextPrimary),
@@ -1248,19 +1252,16 @@ class _TimePatternCard extends StatelessWidget {
     final total = slots.fold<int>(0, (sum, slot) => sum + slot.minutes);
     return _HabitCard(
       child: Column(
-        children: slots
-            .map((slot) {
-              final percent = total == 0 ? 0 : (slot.minutes / total * 100);
-              return _TimePatternRow(
-                label: slot.label,
-                range: slot.range,
-                progress: total == 0 ? 0 : slot.minutes / total,
-                percentLabel: '${percent.round()}%',
-              );
-            })
-            .expand((row) => [row, const SizedBox(height: 12)])
-            .take(slots.length * 2 - 1)
-            .toList(),
+        spacing: AppTheme.spaceMD,
+        children: slots.map((slot) {
+          final percent = total == 0 ? 0 : (slot.minutes / total * 100);
+          return _TimePatternRow(
+            label: slot.label,
+            range: slot.range,
+            progress: total == 0 ? 0 : slot.minutes / total,
+            percentLabel: '${percent.round()}%',
+          );
+        }).toList(),
       ),
     );
   }
@@ -1306,6 +1307,8 @@ class _TimePatternRow extends StatelessWidget {
         ),
         Expanded(
           child: ClipRRect(
+            // 구조상 예외: minHeight 5의 매우 얇은 바 — radiusOuter(10)를
+            // 적용하면 하프캡슐 형태가 과도하게 뭉개져 최소 라운딩만 유지.
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: clamped,

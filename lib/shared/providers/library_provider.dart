@@ -347,6 +347,7 @@ final _kMockBooks = [
     author: '한강',
     coverUrl:
         'https://image.aladin.co.kr/product/29137/2/cover500/8936434594_2.jpg',
+    isbn: '9788936434595',
     status: ReadingStatus.reading,
     totalPages: 276,
     currentPage: 196,

@@ -32,12 +32,15 @@ class StreakBanner extends ConsumerWidget {
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceLG,
+              vertical: AppTheme.spaceMD,
+            ),
             decoration: ShapeDecoration(
               color: AppTheme.warningColor.withValues(alpha: 0.08),
               shape: SmoothRectangleBorder(
                 smoothness: 0.6,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                 side: BorderSide(
                   color: AppTheme.warningColor.withValues(alpha: 0.24),
                 ),
@@ -45,14 +48,16 @@ class StreakBanner extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Text('🔥', style: const TextStyle(fontSize: 24)),
+                // 이모지 장식 — 24→18 스냅(§3)
+                const Text(
+                  '🔥',
+                  style: TextStyle(fontSize: AppTheme.fsSectionTitle),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '$days일 연속 독서 중',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
+                    style: AppTheme.supportingText.copyWith(
                       color: AppTheme.warningColor,
                       height: 1.4,
                     ),

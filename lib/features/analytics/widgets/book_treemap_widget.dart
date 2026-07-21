@@ -68,6 +68,8 @@ class BookTreemapWidget extends StatelessWidget {
                   final rect = rects[i];
                   final item = sorted[i];
                   final t = maxH > 0 ? item.hours / maxH : 0.0;
+                  // 구조상 예외: 트리맵 강도 그라데이션의 저강도 끝값 —
+                  // heatmap_calendar_widget.dart의 _kLv1과 동일 계열.
                   final color = Color.lerp(
                     const Color(0xFF0F6E56),
                     context.appPrimaryAccent,
@@ -85,7 +87,7 @@ class BookTreemapWidget extends StatelessWidget {
                     width: rect.width - 2,
                     height: rect.height - 2,
                     child: SmoothClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusInner),
                       smoothness: 0.6,
                       child: Container(
                         padding: const EdgeInsets.all(10),
@@ -108,7 +110,7 @@ class BookTreemapWidget extends StatelessWidget {
                                       maxLines: 2,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: AppTheme.spaceXS),
                                   Text(
                                     '${item.hours.toStringAsFixed(1)}h',
                                     style: AppTheme.captionSmall.copyWith(

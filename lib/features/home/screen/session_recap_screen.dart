@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -29,14 +28,14 @@ import '../controller/weekly_minutes_provider.dart';
 import '../controller/recommended_books_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 import '../../../shared/widgets/book_cover.dart';
 
-const _recapBg = Color(0xFF000000);
+const _recapBg = AppTheme.darkBg;
 const _recapActionBg = AppTheme.darkCard;
 const _recapBlue = AppTheme.primaryLight;
-const _recapCard = AppTheme.darkCard;
 const _recapText = AppTheme.textPrimary;
 const _recapMuted = AppTheme.textTertiary;
 
@@ -125,20 +124,8 @@ CollectedSentence? _featuredSentence(List<CollectedSentence> sentences) {
   return sentences.isEmpty ? null : sentences.first;
 }
 
-List<Color> _recapBookGradientColors(String bookTitle) {
-  const palettes = [
-    [Color(0xFFE8F8E8), Color(0xFF8DFF54)],
-    [Color(0xFFE7FFF6), Color(0xFF61DDB2)],
-    [Color(0xFFFFF2DD), Color(0xFFFFB761)],
-    [Color(0xFFFFECEC), Color(0xFFFF8C8C)],
-    [Color(0xFFE9F2FF), Color(0xFF88AEFF)],
-    [Color(0xFFF4EDFF), Color(0xFFB58CFF)],
-    [Color(0xFFEAFDF8), Color(0xFF8CB5FF)],
-    [Color(0xFFFFF6E8), Color(0xFFFFD37A)],
-  ];
-  final h = bookTitle.codeUnits.fold(0, (a, b) => a + b);
-  return palettes[h % palettes.length];
-}
+List<Color> _recapBookGradientColors(String bookTitle) =>
+    AppTheme.coverGradientFor(bookTitle);
 
 List<Color> _coverGradientFromPixels(ByteData data, int width, int height) {
   final stepX = (width / 24).ceil().clamp(1, width).toInt();
@@ -487,7 +474,12 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 26, 16, 30),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.screenPadding,
+                      AppTheme.spaceXL,
+                      AppTheme.screenPadding,
+                      AppTheme.sectionGap,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -498,7 +490,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                           publishedYear: widget.data.publishedYear,
                           coverUrl: widget.data.coverUrl,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: AppTheme.spaceXL),
                         if (featuredSentence != null) ...[
                           _FeaturedSentenceCard(
                             sentence: featuredSentence,
@@ -512,7 +504,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                               });
                             },
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppTheme.spaceSM),
                         ],
                         _SummaryRow(
                           icon: Icons.schedule_rounded,
@@ -557,10 +549,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
                             textAlign: TextAlign.right,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: _valueStyle().copyWith(
-                              fontSize: 18,
-                              height: 1.1,
-                            ),
+                            style: _sectionStyle(),
                           ),
                         ),
                         _CompanionSummarySection(
@@ -609,25 +598,24 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
   }
 }
 
-// 세션 요약 — 큰 숫자 값 스타일 (독서시간/집중도/진행도/초서기록/한줄평 공용)
-TextStyle _valueStyle({Color color = _recapText, double fontSize = 28}) =>
-    TextStyle(
-      fontFamily: AppTheme.fontFamily,
-      fontSize: fontSize,
-      fontWeight: FontWeight.w300,
-      color: color,
-      height: 1,
-      letterSpacing: 0,
-    );
+// 세션 리캡은 앱 공통 여섯 단계 타이포 토큰만 사용한다.
+TextStyle _valueStyle({Color color = _recapText}) =>
+    AppTheme.screenTitle.copyWith(color: color, height: 1);
 
-TextStyle _labelStyle({double fontSize = 10}) => TextStyle(
-  fontFamily: AppTheme.fontFamily,
-  fontSize: fontSize,
-  fontWeight: FontWeight.w400,
-  color: _recapMuted,
-  height: 1.25,
-  letterSpacing: 0,
-);
+TextStyle _sectionStyle({Color color = _recapText}) =>
+    AppTheme.sectionTitle.copyWith(color: color);
+
+TextStyle _rowStyle({Color color = _recapText}) =>
+    AppTheme.rowText.copyWith(color: color);
+
+TextStyle _bodyStyle({Color color = _recapText}) =>
+    AppTheme.body.copyWith(color: color);
+
+TextStyle _supportingStyle({Color color = _recapMuted}) =>
+    AppTheme.supportingText.copyWith(color: color);
+
+TextStyle _captionStyle({Color color = _recapMuted}) =>
+    AppTheme.caption.copyWith(color: color);
 
 class _FeaturedSentenceCard extends StatefulWidget {
   final CollectedSentence sentence;
@@ -732,18 +720,17 @@ class _FeaturedSentenceCardState extends State<_FeaturedSentenceCard> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            height: 70,
-            decoration: AppTheme.smoothBox(
-              radius: 10,
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: colors,
-              ),
+        child: SizedBox(
+          height: AppTheme.sectionGap + AppTheme.spaceXL + AppTheme.spaceLG,
+          child: ChorokCard(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: colors,
             ),
+            showBorder: false,
+            padding: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -762,67 +749,60 @@ class _FeaturedSentenceCardState extends State<_FeaturedSentenceCard> {
                       ),
                     ),
                   ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
+                Positioned.fill(
+                  child: ChorokCard(
                     gradient: LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: hasCover
                           ? [
-                              Colors.white.withValues(alpha: 0.62),
+                              AppTheme.textPrimary.withValues(alpha: 0.62),
                               colors.last.withValues(alpha: 0.72),
                             ]
                           : colors,
                     ),
+                    showBorder: false,
+                    padding: EdgeInsets.zero,
+                    child: const SizedBox.expand(),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceXL,
+                  ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.auto_awesome_rounded,
                         size: 17,
-                        color: Color(0xFF101510),
+                        color: AppTheme.darkBg,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppTheme.spaceMD),
                       Expanded(
                         child: Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF101510),
-                            height: 1.2,
-                            letterSpacing: 0,
-                          ),
+                          style: AppTheme.body.copyWith(color: AppTheme.darkBg),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppTheme.spaceMD),
                       Text(
                         meta,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontFamily,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF1D2A1F),
-                          height: 1.2,
-                          letterSpacing: 0,
+                        style: AppTheme.supportingText.copyWith(
+                          color: AppTheme.darkBg.withValues(alpha: 0.78),
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: AppTheme.spaceSM),
                       AnimatedRotation(
                         turns: widget.isExpanded ? 0.5 : 0,
                         duration: const Duration(milliseconds: 180),
                         child: const Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
-                          color: Color(0xFF101510),
+                          color: AppTheme.darkBg,
                         ),
                       ),
                     ],
@@ -864,38 +844,31 @@ class _SummaryBookHeader extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('6번째 세션 요약', style: _labelStyle(fontSize: 12)),
-        const SizedBox(height: 12),
+        Text('6번째 세션 요약', style: _supportingStyle()),
+        const SizedBox(height: AppTheme.spaceMD),
         BookCover(
           coverUrl: coverUrl,
           gradientIndex:
               bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
           width: 80,
           height: 122,
-          radius: 6,
+          radius: AppTheme.radiusInner,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppTheme.spaceLG),
         Text(
           bookTitle,
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: AppTheme.fontFamily,
-            fontSize: 17,
-            fontWeight: FontWeight.w400,
-            color: _recapText,
-            height: 1.25,
-            letterSpacing: 0,
-          ),
+          style: _sectionStyle(),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppTheme.spaceXS),
         Text(
           meta,
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: _labelStyle(fontSize: 12),
+          style: _supportingStyle(),
         ),
       ],
     );
@@ -916,31 +889,31 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 68,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: _recapCard,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 94,
-            child: Row(
-              children: [
-                Icon(icon, size: 16, color: _recapMuted),
-                const SizedBox(width: 8),
-                Text(label, style: _labelStyle(fontSize: 12)),
-              ],
-            ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+      child: SizedBox(
+        height: 68,
+        child: ChorokCard(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceXL),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 94,
+                child: Row(
+                  children: [
+                    Icon(icon, size: 16, color: _recapMuted),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(label, style: _supportingStyle()),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Align(alignment: Alignment.centerRight, child: child),
+              ),
+            ],
           ),
-          Expanded(
-            child: Align(alignment: Alignment.centerRight, child: child),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -971,11 +944,9 @@ class _ProgressValue extends StatelessWidget {
         if (total > 0) ...[
           Text(
             '$current / $total',
-            style: _labelStyle(
-              fontSize: 10,
-            ).copyWith(color: _recapMuted.withValues(alpha: 0.86)),
+            style: _captionStyle(color: _recapMuted.withValues(alpha: 0.86)),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppTheme.spaceSM),
         ],
         Text('$percent%', style: _valueStyle(color: color)),
       ],
@@ -1003,59 +974,60 @@ class _ChoseoSummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final recordCount = sentences.where((s) => s.thought.isNotEmpty).length;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: _recapCard,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 68,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 116,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.format_quote_rounded,
-                          size: 16,
-                          color: _recapMuted,
-                        ),
-                        const SizedBox(width: 8),
-                        Text('초서기록', style: _labelStyle(fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: _ChoseoValue(
-                        sentenceCount: sentences.length,
-                        recordCount: recordCount,
-                        color: _recapText,
-                        isExpanded: isExpanded,
-                        onToggle: onToggle,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+      child: ChorokCard(
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 68,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceXL,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 116,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.format_quote_rounded,
+                            size: 16,
+                            color: _recapMuted,
+                          ),
+                          const SizedBox(width: AppTheme.spaceSM),
+                          Text('초서기록', style: _supportingStyle()),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _ChoseoValue(
+                          sentenceCount: sentences.length,
+                          recordCount: recordCount,
+                          color: _recapText,
+                          isExpanded: isExpanded,
+                          onToggle: onToggle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          _ChoseoRecordsPanel(
-            sentences: sentences,
-            isExpanded: isExpanded,
-            bookTitle: bookTitle,
-            bookAuthor: bookAuthor,
-          ),
-        ],
+            _ChoseoRecordsPanel(
+              sentences: sentences,
+              isExpanded: isExpanded,
+              bookTitle: bookTitle,
+              bookAuthor: bookAuthor,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1084,18 +1056,15 @@ class _ChoseoValue extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '문장 $sentenceCount | 생각 $recordCount',
-            style: _labelStyle(fontSize: 11),
-          ),
-          const SizedBox(width: 10),
+          Text('문장 $sentenceCount | 생각 $recordCount', style: _captionStyle()),
+          const SizedBox(width: AppTheme.spaceMD),
           Text('$sentenceCount개', style: _valueStyle(color: color)),
           Semantics(
             button: true,
             label: isExpanded ? '내 초서 기록 접기' : '내 초서 기록 펼치기',
             child: InkResponse(
               onTap: onToggle,
-              radius: 18,
+              radius: AppTheme.spaceXL,
               child: SizedBox(
                 width: 30,
                 height: 30,
@@ -1144,32 +1113,38 @@ class _ChoseoRecordsPanel extends ConsumerWidget {
 
     return AnimatedCrossFade(
       firstChild: const SizedBox(width: double.infinity),
-      secondChild: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        child: sentences.isEmpty
-            ? Text(
-                '아직 기록한 문장이 없어요',
-                textAlign: TextAlign.right,
-                style: _labelStyle(fontSize: 12),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (int i = 0; i < sentences.length; i++) ...[
-                    _ChoseoRecordItem(
-                      sentence: sentences[i],
-                      overlapInsight:
-                          insightsByNormalized[SentenceNormalizer.normalize(
-                            sentences[i].content,
-                          )],
-                      bookTitle: bookTitle,
-                      bookAuthor: bookAuthor,
-                    ),
-                    if (i < sentences.length - 1) const SizedBox(height: 8),
+      secondChild: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceMD,
+          0,
+          AppTheme.spaceMD,
+          AppTheme.spaceMD,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: sentences.isEmpty
+              ? Text(
+                  '아직 기록한 문장이 없어요',
+                  textAlign: TextAlign.right,
+                  style: _supportingStyle(),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppTheme.spaceSM,
+                  children: [
+                    for (int i = 0; i < sentences.length; i++)
+                      _ChoseoRecordItem(
+                        sentence: sentences[i],
+                        overlapInsight:
+                            insightsByNormalized[SentenceNormalizer.normalize(
+                              sentences[i].content,
+                            )],
+                        bookTitle: bookTitle,
+                        bookAuthor: bookAuthor,
+                      ),
                   ],
-                ],
-              ),
+                ),
+        ),
       ),
       crossFadeState: isExpanded
           ? CrossFadeState.showSecond
@@ -1213,45 +1188,44 @@ class _ChoseoRecordItemState extends State<_ChoseoRecordItem> {
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
+        ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.fromLTRB(20, 17, 22, 17),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1B1F1B),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: _isOpen
-                  ? Colors.white.withValues(alpha: 0.44)
-                  : Colors.white.withValues(alpha: 0.03),
-              width: _isOpen ? 1.1 : 1,
+          child: ChorokCard(
+            inner: true,
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.spaceXL,
+              AppTheme.spaceLG,
+              AppTheme.spaceXL,
+              AppTheme.spaceLG,
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 34,
-                child: Text(
-                  sentence.pageNumber != null ? '${sentence.pageNumber}' : '',
-                  style: _labelStyle(fontSize: 13).copyWith(
-                    color: _recapMuted.withValues(alpha: 0.82),
-                    height: 1.25,
+            borderColor: _isOpen
+                ? AppTheme.textPrimary.withValues(alpha: 0.44)
+                : context.appBorder,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 34,
+                  child: Text(
+                    sentence.pageNumber != null ? '${sentence.pageNumber}' : '',
+                    style: _bodyStyle(
+                      color: _recapMuted.withValues(alpha: 0.82),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  sentence.content,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: _labelStyle(fontSize: 17).copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                    height: 1.48,
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: Text(
+                    sentence.content,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: _sectionStyle(
+                      color: AppTheme.textPrimary.withValues(alpha: 0.84),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_isOpen) _ChoseoRecordDropdown(thought: thought, insight: insight),
@@ -1268,7 +1242,7 @@ class _ChoseoRecordItemState extends State<_ChoseoRecordItem> {
           HapticFeedback.selectionClick();
           setState(() => _isOpen = !_isOpen);
         },
-        borderRadius: BorderRadius.circular(6),
+        customBorder: AppTheme.smoothShape(radius: AppTheme.radiusInner),
         child: body,
       ),
     );
@@ -1288,59 +1262,55 @@ class _ChoseoRecordDropdown extends StatelessWidget {
         insight?.thoughts.take(2).toList() ?? const <OverlapThought>[];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(52, 17, 22, 18),
-        decoration: BoxDecoration(
-          color: const Color(0xFF161B16),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.045)),
+      padding: const EdgeInsets.only(top: AppTheme.spaceSM),
+      child: ChorokCard(
+        inner: true,
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.sectionGap + AppTheme.spaceXL,
+          AppTheme.spaceLG,
+          AppTheme.spaceXL,
+          AppTheme.spaceLG,
         ),
+        borderColor: context.appBorder,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (thought.isNotEmpty)
               Text(
                 thought,
-                style: _labelStyle(
-                  fontSize: 16,
-                ).copyWith(color: _recapBlue, height: 1.5),
+                style: _rowStyle(color: _recapBlue).copyWith(height: 1.5),
               ),
             if (insight != null && overlapThoughts.isNotEmpty) ...[
-              if (thought.isNotEmpty) const SizedBox(height: 18),
+              if (thought.isNotEmpty) const SizedBox(height: AppTheme.spaceLG),
               Text(
                 '${insight.readerCount}명의 독자가 이 문장에 남긴 생각',
-                style: _labelStyle(fontSize: 12).copyWith(
+                style: _supportingStyle(
                   color: _recapBlue.withValues(alpha: 0.82),
-                  height: 1.35,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppTheme.spaceMD),
               for (final item in overlapThoughts) ...[
                 Text(
                   item.thought,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: _labelStyle(fontSize: 13).copyWith(
-                    color: Colors.white.withValues(alpha: 0.72),
-                    height: 1.45,
-                  ),
+                  style: _bodyStyle(
+                    color: AppTheme.textPrimary.withValues(alpha: 0.72),
+                  ).copyWith(height: 1.45),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   item.displayNameOrUsername,
-                  style: _labelStyle(fontSize: 11).copyWith(
+                  style: _captionStyle(
                     color: _recapMuted.withValues(alpha: 0.82),
-                    height: 1.2,
                   ),
                 ),
                 if (item != overlapThoughts.last)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    child: Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.07),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spaceMD,
                     ),
+                    child: Divider(height: 1, color: context.appDivider),
                   ),
               ],
             ],
@@ -1395,72 +1365,73 @@ class _CompanionSummarySection extends StatelessWidget {
         : companions.map((p) => p.displayName).skip(3).toList();
     final totalCount = friendCount + nearbyCount;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: _recapCard,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          Semantics(
-            button: true,
-            label: isExpanded ? '함께 읽은 사람 접기' : '함께 읽은 사람 펼치기',
-            child: InkWell(
-              onTap: onToggle,
-              child: SizedBox(
-                height: 68,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 116,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.radio_button_checked_rounded,
-                              size: 16,
-                              color: _recapMuted,
-                            ),
-                            const SizedBox(width: 8),
-                            Text('함께 읽은', style: _labelStyle(fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: _CompanionValue(
-                            friendCount: friendCount,
-                            nearbyCount: nearbyCount,
-                            totalCount: totalCount,
-                            isExpanded: isExpanded,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+      child: ChorokCard(
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Semantics(
+              button: true,
+              label: isExpanded ? '함께 읽은 사람 접기' : '함께 읽은 사람 펼치기',
+              child: InkWell(
+                onTap: onToggle,
+                child: SizedBox(
+                  height: 68,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceXL,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 116,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.radio_button_checked_rounded,
+                                size: 16,
+                                color: _recapMuted,
+                              ),
+                              const SizedBox(width: AppTheme.spaceSM),
+                              Text('함께 읽은', style: _supportingStyle()),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _CompanionValue(
+                              friendCount: friendCount,
+                              nearbyCount: nearbyCount,
+                              totalCount: totalCount,
+                              isExpanded: isExpanded,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: _CompanionNamesPanel(
-              friendNames: friendNames,
-              nearbyNames: nearbyNames,
+            AnimatedCrossFade(
+              firstChild: const SizedBox(width: double.infinity),
+              secondChild: _CompanionNamesPanel(
+                friendNames: friendNames,
+                nearbyNames: nearbyNames,
+              ),
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 180),
+              reverseDuration: const Duration(milliseconds: 140),
+              sizeCurve: Curves.easeOutCubic,
             ),
-            crossFadeState: isExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 180),
-            reverseDuration: const Duration(milliseconds: 140),
-            sizeCurve: Curves.easeOutCubic,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1487,11 +1458,8 @@ class _CompanionValue extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '친구 $friendCount | 이웃 $nearbyCount',
-            style: _labelStyle(fontSize: 11),
-          ),
-          const SizedBox(width: 10),
+          Text('친구 $friendCount | 이웃 $nearbyCount', style: _captionStyle()),
+          const SizedBox(width: AppTheme.spaceMD),
           Text('$totalCount명', style: _valueStyle(color: _recapText)),
           SizedBox(
             width: 30,
@@ -1531,32 +1499,36 @@ class _CompanionNamesPanel extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 26),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceXL + AppTheme.spaceSM,
+        0,
+        AppTheme.spaceXL + AppTheme.spaceSM,
+        AppTheme.spaceXL,
+      ),
       child: Column(
         children: [
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          Divider(height: 1, color: context.appDivider),
           if (friendNames.isNotEmpty) ...[
-            const SizedBox(height: 28),
+            const SizedBox(height: AppTheme.spaceXL),
             for (final name in friendNames) ...[
               Text(
                 name,
                 textAlign: TextAlign.center,
-                style: _labelStyle(
-                  fontSize: 20,
-                ).copyWith(color: _recapBlue, height: 1.24),
+                style: _rowStyle(color: _recapBlue),
               ),
-              if (name != friendNames.last) const SizedBox(height: 10),
+              if (name != friendNames.last)
+                const SizedBox(height: AppTheme.spaceMD),
             ],
-            const SizedBox(height: 28),
-            Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+            const SizedBox(height: AppTheme.spaceXL),
+            Divider(height: 1, color: context.appDivider),
           ],
           if (nearbyNames.isNotEmpty) ...[
-            const SizedBox(height: 26),
+            const SizedBox(height: AppTheme.spaceXL),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _CompanionNameColumn(names: left)),
-                const SizedBox(width: 32),
+                const SizedBox(width: AppTheme.spaceXL + AppTheme.spaceSM),
                 Expanded(child: _CompanionNameColumn(names: right)),
               ],
             ),
@@ -1575,20 +1547,16 @@ class _CompanionNameColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      spacing: AppTheme.spaceMD,
       children: [
-        for (final name in names) ...[
+        for (final name in names)
           Text(
             name,
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: _labelStyle(fontSize: 13).copyWith(
-              color: _recapMuted.withValues(alpha: 0.86),
-              height: 1.25,
-            ),
+            style: _bodyStyle(color: _recapMuted.withValues(alpha: 0.86)),
           ),
-          if (name != names.last) const SizedBox(height: 13),
-        ],
       ],
     );
   }
@@ -1620,13 +1588,10 @@ class _RecapHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppTheme.smoothBox(
-        gradient: AppTheme.greenCardGradient,
-        radius: 10,
-        side: BorderSide.none,
-      ),
+    return ChorokCard(
+      gradient: AppTheme.greenCardGradient,
+      showBorder: false,
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1639,9 +1604,9 @@ class _RecapHeroCard extends StatelessWidget {
                     bookTitle.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 64,
                 height: 86,
-                radius: 10,
+                radius: AppTheme.radiusOuter,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppTheme.spaceLG),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1651,22 +1616,22 @@ class _RecapHeroCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.headingSmall.copyWith(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Text(
                       bookAuthor,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTheme.captionLarge.copyWith(
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: AppTheme.textPrimary.withValues(alpha: 0.75),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.spaceMD),
                     Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: AppTheme.spaceSM,
+                      runSpacing: AppTheme.spaceSM,
                       children: [
                         _HeroPill(
                           icon: Icons.schedule_rounded,
@@ -1683,7 +1648,7 @@ class _RecapHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           Row(
             children: [
               Expanded(
@@ -1693,7 +1658,7 @@ class _RecapHeroCard extends StatelessWidget {
                   value: '${focusPercent.round()}%',
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Expanded(
                 child: _RecapStat(
                   icon: Icons.auto_awesome_rounded,
@@ -1703,11 +1668,11 @@ class _RecapHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Text(
             evalText,
             style: AppTheme.bodySmall.copyWith(
-              color: Colors.white.withValues(alpha: 0.86),
+              color: AppTheme.textPrimary.withValues(alpha: 0.86),
               height: 1.5,
             ),
           ),
@@ -1730,28 +1695,29 @@ class _RecapStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: AppTheme.smoothBox(
-        color: Colors.white.withValues(alpha: 0.14),
-        radius: 10,
-        side: BorderSide.none,
+    return ChorokCard(
+      inner: true,
+      backgroundColor: AppTheme.textPrimary.withValues(alpha: 0.14),
+      showBorder: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceMD,
+        vertical: AppTheme.spaceSM,
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 8),
+          Icon(icon, size: 16, color: AppTheme.textPrimary),
+          const SizedBox(width: AppTheme.spaceSM),
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTheme.captionSmall.copyWith(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: AppTheme.textPrimary.withValues(alpha: 0.72),
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppTheme.spaceSM),
           Flexible(
             child: Text(
               value,
@@ -1759,8 +1725,7 @@ class _RecapStat extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
               style: AppTheme.captionLarge.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
+                color: AppTheme.textPrimary,
               ),
             ),
           ),
@@ -1771,6 +1736,8 @@ class _RecapStat extends StatelessWidget {
 }
 
 // ─── 공유용 영수증 캡처 ─────────────────────────────────────────────────
+// 영수증은 흰 종이 위 잉크로 캡처되는 공유 이미지다. 다크 팔레트가 아닌
+// receiptBg + black 잉크색을 쓰는 것은 §2 예외(공유 카드 전용).
 class _ReceiptCapture extends StatelessWidget {
   final String bookTitle;
   final String bookAuthor;
@@ -1793,7 +1760,7 @@ class _ReceiptCapture extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.receiptBg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -1802,7 +1769,10 @@ class _ReceiptCapture extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.space2XL,
+        vertical: 32,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1810,64 +1780,66 @@ class _ReceiptCapture extends StatelessWidget {
             'C H O R O K',
             style: TextStyle(
               color: Colors.black87,
-              fontSize: 30,
+              fontSize: AppTheme.fsScreenTitle, // 로고 워드마크
               fontWeight: FontWeight.w400,
               letterSpacing: 8,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppTheme.spaceXS),
           const Text(
             'READING RECEIPT',
             style: TextStyle(
               color: Colors.black54,
-              fontSize: 12,
+              fontSize: AppTheme.fsSupporting,
               letterSpacing: 3,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           const SizedBox(height: AppTheme.spaceMD),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           Text(
             bookTitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.black87,
-              fontSize: 24,
+              fontSize: AppTheme.fsSectionTitle, // 24→18 스냅(§3)
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             bookAuthor,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.black54, fontSize: 16),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: AppTheme.fsRowText,
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           const SizedBox(height: AppTheme.spaceMD),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           _ReceiptRow('DATE', time_fmt.formatDate(DateTime.now())),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           _ReceiptRow('TIME', timeText),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           _ReceiptRow('FOCUS', '${focusPercent.toInt()}%'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           _ReceiptRow('SCORE', '$score PTS'),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           const SizedBox(height: AppTheme.spaceMD),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           if (firstSentence != null) ...[
             Text(
               '"$firstSentence"',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 16,
-                fontStyle: FontStyle.italic,
+                fontSize: AppTheme.fsRowText,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
+            const SizedBox(height: AppTheme.spaceXL),
           ],
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1881,12 +1853,12 @@ class _ReceiptCapture extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           const Text(
             'THANK YOU FOR READING',
             style: TextStyle(
               color: Colors.black54,
-              fontSize: 10,
+              fontSize: AppTheme.fsCaption,
               letterSpacing: 2,
             ),
           ),
@@ -1920,12 +1892,15 @@ class _SentencesSection extends StatelessWidget {
                 color: context.appTextPrimary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceSM,
+                vertical: 2,
+              ),
               decoration: AppTheme.smoothBox(
                 color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                radius: 10,
+                radius: AppTheme.radiusOuter,
               ),
               child: Text(
                 '${sentences.length}',
@@ -1938,10 +1913,13 @@ class _SentencesSection extends StatelessWidget {
             if (overlapBadge != null) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: 2,
+                ),
                 decoration: AppTheme.smoothBox(
                   color: context.appCardElevated,
-                  radius: 10,
+                  radius: AppTheme.radiusOuter,
                 ),
                 child: Text(
                   overlapBadge!,
@@ -1954,7 +1932,7 @@ class _SentencesSection extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         ...sentences.asMap().entries.map(
           (e) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -2027,7 +2005,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
       decoration: AppTheme.smoothBox(
         color: isSpecial ? null : context.appCard,
         gradient: isSpecial ? specialGradient : null,
-        radius: 10,
+        radius: AppTheme.radiusOuter,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2035,18 +2013,15 @@ class _SentenceAnalysisCard extends StatelessWidget {
           // 분석 배너
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: AppTheme.spaceSM,
+            ),
             decoration: ShapeDecoration(
               color: isSpecial
-                  ? Colors.white.withValues(alpha: 0.12)
+                  ? AppTheme.textPrimary.withValues(alpha: 0.12)
                   : tagColor.withValues(alpha: 0.05),
-              shape: SmoothRectangleBorder(
-                smoothness: 0.6,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                ),
-              ),
+              shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
             ),
             child: Row(
               children: [
@@ -2075,15 +2050,14 @@ class _SentenceAnalysisCard extends StatelessWidget {
                 // 수집한 문장
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
                   decoration: BoxDecoration(
                     color: context.appCardElevated,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   ),
                   child: Text(
                     '"${entry.content}"',
                     style: AppTheme.bodyMedium.copyWith(
-                      fontStyle: FontStyle.italic,
                       color: context.appTextPrimary,
                       height: 1.6,
                     ),
@@ -2091,7 +2065,7 @@ class _SentenceAnalysisCard extends StatelessWidget {
                 ),
                 // 내 생각 (있을 때만)
                 if (entry.thought.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.spaceSM),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2133,7 +2107,7 @@ class _RecapActions extends StatelessWidget {
     return Container(
       height: 74,
       color: _recapActionBg,
-      padding: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.only(top: AppTheme.spaceLG),
       alignment: Alignment.topCenter,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -2148,7 +2122,7 @@ class _RecapActions extends StatelessWidget {
               unawaited(onShare());
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppTheme.spaceSM),
           // 홈
           _RecapActionButton(
             width: 70,
@@ -2156,7 +2130,7 @@ class _RecapActions extends StatelessWidget {
             label: '홈',
             onTap: () => onNavigate(AppConstants.routeHome),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppTheme.spaceSM),
           // 서재
           _RecapActionButton(
             width: 84,
@@ -2196,19 +2170,17 @@ class _RecapActionButton extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           color: filled ? AppTheme.primaryLight : _recapText,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppTheme.radiusInner),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 16, color: fg),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppTheme.spaceXS),
             Text(
               label,
-              style: TextStyle(
-                fontFamily: AppTheme.fontFamily,
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
+              style: AppTheme.body.copyWith(
+                // 13→body(14) 스냅(§3)
                 color: fg,
                 height: 1,
                 letterSpacing: 0,
@@ -2238,7 +2210,7 @@ class _CompletionDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.space2XL),
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusXL,
@@ -2272,26 +2244,26 @@ class _CompletionDialog extends StatelessWidget {
             Text(
               '완독을 축하해요! 🎉',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: AppTheme.fsSectionTitle, // 24→18 스냅(§3)
                 fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
 
             Text(
               '"$bookTitle"을(를)\n끝까지 읽으셨군요!',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: AppTheme.fsRowText,
                 fontWeight: FontWeight.w400,
                 color: context.appTextSecondary,
                 height: 1.6,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
 
             // 감상 남기기
             Semantics(
@@ -2310,7 +2282,7 @@ class _CompletionDialog extends StatelessWidget {
                   child: const Text(
                     '감상 남기기',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       fontWeight: FontWeight.w400,
                       color: AppTheme.darkBg,
                       height: 1.4,
@@ -2319,7 +2291,7 @@ class _CompletionDialog extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
 
             // 나중에
             Semantics(
@@ -2334,7 +2306,7 @@ class _CompletionDialog extends StatelessWidget {
                   child: Text(
                     '나중에',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
                       height: 1.4,
@@ -2363,7 +2335,7 @@ class _ReceiptRow extends StatelessWidget {
           label,
           style: const TextStyle(
             color: Colors.black54,
-            fontSize: 12,
+            fontSize: AppTheme.fsSupporting,
             letterSpacing: 1,
             fontWeight: FontWeight.w400,
           ),
@@ -2372,7 +2344,7 @@ class _ReceiptRow extends StatelessWidget {
           value,
           style: const TextStyle(
             color: Colors.black87,
-            fontSize: 16,
+            fontSize: AppTheme.fsRowText,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -2389,17 +2361,20 @@ class _HeroPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: AppTheme.spaceXS,
+      ),
       decoration: AppTheme.smoothBox(
         color: Colors.white.withValues(alpha: 0.15),
-        radius: 10,
+        radius: AppTheme.radiusOuter,
         side: BorderSide.none,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: Colors.white),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppTheme.spaceXS),
           Text(
             label,
             style: AppTheme.captionSmall.copyWith(
@@ -2430,7 +2405,7 @@ class _ChainLightningDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.space2XL),
         decoration: AppTheme.smoothBox(
           color: context.appCard,
           radius: AppTheme.radiusXL,
@@ -2448,7 +2423,7 @@ class _ChainLightningDialog extends StatelessWidget {
             Text(
               '다음 책으로 이건 어떠세요?',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: AppTheme.fsSectionTitle, // 20→18 스냅(§3)
                 fontWeight: FontWeight.w400,
                 color: context.appTextPrimary,
                 height: 1.4,
@@ -2466,9 +2441,9 @@ class _ChainLightningDialog extends StatelessWidget {
                   gradientIndex: book.gradientIndex,
                   width: 56,
                   height: 72,
-                  radius: 10,
+                  radius: AppTheme.radiusOuter,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppTheme.spaceLG),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2489,7 +2464,7 @@ class _ChainLightningDialog extends StatelessWidget {
                           color: context.appTextSecondary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppTheme.spaceSM),
                       Text(
                         book.reason,
                         style: AppTheme.captionSmall.copyWith(
@@ -2503,7 +2478,7 @@ class _ChainLightningDialog extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceXL),
 
             // 바로 읽기
             Semantics(
@@ -2522,7 +2497,7 @@ class _ChainLightningDialog extends StatelessWidget {
                   child: const Text(
                     '바로 읽기',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       fontWeight: FontWeight.w400,
                       color: AppTheme.darkBg,
                       height: 1.4,
@@ -2531,7 +2506,7 @@ class _ChainLightningDialog extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
 
             // 나중에요
             Semantics(
@@ -2546,7 +2521,7 @@ class _ChainLightningDialog extends StatelessWidget {
                   child: Text(
                     '나중에요',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       fontWeight: FontWeight.w400,
                       color: context.appTextTertiary,
                       height: 1.4,

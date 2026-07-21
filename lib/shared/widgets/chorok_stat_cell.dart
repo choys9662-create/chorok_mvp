@@ -27,7 +27,7 @@ class ChorokStatCell extends StatelessWidget {
           children: [
             if (icon != null) ...[
               Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppTheme.spaceXS),
             ],
             Flexible(
               child: FittedBox(

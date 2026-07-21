@@ -24,7 +24,7 @@ class BookCover extends StatelessWidget {
     this.gradientIndex = 0,
     this.width,
     this.height,
-    this.radius = AppTheme.radiusMD,
+    this.radius = AppTheme.radiusOuter,
     this.shadows,
     this.fallbackIcon,
     this.child,
@@ -59,8 +59,10 @@ class BookCover extends StatelessWidget {
             Center(
               child: Icon(
                 Icons.menu_book,
-                color: Colors.white.withValues(alpha: 0.5),
-                size: (width != null && width!.isFinite ? width! / 2.5 : 24),
+                color: context.appTextPrimary.withValues(alpha: 0.5),
+                size: (width != null && width!.isFinite
+                    ? width! / 2.5
+                    : AppTheme.spaceXL),
               ),
             ),
 
@@ -75,19 +77,21 @@ class BookCover extends StatelessWidget {
             ),
 
           DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(
+            decoration: AppTheme.smoothBox(
+              radius: radius,
+              side: BorderSide(
                 color: fallback
-                    ? Colors.white.withValues(alpha: 0.18)
-                    : Colors.black.withValues(alpha: 0.10),
+                    ? context.appTextPrimary.withValues(alpha: 0.18)
+                    : AppTheme.primary.withValues(alpha: 0.10),
               ),
-              borderRadius: BorderRadius.circular(radius),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withValues(alpha: fallback ? 0.06 : 0.02),
-                  Colors.black.withValues(alpha: fallback ? 0.12 : 0.18),
+                  context.appTextPrimary.withValues(
+                    alpha: fallback ? 0.06 : 0.02,
+                  ),
+                  AppTheme.primary.withValues(alpha: fallback ? 0.12 : 0.18),
                 ],
               ),
             ),

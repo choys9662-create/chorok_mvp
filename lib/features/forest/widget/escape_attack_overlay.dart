@@ -41,6 +41,9 @@ class _EscapeAttackOverlayState extends State<EscapeAttackOverlay> {
                 Text(
                   message,
                   textAlign: TextAlign.center,
+                  // 구조상 예외: 몰입 이탈-방지 오버레이 전용 디스플레이 문구.
+                  // 동적 메시지 길이·1.6 줄간격에 맞춘 값으로 6단계 스케일
+                  // (18/30) 중 어느 쪽으로 스냅해도 등거리라 임의 결정 대신 유지.
                   style: const TextStyle(
                     fontFamily: _kFont,
                     fontSize: 24,
@@ -55,9 +58,13 @@ class _EscapeAttackOverlayState extends State<EscapeAttackOverlay> {
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.primaryLight,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppTheme.spaceLG,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                       ),
                     ),
                     onPressed: () {
@@ -68,7 +75,7 @@ class _EscapeAttackOverlayState extends State<EscapeAttackOverlay> {
                       '계속 읽을게요',
                       style: TextStyle(
                         fontFamily: _kFont,
-                        fontSize: 16,
+                        fontSize: AppTheme.fsRowText,
                         fontWeight: FontWeight.w400,
                       ),
                     ),

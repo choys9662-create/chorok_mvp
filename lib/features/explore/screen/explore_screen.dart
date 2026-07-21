@@ -231,7 +231,7 @@ class _AppBarArea extends StatelessWidget {
             selectedTab: selectedTab,
             onDismiss: onDismiss,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           _SearchTabBar(current: selectedTab, onChanged: onTabChanged),
           const SizedBox(height: 14),
         ],
@@ -264,7 +264,7 @@ class _SearchTabBar extends StatelessWidget {
             isSelected: item.$1 == current,
             onTap: () => onChanged(item.$1),
           ),
-          if (item != items.last) const SizedBox(width: 8),
+          if (item != items.last) const SizedBox(width: AppTheme.spaceSM),
         ],
       ],
     );
@@ -295,7 +295,7 @@ class _SearchTabChip extends StatelessWidget {
           curve: Curves.easeOutCubic,
           height: 34,
           constraints: const BoxConstraints(minWidth: 58),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
           alignment: Alignment.center,
           decoration: AppTheme.smoothPill(
             color: context.appCard,
@@ -350,7 +350,7 @@ class _SearchBar extends StatelessWidget {
       height: 48,
       decoration: AppTheme.smoothBox(
         color: context.appCard,
-        radius: 10,
+        radius: AppTheme.radiusOuter,
         side: BorderSide.none,
         shadows: isSearchFocused
             ? [
@@ -365,13 +365,13 @@ class _SearchBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 16),
+          const SizedBox(width: AppTheme.spaceLG),
           Icon(
             Icons.search_rounded,
             size: 20,
             color: isSearchFocused ? AppTheme.accent : context.appTextTertiary,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppTheme.spaceSM),
           Expanded(
             child: TextField(
               controller: controller,
@@ -388,13 +388,36 @@ class _SearchBar extends StatelessWidget {
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 12,
+                  vertical: AppTheme.spaceSM,
+                  horizontal: AppTheme.spaceMD,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          // 지우기 버튼 — 텍스트만 지우고 포커스는 유지한다(search_screen.dart와 동일 패턴).
+          ValueListenableBuilder(
+            valueListenable: controller,
+            builder: (_, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return Semantics(
+                button: true,
+                label: '검색어 지우기',
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    controller.clear();
+                    focusNode.requestFocus();
+                  },
+                  child: Icon(
+                    Icons.cancel_rounded,
+                    color: context.appTextTertiary,
+                    size: 18,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: AppTheme.spaceLG),
         ],
       ),
     );
@@ -464,14 +487,14 @@ class _SearchResultsView extends StatelessWidget {
               size: 52,
               color: context.appTextTertiary,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             Text(
               '검색 결과가 없어요',
               style: AppTheme.headingSmall.copyWith(
                 color: context.appTextSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               emptyHint,
               style: AppTheme.bodySmall.copyWith(
@@ -557,10 +580,10 @@ class _UserResultTile extends StatelessWidget {
       child: GestureDetector(
         onTap: () => onNavigate(profile),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppTheme.spaceLG),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 10,
+            radius: AppTheme.radiusOuter,
             side: BorderSide.none,
           ),
           child: Row(
@@ -580,7 +603,7 @@ class _UserResultTile extends StatelessWidget {
                       )
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,7 +617,7 @@ class _UserResultTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Text(
                       '@${profile.username}',
                       style: AppTheme.captionSmall.copyWith(
@@ -604,7 +627,7 @@ class _UserResultTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppTheme.spaceXS),
                       Text(
                         profile.bio!,
                         style: AppTheme.captionSmall.copyWith(
@@ -617,7 +640,7 @@ class _UserResultTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Icon(
                 Icons.chevron_right_rounded,
                 color: context.appTextTertiary,
@@ -724,10 +747,10 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
           ),
           decoration: AppTheme.smoothBox(
             color: context.appCard,
-            radius: 10,
+            radius: AppTheme.radiusOuter,
             side: BorderSide.none,
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppTheme.spaceLG),
           child: Row(
             children: [
               BookCover(
@@ -735,12 +758,13 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                 gradientIndex: widget.rank - 1,
                 width: 44,
                 height: 60,
-                radius: 10,
+                radius: AppTheme.radiusInner,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       widget.book.title,
@@ -751,7 +775,6 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       '${widget.book.author} · ${widget.book.publisher}',
                       style: AppTheme.captionSmall.copyWith(
@@ -763,7 +786,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Semantics(
                 label: isAdded
                     ? '${widget.book.title} 서재에 추가됨'
@@ -788,7 +811,9 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                     curve: Curves.easeOutCubic,
                     child: Container(
                       height: 32,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceMD,
+                      ),
                       constraints: const BoxConstraints(
                         minWidth: 48,
                         minHeight: 48,
@@ -802,7 +827,9 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                             : context.appCardElevated,
                         shape: SmoothRectangleBorder(
                           smoothness: 0.6,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusInner,
+                          ),
                           side: BorderSide.none,
                         ),
                       ),
@@ -827,7 +854,7 @@ class _BookResultTileState extends ConsumerState<_BookResultTile> {
                                   size: 13,
                                   color: AppTheme.accent,
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: AppTheme.spaceXS),
                                 Text(
                                   '추가됨',
                                   style: AppTheme.captionSmall.copyWith(

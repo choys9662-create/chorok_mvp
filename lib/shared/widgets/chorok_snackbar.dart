@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -17,31 +16,23 @@ SnackBar chorokSnackBar(
           color: success ? context.appPrimaryAccent : context.appTextSecondary,
           size: 18,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppTheme.spaceSM),
         Expanded(
           child: Text(
             message,
-            style: AppTheme.bodySmall.copyWith(
-              color: context.appTextPrimary,
-              fontWeight: FontWeight.w400,
-              height: 1.4,
-            ),
+            style: AppTheme.bodySmall.copyWith(color: context.appTextPrimary),
           ),
         ),
       ],
     ),
     backgroundColor: context.appCardElevated,
     behavior: SnackBarBehavior.floating,
-    shape: SmoothRectangleBorder(
-      smoothness: 0.6,
-      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-      side: BorderSide.none,
-    ),
+    shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
     margin: const EdgeInsets.fromLTRB(
       AppTheme.screenPadding,
       0,
       AppTheme.screenPadding,
-      16,
+      AppTheme.spaceLG,
     ),
     duration: const Duration(seconds: 2),
   );

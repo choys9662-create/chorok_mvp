@@ -181,9 +181,12 @@ void main() {
       find.descendant(of: button, matching: find.byType(Text)),
     );
 
-    // 좌우 패딩 15+15 = 30 (보더 없음)
-    expect(buttonSize.width, closeTo(textSize.width + 30, 0.1));
-    expect(buttonSize.width, lessThanOrEqualTo(402 - 80));
+    // 좌우 패딩 spaceLG(16)+spaceLG(16) = 32 (보더 없음)
+    expect(buttonSize.width, closeTo(textSize.width + 32, 0.1));
+    // 화면 좌우 여백은 sectionGap(30)*2 = 60 (SingleChildScrollView의
+    // horizontal padding, _SessionStartOverlay 참고) — screenPadding(16)이
+    // 아니라 이 화면 전용 sectionGap 여백을 따른다.
+    expect(buttonSize.width, lessThanOrEqualTo(402 - AppTheme.sectionGap * 2));
   });
 
   testWidgets('긴 세션 시작 질문은 잘리지 않고 박스 높이를 늘린다', (tester) async {
@@ -211,7 +214,8 @@ void main() {
     );
 
     expect(find.textContaining('왜 이 문장이 남았을까요?'), findsOneWidget);
-    expect(buttonSize.width, lessThanOrEqualTo(320 - 80));
+    // 화면 좌우 sectionGap(30)*2 = 60 만큼 여백을 두고 나머지 폭을 채운다.
+    expect(buttonSize.width, lessThanOrEqualTo(320 - 60));
     expect(buttonSize.height, greaterThan(50));
     expect(tester.takeException(), isNull);
   });
@@ -356,11 +360,14 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 600));
 
-    await tester.tapAt(const Offset(196, 426));
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tapAt(const Offset(196, 150));
+    // revealed 진입 애니메이션(opacity/translate ~520ms) 완전 종료 후 배지 탭.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
 
     await tester.tap(find.text('+1'));
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
 
     final dismissFinder = find.bySemanticsLabel('문장 모아보기 닫기');
     expect(dismissFinder, findsOneWidget);
@@ -389,7 +396,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 600));
 
-    await tester.tapAt(const Offset(196, 426));
+    await tester.tapAt(const Offset(196, 150));
     await tester.pump(const Duration(milliseconds: 600));
 
     await tester.longPress(

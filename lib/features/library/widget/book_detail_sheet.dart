@@ -8,9 +8,10 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/reading_session.dart';
 import '../../../shared/models/session_goal.dart';
 import '../../../shared/providers/library_provider.dart';
-import '../../../shared/widgets/sheet_handle.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/page_slider_card.dart';
+import '../../../shared/widgets/sheet_handle.dart';
 import 'manual_reading_log_sheet.dart';
 
 void showBookDetail(BuildContext context, Book book) {
@@ -18,9 +19,7 @@ void showBookDetail(BuildContext context, Book book) {
     context: context,
     isScrollControlled: true,
     backgroundColor: context.appCard,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
     builder: (_) => BookDetailSheet(book: book, outerContext: context),
   );
 }
@@ -64,12 +63,19 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
       SnackBar(
         content: Text(
           '${widget.book.title} — $_currentPage쪽으로 업데이트했어요',
-          style: const TextStyle(color: Colors.white),
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextPrimary,
+          ),
         ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          0,
+          AppTheme.screenPadding,
+          AppTheme.spaceLG,
+        ),
       ),
     );
   }
@@ -132,7 +138,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.warningColor),
             child: const Text('제거'),
           ),
         ],
@@ -146,12 +152,19 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
       SnackBar(
         content: Text(
           '${widget.book.title}을(를) 서재에서 제거했어요',
-          style: const TextStyle(color: Colors.white),
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextPrimary,
+          ),
         ),
         backgroundColor: AppTheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          0,
+          AppTheme.screenPadding,
+          AppTheme.spaceLG,
+        ),
       ),
     );
   }
@@ -168,13 +181,13 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
     final progress = _currentPage / (book.totalPages > 0 ? book.totalPages : 1);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const ChorokSheetHandle(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           // ── 책 정보 ────────────────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,9 +198,9 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     book.title.hashCode.abs() % AppTheme.coverGradients.length,
                 width: 64,
                 height: 88,
-                radius: 10,
+                radius: AppTheme.radiusOuter,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppTheme.spaceLG),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,36 +211,34 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                         color: context.appTextPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppTheme.spaceXS),
                     Text(
                       book.author,
                       style: AppTheme.bodyMedium.copyWith(
                         color: context.appTextSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
+                    const SizedBox(height: AppTheme.spaceSM),
+                    ChorokCard(
+                      inner: true,
+                      showBorder: false,
+                      backgroundColor: isCompleted
+                          ? context.primaryBg(0.12)
+                          : isReading
+                          ? context.appPrimaryAccent.withValues(
+                              alpha: isDark ? 0.12 : 0.15,
+                            )
+                          : context.appCardElevated,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isCompleted
-                            ? context.primaryBg(0.12)
-                            : isReading
-                            ? context.appPrimaryAccent.withValues(
-                                alpha: isDark ? 0.12 : 0.15,
-                              )
-                            : context.appCardElevated,
-                        borderRadius: BorderRadius.circular(10),
+                        horizontal: AppTheme.spaceSM,
+                        vertical: AppTheme.spaceXS,
                       ),
                       child: Text(
                         book.status.label,
-                        style: AppTheme.captionSmall.copyWith(
+                        style: AppTheme.caption.copyWith(
                           color: isCompleted || isReading
                               ? context.appPrimaryAccent
                               : context.appTextTertiary,
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -236,14 +247,12 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           // ── 통계 ──────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: AppTheme.smoothBox(
-              color: context.appCardElevated,
-              radius: 10,
-            ),
+          ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
             child: Row(
               children: [
                 _DetailStat(
@@ -272,30 +281,26 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
           ),
           // ── 수집한 문장 ───────────────────────────────────────
           if (book.savedSentences.isNotEmpty) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: AppTheme.spaceXL),
             Text(
               '수집한 문장',
-              style: AppTheme.headingSmall.copyWith(
+              style: AppTheme.sectionTitle.copyWith(
                 color: context.appTextPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.spaceMD),
             ...book.savedSentences
                 .take(3)
                 .map(
                   (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: context.appCardElevated,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                    child: ChorokCard(
+                      inner: true,
+                      showBorder: false,
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
                       child: Text(
                         '"$s"',
-                        style: AppTheme.bodySmall.copyWith(
-                          fontStyle: FontStyle.italic,
+                        style: AppTheme.bodyMedium.copyWith(
                           color: context.appTextPrimary,
                           height: 1.5,
                         ),
@@ -306,18 +311,14 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
           ],
           // ── 진행률 바 ─────────────────────────────────────────
           if (isReading) ...[
-            const SizedBox(height: 20),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: context.appBorder,
-                valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
-                minHeight: 6,
-              ),
+            const SizedBox(height: AppTheme.spaceXL),
+            ChorokProgressBar(
+              value: progress,
+              trackColor: context.appBorder,
+              valueColor: context.appPrimaryAccent,
             ),
             // ── 현재 페이지 업데이트 (슬라이더) ─────────────────
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceLG),
             PageSliderCard(
               key: ValueKey(book.totalPages),
               initialPage: _currentPage,
@@ -330,27 +331,24 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                   showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: context.appBg.withValues(alpha: 0),
                     builder: (_) => ManualReadingLogSheet(book: book),
                   );
                 },
                 icon: const Icon(Icons.history_edu_rounded, size: 16),
-                label: const Text(
-                  '수동 기록',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-                ),
+                label: Text('수동 기록', style: AppTheme.supportingText),
                 style: TextButton.styleFrom(
                   foregroundColor: context.appPrimaryAccent,
                   minimumSize: Size.zero,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: AppTheme.spaceSM,
+                    vertical: AppTheme.spaceXS,
                   ),
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
           // ── 액션 버튼 ─────────────────────────────────────────
           Row(
             children: [
@@ -391,25 +389,27 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                     backgroundColor: AppTheme.primary,
                     foregroundColor: isDark
                         ? AppTheme.primaryLight
-                        : Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                        : AppTheme.lightSurface,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppTheme.spaceMD,
+                    ),
                     shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppTheme.spaceMD),
               IconButton(
                 onPressed: () => _deleteBook(context),
                 icon: const Icon(Icons.delete_outline_rounded),
                 style: IconButton.styleFrom(
                   foregroundColor: context.appTextTertiary,
                   backgroundColor: context.appCardElevated,
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
         ],
       ),
     );
@@ -424,6 +424,7 @@ class _DetailStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Column(
+      spacing: AppTheme.spaceXS,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -436,7 +437,7 @@ class _DetailStat extends StatelessWidget {
               ),
             ),
             if (onTap != null) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: AppTheme.spaceXS),
               Icon(
                 Icons.edit_rounded,
                 size: 12,
@@ -445,7 +446,6 @@ class _DetailStat extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 2),
         Text(
           label,
           style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),

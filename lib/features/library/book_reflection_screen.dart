@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,16 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/models/reading_session.dart';
 import '../../shared/repositories/book_repository.dart';
 import '../../shared/repositories/supabase_book_repository.dart';
-
-// ─── 색상 상수 ───────────────────────────────────────────────────────────────
-const _kBg = AppTheme.darkBg;
-const _kGreen = AppTheme.primaryLight;
-const _kGreenDim = AppTheme.primaryLight;
-const _kSurface = AppTheme.darkCard;
-const _kBorder = Color(0xFF1A1A1A);
-const _kTextPrimary = AppTheme.textPrimary;
-const _kTextSecondary = AppTheme.textTertiary;
-const _kTextTertiary = AppTheme.textTertiary;
+import '../../shared/widgets/chorok_card.dart';
 
 // ─── 단계 정의 ────────────────────────────────────────────────────────────────
 const _kStepCount = 3;
@@ -169,7 +159,7 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBg,
+      backgroundColor: context.appBg,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -181,7 +171,7 @@ class _BookReflectionScreenState extends ConsumerState<BookReflectionScreen>
                 onSkip: _onSkip,
               ),
               _ProgressBar(current: _currentStep, total: _kStepCount),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppTheme.sectionGap),
 
               // PageView
               Expanded(
@@ -257,7 +247,11 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+      padding: const EdgeInsets.only(
+        left: AppTheme.spaceSM,
+        top: AppTheme.spaceSM,
+        right: AppTheme.spaceLG,
+      ),
       child: Row(
         children: [
           // 뒤로 or 공백
@@ -270,9 +264,9 @@ class _TopBar extends StatelessWidget {
                     label: '이전 단계',
                     child: GestureDetector(
                       onTap: onBack,
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: _kTextSecondary,
+                        color: context.appTextSecondary,
                         size: 20,
                       ),
                     ),
@@ -285,11 +279,8 @@ class _TopBar extends StatelessWidget {
           // 단계 표시
           Text(
             '${currentStep + 1} / $_kStepCount',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: _kTextSecondary,
-              height: 1.4,
+            style: AppTheme.supportingText.copyWith(
+              color: context.appTextSecondary,
             ),
           ),
 
@@ -301,17 +292,14 @@ class _TopBar extends StatelessWidget {
             label: '나중에 하기',
             child: GestureDetector(
               onTap: onSkip,
-              child: const SizedBox(
+              child: SizedBox(
                 height: 48,
                 child: Align(
                   alignment: Alignment.center,
                   child: Text(
                     '나중에',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: _kTextSecondary,
-                      height: 1.4,
+                    style: AppTheme.rowText.copyWith(
+                      color: context.appTextSecondary,
                     ),
                   ),
                 ),
@@ -335,14 +323,24 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: LinearProgressIndicator(
-          value: (current + 1) / total,
-          backgroundColor: _kBorder,
-          valueColor: const AlwaysStoppedAnimation(_kGreen),
-          minHeight: 3,
+      padding: const EdgeInsets.only(
+        left: AppTheme.spaceXL,
+        top: AppTheme.spaceMD,
+        right: AppTheme.spaceXL,
+      ),
+      child: SizedBox(
+        height: AppTheme.spaceXS,
+        child: ChorokCard(
+          inner: true,
+          showBorder: false,
+          padding: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: LinearProgressIndicator(
+            value: (current + 1) / total,
+            backgroundColor: context.appProgressTrack,
+            valueColor: AlwaysStoppedAnimation(context.appPrimaryAccent),
+            minHeight: AppTheme.spaceXS,
+          ),
         ),
       ),
     );
@@ -365,30 +363,24 @@ class _StepWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.only(
+        left: AppTheme.spaceXL,
+        right: AppTheme.spaceXL,
+        bottom: AppTheme.spaceXL,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w400,
-              color: _kTextPrimary,
-              height: 1.3,
-            ),
+            style: AppTheme.screenTitle.copyWith(color: context.appTextPrimary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             subtitle,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: _kTextSecondary,
-              height: 1.6,
-            ),
+            style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: AppTheme.sectionGap),
           child,
         ],
       ),
@@ -436,7 +428,9 @@ class _StarStep extends StatelessWidget {
                               : Icons.star_outline_rounded,
                           key: ValueKey('$i-$filled'),
                           size: 44,
-                          color: filled ? _kGreen : _kTextTertiary,
+                          color: filled
+                              ? context.appPrimaryAccent
+                              : context.appTextTertiary,
                         ),
                       ),
                     ),
@@ -446,7 +440,7 @@ class _StarStep extends StatelessWidget {
             );
           }),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppTheme.spaceXL),
 
         // 라벨
         AnimatedSwitcher(
@@ -462,62 +456,48 @@ class _StarStep extends StatelessWidget {
             ),
           ),
           child: rating > 0
-              ? Container(
+              ? ChorokCard(
                   key: ValueKey(rating),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+                    horizontal: AppTheme.spaceXL,
+                    vertical: AppTheme.spaceSM,
                   ),
-                  decoration: ShapeDecoration(
-                    color: _kGreen.withValues(alpha: 0.08),
-                    shape: AppTheme.smoothShape(radius: 10),
-                  ),
+                  backgroundColor: context.primaryBg(0.08),
+                  showBorder: false,
                   child: Text(
                     _labels[rating],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: _kGreen,
-                      height: 1.4,
+                    style: AppTheme.rowText.copyWith(
+                      color: context.appPrimaryAccent,
                     ),
                   ),
                 )
               : const SizedBox(key: ValueKey(0), height: 40),
         ),
 
-        const SizedBox(height: 40),
+        const SizedBox(height: AppTheme.sectionGap),
 
         // 서브 안내
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: ShapeDecoration(
-            color: _kSurface,
-            shape: SmoothRectangleBorder(
-              smoothness: 0.6,
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-              side: BorderSide.none,
-            ),
-          ),
-          child: const Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 16,
-                color: _kTextSecondary,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '별점과 감상은 책 정보 화면의 사용자 평가에 함께 보여요.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: _kTextSecondary,
-                    height: 1.5,
+        SizedBox(
+          width: double.infinity,
+          child: ChorokCard(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: context.appTextSecondary,
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: Text(
+                    '별점과 감상은 책 정보 화면의 사용자 평가에 함께 보여요.',
+                    style: AppTheme.supportingText.copyWith(
+                      color: context.appTextSecondary,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -544,69 +524,56 @@ class _TextStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppTheme.spaceLG,
       children: [
         // 입력 필드
-        Container(
+        SizedBox(
           width: double.infinity,
-          decoration: ShapeDecoration(
-            color: _kSurface,
-            shape: SmoothRectangleBorder(
-              smoothness: 0.6,
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-              side: BorderSide.none,
+          child: ChorokCard(
+            padding: const EdgeInsets.all(AppTheme.spaceXL),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppTheme.spaceMD,
+              children: [
+                Icon(icon, size: 20, color: context.appPrimaryAccent),
+                TextField(
+                  controller: controller,
+                  maxLines: maxLines,
+                  style: AppTheme.rowText.copyWith(
+                    height: 1.6,
+                    color: context.appTextPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: AppTheme.rowText.copyWith(
+                      height: 1.6,
+                      color: context.appTextTertiary,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  cursorColor: context.appPrimaryAccent,
+                  cursorWidth: 1.5,
+                ),
+              ],
             ),
           ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: _kGreen),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLines: maxLines,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: _kTextPrimary,
-                  height: 1.6,
-                ),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: _kTextTertiary,
-                    height: 1.6,
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                cursorColor: _kGreen,
-                cursorWidth: 1.5,
-              ),
-            ],
-          ),
         ),
-        const SizedBox(height: 16),
 
         // 선택 입력 안내
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.check_circle_outline_rounded,
               size: 14,
-              color: _kTextTertiary,
+              color: context.appTextTertiary,
             ),
-            SizedBox(width: 6),
+            const SizedBox(width: AppTheme.spaceSM),
             Text(
               '선택 입력이에요 — 비워도 괜찮아요',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: _kTextTertiary,
-                height: 1.5,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextTertiary,
               ),
             ),
           ],
@@ -651,8 +618,13 @@ class _BottomCtaState extends State<_BottomCta> {
   Widget build(BuildContext context) {
     final active = widget.canProceed && !widget.isSaving;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceXL,
+        AppTheme.spaceMD,
+        AppTheme.spaceXL,
+        AppTheme.sectionGap,
+      ),
       child: Column(
         children: [
           // 단계 인디케이터 점
@@ -663,17 +635,26 @@ class _BottomCtaState extends State<_BottomCta> {
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: active ? 20 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: active ? _kGreen : _kBorder,
-                  borderRadius: BorderRadius.circular(10),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceXS,
+                ),
+                width: active
+                    ? AppTheme.spaceMD + AppTheme.spaceSM
+                    : AppTheme.radiusInner,
+                height: AppTheme.radiusInner,
+                child: ChorokCard(
+                  inner: true,
+                  backgroundColor: active
+                      ? context.appPrimaryAccent
+                      : context.appBorder,
+                  showBorder: false,
+                  padding: EdgeInsets.zero,
+                  child: const SizedBox.expand(),
                 ),
               );
             }),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppTheme.spaceXL),
 
           // 메인 버튼
           Semantics(
@@ -692,57 +673,50 @@ class _BottomCtaState extends State<_BottomCta> {
                 scale: _pressed ? 0.97 : 1.0,
                 duration: const Duration(milliseconds: 120),
                 curve: Curves.easeOutCubic,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                child: SizedBox(
                   width: double.infinity,
                   height: 56,
-                  decoration: ShapeDecoration(
-                    gradient: active
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [_kGreen, _kGreenDim],
-                          )
-                        : null,
-                    color: active ? null : _kSurface,
-                    shape: SmoothRectangleBorder(
-                      smoothness: 0.6,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                      side: active ? BorderSide.none : BorderSide.none,
+                  child: ChorokCard(
+                    backgroundColor: active
+                        ? context.appPrimaryAccent
+                        : context.appCardElevated,
+                    showBorder: false,
+                    padding: EdgeInsets.zero,
+                    child: Center(
+                      child: widget.isSaving
+                          ? SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: context.appBg,
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _label,
+                                  style: AppTheme.rowText.copyWith(
+                                    color: active
+                                        ? context.appBg
+                                        : context.appTextTertiary,
+                                  ),
+                                ),
+                                if (!_isLastStep) ...[
+                                  const SizedBox(width: AppTheme.spaceSM),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 18,
+                                    color: active
+                                        ? context.appBg
+                                        : context.appTextTertiary,
+                                  ),
+                                ],
+                              ],
+                            ),
                     ),
                   ),
-                  alignment: Alignment.center,
-                  child: widget.isSaving
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: _kBg,
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _label,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                color: active ? _kBg : _kTextTertiary,
-                                height: 1.4,
-                              ),
-                            ),
-                            if (!_isLastStep) ...[
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.arrow_forward_rounded,
-                                size: 18,
-                                color: active ? _kBg : _kTextTertiary,
-                              ),
-                            ],
-                          ],
-                        ),
                 ),
               ),
             ),
@@ -750,14 +724,11 @@ class _BottomCtaState extends State<_BottomCta> {
 
           // 별점 미선택 안내 (1단계에서만)
           if (widget.currentStep == 0 && !widget.canProceed) ...[
-            const SizedBox(height: 12),
-            const Text(
+            const SizedBox(height: AppTheme.spaceMD),
+            Text(
               '별점을 선택해야 다음으로 넘어갈 수 있어요',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-                color: _kTextSecondary,
-                height: 1.5,
+              style: AppTheme.supportingText.copyWith(
+                color: context.appTextSecondary,
               ),
             ),
           ],

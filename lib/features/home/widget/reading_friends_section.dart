@@ -7,6 +7,9 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/user_profile.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
+import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../controller/session_firefly_provider.dart';
 
@@ -16,19 +19,11 @@ const _sideMargin = AppTheme.screenPadding;
 ///
 /// 데이터: [sessionFireflyProvider] (mutuals + nearbyCount).
 /// 맞팔(친구)이 0명이어도 주변 독자가 있으면 이웃 섹션은 보여준다.
-class ReadingFriendsSection extends ConsumerStatefulWidget {
+class ReadingFriendsSection extends ConsumerWidget {
   const ReadingFriendsSection({super.key});
 
   @override
-  ConsumerState<ReadingFriendsSection> createState() =>
-      _ReadingFriendsSectionState();
-}
-
-class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(sessionFireflyProvider);
 
     return async.when(
@@ -36,9 +31,7 @@ class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
       error: (_, _) => const SizedBox.shrink(),
       data: (d) {
         final totalFriends = kUseMock ? d.mutuals.length : d.mutualCount;
-        final visibleFriends = _expanded
-            ? d.mutuals
-            : d.mutuals.take(3).toList();
+        final visibleFriends = d.mutuals.take(3).toList();
         final nearbyCount = kUseMock ? 10 : d.nearbyCount;
         final showNeighbors = kUseMock && nearbyCount > 0;
         if (visibleFriends.isEmpty && !showNeighbors) {
@@ -47,23 +40,21 @@ class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 30),
+            const SizedBox(height: AppTheme.sectionGap),
             if (visibleFriends.isNotEmpty) ...[
               _Header(title: '읽고 있는 친구', count: totalFriends),
-              const SizedBox(height: 12),
-              _LiveReadersCard(mutuals: visibleFriends),
-              if (totalFriends > 3) ...[
-                const SizedBox(height: 7),
-                _ShowAllButton(
-                  expanded: _expanded,
-                  onTap: () => setState(() => _expanded = !_expanded),
-                ),
-              ],
+              const SizedBox(height: AppTheme.spaceMD),
+              ReadingFriendsCard(
+                mutuals: visibleFriends,
+                onShowAll: totalFriends > visibleFriends.length
+                    ? () => context.push(AppConstants.routeReadingFriends)
+                    : null,
+              ),
             ],
             if (showNeighbors) ...[
-              const SizedBox(height: 30),
+              const SizedBox(height: AppTheme.sectionGap),
               _Header(title: '읽고 있는 이웃', count: nearbyCount, showChevron: true),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               const _NeighborPreviewCard(),
             ],
           ],
@@ -74,30 +65,24 @@ class _ReadingFriendsSectionState extends ConsumerState<ReadingFriendsSection> {
 }
 
 class _ShowAllButton extends StatelessWidget {
-  final bool expanded;
   final VoidCallback onTap;
 
-  const _ShowAllButton({required this.expanded, required this.onTap});
+  const _ShowAllButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: SizedBox(
-          height: 40,
-          child: Center(
-            child: Text(
-              expanded ? '접기' : '전체보기',
-              style: AppTheme.bodyLarge.copyWith(
-                color: context.appTextTertiary,
-              ),
-            ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: SizedBox(
+        height: AppTheme.spaceXL * 1.5,
+        child: Center(
+          child: Text(
+            '전체보기',
+            style: AppTheme.rowText.copyWith(color: context.appTextTertiary),
           ),
         ),
       ),
@@ -121,73 +106,43 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextTertiary,
-              fontWeight: FontWeight.w400,
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '|',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appTextTertiary.withValues(alpha: 0.35),
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$count',
-            style: AppTheme.headingSmall.copyWith(
-              color: context.appPrimaryAccent,
-              fontSize: 20,
-              letterSpacing: 0,
-            ),
-          ),
-          const Spacer(),
-          if (showChevron)
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 30,
-              color: context.appTextTertiary,
-            ),
-        ],
+      child: ChorokSectionHeader(
+        title: title,
+        count: count,
+        trailing: showChevron
+            ? Icon(
+                Icons.chevron_right_rounded,
+                size: AppTheme.spaceXL,
+                color: context.appTextTertiary,
+              )
+            : null,
       ),
     );
   }
 }
 
-class _LiveReadersCard extends StatelessWidget {
+class ReadingFriendsCard extends StatelessWidget {
   final List<UserProfile> mutuals;
-  const _LiveReadersCard({required this.mutuals});
+  final VoidCallback? onShowAll;
+
+  const ReadingFriendsCard({super.key, required this.mutuals, this.onShowAll});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 8,
-          side: BorderSide.none,
-        ),
+      child: ChorokCard(
+        padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
         child: Column(
           children: [
             for (var i = 0; i < mutuals.length; i++) ...[
               _LiveReaderRow(profile: mutuals[i], index: i),
               if (i < mutuals.length - 1)
-                Divider(
-                  height: 22,
-                  thickness: 1,
-                  color: context.appDivider.withValues(alpha: 0.35),
-                ),
+                Divider(height: AppTheme.space2XL, color: context.appDivider),
+            ],
+            if (onShowAll != null) ...[
+              Divider(height: AppTheme.space2XL, color: context.appDivider),
+              _ShowAllButton(onTap: onShowAll!),
             ],
           ],
         ),
@@ -216,37 +171,32 @@ class _LiveReaderRow extends StatelessWidget {
         },
         child: SizedBox(
           height: 44,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: context.appTextPrimary,
-                    fontSize: 22,
-                    letterSpacing: 0,
+          child: ChorokListRow(
+            title: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _LiveDot(index: index),
+                const SizedBox(width: AppTheme.spaceLG),
+                SizedBox(
+                  width: AppTheme.space2XL * 4,
+                  child: Text(
+                    _readerDuration(profile, index),
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: AppTheme.sectionTitle.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
-              ),
-              _LiveDot(index: index),
-              const SizedBox(width: 18),
-              SizedBox(
-                width: 96,
-                child: Text(
-                  _readerDuration(profile, index),
-                  maxLines: 1,
-                  textAlign: TextAlign.right,
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: context.appPrimaryAccent,
-                    fontSize: 20,
-                    letterSpacing: 0,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -260,6 +210,7 @@ class _LiveDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 디자인 문서의 원형 상태 표식 예외다.
     final size = switch (index) {
       0 => 30.0,
       1 => 18.0,
@@ -303,45 +254,39 @@ class _NeighborPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _sideMargin),
-      child: Container(
+      child: SizedBox(
         height: 82,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: AppTheme.smoothBox(
-          color: context.appCard,
-          radius: 8,
-          side: BorderSide.none,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '이명이 초록숲',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.bodyMedium.copyWith(
-                  color: context.appTextPrimary,
-                  fontSize: 22,
-                  letterSpacing: 0,
-                ),
-              ),
+        child: ChorokCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.cardPaddingMD,
+          ),
+          child: ChorokListRow(
+            title: Text(
+              '이명이 초록숲',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
             ),
-            const _LiveDot(index: 0),
-            const SizedBox(width: 18),
-            SizedBox(
-              width: 96,
-              child: Text(
-                '00:20:25',
-                maxLines: 1,
-                textAlign: TextAlign.right,
-                style: AppTheme.bodyMedium.copyWith(
-                  color: context.appPrimaryAccent,
-                  fontSize: 20,
-                  letterSpacing: 0,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const _LiveDot(index: 0),
+                const SizedBox(width: AppTheme.spaceLG),
+                SizedBox(
+                  width: AppTheme.space2XL * 4,
+                  child: Text(
+                    '00:20:25',
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: AppTheme.sectionTitle.copyWith(
+                      color: context.appPrimaryAccent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -378,12 +323,20 @@ class _FriendsShimmer extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: _sideMargin),
-          child: ChorokShimmer(width: 140, height: 22, radius: 10),
+          child: ChorokShimmer(
+            width: 140,
+            height: 22,
+            radius: AppTheme.radiusOuter,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppTheme.spaceMD),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: _sideMargin),
-          child: ChorokShimmer(width: double.infinity, height: 176, radius: 8),
+          child: ChorokShimmer(
+            width: double.infinity,
+            height: 176,
+            radius: AppTheme.radiusOuter,
+          ),
         ),
       ],
     );

@@ -138,7 +138,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 gradient: RadialGradient(
                   center: Alignment(0, -0.3),
                   radius: 1.2,
-                  colors: [Color(0xFF0A2215), AppTheme.darkBg],
+                  colors: [
+                    Color(0xFF0A2215), // 구조상 예외: 팔레트 외 그라디언트 정지점
+                    AppTheme.darkBg,
+                  ],
                 ),
               ),
             ),
@@ -176,14 +179,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         (i) => AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeOutCubic,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spaceXS,
+                          ),
                           width: i == _currentPage ? 24 : 6,
                           height: 6,
                           decoration: BoxDecoration(
                             color: i == _currentPage
                                 ? context.appPrimaryAccent
                                 : AppTheme.darkBorder,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusInner,
+                            ),
                           ),
                         ),
                       ),
@@ -196,15 +203,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         label: '첫 번째 책 등록하기',
                         onTap: () => _finish(AppConstants.routeSearch),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppTheme.spaceMD),
                       GestureDetector(
                         onTap: () => _finish(AppConstants.routeHome),
                         child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppTheme.spaceMD,
+                          ),
                           child: Text(
                             '일단 시작해보기',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: AppTheme.fsRowText,
                               fontWeight: FontWeight.w400,
                               color: AppTheme.textSecondary,
                               height: 1.4,
@@ -214,15 +223,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       ),
                     ] else ...[
                       _PrimaryButton(label: '다음', onTap: _next),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppTheme.spaceMD),
                       GestureDetector(
                         onTap: () => _finish(AppConstants.routeHome),
                         child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppTheme.spaceMD,
+                          ),
                           child: Text(
                             '건너뛰기',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppTheme.fsSupporting,
                               color: AppTheme.textTertiary,
                               height: 1.4,
                             ),
@@ -279,7 +290,10 @@ class _SlidePage extends StatelessWidget {
                   ),
                 ),
                 child: Center(
-                  child: Text(data.emoji, style: TextStyle(fontSize: 52)),
+                  child: Text(
+                    data.emoji,
+                    style: TextStyle(fontSize: 52), // 구조상 예외: 히어로 아이콘
+                  ),
                 ),
               ),
             ),
@@ -292,26 +306,30 @@ class _SlidePage extends StatelessWidget {
             data.title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 24,
+              // height 1.3 = sectionTitle과 동일 계열이라 18로 스냅(24→18).
+              fontSize: AppTheme.fsSectionTitle,
               fontWeight: FontWeight.w400,
               color: AppTheme.textPrimary,
               height: 1.3,
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
 
           // 서브타이틀 (강조)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceLG,
+              vertical: AppTheme.spaceSM,
+            ),
             decoration: ShapeDecoration(
               color: context.appPrimaryAccent.withValues(alpha: 0.08),
-              shape: AppTheme.smoothShape(radius: 10),
+              shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
             ),
             child: Text(
               data.subtitle,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: AppTheme.fsSupporting,
                 fontWeight: FontWeight.w400,
                 color: context.appPrimaryAccent,
                 height: 1.4,
@@ -319,14 +337,14 @@ class _SlidePage extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceXL),
 
           // 본문
           Text(
             data.body,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: AppTheme.fsRowText,
               fontWeight: FontWeight.w400,
               color: AppTheme.textSecondary,
               height: 1.7,
@@ -484,13 +502,13 @@ class _PrimaryButtonState extends State<_PrimaryButton>
           height: 56,
           decoration: ShapeDecoration(
             gradient: AppTheme.greenGradient,
-            shape: AppTheme.smoothShape(radius: 10),
+            shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
           ),
           child: Center(
             child: Text(
               widget.label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: AppTheme.fsRowText,
                 fontWeight: FontWeight.w400,
                 color: Colors.black,
                 height: 1.4,

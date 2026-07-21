@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/forest_accent_card.dart';
-import '../../../shared/widgets/gradient_text.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
@@ -48,7 +47,11 @@ class WeeklyStatusCard extends ConsumerWidget {
     // 오늘 인사이트 (목업 mockup exitCount=0 기준)
     final insight = todayInsightText(todayMin, 0, goalMin);
 
-    return ForestAccentCard(
+    return ChorokCard(
+      backgroundColor: context.appBg,
+      borderColor: isDark
+          ? context.appPrimaryAccent
+          : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45),
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,14 +66,17 @@ class WeeklyStatusCard extends ConsumerWidget {
                   color: context.appTextTertiary,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: 2,
+                ),
                 decoration: ShapeDecoration(
                   color: context.primaryBg(0.08),
                   shape: SmoothRectangleBorder(
                     smoothness: 0.6,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   ),
                 ),
                 child: Text(
@@ -83,12 +89,14 @@ class WeeklyStatusCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           // ── 주간 총 시간 ──────────────────────────────────────
-          GradientText(
+          Text(
             weekTotalText,
-            style: AppTheme.displayLarge.copyWith(fontSize: 30),
-            gradient: context.appReadingGradient,
+            // displayLarge 자체가 30(통계 hero 예외). 중복 fontSize 리터럴 제거.
+            style: AppTheme.displayLarge.copyWith(
+              color: context.appPrimaryAccent,
+            ),
           ),
           const SizedBox(height: 20),
           // ── 주간 바 차트 (풀 너비) ────────────────────────────
@@ -115,6 +123,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                       padding: EdgeInsets.only(right: i < 6 ? 4 : 0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
+                        spacing: AppTheme.spaceXS,
                         children: [
                           Expanded(
                             child: Align(
@@ -125,7 +134,9 @@ class WeeklyStatusCard extends ConsumerWidget {
                                     : (ratio < 0.08 ? 0.08 : ratio),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusOuter,
+                                    ),
                                     color: isFuture
                                         ? context.appProgressTrack
                                         : null,
@@ -161,7 +172,6 @@ class WeeklyStatusCard extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 4),
                           Text(
                             AppConstants.weekdaysMonFirst[i],
                             style: AppTheme.captionSmall.copyWith(
@@ -182,9 +192,12 @@ class WeeklyStatusCard extends ConsumerWidget {
             ),
           ),
           // ── 오늘의 목표 현황 (인사이트 & 그래프) ──────────────────
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spaceLG,
+              vertical: 14,
+            ),
             decoration: ShapeDecoration(
               color: context.primaryBg(0.06),
               shape: SmoothRectangleBorder(
@@ -207,7 +220,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                 ],
                 // 프로그레스 바
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   child: LinearProgressIndicator(
                     value: (todayMin / goalMin).clamp(0.0, 1.0),
                     minHeight: 8,
@@ -217,7 +230,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppTheme.spaceSM),
                 // 상세 텍스트 (ex. 12분 / 30분)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -8,6 +8,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/utils/time_format.dart' as time_fmt;
 
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
+import '../../../shared/widgets/chorok_list_row.dart';
 
 // ─── 독서 기록 타입 ───────────────────────────────────────────────────────
 typedef ReadingLog = ({
@@ -240,41 +242,40 @@ class SegmentToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 40,
-      padding: const EdgeInsets.all(3),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final isSelected = i == selectedIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        padding: const EdgeInsets.all(AppTheme.spaceXS),
+        child: Row(
+          children: List.generate(labels.length, (i) {
+            final isSelected = i == selectedIndex;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(i),
+                child: ChorokCard(
+                  inner: true,
+                  showBorder: false,
+                  backgroundColor: isSelected
                       ? context.appPrimaryAccent
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  labels[i],
-                  style: AppTheme.captionLarge.copyWith(
-                    color: isSelected ? Colors.white : context.appTextTertiary,
-                    fontWeight: isSelected ? FontWeight.w400 : FontWeight.w400,
+                      : context.appCard.withValues(alpha: 0),
+                  padding: EdgeInsets.zero,
+                  child: Center(
+                    child: Text(
+                      labels[i],
+                      style: AppTheme.supportingText.copyWith(
+                        color: isSelected
+                            ? AppTheme.primary
+                            : context.appTextTertiary,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -379,9 +380,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AppTheme.screenPadding,
-              16,
+              AppTheme.spaceLG,
               AppTheme.screenPadding,
-              12,
+              AppTheme.spaceMD,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -397,16 +398,15 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                       child: Icon(
                         Icons.chevron_left_rounded,
                         color: context.appTextSecondary,
-                        size: 24,
+                        size: AppTheme.spaceXL,
                       ),
                     ),
                   ),
                 ),
                 Text(
                   '${_focusedMonth.year}년 ${_focusedMonth.month}월',
-                  style: AppTheme.headingSmall.copyWith(
+                  style: AppTheme.sectionTitle.copyWith(
                     color: context.appTextPrimary,
-                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 Semantics(
@@ -420,7 +420,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                       child: Icon(
                         Icons.chevron_right_rounded,
                         color: context.appTextSecondary,
-                        size: 24,
+                        size: AppTheme.spaceXL,
                       ),
                     ),
                   ),
@@ -442,9 +442,8 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                       child: Center(
                         child: Text(
                           d,
-                          style: AppTheme.captionSmall.copyWith(
+                          style: AppTheme.caption.copyWith(
                             color: context.appTextTertiary,
-                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
@@ -454,7 +453,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceSM)),
 
         SliverToBoxAdapter(
           child: Padding(
@@ -473,7 +472,7 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceLG)),
 
         if (_selectedDate != null) ...[
           SliverToBoxAdapter(
@@ -485,27 +484,26 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                 children: [
                   Text(
                     '${_selectedDate!.month}월 ${_selectedDate!.day}일',
-                    style: AppTheme.headingSmall.copyWith(
+                    style: AppTheme.sectionTitle.copyWith(
                       color: context.appTextPrimary,
-                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   if (totalMin > 0) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                    const SizedBox(width: AppTheme.spaceSM),
+                    ChorokCard(
+                      inner: true,
+                      showBorder: false,
+                      backgroundColor: context.appPrimaryAccent.withValues(
+                        alpha: 0.1,
                       ),
-                      decoration: BoxDecoration(
-                        color: context.appPrimaryAccent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceSM,
+                        vertical: AppTheme.spaceXS,
                       ),
                       child: Text(
                         time_fmt.formatMinutes(totalMin),
-                        style: AppTheme.captionSmall.copyWith(
+                        style: AppTheme.caption.copyWith(
                           color: context.appPrimaryAccent,
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -514,18 +512,18 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: SizedBox(height: AppTheme.spaceMD)),
           if (selectedLogs.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppTheme.screenPadding,
-                  vertical: 24,
+                  vertical: AppTheme.spaceXL,
                 ),
                 child: Center(
                   child: Text(
                     '이 날은 독서 기록이 없어요',
-                    style: AppTheme.captionLarge.copyWith(
+                    style: AppTheme.supportingText.copyWith(
                       color: context.appTextTertiary,
                     ),
                   ),
@@ -540,7 +538,9 @@ class _LibraryCalendarViewState extends State<LibraryCalendarView> {
                     AppTheme.screenPadding,
                     0,
                     AppTheme.screenPadding,
-                    i < selectedLogs.length - 1 ? 8 : 24,
+                    i < selectedLogs.length - 1
+                        ? AppTheme.spaceSM
+                        : AppTheme.spaceXL,
                   ),
                   child: _ReadingLogCard(log: selectedLogs[i]),
                 ),
@@ -596,55 +596,47 @@ class _CalendarGrid extends StatelessWidget {
       cells.add(
         GestureDetector(
           onTap: isFuture ? null : () => onDayTap(date),
-          child: Container(
-            decoration: AppTheme.smoothBox(
-              color: isSelected
-                  ? AppTheme.primary
-                  : isToday
-                  ? AppTheme.primary.withValues(alpha: 0.15)
-                  : null,
-              radius: 10,
-              side: BorderSide.none,
-            ),
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: EdgeInsets.zero,
+            backgroundColor: isSelected
+                ? AppTheme.primary
+                : isToday
+                ? AppTheme.primary.withValues(alpha: 0.15)
+                : context.appCard.withValues(alpha: 0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '$d',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isToday ? FontWeight.w400 : FontWeight.w400,
+                  style: AppTheme.supportingText.copyWith(
                     color: isFuture
                         ? context.appTextTertiary.withValues(alpha: 0.3)
                         : isSelected
-                        ? Colors.white
+                        ? AppTheme.textPrimary
                         : isToday
                         ? context.appPrimaryAccent
                         : context.appTextPrimary,
-                    height: 1.4,
                   ),
                 ),
                 if (isCompleted || hasLog) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppTheme.spaceXS),
                   if (isCompleted)
-                    Container(
+                    ChorokCard(
+                      inner: true,
+                      showBorder: false,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
+                        horizontal: AppTheme.spaceXS,
                       ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : context.appPrimaryAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      backgroundColor: isSelected
+                          ? AppTheme.textPrimary.withValues(alpha: 0.2)
+                          : context.appPrimaryAccent.withValues(alpha: 0.2),
                       child: Text(
                         '완독',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
+                        style: AppTheme.caption.copyWith(
                           color: isSelected
-                              ? Colors.white
+                              ? AppTheme.textPrimary
                               : context.appPrimaryAccent,
                         ),
                       ),
@@ -661,7 +653,7 @@ class _CalendarGrid extends StatelessWidget {
                       ),
                     ),
                 ] else ...[
-                  const SizedBox(height: 7),
+                  const SizedBox(height: AppTheme.spaceSM),
                 ],
               ],
             ),
@@ -687,77 +679,57 @@ class _ReadingLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppTheme.smoothBox(
-        color: context.appCard,
-        radius: 10,
-        side: BorderSide.none,
-      ),
-      child: Row(
-        children: [
-          BookCover(
-            coverUrl: log.coverUrl,
-            gradientIndex: log.gradientIndex,
-            width: 44,
-            height: 44,
-            radius: 10,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return ChorokCard(
+      child: ChorokListRow(
+        leading: BookCover(
+          coverUrl: log.coverUrl,
+          gradientIndex: log.gradientIndex,
+          width: 44,
+          height: 44,
+          radius: AppTheme.radiusInner,
+        ),
+        title: Text(
+          log.bookTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTheme.rowText.copyWith(color: context.appTextPrimary),
+        ),
+        supporting: Text(
+          log.bookAuthor,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTheme.caption.copyWith(color: context.appTextSecondary),
+        ),
+        trailing: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          spacing: AppTheme.spaceXS,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  log.bookTitle,
-                  style: AppTheme.bodySmall.copyWith(
-                    color: context.appTextPrimary,
-                    fontWeight: FontWeight.w400,
-                  ),
+                Icon(
+                  Icons.schedule_rounded,
+                  size: AppTheme.spaceMD,
+                  color: context.appPrimaryAccent,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(width: AppTheme.spaceXS),
                 Text(
-                  log.bookAuthor,
-                  style: AppTheme.captionSmall.copyWith(
-                    color: context.appTextSecondary,
+                  log.minutes >= 60
+                      ? '${log.minutes ~/ 60}h ${log.minutes % 60}m'
+                      : '${log.minutes}분',
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appPrimaryAccent,
                   ),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.schedule_rounded,
-                    size: 12,
-                    color: context.appPrimaryAccent,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    log.minutes >= 60
-                        ? '${log.minutes ~/ 60}h ${log.minutes % 60}m'
-                        : '${log.minutes}분',
-                    style: AppTheme.captionLarge.copyWith(
-                      color: context.appPrimaryAccent,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${log.pages}쪽 읽음',
-                style: AppTheme.captionSmall.copyWith(
-                  color: context.appTextTertiary,
-                ),
-              ),
-            ],
-          ),
-        ],
+            Text(
+              '${log.pages}쪽 읽음',
+              style: AppTheme.caption.copyWith(color: context.appTextTertiary),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -114,6 +114,7 @@ class FeedHighlightSection extends ConsumerWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppTheme.spaceMD,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -124,6 +125,7 @@ class FeedHighlightSection extends ConsumerWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppTheme.spaceXS,
                   children: [
                     Text(
                       title,
@@ -132,7 +134,6 @@ class FeedHighlightSection extends ConsumerWidget {
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: AppTheme.captionLarge.copyWith(
@@ -154,7 +155,6 @@ class FeedHighlightSection extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -198,7 +198,7 @@ class HighlightCard extends StatelessWidget {
           decoration: AppTheme.smoothBox(
             color: context.appCard,
             radius: AppTheme.radiusLG,
-            side: const BorderSide(color: Color(0xFF8DFF54)),
+            side: BorderSide(color: context.appPrimaryAccent),
           ),
           child: IntrinsicHeight(
             child: Row(
@@ -217,8 +217,8 @@ class HighlightCard extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
+                                horizontal: AppTheme.spaceSM,
+                                vertical: AppTheme.spaceXS,
                               ),
                               decoration: ShapeDecoration(
                                 color: context.appPrimaryAccent.withValues(
@@ -226,7 +226,9 @@ class HighlightCard extends StatelessWidget {
                                 ),
                                 shape: SmoothRectangleBorder(
                                   smoothness: 0.6,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusOuter,
+                                  ),
                                   side: BorderSide.none,
                                 ),
                               ),
@@ -238,7 +240,7 @@ class HighlightCard extends StatelessWidget {
                                     size: 11,
                                     color: context.appPrimaryAccent,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: AppTheme.spaceXS),
                                   Text(
                                     '겹문장 · ${sentence.recordCount}명 수집',
                                     style: AppTheme.captionSmall.copyWith(
@@ -253,9 +255,8 @@ class HighlightCard extends StatelessWidget {
                         // 문장 본문
                         Text(
                           '"${sentence.content}"',
-                          style: AppTheme.bodySmall.copyWith(
+                          style: AppTheme.bodyMedium.copyWith(
                             color: context.appTextPrimary,
-                            fontStyle: FontStyle.italic,
                             height: 1.6,
                           ),
                           maxLines: 2,
@@ -274,7 +275,7 @@ class HighlightCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppTheme.spaceSM),
                             Icon(
                               Icons.favorite_rounded,
                               size: 12,
@@ -282,7 +283,7 @@ class HighlightCard extends StatelessWidget {
                                 alpha: 0.8,
                               ),
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: AppTheme.spaceXS),
                             Text(
                               '${sentence.empathyCount}',
                               style: AppTheme.captionSmall.copyWith(

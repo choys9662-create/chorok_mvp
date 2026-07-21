@@ -62,12 +62,15 @@ class PassiveAggroCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: 14,
+        ),
         decoration: ShapeDecoration(
           color: AppTheme.warningColor.withValues(alpha: 0.08),
           shape: SmoothRectangleBorder(
             smoothness: 0.6,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD * 1.8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             side: BorderSide(
               color: AppTheme.warningColor.withValues(alpha: 0.24),
             ),
@@ -75,20 +78,22 @@ class PassiveAggroCard extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Text('🦉', style: TextStyle(fontSize: 24)),
-            const SizedBox(width: 12),
+            // 이모지 장식 — 24→18 스냅(§3)
+            const Text(
+              '🦉',
+              style: TextStyle(fontSize: AppTheme.fsSectionTitle),
+            ),
+            const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
+                style: AppTheme.supportingText.copyWith(
                   color: AppTheme.warningColor,
                   height: 1.45,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppTheme.spaceSM),
             TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.warningColor,
@@ -100,10 +105,7 @@ class PassiveAggroCard extends ConsumerWidget {
                 HapticFeedback.selectionClick();
                 context.go(AppConstants.routeLibrary);
               },
-              child: const Text(
-                '읽을게요',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-              ),
+              child: const Text('읽을게요', style: AppTheme.supportingText),
             ),
           ],
         ),

@@ -1,4 +1,3 @@
-import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import '../../../shared/models/reading_session.dart';
 import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/book_repository.dart';
 
+import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../analytics/controller/analytics_provider.dart';
 import '../screen/library_screen.dart';
@@ -67,11 +67,19 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error, style: const TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red.shade700,
+          content: Text(
+            error,
+            style: AppTheme.supportingText.copyWith(color: AppTheme.primary),
+          ),
+          backgroundColor: AppTheme.warningColor,
           behavior: SnackBarBehavior.floating,
           shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          margin: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            0,
+            AppTheme.screenPadding,
+            AppTheme.spaceLG,
+          ),
         ),
       );
       return;
@@ -103,12 +111,19 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
         SnackBar(
           content: Text(
             '독서 기록이 추가됐어요 (+${endPage - int.parse(_startPageCtrl.text.trim())}쪽)',
-            style: const TextStyle(color: Colors.white),
+            style: AppTheme.supportingText.copyWith(
+              color: context.appTextPrimary,
+            ),
           ),
           backgroundColor: AppTheme.primary,
           behavior: SnackBarBehavior.floating,
           shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          margin: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            0,
+            AppTheme.screenPadding,
+            AppTheme.spaceLG,
+          ),
         ),
       );
     } finally {
@@ -150,305 +165,310 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
-      decoration: ShapeDecoration(
-        color: context.appCard,
-        shape: SmoothRectangleBorder(
-          smoothness: 0.6,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(10),
-            topRight: Radius.circular(10),
-          ),
-        ),
-      ),
+    return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ChorokSheetHandle(),
-              const SizedBox(height: 20),
+      child: ChorokCard(
+        showBorder: false,
+        padding: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              AppTheme.spaceLG,
+              AppTheme.screenPadding,
+              AppTheme.spaceLG,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ChorokSheetHandle(),
+                const SizedBox(height: AppTheme.spaceXL),
 
-              // ── 헤더 ─────────────────────────────────────────────
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: AppTheme.smoothBox(
-                      color: context.appPrimaryAccent.withValues(alpha: 0.12),
-                      radius: 10,
-                    ),
-                    child: Icon(
-                      Icons.edit_note_rounded,
-                      size: 18,
-                      color: context.appPrimaryAccent,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '독서 기록 직접 추가',
-                          style: AppTheme.headingMedium.copyWith(
-                            color: context.appTextPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.book.title,
-                          style: AppTheme.captionLarge.copyWith(
-                            color: context.appTextTertiary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // ── 날짜 선택 ──────────────────────────────────────────
-              Text(
-                '읽은 날짜',
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Semantics(
-                label: '날짜 선택',
-                button: true,
-                child: GestureDetector(
-                  onTap: () => _pickDate(context),
-                  child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: AppTheme.smoothBox(
-                      color: context.appCardElevated,
-                      radius: AppTheme.radiusMD,
-                      side: BorderSide.none,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 16,
-                          color: context.appPrimaryAccent,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _formatDate(_selectedDate),
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: context.appTextPrimary,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 18,
-                          color: context.appTextTertiary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── 페이지 범위 ────────────────────────────────────────
-              Text(
-                '읽은 페이지',
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _PageField(
-                      controller: _startPageCtrl,
-                      label: '시작',
-                      hint: '예: ${widget.book.currentPage}',
-                      onChanged: () => setState(() {}),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      '→',
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: context.appTextTertiary,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _PageField(
-                      controller: _endPageCtrl,
-                      label: '종료',
-                      hint: widget.book.totalPages > 0
-                          ? '예: ${widget.book.totalPages}'
-                          : '종료 쪽',
-                      onChanged: () => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '쪽',
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-
-              // 읽은 쪽수 미리보기
-              Builder(
-                builder: (_) {
-                  final start = int.tryParse(_startPageCtrl.text);
-                  final end = int.tryParse(_endPageCtrl.text);
-                  if (start != null && end != null && end > start) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        '${end - start}쪽 읽었어요',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appPrimaryAccent,
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox(height: 6);
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // ── 독서 시간 ──────────────────────────────────────────
-              Text(
-                '독서 시간',
-                style: AppTheme.bodySmall.copyWith(
-                  color: context.appTextSecondary,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: AppTheme.smoothBox(
-                        color: context.appCardElevated,
-                        radius: AppTheme.radiusMD,
-                        side: BorderSide.none,
-                      ),
-                      child: TextField(
-                        controller: _minutesCtrl,
-                        keyboardType: TextInputType.number,
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: context.appTextPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: '예: 30',
-                          hintStyle: AppTheme.bodyMedium.copyWith(
-                            color: context.appTextTertiary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '분',
-                    style: AppTheme.bodyMedium.copyWith(
-                      color: context.appTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // ── 안내 문구 ──────────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: AppTheme.smoothBox(
-                  color: context.appPrimaryAccent.withValues(alpha: 0.08),
-                  radius: AppTheme.radiusMD,
-                  side: BorderSide.none,
-                ),
-                child: Row(
+                // ── 헤더 ─────────────────────────────────────────────
+                Row(
                   children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 14,
-                      color: context.appPrimaryAccent,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '종료 페이지가 현재 페이지(${widget.book.currentPage}쪽)보다 크면 자동으로 업데이트돼요.',
-                        style: AppTheme.captionLarge.copyWith(
-                          color: context.appPrimaryAccent,
-                          height: 1.4,
+                    SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: ChorokCard(
+                        inner: true,
+                        showBorder: false,
+                        backgroundColor: context.appPrimaryAccent.withValues(
+                          alpha: 0.12,
                         ),
+                        padding: EdgeInsets.zero,
+                        child: Icon(
+                          Icons.edit_note_rounded,
+                          size: 18,
+                          color: context.appPrimaryAccent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: AppTheme.spaceXS,
+                        children: [
+                          Text(
+                            '독서 기록 직접 추가',
+                            style: AppTheme.headingMedium.copyWith(
+                              color: context.appTextPrimary,
+                            ),
+                          ),
+                          Text(
+                            widget.book.title,
+                            style: AppTheme.captionLarge.copyWith(
+                              color: context.appTextTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: AppTheme.spaceXL),
 
-              // ── 저장 버튼 ──────────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _isSaving ? null : () => _save(context),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: isDark
-                        ? AppTheme.primaryLight
-                        : Colors.white,
-                    disabledBackgroundColor: AppTheme.primary.withValues(
-                      alpha: 0.5,
-                    ),
-                    shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                // ── 날짜 선택 ──────────────────────────────────────────
+                Text(
+                  '읽은 날짜',
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextSecondary,
                   ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          '기록 추가하기',
-                          style: AppTheme.bodyLarge.copyWith(
-                            color: isDark
-                                ? AppTheme.primaryLight
-                                : Colors.white,
-                            fontWeight: FontWeight.w400,
+                ),
+                const SizedBox(height: AppTheme.spaceSM),
+                Semantics(
+                  label: '날짜 선택',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () => _pickDate(context),
+                    child: SizedBox(
+                      height: 48,
+                      child: ChorokCard(
+                        inner: true,
+                        showBorder: false,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.cardPaddingMD,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 16,
+                              color: context.appPrimaryAccent,
+                            ),
+                            const SizedBox(width: AppTheme.spaceMD),
+                            Text(
+                              _formatDate(_selectedDate),
+                              style: AppTheme.body.copyWith(
+                                color: context.appTextPrimary,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: context.appTextTertiary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceLG),
+
+                // ── 페이지 범위 ────────────────────────────────────────
+                Text(
+                  '읽은 페이지',
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceSM),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PageField(
+                        controller: _startPageCtrl,
+                        label: '시작',
+                        hint: '예: ${widget.book.currentPage}',
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceMD,
+                      ),
+                      child: Text(
+                        '→',
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: context.appTextTertiary,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _PageField(
+                        controller: _endPageCtrl,
+                        label: '종료',
+                        hint: widget.book.totalPages > 0
+                            ? '예: ${widget.book.totalPages}'
+                            : '종료 쪽',
+                        onChanged: () => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(
+                      '쪽',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // 읽은 쪽수 미리보기
+                Builder(
+                  builder: (_) {
+                    final start = int.tryParse(_startPageCtrl.text);
+                    final end = int.tryParse(_endPageCtrl.text);
+                    if (start != null && end != null && end > start) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: AppTheme.spaceSM),
+                        child: Text(
+                          '${end - start}쪽 읽었어요',
+                          style: AppTheme.captionLarge.copyWith(
+                            color: context.appPrimaryAccent,
                           ),
                         ),
+                      );
+                    }
+                    return const SizedBox(height: AppTheme.spaceSM);
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: AppTheme.spaceLG),
+
+                // ── 독서 시간 ──────────────────────────────────────────
+                Text(
+                  '독서 시간',
+                  style: AppTheme.supportingText.copyWith(
+                    color: context.appTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceSM),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ChorokCard(
+                          inner: true,
+                          showBorder: false,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.cardPaddingMD,
+                          ),
+                          child: TextField(
+                            controller: _minutesCtrl,
+                            keyboardType: TextInputType.number,
+                            style: AppTheme.body.copyWith(
+                              color: context.appTextPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: '예: 30',
+                              hintStyle: AppTheme.body.copyWith(
+                                color: context.appTextTertiary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(
+                      '분',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: context.appTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spaceXL),
+
+                // ── 안내 문구 ──────────────────────────────────────────
+                ChorokCard(
+                  inner: true,
+                  showBorder: false,
+                  backgroundColor: context.appPrimaryAccent.withValues(
+                    alpha: 0.08,
+                  ),
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 14,
+                        color: context.appPrimaryAccent,
+                      ),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: Text(
+                          '종료 페이지가 현재 페이지(${widget.book.currentPage}쪽)보다 크면 자동으로 업데이트돼요.',
+                          style: AppTheme.captionLarge.copyWith(
+                            color: context.appPrimaryAccent,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spaceXL),
+
+                // ── 저장 버튼 ──────────────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: _isSaving ? null : () => _save(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: isDark
+                          ? AppTheme.primaryLight
+                          : AppTheme.lightSurface,
+                      disabledBackgroundColor: AppTheme.primary.withValues(
+                        alpha: 0.5,
+                      ),
+                      shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
+                    ),
+                    child: _isSaving
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: isDark
+                                  ? AppTheme.primaryLight
+                                  : AppTheme.lightSurface,
+                            ),
+                          )
+                        : Text(
+                            '기록 추가하기',
+                            style: AppTheme.bodyLarge.copyWith(
+                              color: isDark
+                                  ? AppTheme.primaryLight
+                                  : AppTheme.lightSurface,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -473,34 +493,30 @@ class _PageField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppTheme.spaceXS,
       children: [
         Text(
           label,
-          style: AppTheme.captionSmall.copyWith(color: context.appTextTertiary),
+          style: AppTheme.caption.copyWith(color: context.appTextTertiary),
         ),
-        const SizedBox(height: 4),
-        Container(
+        SizedBox(
           height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: AppTheme.smoothBox(
-            color: context.appCardElevated,
-            radius: AppTheme.radiusMD,
-            side: BorderSide.none,
-          ),
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            onChanged: (_) => onChanged(),
-            style: AppTheme.bodyMedium.copyWith(
-              color: context.appTextPrimary,
-              fontWeight: FontWeight.w400,
-            ),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              hintText: hint,
-              hintStyle: AppTheme.captionLarge.copyWith(
-                color: context.appTextTertiary,
+          child: ChorokCard(
+            inner: true,
+            showBorder: false,
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              onChanged: (_) => onChanged(),
+              style: AppTheme.body.copyWith(color: context.appTextPrimary),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: hint,
+                hintStyle: AppTheme.supportingText.copyWith(
+                  color: context.appTextTertiary,
+                ),
               ),
             ),
           ),

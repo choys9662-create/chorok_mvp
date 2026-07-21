@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/chorok_card.dart';
-import '../../../shared/widgets/gradient_text.dart';
 
 class QualitativeInsightCard extends StatelessWidget {
   final IconData icon;
@@ -52,7 +51,10 @@ class QualitativeInsightCard extends StatelessWidget {
           if (subMessage != null) ...[
             const SizedBox(height: AppTheme.spaceMD),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMD,
+                vertical: AppTheme.spaceSM,
+              ),
               decoration: AppTheme.smoothBox(
                 color: AppTheme.primary.withValues(alpha: 0.2),
                 side: BorderSide.none,
@@ -169,10 +171,12 @@ class ReaderIdentityCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spaceMD),
-          GradientText(
+          Text(
             identity,
-            style: AppTheme.displaySmall.copyWith(height: 1.1),
-            gradient: AppTheme.greenGradientVertical,
+            style: AppTheme.displaySmall.copyWith(
+              height: 1.1,
+              color: context.appPrimaryAccent,
+            ),
           ),
           const SizedBox(height: AppTheme.spaceMD),
           // Divider(color: context.appBorder, height: 1),

@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>초록 디자인 토큰 · 위젯 치수</title>
+<style>
+  /* 이 페이지의 CSS 변수는 초록 AppTheme의 실제 토큰값이다.
+     출처: lib/core/theme/app_theme.dart */
+  :root {
+    --ground:  #000000;
+    --surface: #141614;
+    --inner:   #222422;
+    --green:   #8DFF54;
+    --text:    #F1FFF2;
+    --muted:   #7B847C;
+
+    --r-outer: 10px;
+    --r-inner: 6px;
+
+    --s-xs: 4px;
+    --s-sm: 8px;
+    --s-md: 12px;
+    --s-lg: 16px;
+    --s-2xl: 24px;
+    --s-section: 30px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+            "Noto Sans KR", "Malgun Gothic", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  /* 초록은 다크 전용 시스템이므로 이 페이지도 단일 테마로 고정한다. */
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 56px var(--s-lg) 96px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-section);
+  }
+
+  /* ── 헤더 ─────────────────────────────────────── */
+  .masthead { display: flex; flex-direction: column; gap: var(--s-md); }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    margin: 0; font-size: 30px; font-weight: 400;
+    letter-spacing: -1.2px; line-height: 1.2; text-wrap: balance;
+  }
+  .lede { margin: 0; color: var(--muted); max-width: 62ch; }
+  .lede b { color: var(--text); font-weight: 400; }
+  .lede code, .sec-head code, footer code, .rule code {
+    font-family: var(--mono); font-size: 12px;
+  }
+
+  .stack { display: flex; flex-direction: column; gap: var(--s-xs); margin-top: var(--s-sm); }
+  .stack-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: var(--s-md);
+    align-items: baseline; padding: var(--s-sm) var(--s-md);
+    background: var(--surface); border-radius: var(--r-outer);
+  }
+  .stack-row code { font-family: var(--mono); font-size: 12px; color: var(--green); }
+  .stack-row span { color: var(--muted); font-size: 13px; }
+
+  /* ── 섹션 ─────────────────────────────────────── */
+  section { display: flex; flex-direction: column; gap: var(--s-lg); }
+  .sec-head { display: flex; flex-direction: column; gap: var(--s-xs); }
+  h2 {
+    margin: 0; font-size: 18px; font-weight: 400;
+    letter-spacing: -0.72px; line-height: 1.3;
+  }
+  .sec-head p { margin: 0; color: var(--muted); font-size: 13px; max-width: 64ch; }
+
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--inner);
+    border-radius: var(--r-outer);
+    padding: var(--s-lg);
+  }
+
+  /* ── 색 ───────────────────────────────────────── */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); gap: var(--s-sm); }
+  .sw { display: flex; flex-direction: column; gap: var(--s-md); }
+  .chip { height: 60px; border-radius: var(--r-inner); border: 1px solid var(--inner); }
+  .sw-meta { display: flex; flex-direction: column; gap: 2px; }
+  .hex { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .sym { font-family: var(--mono); font-size: 11px; color: var(--green); }
+  .role { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+  /* ── 타이포 ───────────────────────────────────── */
+  .type-row {
+    display: grid; grid-template-columns: 1fr 168px; gap: var(--s-lg);
+    align-items: baseline; padding: var(--s-md) 0; border-bottom: 1px solid var(--inner);
+  }
+  .type-row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .type-row:first-child { padding-top: 0; }
+  .specimen { line-height: 1.3; }
+  .type-meta { display: flex; flex-direction: column; gap: 1px; text-align: right; }
+  .type-meta .px { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ── 간격 ─────────────────────────────────────── */
+  .space-row {
+    display: grid; grid-template-columns: 46px 1fr; gap: var(--s-md);
+    align-items: center; padding: var(--s-sm) 0;
+  }
+  .space-row + .space-row { border-top: 1px solid var(--inner); }
+  .space-val {
+    font-family: var(--mono); font-size: 12px;
+    font-variant-numeric: tabular-nums; text-align: right;
+  }
+  .space-vis { display: flex; align-items: center; gap: var(--s-md); min-width: 0; }
+  .bar { height: 12px; border-radius: 2px; background: var(--text); flex: none; }
+  .space-note { color: var(--muted); font-size: 12px; min-width: 0; }
+  .space-note code { font-family: var(--mono); color: var(--green); font-size: 11px; }
+
+  /* ── 곡률 ─────────────────────────────────────── */
+  .radius-demo { display: flex; gap: var(--s-lg); flex-wrap: wrap; }
+  .demo-outer {
+    flex: 1 1 260px; background: var(--surface); border: 1px solid var(--inner);
+    border-radius: var(--r-outer); padding: var(--s-lg);
+    display: flex; flex-direction: column; gap: var(--s-sm);
+  }
+  .demo-inner {
+    background: var(--inner); border-radius: var(--r-inner);
+    padding: var(--s-md); font-size: 12px; color: var(--muted);
+  }
+  .demo-label { font-family: var(--mono); font-size: 11px; color: var(--green); }
+
+  /* ── 위젯 해부 ────────────────────────────────── */
+  .widget { display: flex; flex-direction: column; gap: var(--s-md); }
+  .widget + .widget { margin-top: var(--s-2xl); padding-top: var(--s-2xl); border-top: 1px solid var(--inner); }
+  .widget-head { display: flex; align-items: baseline; gap: var(--s-md); flex-wrap: wrap; }
+  .widget-name { font-family: var(--mono); font-size: 14px; color: var(--green); }
+  .widget-desc { color: var(--muted); font-size: 12.5px; }
+  .widget-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 260px); gap: var(--s-lg); align-items: start; }
+  .stage {
+    background: var(--ground); border: 1px dashed var(--inner);
+    border-radius: var(--r-inner); padding: var(--s-lg);
+    display: flex; flex-direction: column; gap: var(--s-sm); min-width: 0;
+  }
+  .stage-cap {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* 치수 목록 */
+  .dims { display: flex; flex-direction: column; gap: 0; }
+  .dim {
+    display: grid; grid-template-columns: 1fr auto; gap: var(--s-md);
+    padding: var(--s-sm) 0; border-bottom: 1px solid var(--inner);
+    font-size: 12px; align-items: baseline;
+  }
+  .dim:last-child { border-bottom: 0; }
+  .dim-k { color: var(--muted); min-width: 0; }
+  .dim-v {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    white-space: nowrap; font-size: 11.5px;
+  }
+  .dim-v em { font-style: normal; color: var(--green); }
+
+  /* 실물 크기 데모 요소 */
+  .d-card {
+    background: var(--surface); border: 1px solid var(--inner);
+    border-radius: var(--r-outer); padding: var(--s-lg);
+    font-size: 12px; color: var(--muted);
+  }
+  .d-row { display: flex; align-items: center; gap: var(--s-md); }
+  .d-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--inner); flex: none;
+  }
+  .d-col { display: flex; flex-direction: column; gap: var(--s-xs); flex: 1; min-width: 0; }
+  .d-title { font-size: 16px; letter-spacing: -0.64px; }
+  .d-sub { font-size: 12px; letter-spacing: -0.48px; color: var(--muted); }
+  .d-trail { color: var(--muted); font-size: 12px; flex: none; }
+  .d-progress-track {
+    height: 4px; border-radius: var(--r-inner);
+    background: var(--inner); overflow: hidden;
+  }
+  .d-progress-fill { height: 100%; width: 62%; background: var(--green); border-radius: var(--r-inner); }
+  .d-cover {
+    width: 44px; height: 72px; border-radius: var(--r-outer);
+    background: linear-gradient(145deg, #1A4D2E, #00CC6A); flex: none;
+  }
+  .d-covers { display: flex; gap: var(--s-sm); align-items: flex-end; }
+  .d-cover.s38 { width: 38px; height: 62px; }
+  .d-cover.s52 { width: 52px; height: 84px; }
+  .d-cover.s88 { width: 88px; height: 132px; }
+  .d-orb {
+    width: 62px; height: 62px; border-radius: 50%;
+    background: var(--green); flex: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #000; font-size: 10px;
+  }
+  .d-nav {
+    height: 92px; border-radius: var(--r-outer); background: var(--surface);
+    border: 1px solid var(--inner); display: flex; align-items: center;
+    justify-content: space-around; padding: 0 var(--s-md);
+  }
+  .d-tab { width: 64px; text-align: center; color: var(--muted); font-size: 10px; }
+  .d-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--inner); margin: 0 auto; }
+  .d-header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-sm); }
+  .d-header .t { font-size: 18px; letter-spacing: -0.72px; }
+  .d-header .a { font-size: 12px; color: var(--muted); }
+  .d-stat { display: flex; flex-direction: column; gap: 2px; }
+  .d-stat-top { display: flex; align-items: center; gap: var(--s-xs); color: var(--muted); font-size: 12px; }
+  .d-stat-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--green); flex: none; }
+  .d-stat-val { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .d-btn {
+    height: 30px; border-radius: var(--r-outer);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #000; padding: 0 84px; white-space: nowrap;
+  }
+  .d-btn.grn { background: var(--green); }
+  .d-btn.wht { background: var(--text); }
+  .d-chip {
+    background: var(--inner); border-radius: var(--r-inner);
+    padding: var(--s-sm) var(--s-md); font-size: 12px; color: var(--muted);
+    display: inline-block;
+  }
+
+  /* ── 표 ───────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 480px; }
+  th {
+    text-align: left; font-weight: 400; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    padding: 0 var(--s-md) var(--s-sm) 0; border-bottom: 1px solid var(--inner);
+  }
+  td { padding: var(--s-md) var(--s-md) var(--s-md) 0; border-bottom: 1px solid var(--inner); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.name { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+  td.count { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.role-cell { color: var(--muted); }
+  .live { color: var(--green); }
+  .zero { color: var(--muted); }
+  .flag {
+    display: inline-block; margin-left: var(--s-sm); padding: 1px 6px;
+    border: 1px solid var(--inner); border-radius: var(--r-inner);
+    font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap;
+  }
+
+  /* ── 규칙 ─────────────────────────────────────── */
+  .rules { display: flex; flex-direction: column; gap: var(--s-md); }
+  .rule { display: grid; grid-template-columns: var(--s-xs) 1fr; gap: var(--s-md); align-items: stretch; }
+  .rule::before { content: ""; background: var(--green); border-radius: 2px; }
+  .rule div { min-width: 0; }
+  .rule strong { font-weight: 400; display: block; }
+  .rule span { color: var(--muted); font-size: 12.5px; }
+
+  footer {
+    color: var(--muted); font-size: 12px;
+    border-top: 1px solid var(--inner); padding-top: var(--s-lg); line-height: 1.7;
+  }
+
+  /* ── 실제 화면 (402 × 874) ────────────────────── */
+  .phones {
+    display: flex; gap: var(--s-section); overflow-x: auto;
+    padding-bottom: var(--s-md);
+  }
+  .phone-unit { display: flex; flex-direction: column; gap: var(--s-sm); flex: none; }
+  .phone-cap { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .phone-cap em { font-style: normal; color: var(--green); }
+  .phone {
+    width: 402px; height: 874px; flex: none;
+    background: var(--ground);
+    border: 1px solid var(--inner);
+    border-radius: 44px;            /* 기기 외형이라 앱 UI 곡률 규칙과 무관 */
+    overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  /* 상태바 */
+  .sbar {
+    height: 44px; flex: none; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 var(--s-2xl);
+    font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .sbar .dots { display: flex; gap: 3px; align-items: center; color: var(--muted); font-size: 10px; }
+  /* 앱바 */
+  .abar {
+    height: 52px; flex: none; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 var(--s-lg);
+  }
+  .abar .t { font-size: 18px; letter-spacing: -0.72px; }
+  .abar .i { width: 24px; height: 24px; border-radius: 50%; background: var(--inner); }
+  /* 본문 */
+  .screen {
+    flex: 1; min-height: 0; overflow: hidden;
+    padding: 0 var(--s-lg);
+    display: flex; flex-direction: column; gap: var(--s-section);
+  }
+  .grp { display: flex; flex-direction: column; gap: var(--s-md); }
+  .grp-sm { display: flex; flex-direction: column; gap: var(--s-sm); }
+  /* 하단 네비 (92) */
+  .navbar {
+    height: 92px; flex: none; display: flex; align-items: center;
+    justify-content: space-around; padding: 0 var(--s-md) var(--s-lg);
+    border-top: 1px solid var(--inner);
+  }
+  .navtab {
+    width: 64px; display: flex; flex-direction: column;
+    align-items: center; gap: var(--s-sm); color: var(--muted); font-size: 10px;
+  }
+  .navtab.on { color: var(--green); }
+  .navicon { width: 21px; height: 21px; border-radius: 5px; background: currentColor; opacity: .75; }
+  .naworb {
+    width: 62px; height: 62px; border-radius: 50%; background: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    color: #000; font-size: 11px; flex: none; margin-bottom: 14px;
+  }
+  /* 화면 안 부품 */
+  .p-card {
+    background: var(--surface); border: 1px solid var(--inner);
+    border-radius: var(--r-outer); padding: var(--s-lg);
+  }
+  .p-inner {
+    background: var(--inner); border-radius: var(--r-inner);
+    padding: var(--s-md); font-size: 14px; line-height: 1.55; letter-spacing: -0.56px;
+  }
+  .p-quote { display: flex; gap: var(--s-md); }
+  .p-page { font-size: 14px; color: var(--muted); flex: none; }
+  .p-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .p-head .t { font-size: 18px; letter-spacing: -0.72px; }
+  .p-head .a { font-size: 12px; color: var(--muted); }
+  .p-row { display: flex; align-items: center; gap: var(--s-md); }
+  .p-av { width: 36px; height: 36px; border-radius: 50%; background: var(--inner); flex: none; }
+  .p-col { display: flex; flex-direction: column; gap: var(--s-xs); flex: 1; min-width: 0; }
+  .p-name { font-size: 16px; letter-spacing: -0.64px; }
+  .p-sub { font-size: 12px; color: var(--muted); letter-spacing: -0.48px; }
+  .p-meta { display: flex; gap: var(--s-lg); color: var(--muted); font-size: 12px; flex: none; }
+  .p-cover {
+    width: 120px; height: 180px; border-radius: var(--r-outer);
+    background: linear-gradient(150deg, #1A4D2E, #00CC6A); margin: 0 auto;
+  }
+  /* ChorokButton — 높이 30, 좌우 84.
+     묶음은 가장 긴 버튼에 폭을 맞춘다(둘의 폭이 달라 보이면 안 됨). */
+  .p-ctas {
+    display: flex; flex-direction: column; gap: var(--s-sm);
+    width: fit-content; margin: 0 auto;
+  }
+  .p-cta, .p-cta2 {
+    height: 30px; border-radius: var(--r-outer);
+    padding: 0 84px; white-space: nowrap; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    align-self: stretch;
+  }
+  .p-cta { background: var(--green); color: #000; }
+  .p-cta2 { background: var(--text); color: #000; }
+  /* ChorokStatBox — 화면 배경 위에 직접 놓이므로 바깥 박스(10) */
+  .p-stats { display: flex; gap: var(--s-sm); }
+  .p-stat {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: var(--s-sm); background: var(--surface);
+    border-radius: var(--r-outer); padding: var(--s-sm) var(--s-xs);
+  }
+  .p-stat .k { font-size: 10px; color: var(--muted); }
+  .p-stat .v { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .p-twin { display: flex; gap: var(--s-sm); }
+  .p-twin > div {
+    flex: 1; border-radius: var(--r-outer); padding: var(--s-md);
+    display: flex; flex-direction: column; gap: var(--s-2xl);
+  }
+  .p-twin .k { font-size: 12px; }
+  .p-twin .v { font-size: 30px; letter-spacing: -1.2px; text-align: right; line-height: 1; }
+  .p-twin .light { background: var(--text); color: #0B0F0B; }
+  .p-twin .grn { background: var(--green); color: #000; }
+  .fade {
+    position: absolute; left: 0; right: 0; bottom: 92px; height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--ground));
+    pointer-events: none;
+  }
+
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  @media (max-width: 640px) {
+    .widget-body { grid-template-columns: 1fr; }
+    .type-row { grid-template-columns: 1fr; gap: var(--s-xs); }
+    .type-meta { text-align: left; flex-direction: row; gap: var(--s-sm); align-items: baseline; }
+    .wrap { padding-top: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Chorok · Design Tokens</div>
+    <h1>초록 디자인 토큰과 위젯 치수</h1>
+    <p class="lede">
+      이 페이지는 <b>초록 앱의 실제 토큰값으로 만들어졌다.</b> 배경, 글자 크기, 여백, 모서리가
+      전부 <code>AppTheme</code>에서 그대로 온 값이고, 아래 위젯 데모도 실제 치수로 그려져 있다.
+      설명이 아니라 표본이다.
+    </p>
+
+    <div class="stack">
+      <div class="stack-row"><code>design.md</code><span>규칙과 이유 — 왜 이 색, 왜 이 간격인지</span></div>
+      <div class="stack-row"><code>AppTheme</code><span>그 규칙의 현재 숫자값 — 여기 하나 고치면 앱 전체가 따라온다</span></div>
+      <div class="stack-row"><code>shared/widgets</code><span>값을 자동으로 입히는 부품 — 화면은 조립만 한다</span></div>
+    </div>
+  </header>
+
+  <!-- 실제 화면 -->
+  <section>
+    <div class="sec-head">
+      <h2>실제 화면 — 402 × 874</h2>
+      <p>디자인 기준 프레임 그대로다. 아래 두 화면은 <b style="color:var(--text);font-weight:400">이 페이지에 있는 토큰과 위젯 치수만으로</b>
+         1:1 크기로 그려져 있다. 화면에서 자를 대고 재도 값이 맞는다.</p>
+    </div>
+    <div class="phones">
+
+      <!-- 피드 -->
+      <div class="phone-unit">
+        <span class="phone-cap">피드 — 초서 블록이 쌓인 화면 · <em>402 × 874</em></span>
+        <div class="phone">
+          <div class="sbar"><span>9:41</span><span class="dots">••• ▮</span></div>
+          <div class="abar"><span class="t">피드</span><span class="i"></span></div>
+          <div class="screen">
+            <div class="grp">
+              <div class="p-head"><span class="t">인기있는 문장·생각</span><span class="a">모두 보기 ›</span></div>
+
+              <div class="p-card">
+                <div class="grp-sm">
+                  <div class="p-row">
+                    <div class="p-av"></div>
+                    <div class="p-col"><span class="p-name">해골맨</span></div>
+                    <div class="p-meta"><span>댓글 29</span><span>♡ 356</span></div>
+                  </div>
+                  <div class="p-inner p-quote">
+                    <span class="p-page">9</span>
+                    <span>아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.</span>
+                  </div>
+                  <div class="p-inner" style="color:var(--green)">
+                    평범함에 대한 진술이 아니라, 그 평범함이 끝났다는 예고이기 때문이다.
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-card">
+                <div class="grp-sm">
+                  <div class="p-row">
+                    <div class="p-av"></div>
+                    <div class="p-col"><span class="p-name">염창맨</span></div>
+                    <div class="p-meta"><span>댓글 2</span><span>♡ 4</span></div>
+                  </div>
+                  <div class="p-inner p-quote">
+                    <span class="p-page">9</span>
+                    <span>아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.</span>
+                  </div>
+                  <div class="p-inner" style="color:var(--green)">
+                    그러니까 유난떨지 마라 영혜야. 탕수육이 우습냐?
+                  </div>
+                  <div class="p-row" style="margin-top:4px">
+                    <div class="p-av" style="width:28px;height:28px"></div>
+                    <div class="p-col"><span class="p-sub">등촌맨 · 넌 한강에 빠져서 죽어라</span></div>
+                    <span class="p-sub">♡ 15</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="fade"></div>
+          <div class="navbar">
+            <div class="navtab"><span class="navicon"></span>홈</div>
+            <div class="navtab"><span class="navicon"></span>검색</div>
+            <div class="naworb">orb</div>
+            <div class="navtab on"><span class="navicon"></span>피드</div>
+            <div class="navtab"><span class="navicon"></span>서재</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 책 상세 -->
+      <div class="phone-unit">
+        <span class="phone-cap">책 상세 — 표지·통계·문장 요약 · <em>402 × 874</em></span>
+        <div class="phone">
+          <div class="sbar"><span>9:41</span><span class="dots">••• ▮</span></div>
+          <div class="abar"><span class="i" style="border-radius:10px"></span><span></span></div>
+          <div class="screen" style="gap:var(--s-2xl)">
+            <div class="grp">
+              <div class="p-cover"></div>
+              <div style="text-align:center">
+                <div style="font-size:18px;letter-spacing:-0.72px">채식주의자 (리마스터링)</div>
+                <div class="p-sub" style="margin-top:4px">한강</div>
+              </div>
+              <div class="p-ctas">
+                <div class="p-cta">▶ 이어 읽기</div>
+                <div class="p-cta2">✓ 서재에 있는 책</div>
+              </div>
+            </div>
+
+            <div class="p-stats">
+              <div class="p-stat"><span class="k">전체 완독</span><span class="v">1250</span></div>
+              <div class="p-stat"><span class="k">친구 완독</span><span class="v">10</span></div>
+              <div class="p-stat"><span class="k">평균 완독률</span><span class="v">95%</span></div>
+              <div class="p-stat"><span class="k">평균 세션</span><span class="v">4</span></div>
+            </div>
+
+            <div class="p-card" style="font-size:12px;color:var(--muted);line-height:1.6">
+              2016년 인터내셔널 부커상을 수상하며 한국문학의 입지를 한 단계 확장시킨 한강의 장편소설
+              『채식주의자』를 15년 만에 새로운 장정으로 선보인다.
+            </div>
+
+            <div class="grp-sm">
+              <div class="p-card" style="padding:var(--s-md)">
+                <div class="p-row">
+                  <div class="p-av"></div>
+                  <div class="p-col"><span class="p-name">한강</span></div>
+                  <span class="p-sub">저자 ›</span>
+                </div>
+              </div>
+              <div class="p-card" style="padding:var(--s-md)">
+                <div class="p-row">
+                  <div class="p-av"></div>
+                  <div class="p-col"><span class="p-name">김한강</span></div>
+                  <span class="p-sub">옮긴이 ›</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grp">
+              <div class="p-head"><span class="t">나의 문장·생각</span></div>
+              <div class="p-twin">
+                <div class="light"><span class="k">문장</span><span class="v">30</span></div>
+                <div class="grn"><span class="k">생각</span><span class="v">5</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fade"></div>
+          <div class="navbar">
+            <div class="navtab"><span class="navicon"></span>홈</div>
+            <div class="navtab"><span class="navicon"></span>검색</div>
+            <div class="naworb">orb</div>
+            <div class="navtab"><span class="navicon"></span>피드</div>
+            <div class="navtab on"><span class="navicon"></span>서재</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 색 -->
+  <section>
+    <div class="sec-head">
+      <h2>색 — 여섯 가지가 전부</h2>
+      <p>이 외의 hex는 쓰지 않는다. 중간 톤이 필요하면 새 색을 만들지 말고 이 여섯 색의 투명도로 만든다.</p>
+    </div>
+    <div class="box">
+      <div class="swatches">
+        <div class="sw">
+          <div class="chip" style="background:#000000"></div>
+          <div class="sw-meta"><span class="hex">#000000</span><span class="sym">context.appBg</span>
+            <span class="role">기준 배경. 세션·라이브 포레스트 등 몰입 화면</span></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#141614"></div>
+          <div class="sw-meta"><span class="hex">#141614</span><span class="sym">context.appCard</span>
+            <span class="role">바깥 박스 — 카드·시트·다이얼로그 배경</span></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#222422"></div>
+          <div class="sw-meta"><span class="hex">#222422</span><span class="sym">AppTheme.darkNested</span>
+            <span class="role">이너 박스 — 칩·입력 필드·서브 카드. 구분선과 비활성 요소도</span></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#8DFF54"></div>
+          <div class="sw-meta"><span class="hex">#8DFF54</span><span class="sym">context.appPrimaryAccent</span>
+            <span class="role">브랜드 그린. 진행 중·살아 있음·눌러야 할 것에만. 긴 본문에는 쓰지 않는다</span></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#F1FFF2"></div>
+          <div class="sw-meta"><span class="hex">#F1FFF2</span><span class="sym">context.appTextPrimary</span>
+            <span class="role">본문 글자</span></div>
+        </div>
+        <div class="sw">
+          <div class="chip" style="background:#7B847C"></div>
+          <div class="sw-meta"><span class="hex">#7B847C</span><span class="sym">context.appTextSecondary</span>
+            <span class="role">보조 글자, 비활성 아이콘, 설명문</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 글자 -->
+  <section>
+    <div class="sec-head">
+      <h2>글자 — 여섯 단계</h2>
+      <p>위계는 굵기가 아니라 크기·색·여백으로 만든다. 모든 단계가 굵기 400이고 자간은 크기 × −0.04다.
+         실제 앱 폰트는 조선굴림체(ChosunGu)이며, 이 페이지는 시스템 한글 폰트로 근사해 보여준다.</p>
+    </div>
+    <div class="box">
+      <div class="type-row">
+        <div class="specimen" style="font-size:30px; letter-spacing:-1.2px;">오늘도 같이 읽어요</div>
+        <div class="type-meta"><span class="sym">screenTitle</span><span class="px">30px</span></div>
+      </div>
+      <div class="type-row">
+        <div class="specimen" style="font-size:18px; letter-spacing:-0.72px;">읽고 있는 책</div>
+        <div class="type-meta"><span class="sym">sectionTitle</span><span class="px">18px</span></div>
+      </div>
+      <div class="type-row">
+        <div class="specimen" style="font-size:16px; letter-spacing:-0.64px;">채식주의자 · 한강</div>
+        <div class="type-meta"><span class="sym">rowText</span><span class="px">16px</span></div>
+      </div>
+      <div class="type-row">
+        <div class="specimen" style="font-size:14px; letter-spacing:-0.56px;">아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.</div>
+        <div class="type-meta"><span class="sym">body</span><span class="px">14px</span></div>
+      </div>
+      <div class="type-row">
+        <div class="specimen" style="font-size:12px; letter-spacing:-0.48px; color:var(--muted);">47분 전 · 1시간 30분 읽음</div>
+        <div class="type-meta"><span class="sym">supportingText</span><span class="px">12px</span></div>
+      </div>
+      <div class="type-row">
+        <div class="specimen" style="font-size:10px; letter-spacing:-0.4px; color:var(--muted);">페이지 128</div>
+        <div class="type-meta"><span class="sym">caption</span><span class="px">10px</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 간격 -->
+  <section>
+    <div class="sec-head">
+      <h2>간격 — 여섯 계단</h2>
+      <p>이 계단 밖의 값(18, 20, 22 …)은 새로 만들지 않는다. 나열 간격은 요소가 아니라 컨테이너가 책임진다.</p>
+    </div>
+    <div class="box">
+      <div class="space-row"><div class="space-val">4</div>
+        <div class="space-vis"><div class="bar" style="width:4px"></div>
+        <div class="space-note"><code>spaceXS</code> · 아이콘과 글자 사이 같은 아주 작은 틈</div></div></div>
+      <div class="space-row"><div class="space-val">8</div>
+        <div class="space-vis"><div class="bar" style="width:8px"></div>
+        <div class="space-note"><code>spaceSM</code> · 카드끼리의 틈, 박스 안 작은 간격</div></div></div>
+      <div class="space-row"><div class="space-val">12</div>
+        <div class="space-vis"><div class="bar" style="width:12px"></div>
+        <div class="space-note"><code>spaceMD</code> · 카드 내부 보조 간격, 행 안의 아바타와 글자 사이</div></div></div>
+      <div class="space-row"><div class="space-val">16</div>
+        <div class="space-vis"><div class="bar" style="width:16px"></div>
+        <div class="space-note"><code>spaceLG</code> · 카드 안쪽 여백, 화면 좌우 여백 <code>screenPadding</code></div></div></div>
+      <div class="space-row"><div class="space-val">24</div>
+        <div class="space-vis"><div class="bar" style="width:24px"></div>
+        <div class="space-note"><code>space2XL</code> · 한 섹션 안에서 덩어리를 끊을 때</div></div></div>
+      <div class="space-row"><div class="space-val">30</div>
+        <div class="space-vis"><div class="bar" style="width:30px"></div>
+        <div class="space-note"><code>sectionGap</code> · 섹션과 섹션 사이</div></div></div>
+    </div>
+  </section>
+
+  <!-- 모서리 -->
+  <section>
+    <div class="sec-head">
+      <h2>모서리 — 두 단계</h2>
+      <p>바깥에 놓이면 10, 그 안에 들어가면 6. 아래 박스가 실제 값으로 그려져 있다. 완전한 원(아바타·오브·점)만 예외다.</p>
+    </div>
+    <div class="radius-demo">
+      <div class="demo-outer">
+        <span class="demo-label">radiusOuter · 10</span>
+        <span class="role">화면 배경 위에 직접 놓이는 카드·시트·다이얼로그</span>
+        <div class="demo-inner">
+          <span class="demo-label">radiusInner · 6</span><br>
+          바깥 박스 안에 들어간 칩·썸네일·입력 필드·서브 카드
+        </div>
+      </div>
+      <div class="demo-outer">
+        <span class="demo-label">실제 사용례 — 초서 블록</span>
+        <div class="demo-inner" style="color:var(--text)">
+          아내가 채식을 시작하기 전까지 나는 그녀가 특별한 사람이라고 생각한 적이 없었다.
+        </div>
+        <div class="demo-inner" style="color:var(--green)">
+          평범함에 대한 진술이 아니라, 그 평범함이 끝났다는 예고다.
+        </div>
+        <span class="role">위는 책의 <b style="color:var(--text);font-weight:400">문장</b>, 아래는 독자의 <b style="color:var(--green);font-weight:400">생각</b>. 초록은 “내 목소리”라는 신호로 쓰인다.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 위젯 해부 -->
+  <section>
+    <div class="sec-head">
+      <h2>위젯 — 실제 치수</h2>
+      <p>왼쪽은 실물 크기 데모, 오른쪽은 그 위젯이 내부에서 쓰는 값이다.
+         <em style="font-style:normal;color:var(--green)">초록색 값</em>은 토큰에서 오는 값이라 토큰을 바꾸면 함께 움직인다.</p>
+    </div>
+
+    <div class="box">
+
+      <!-- ChorokCard -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokCard</span>
+          <span class="widget-desc">모든 박스. <code style="font-family:var(--mono)">inner</code> 하나로 바깥/이너를 전환한다</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">바깥 · inner: false</span>
+            <div class="d-card">
+              안쪽 여백 16, 모서리 10, 테두리 1
+              <div class="d-chip" style="margin-top:12px">이너 박스 · 모서리 6</div>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">안쪽 여백 (기본)</span><span class="dim-v"><em>16</em> · cardPaddingMD</span></div>
+            <div class="dim"><span class="dim-k">모서리 — 바깥</span><span class="dim-v"><em>10</em> · radiusOuter</span></div>
+            <div class="dim"><span class="dim-k">모서리 — 이너</span><span class="dim-v"><em>6</em> · radiusInner</span></div>
+            <div class="dim"><span class="dim-k">테두리</span><span class="dim-v">1 · appBorder</span></div>
+            <div class="dim"><span class="dim-k">모서리 부드러움</span><span class="dim-v">0.6 smoothing</span></div>
+            <div class="dim"><span class="dim-k">그림자 (hasShadow)</span><span class="dim-v">blur <em>24</em> · y <em>8</em></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChorokButton -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokButton</span>
+          <span class="widget-desc">얇은 버튼. 초록은 주요 행동 하나에만, 흰색은 그 옆의 보조 행동</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">쌓을 때는 긴 버튼에 폭을 맞춘다</span>
+            <div style="display:flex;flex-direction:column;gap:8px;width:fit-content">
+              <div class="d-btn grn" style="align-self:stretch">▶ 이어 읽기</div>
+              <div class="d-btn wht" style="align-self:stretch">✓ 서재에 있는 책</div>
+            </div>
+            <span class="stage-cap" style="margin-top:8px">폭을 안 맞추면 이렇게 어긋난다</span>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;opacity:.45">
+              <div class="d-btn grn">▶ 이어 읽기</div>
+              <div class="d-btn wht">✓ 서재에 있는 책</div>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">높이 (고정)</span><span class="dim-v">30</span></div>
+            <div class="dim"><span class="dim-k">모서리</span><span class="dim-v"><em>10</em> · radiusOuter</span></div>
+            <div class="dim"><span class="dim-k">좌우 여백 (기본)</span><span class="dim-v">84 — 버튼 고유값</span></div>
+            <div class="dim"><span class="dim-k">아이콘 → 글자</span><span class="dim-v"><em>4</em> · spaceXS</span></div>
+            <div class="dim"><span class="dim-k">글자</span><span class="dim-v"><em>14</em> · body · 검정</span></div>
+            <div class="dim"><span class="dim-k">터치 영역</span><span class="dim-v">30 — 기준 42 미달</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChorokListRow -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokListRow</span>
+          <span class="widget-desc">아바타 · 제목 · 오른쪽 요소가 늘어선 가로줄</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">leading · title/supporting · trailing</span>
+            <div class="d-row">
+              <div class="d-avatar"></div>
+              <div class="d-col">
+                <span class="d-title">해골맨</span>
+                <span class="d-sub">정말 대단한 통찰입니다</span>
+              </div>
+              <span class="d-trail">15</span>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">leading → 내용</span><span class="dim-v"><em>12</em> · spaceMD</span></div>
+            <div class="dim"><span class="dim-k">제목 → 보조</span><span class="dim-v"><em>4</em> · spaceXS</span></div>
+            <div class="dim"><span class="dim-k">내용 → trailing</span><span class="dim-v"><em>12</em> · spaceMD</span></div>
+            <div class="dim"><span class="dim-k">바깥 여백 (기본)</span><span class="dim-v">0 — 호출부가 정함</span></div>
+            <div class="dim"><span class="dim-k">내용 폭</span><span class="dim-v">Expanded — 남는 폭 전부</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChorokSectionHeader -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokSectionHeader</span>
+          <span class="widget-desc">섹션 제목과 “모두 보기”</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">title · trailing</span>
+            <div class="d-header">
+              <span class="t">인기있는 문장·생각</span>
+              <span class="a">모두 보기 ›</span>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">제목 글자</span><span class="dim-v"><em>18</em> · sectionTitle</span></div>
+            <div class="dim"><span class="dim-k">제목 → 설명</span><span class="dim-v"><em>4</em> · spaceXS</span></div>
+            <div class="dim"><span class="dim-k">제목 → trailing</span><span class="dim-v"><em>8</em> · spaceSM</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChorokProgressBar -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokProgressBar</span>
+          <span class="widget-desc">진행 바. 트랙과 채움 모두 ChorokCard로 조립돼 있다</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">value: 0.62</span>
+            <div class="d-progress-track"><div class="d-progress-fill"></div></div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">높이 (기본)</span><span class="dim-v"><em>4</em> · spaceXS</span></div>
+            <div class="dim"><span class="dim-k">모서리</span><span class="dim-v"><em>6</em> · radiusInner</span></div>
+            <div class="dim"><span class="dim-k">트랙 색</span><span class="dim-v">appProgressTrack</span></div>
+            <div class="dim"><span class="dim-k">채움 색</span><span class="dim-v">reading gradient</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BookCover -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">BookCover</span>
+          <span class="widget-desc">책 표지. 이미지가 있으면 이미지, 없으면 그라디언트</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">실제 쓰이는 크기들</span>
+            <div class="d-covers">
+              <div class="d-cover s38"></div>
+              <div class="d-cover"></div>
+              <div class="d-cover s52"></div>
+              <div class="d-cover s88"></div>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">모서리 (기본)</span><span class="dim-v"><em>10</em> · radiusOuter</span></div>
+            <div class="dim"><span class="dim-k">크기</span><span class="dim-v">호출부가 지정</span></div>
+            <div class="dim"><span class="dim-k">쓰이는 폭</span><span class="dim-v">38 · 44 · 52 · 64 · 88</span></div>
+            <div class="dim"><span class="dim-k">비율</span><span class="dim-v">대략 2:3 (44×72)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChorokStatCell -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokStatCell</span>
+          <span class="widget-desc">통계 숫자 한 칸</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">icon · label · value</span>
+            <div class="d-stat">
+              <div class="d-stat-top"><span class="d-stat-dot"></span><span>평균 완독률</span></div>
+              <span class="d-stat-val">95%</span>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">아이콘 크기</span><span class="dim-v">14</span></div>
+            <div class="dim"><span class="dim-k">아이콘 → 라벨</span><span class="dim-v"><em>4</em> · spaceXS</span></div>
+            <div class="dim"><span class="dim-k">라벨 → 숫자</span><span class="dim-v">2</span></div>
+            <div class="dim"><span class="dim-k">숫자 정렬</span><span class="dim-v">tabular figures</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MainScaffold -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">MainScaffold</span>
+          <span class="widget-desc">하단 네비게이션과 가운데 오브 — 앱의 뼈대</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">bottom nav · 92 높이</span>
+            <div class="d-nav">
+              <div class="d-tab">홈</div>
+              <div class="d-tab">검색</div>
+              <div class="d-orb">orb</div>
+              <div class="d-tab">피드</div>
+              <div class="d-tab">서재</div>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">네비 높이</span><span class="dim-v">92</span></div>
+            <div class="dim"><span class="dim-k">가운데 오브</span><span class="dim-v">62 × 62 · 원형</span></div>
+            <div class="dim"><span class="dim-k">탭 한 칸 폭</span><span class="dim-v">64</span></div>
+            <div class="dim"><span class="dim-k">탭 아이콘</span><span class="dim-v">21</span></div>
+            <div class="dim"><span class="dim-k">아이콘 → 라벨</span><span class="dim-v"><em>8</em> · spaceSM</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SheetHandle -->
+      <div class="widget">
+        <div class="widget-head">
+          <span class="widget-name">ChorokSheetHandle</span>
+          <span class="widget-desc">바텀시트 위쪽 손잡이</span>
+        </div>
+        <div class="widget-body">
+          <div class="stage">
+            <span class="stage-cap">시트 상단</span>
+            <div style="background:var(--surface);border-radius:var(--r-outer) var(--r-outer) 0 0;padding:12px 16px 16px;">
+              <div class="d-handle"></div>
+              <div style="margin-top:16px;font-size:18px;letter-spacing:-0.72px;">문장 남기기</div>
+            </div>
+          </div>
+          <div class="dims">
+            <div class="dim"><span class="dim-k">손잡이 크기</span><span class="dim-v">36 × <em>4</em></span></div>
+            <div class="dim"><span class="dim-k">손잡이 위 여백</span><span class="dim-v"><em>12</em> · spaceMD</span></div>
+            <div class="dim"><span class="dim-k">손잡이 → 제목</span><span class="dim-v"><em>16</em> · spaceLG</span></div>
+            <div class="dim"><span class="dim-k">시트 모서리</span><span class="dim-v"><em>10</em> · 위쪽만</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 부품 사용 현황 -->
+  <section>
+    <div class="sec-head">
+      <h2>부품 사용 현황</h2>
+      <p><code>lib/features</code> 기준 실측값. 새 부품은 “기존 조합으로 못 만들고 세 곳 이상 반복될 때”만 만든다.</p>
+    </div>
+    <div class="box">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>부품</th><th>역할</th><th style="text-align:right">사용</th></tr></thead>
+          <tbody>
+            <tr><td class="name">ChorokCard</td><td class="role-cell">모든 박스</td><td class="count live">224</td></tr>
+            <tr><td class="name">ChorokSectionHeader</td><td class="role-cell">섹션 제목과 “모두 보기”</td><td class="count live">39</td></tr>
+            <tr><td class="name">BookCover</td><td class="role-cell">책 표지</td><td class="count live">28</td></tr>
+            <tr><td class="name">ChorokListRow</td><td class="role-cell">아바타 · 제목 · 오른쪽 요소가 늘어선 가로줄</td><td class="count live">12</td></tr>
+            <tr><td class="name">ChorokStatCell</td><td class="role-cell">통계 숫자 한 칸</td><td class="count live">4</td></tr>
+            <tr>
+              <td class="name">AsyncStateView</td>
+              <td class="role-cell">로딩 · 빈 화면 · 오류 상태<span class="flag">쓰이지 않음</span></td>
+              <td class="count zero">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 규칙 -->
+  <section>
+    <div class="sec-head"><h2>지켜야 할 것</h2></div>
+    <div class="rules">
+      <div class="rule"><div>
+        <strong>화면 코드에 숫자를 쓰지 않는다</strong>
+        <span>색·크기·여백·모서리는 <code>AppTheme</code> 토큰과 <code>shared/widgets</code>를 통해서만 들어간다.
+        화면에 <code>#8DFF54</code>나 <code>16</code>이 남아 있으면 그 화면은 아직 끝나지 않은 것이다.</span>
+      </div></div>
+      <div class="rule"><div>
+        <strong>참고 이미지는 구조만 빌린다</strong>
+        <span>스크린샷이나 시안을 받아도 그대로 베끼지 않는다. 배치는 참고하되 색·글자·모서리는 이 토큰을 따른다. 충돌하면 토큰이 이긴다.</span>
+      </div></div>
+      <div class="rule"><div>
+        <strong>초록은 아껴 쓴다</strong>
+        <span>진행 중·살아 있음·눌러야 할 것에만 강하게 쓴다. 긴 설명문을 초록으로 칠하면 정작 중요한 것이 묻힌다.</span>
+      </div></div>
+      <div class="rule"><div>
+        <strong>간격은 컨테이너가 책임진다</strong>
+        <span>요소를 나열할 때는 <code>Column(spacing:)</code>으로 묶는다. 요소 하나하나가 자기 위아래 여백을 스스로 정하지 않는다.</span>
+      </div></div>
+    </div>
+  </section>
+
+  <footer>
+    출처 — <code>lib/core/theme/app_theme.dart</code> · <code>lib/shared/widgets/</code> · <code>design.md</code> · <code>docs/components.md</code>.
+    값이 바뀌면 이 페이지가 아니라 <code>AppTheme</code>을 고친다.<br>
+    초록은 다크 전용 시스템이라 이 페이지도 단일 테마로 고정했다.
+  </footer>
+
+</div>
+</body>
+</html>

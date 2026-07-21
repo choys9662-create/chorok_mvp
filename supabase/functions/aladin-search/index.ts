@@ -44,7 +44,9 @@ Deno.serve(async (req: Request) => {
       aladinUrl.searchParams.set("output", "js");
       aladinUrl.searchParams.set("Version", "20131101");
       aladinUrl.searchParams.set("Cover", "MidBig");
-      aladinUrl.searchParams.set("OptResult", "subInfo");
+      // subInfo(itemPage 등) + fullDescription(전체 책소개) + Story(줄거리).
+      // 단일 조회라 응답이 커져도 부담 없다.
+      aladinUrl.searchParams.set("OptResult", "subInfo,fulldescription,Story");
     } else if (query) {
       const qt = queryType ?? "Keyword";
       aladinUrl = new URL(`${BASE_URL}/ItemSearch.aspx`);

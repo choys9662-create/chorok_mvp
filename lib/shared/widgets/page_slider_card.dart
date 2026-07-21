@@ -93,10 +93,10 @@ class _PageSliderCardState extends State<PageSliderCard> {
     final sliderMax = total > 0 ? total.toDouble() : 100.0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppTheme.cardPaddingMD),
       decoration: AppTheme.smoothBox(
         color: context.appCardElevated,
-        radius: 10,
+        radius: AppTheme.radiusInner,
         side: BorderSide(color: context.appBorderSubtle),
       ),
       child: Column(
@@ -107,15 +107,12 @@ class _PageSliderCardState extends State<PageSliderCard> {
             children: [
               Text(
                 widget.title,
-                style: AppTheme.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: context.appTextPrimary,
-                ),
+                style: AppTheme.body.copyWith(color: context.appTextPrimary),
               ),
               if (widget.trailing != null) widget.trailing!,
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppTheme.spaceXL),
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -135,14 +132,10 @@ class _PageSliderCardState extends State<PageSliderCard> {
                   },
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 0,
-                        vertical: 0,
-                      ),
-                      decoration: BoxDecoration(
+                      decoration: AppTheme.smoothBox(
                         color: context.appCardElevated,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: context.appBorderSubtle),
+                        radius: AppTheme.radiusInner,
+                        side: BorderSide(color: context.appBorderSubtle),
                       ),
                       child: IntrinsicWidth(
                         child: TextField(
@@ -154,20 +147,20 @@ class _PageSliderCardState extends State<PageSliderCard> {
                             _commitText();
                             _focusNode.unfocus();
                           },
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w400,
+                          style: AppTheme.screenTitle.copyWith(
                             color: context.appPrimaryAccent,
                             height: 1.1,
                           ),
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             isDense: true,
-                            contentPadding: const EdgeInsets.all(12),
+                            contentPadding: const EdgeInsets.all(
+                              AppTheme.spaceMD,
+                            ),
                             suffixIcon: Padding(
                               padding: const EdgeInsets.only(
-                                left: 6,
-                                right: 12,
+                                left: AppTheme.spaceSM,
+                                right: AppTheme.spaceMD,
                               ),
                               child: Icon(
                                 Icons.edit_rounded,
@@ -193,7 +186,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
             ],
           ),
           if (total > 0) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Center(
               child: Text(
                 '/ $total쪽',
@@ -203,7 +196,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceLG),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
@@ -222,7 +215,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
             ),
           ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: AppTheme.spaceXS),
 
           // 저장 버튼
           SizedBox(
@@ -236,14 +229,12 @@ class _PageSliderCardState extends State<PageSliderCard> {
                     },
               style: FilledButton.styleFrom(
                 backgroundColor: context.appPrimaryAccent,
-                foregroundColor: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.black
-                    : Colors.white,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 disabledBackgroundColor: context.appPrimaryAccent.withValues(
                   alpha: 0.05,
                 ),
-                shape: AppTheme.smoothShape(radius: 10),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               ),
               child: widget.isSaving
                   ? SizedBox(
@@ -254,10 +245,7 @@ class _PageSliderCardState extends State<PageSliderCard> {
                         color: context.appPrimaryAccent,
                       ),
                     )
-                  : Text(
-                      widget.saveLabel,
-                      style: const TextStyle(fontWeight: FontWeight.w400),
-                    ),
+                  : Text(widget.saveLabel),
             ),
           ),
         ],

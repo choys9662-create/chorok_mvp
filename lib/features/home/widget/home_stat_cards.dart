@@ -6,15 +6,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_flags.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/weekly_minutes_provider.dart';
 import 'home_helpers.dart';
 
-const _cardRadius = 8.0;
 const _summaryCardHeight = 78.0;
 const _summaryMarkerStart = 92.0;
 
-/// 홈 상단 통계 — "오늘" / "이번 주" 두 장의 pill 카드.
+/// 홈 상단 통계 — "오늘" / "이번 주" 두 장의 요약 카드.
 ///
 /// 기존 [WeeklyStatusCard](바 차트 한 장)를 대체한다.
 /// 데이터 소스는 [weeklyMinutesProvider] + 실행 중인 타이머(오늘 누적).
@@ -47,7 +47,7 @@ class HomeStatCards extends ConsumerWidget {
       child: Column(
         children: [
           _TodayCard(todaySeconds: todaySeconds),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppTheme.spaceMD),
           _WeekCard(
             perDay: perDay,
             todayIndex: todayIndex,
@@ -67,7 +67,9 @@ class _TodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasReadToday = todaySeconds > 0;
-    final foreground = hasReadToday ? Colors.black : context.appTextSecondary;
+    final foreground = hasReadToday
+        ? AppTheme.primary
+        : context.appTextSecondary;
 
     return _SummaryCard(
       active: hasReadToday,
@@ -75,12 +77,14 @@ class _TodayCard extends StatelessWidget {
         children: [
           _SummaryMarker(
             label: '오늘',
-            labelColor: hasReadToday ? Colors.black : context.appTextTertiary,
+            labelColor: hasReadToday
+                ? AppTheme.primary
+                : context.appTextTertiary,
             marker: Icon(
               Icons.check_rounded,
               size: 30,
               color: hasReadToday
-                  ? Colors.black
+                  ? AppTheme.primary
                   : context.appTextTertiary.withValues(alpha: 0.20),
             ),
           ),
@@ -92,12 +96,7 @@ class _TodayCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: AppTheme.captionLarge.copyWith(
-                color: foreground,
-                fontSize: 30,
-                letterSpacing: 0,
-                height: 1,
-              ),
+              style: AppTheme.displayMedium.copyWith(color: foreground),
             ),
           ),
         ],
@@ -135,7 +134,9 @@ class _WeekCard extends StatelessWidget {
                   final achieved = perDay[i] > 0;
                   final isFuture = i > todayIndex;
                   return Padding(
-                    padding: EdgeInsets.only(right: i < 6 ? 5 : 0),
+                    padding: i < 6
+                        ? const EdgeInsets.only(right: AppTheme.spaceXS)
+                        : EdgeInsets.zero,
                     child: _DayDot(achieved: achieved, dim: isFuture),
                   );
                 }),
@@ -150,11 +151,8 @@ class _WeekCard extends StatelessWidget {
                 child: Text(
                   _formatKoreanMinutes(weekSeconds ~/ 60),
                   maxLines: 1,
-                  style: AppTheme.captionLarge.copyWith(
+                  style: AppTheme.displayMedium.copyWith(
                     color: context.appTextPrimary,
-                    fontSize: 30,
-                    letterSpacing: 0,
-                    height: 1,
                   ),
                 ),
               ),
@@ -174,17 +172,14 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: _summaryCardHeight,
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: AppTheme.smoothBox(
-        color: active ? context.appPrimaryAccent : context.appCard,
-        radius: _cardRadius,
-        side: BorderSide.none,
+      child: ChorokCard(
+        backgroundColor: active ? context.appPrimaryAccent : null,
+        borderColor: active ? context.appPrimaryAccent : null,
+        child: Align(alignment: Alignment.center, child: child),
       ),
-      alignment: Alignment.center,
-      child: child,
     );
   }
 }
@@ -199,10 +194,8 @@ class _SummaryLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: AppTheme.headingSmall.copyWith(
+      style: AppTheme.sectionTitle.copyWith(
         color: color ?? context.appTextTertiary,
-        fontSize: 20,
-        letterSpacing: 0,
       ),
     );
   }
@@ -242,7 +235,7 @@ class _DayDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = achieved
-        ? Colors.white
+        ? context.appTextPrimary
         : context.appTextSecondary.withValues(alpha: dim ? 0.18 : 0.50);
     return Container(
       width: 8,

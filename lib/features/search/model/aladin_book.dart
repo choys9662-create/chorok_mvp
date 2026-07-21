@@ -9,6 +9,11 @@ class AladinBook {
   final String? coverUrl;
   final String? isbn13;
   final String? description;
+
+  /// 전체 책소개(`fullDescription`) 또는 줄거리(`subInfo.story`).
+  /// ItemLookUp(OptResult=fulldescription,Story)에서만 채워지고, 검색 결과는 null.
+  final String? fullDescription;
+
   final int totalPages;
   final String? genre;
 
@@ -26,6 +31,7 @@ class AladinBook {
     this.coverUrl,
     this.isbn13,
     this.description,
+    this.fullDescription,
     this.totalPages = 0,
     this.genre,
     this.rawAuthor,
@@ -50,6 +56,13 @@ class AladinBook {
     final subInfo = json['subInfo'] as Map<String, dynamic>?;
     final totalPages = (subInfo?['itemPage'] as num?)?.toInt() ?? 0;
 
+    // 전체 책소개 우선, 없으면 줄거리(subInfo.story). 빈 문자열은 null 처리.
+    final fullDesc = (json['fullDescription'] as String?)?.trim();
+    final story = (subInfo?['story'] as String?)?.trim();
+    final fullDescription = (fullDesc?.isNotEmpty == true)
+        ? fullDesc
+        : (story?.isNotEmpty == true ? story : null);
+
     return AladinBook(
       title: title.isEmpty ? (json['title'] as String? ?? '') : title,
       author: author.isEmpty ? rawAuthor : author,
@@ -57,6 +70,7 @@ class AladinBook {
       coverUrl: json['cover'] as String?,
       isbn13: json['isbn13'] as String?,
       description: json['description'] as String?,
+      fullDescription: fullDescription,
       totalPages: totalPages,
       genre: _parseGenre(json['categoryName'] as String?),
       rawAuthor: rawAuthor.trim().isEmpty ? null : rawAuthor.trim(),

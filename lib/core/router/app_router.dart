@@ -21,6 +21,7 @@ import '../../features/library/screen/book_detail_screen.dart';
 import '../../features/library/screen/book_sentences_screen.dart';
 import '../../features/home/screen/home_screen.dart';
 import '../../features/home/screen/notification_screen.dart';
+import '../../features/home/screen/reading_friends_screen.dart';
 import '../../features/home/screen/reading_session_screen.dart';
 import '../../features/home/screen/session_recap_screen.dart';
 import '../../features/library/book_reflection_screen.dart';
@@ -132,6 +133,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppConstants.routeNotifications,
         builder: (context, state) => const NotificationScreen(),
+      ),
+
+      // 지금 독서 중인 맞팔 친구 전체 목록
+      GoRoute(
+        path: AppConstants.routeReadingFriends,
+        builder: (context, state) => const ReadingFriendsScreen(),
       ),
 
       // 분석 — 탭에서 제거됨. 홈 카드·서재에서 드릴다운(push)으로 진입

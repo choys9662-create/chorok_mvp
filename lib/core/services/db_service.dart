@@ -422,14 +422,14 @@ class DbService {
   }) async {
     var query = supabase
         .from('sentences')
-        .select('*, books(title, author)')
+        .select(
+          '*, books(title, author), sentence_likes(count), sentence_comments(count)',
+        )
         .eq('user_id', _uid);
     if (before != null) {
       query = query.lt('created_at', before.toUtc().toIso8601String());
     }
-    final res = await query
-        .order('created_at', ascending: false)
-        .limit(limit);
+    final res = await query.order('created_at', ascending: false).limit(limit);
     return List<Map<String, dynamic>>.from(res);
   }
 

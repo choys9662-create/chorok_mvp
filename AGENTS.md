@@ -51,180 +51,59 @@ Transform tasks into verifiable goals:
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Environment Synchronization (Project Specific)
-
-**Mirror design changes across environments immediately.**
-
-- The "Design App" is the mock-data environment for quickly shaping and reviewing UI/UX, layout, component structure, and interaction design.
-- The "Test App" is the real-data environment for validating the same experience against the actual database/API.
-- If you modify the UI/UX or layout in the "Design App" (mockup environment), you MUST apply the exact same visual changes to the "Test App" (real data environment).
-- Keep the look, feel, copy, layout, interaction behavior, and component structure 100% identical across both environments. Only the data source (mock data vs. real database/API) should differ.
-- Do not treat either environment as disposable. A design task is incomplete if only one side reflects the requested visual or UX change.
-- Functional fixes that do not alter UI/UX, layout, or component structure do not require a design/test visual sync, but still verify the affected runtime environment.
-- Always verify both sides are synced before completing a design task.
-
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+## 5. 문서 라우팅 — 작업 종류별 필독 문서
 
----
+작업을 시작하기 전에, 해당하는 문서를 **반드시 먼저 읽는다.** 여기에 내용을 중복 기재하지 않는다.
 
-## 6. 제품 지식 (Product Knowledge)
+| 작업 | 필독 문서 |
+|------|-----------|
+| UI 생성·수정 (화면·위젯·색·간격 전부) | `design.md`(규칙·값) + `docs/components.md`(코드에서 쓸 토큰·위젯 이름) |
+| 앱 실행, 시뮬레이터·실기기, 빌드, 배포, 커밋 전 검증, 테스트 데이터 | `docs/run.md` |
+| Figma 링크·스크린샷·목업 이미지를 구현 | `docs/figma.md` + `design.md` |
+
+**UI 작업 핵심 규칙 (상시):**
+- 참고 이미지를 첨부받아도 그대로 복제하지 않는다. 이미지는 레이아웃·구조 참고, 색상·타이포·톤은 design.md가 이긴다. design.md에 없는 판단은 임의로 정하지 말고 묻는다.
+- 스타일은 `AppTheme` 토큰과 `shared/widgets`로만 구현한다. 화면 코드에 hex·px 리터럴을 넣지 않는다.
+- 하드코딩 리터럴 검사 시 `BorderRadius.circular(N)`뿐 아니라 named param `radius: N`(`smoothBox`/`smoothShape`/`BookCover`/`ChorokShimmer` 등)도 함께 grep한다. 단 `CircleAvatar(radius:)`·`RadialGradient(radius:)`는 크기/그라디언트 폭이라 토큰화 대상이 아니다 — false positive로 제외.
+
+## 6. 환경 동기화
+
+디자인앱(목업 데이터)과 실앱(실데이터)은 데이터 소스만 다르고 UI는 100% 동일해야 한다. UI/레이아웃을 한쪽에서 바꿨으면 반드시 다른 쪽에도 동일하게 반영하고 확인한다. 한쪽만 반영된 디자인 작업은 미완료다.
+
+## 7. 제품 지식
 
 **wiki는 묻지 않는 한 읽지 않는다.** 아래 인라인 결정사항으로 대부분의 코딩 판단이 가능하다.
-wiki를 읽어야 하는 경우는 사용자가 명시적으로 요청하거나, 인라인에 없는 스펙이 필요할 때뿐이다.
-
-**확정된 설계 결정 — 코드 판단 기준:**
 
 | 결정 | 내용 |
 |------|------|
 | 하단 탭 | 홈 / 검색 / **세션 orb(가운데)** / 피드 / 서재 — 2026-06-10 확정. 분석은 별도 탭 아님(서재 통계 뷰로 흡수) |
-| 검색 위치 | 하단 탭 2번. 우상단 앱바에는 알림만 (검색 아이콘 제거됨) |
-| 분석 위치 | 서재의 통계 뷰(`_viewIndex==1`)로 간소화. 전체 `AnalyticsScreen`은 홈 카드·서재에서 드릴다운(push)으로만 유지 |
+| 검색 위치 | 하단 탭 2번. 우상단 앱바에는 알림만 |
+| 분석 위치 | 서재의 통계 뷰(`_viewIndex==1`). 전체 `AnalyticsScreen`은 드릴다운(push)으로만 |
 | 하지 말 것 | SNS 공유, 챌린지 — 기능 추가 제안 금지 |
 | UX 원칙 | 선택지를 주지 않고 알고리즘이 정보를 제시 (착수 마찰 최소화) |
-| 피드 매칭 | 기본 95% 취향 일치. 사용자가 80%까지 조정 가능 |
+| 피드 매칭 | 기본 95% 취향 일치, 80%까지 조정 가능 |
 | 소셜 단위 | 초서 블록이 좋아요·댓글의 기본 단위 |
 | 핵심 타겟 | 종인이 — 읽으려고는 하지만 실천 못 하는 사람. UX 결정 기준 |
 
-**wiki가 필요한 경우 (사용자 요청 시에만):**
+상세 스펙이 필요하면 (사용자 요청 시에만): `/Users/joyongseong/Documents/dev/Obsidian Vault/wiki/analyses/` — 화면-UI-설계, 숲-시스템-상세, 팀-논의-설계결정, 타겟-사용자-페르소나 등.
 
-```
-화면 전체 스펙   → wiki/analyses/화면-UI-설계.md
-숲 시스템 상세   → wiki/analyses/숲-시스템-상세.md
-설계 결정 배경   → wiki/analyses/팀-논의-설계결정.md
-타겟 유저 상세   → wiki/analyses/타겟-사용자-페르소나.md
-경쟁사 분석      → wiki/analyses/경쟁사-분석.md
-BM 구조         → wiki/analyses/비즈니스-모델.md
-경로: /Users/joyongseong/Documents/dev/Obsidian Vault/
-```
+## 8. 아키텍처 · 스택 규칙
 
----
+구조는 `lib/core/`(테마·라우터·서비스) + `lib/features/<기능>/`(화면) + `lib/shared/`(models·providers·repositories·widgets). 폴더를 열어보면 알 수 있으므로 여기 나열하지 않는다.
 
-## 7. 프로젝트 아키텍처
+- 상태 관리: Riverpod — **수동 선언 방식** (`NotifierProvider` 등 직접 작성). `@riverpod` 코드젠 금지 (`.g.dart` 없음, build_runner 불필요). `riverpod_annotation`이 pubspec에 있지만 미사용 — 신규도 수동 선언.
+- 라우팅: GoRouter — `core/router/app_router.dart`
+- 백엔드: Supabase (원격) + sqflite (로컬 캐시). 환경변수는 `.env` + `flutter_dotenv`.
+- **website/** (Flutter 외부): 정적 홍보 사이트. firebase hosting `site` 타겟 — Flutter 웹 빌드(`design`/`prod` 타겟)와 별개.
 
-**폴더 구조:**
+## 9. Claude Code 작업 시 참고
 
-```
-lib/
-├── core/
-│   ├── constants/     # 앱 전역 상수, 피처 플래그
-│   ├── services/      # db_service, ocr_service, stt_service
-│   ├── theme/         # 앱 테마
-│   └── router/        # GoRouter 설정
-├── features/          # 기능별 화면 (피처 단위로 분리)
-│   ├── home/          # 홈 탭
-│   ├── library/       # CHOLOCK(책) 탭 — 초서 목록, 독서 기록
-│   ├── timer/         # CHO_LOCK 독서 세션 — 핵심 기능
-│   ├── forest/        # 숲 탭 — 면적·나이테·뿌리 얽힘
-│   ├── feed/          # 소셜 탭 — 이웃 초서 피드, 겹문장 알림
-│   ├── explore/       # 탐험 탭
-│   ├── auth/          # 인증
-│   ├── onboarding/    # 온보딩
-│   ├── search/        # 검색·바코드 스캐너
-│   ├── settings/      # MY 탭 — 서재 포함
-│   ├── analytics/     # 통계·히트맵
-│   ├── achievements/  # 스트릭·뱃지
-│   └── profile/       # 유저 프로필
-└── shared/
-    ├── models/        # 데이터 모델 (Book, SentenceRecord, ReadingSession 등)
-    ├── providers/     # Riverpod 프로바이더
-    ├── repositories/  # Supabase + sqflite 리포지토리
-    ├── widgets/       # 공통 위젯
-    └── utils/         # 유틸 함수
-```
-
-**스택 규칙:**
-- 상태 관리: Riverpod — 수동 선언 방식 (`NotifierProvider`/`AsyncNotifierProvider`/`Provider`를 직접 작성). `@riverpod` 코드젠은 쓰지 않는다 (`.g.dart` 없음, build_runner 불필요). `riverpod_annotation`이 pubspec에 있지만 미사용 — 신규 프로바이더도 수동 선언으로 통일한다.
-- 라우팅: GoRouter — 라우트 정의는 `core/router/app_router.dart`
-- 백엔드: Supabase (원격) + sqflite (로컬 캐시)
-- 환경변수: `.env` 파일, `flutter_dotenv`로 로드
-- 폰트: Pretendard (기본), 조선굴림체 (브랜드용)
-
----
-
-## 8. 실행 환경 — 시뮬레이터·빌드
-
-**`flutter` 명령은 반드시 `chorok_app/`에서 실행한다.** `pubspec.yaml`이 이 디렉토리에 있기 때문이다.
-
-상위 폴더(`dev/`)에서 세션이 열려 있을 때:
-
-```bash
-cd /Users/joyongseong/Documents/dev/chorok_app && flutter run
-```
-
-또는 (작업 디렉토리를 유지하면서):
-
-```bash
-flutter run --suppress-analytics 2>&1   # ❌ dev/ 에서 실행하면 pubspec.yaml not found
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run )   # ✅
-```
-
-iOS 시뮬레이터 실행:
-
-```bash
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d "iPhone" )
-```
-
-**실기기(아이폰) 실행 — 개발 중 폰 테스트의 기본 방법.** 시뮬레이터는 구글 로그인이 안 되므로, 폰에서 실제로 써보려면 아이폰을 케이블로 연결해 직접 돌린다. git push·웹배포 불필요 — 핫 리로드(`r`)로 즉시 반영되고 운영 Supabase에 붙어 실데이터가 그대로 보인다.
-
-```bash
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d <아이폰-id> )  # id: flutter devices
-# 코드 수정 후 터미널:  r = 핫 리로드 ,  R = 핫 리스타트
-```
-
-최초 1회: 아이폰 USB 연결 → "이 컴퓨터 신뢰" → 설정에서 개발자 모드 ON → Xcode 로 `ios/Runner.xcworkspace` 열어 Signing & Capabilities 에서 Team(본인 Apple ID) 지정(Bundle ID `com.chorok.chorokApp` 유지). 무료 개인 팀은 앱이 7일마다 만료되며 `flutter run` 한 번이면 재서명됨.
-
-웹 실행 (목업 모드):
-
-```bash
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter run -d web-server --web-port 8080 --dart-define=USE_MOCK=true )
-```
-
-VSCode launch.json은 `chorok_app/.claude/launch.json`에 정의됨. 이 파일을 사용하면 작업 디렉토리 무관하게 실행 가능.
-
-**디바이스 ID (고정값):**
-- 실기기(아이폰): `00008120-0011549E3640C01E`
-- 디자인 앱 시뮬레이터 "New Chorok iPhone": `C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0`
-
-```bash
-# 디자인 앱 (시뮬레이터, 목업)
-flutter run -d C7F969E8-97C3-4A20-AAA4-E44AC9DC47F0 --dart-define=USE_MOCK=true
-# 실기기 (실데이터)
-flutter run -d 00008120-0011549E3640C01E
-```
-
-**⚠️ iOS 서명 gotcha:**
-
-1. **Apple 로그인 + 무료 개인 팀 조합 불가.** `Runner.entitlements`에 `com.apple.developer.applesignin`이 있으면 기기 설치 시 `0xe8008001` 오류(코드 서명 검증 실패). 무료 팀(VQ45VLJ87Y, choys9662@gmail.com)으로는 Sign in with Apple entitlement를 프로비저닝 못 함. 현재 `Runner.entitlements`는 의도적으로 비워 둔 상태 — 유료 Apple Developer Program 가입 전까지 건드리지 않는다.
-
-2. **`path_provider_foundation` 2.6.0 시뮬레이터 크래시.** 2.6.0부터 objective_c native-assets 방식으로 전환됐는데, Flutter 3.41 + iOS 시뮬레이터에서 `SdkRoot` 미전달로 `dlopen` 실패 → 앱이 흰 화면으로 죽음. `pubspec.yaml`의 `dependency_overrides: path_provider_foundation: 2.5.1`로 고정 중 — 2.6.x로 올리지 않는다.
-
-**검증 명령** (커밋·푸시 전):
-
-```bash
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter analyze )
-( cd /Users/joyongseong/Documents/dev/chorok_app && flutter test )   # test/ 가 lib/ 구조(core·features·shared) 미러링
-```
-
----
-
-## 9. Git · 배포 · 롤백 · 테스트 데이터 워크플로
-
-**개발 루프:** 변경 확인은 git push 가 아니라 **실기기 `flutter run` + 핫 리로드**로 한다(§8). 웹 배포는 이제 "링크 공유 / 최종 교차확인"용이지 개발 루프가 아니다.
-
-**브랜치 → 배포:**
-- 기본: `main`에 직접 커밋·푸시 (빠른 개발 루프). 기능이 크거나 롤백 안전망이 필요할 때만 `feat/...` 브랜치.
-- `main` 머지 시 GitHub Actions 가 자동 배포: 디자인앱(`chorok-d1414`, `USE_MOCK=true`) + 실앱(`chorok-real`, 실데이터). 정의: `.github/workflows/deploy-design.yml`, `deploy-prod.yml`.
-- **롤백:** 배포 후 문제 시 `git revert <머지커밋>` → `main` 재배포. git 이력에 다 남아 있다.
-
-**테스트 데이터 (출시 전):** dev/prod DB 는 아직 분리 안 함(단일 운영 Supabase). 개발 테스트는 **전용 테스트 구글 계정**으로만 로그인해 데이터를 식별 가능하게 둔다. 유저 간 상호작용 테스트는 계정 2~3개(아이폰=계정A 실로그인 + 웹 `chorok-real`=계정B). 쌓인 테스트 데이터는 `supabase/scripts/purge_test_user.sql`로 이메일 기준 일괄 삭제(모든 user 테이블이 `auth.users` cascade). dev/prod Supabase 분리는 실유저 생기기 직전에(`.env.dev`/`.env.prod` + `--dart-define=ENV`).
+- 저장소가 이미 대규모 미완료 리팩터로 uncommitted 상태다. `git diff <file>`은 이번 세션 변경분이 아니라 누적 전체를 보여준다 — 세션 범위 확인 시 착각 주의.
+- 서브에이전트에게 좁은 범위(리터럴 치환 등)를 위임할 때는 "발견한 TODO/ponytail 주석·미완성 기능에 손대지 말 것"을 매번 명시한다. 명시하지 않으면 무관한 기능을 임의로 "복원"하는 사고가 난 적 있다.
+- Flutter 3.41.9 사용 중 — `Column(spacing:)`/`Row(spacing:)` 사용 가능(3.27+). design.md가 언급하는 `ChorokColumn(gap:)`은 만들어진 적 없고 필요 없다 — 네이티브 `spacing:`으로 충분.
+- **AGENTS.md는 CLAUDE.md의 사본이다** (코덱스가 읽음). CLAUDE.md를 고치면 AGENTS.md에도 그대로 반영한다 — 안 하면 코덱스와 규칙이 어긋난다.
+- 코드 구현은 코덱스, 검증은 Claude 분업. 코덱스의 "완료" 보고는 그대로 믿지 말고 `flutter analyze`·`flutter test`를 직접 재실행해 확인한다.

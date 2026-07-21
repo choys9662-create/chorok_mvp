@@ -28,6 +28,7 @@ import '../../../shared/providers/library_provider.dart';
 import '../../../shared/repositories/reading_presence_repository.dart';
 import '../../../shared/utils/sentence_normalizer.dart';
 import '../../../shared/widgets/book_cover.dart';
+import '../../../shared/widgets/chorok_card.dart';
 import '../../timer/controller/timer_controller.dart';
 import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
@@ -1043,13 +1044,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: Text(
               '목표를 달성했어요! 🎉',
-              style: TextStyle(
-                fontFamily: _kFont,
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
-              ),
+              style: AppTheme.body.copyWith(color: AppTheme.textPrimary),
             ),
             duration: const Duration(seconds: 3),
             backgroundColor: AppTheme.darkCard,
@@ -1065,7 +1062,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         canPop: false,
         child: Scaffold(
           resizeToAvoidBottomInset: false,
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.darkBg,
           // 모든 포인터 입력에서 시스템 밝기로 복원(소비하지 않고 통과). 무터치 10초 후 20%.
           body: Listener(
             behavior: HitTestBehavior.translucent,
@@ -1210,24 +1207,18 @@ class _PillTimerOnly extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: _kGreen.withValues(alpha: timer.isPaused ? 0.25 : 0.45),
-          width: 1,
-        ),
-        color: Colors.black, // Fireflies 가림
+    return ChorokCard(
+      backgroundColor: AppTheme.darkBg, // Fireflies 가림
+      borderColor: _kGreen.withValues(alpha: timer.isPaused ? 0.25 : 0.45),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceSM,
       ),
       child: Text(
         timer.formattedTime,
-        style: TextStyle(
-          fontSize: 16,
+        style: AppTheme.rowText.copyWith(
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontWeight: FontWeight.w400,
           letterSpacing: 2,
-          fontFamily: _kFont,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
@@ -1238,6 +1229,7 @@ class _PillTimerOnly extends StatelessWidget {
 // ─── 함께 읽는 독자 CTA ────────────────────────────────────────────────────
 
 // ─── 이름 있는 독자 오브 레이어 ──────────────────────────────────────────
+// 캔버스 기반 오브/반딧불 렌더링은 세션의 몰입 레이어이므로 카드 규칙 적용 예외다.
 class _NamedReaderOrbs extends StatelessWidget {
   final List<UserProfile> mutuals;
   final int neighborCount;
@@ -1268,8 +1260,8 @@ class _NamedReaderOrbs extends StatelessWidget {
         radiusBase: 4.0,
         radiusRange: 8.0,
         label: '이웃',
-        labelColor: const Color(0xFF9A9F9A).withValues(alpha: 0.62),
-        orbColor: const Color(0xFF8A8F8A),
+        labelColor: context.appTextSecondary.withValues(alpha: 0.62),
+        orbColor: context.appTextSecondary,
         orbAlpha: 0.35,
       );
     }
@@ -1355,12 +1347,9 @@ class _NamedReaderOrbs extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: AppTheme.supportingText.copyWith(
               color: labelColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
               letterSpacing: 0,
-              fontFamily: _kFont,
             ),
           ),
         ),
@@ -1426,17 +1415,18 @@ class _OrbRingPainter extends CustomPainter {
 }
 
 // ─── 배경 (순수 블랙) ──────────────────────────────────────────────────────
+// 오브와 함께 한 장의 캔버스처럼 동작하는 배경이라 일반 카드가 아닌 렌더링 예외다.
 class _SessionBackground extends StatelessWidget {
   const _SessionBackground();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: RadialGradient(
           center: Alignment.center,
           radius: 0.9,
-          colors: [Color(0xFF050805), Color(0xFF000000)],
+          colors: [AppTheme.darkBg, AppTheme.darkBg],
         ),
       ),
     );
@@ -1444,6 +1434,7 @@ class _SessionBackground extends StatelessWidget {
 }
 
 // ─── 나 — 중심 3단 링 오브 ────────────────────────────────────────────────
+// true circle CustomPainter 예외: Live Forest의 pulse와 3단 링을 유지한다.
 class _GlowOrb extends StatelessWidget {
   final double scale;
   final bool isPaused;
@@ -1455,7 +1446,7 @@ class _GlowOrb extends StatelessWidget {
     final screenW = MediaQuery.of(context).size.width;
     final radius = screenW * 0.14;
     final d = radius * 2;
-    final bright = isPaused ? const Color(0xFF2A7A3D) : _kGreen;
+    final bright = isPaused ? _kGreen.withValues(alpha: 0.25) : _kGreen;
 
     return Transform.scale(
       scale: scale,
@@ -1479,13 +1470,17 @@ class _CenterOrbPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
-    // Layer 1 (외곽): 아주 어두운 녹색
-    canvas.drawCircle(c, radius, Paint()..color = const Color(0xFF0D2010));
-    // Layer 2 (중간): 중간 어두운 녹색
+    // Layer 1 (외곽): 초록 토큰의 낮은 opacity
+    canvas.drawCircle(
+      c,
+      radius,
+      Paint()..color = AppTheme.primaryLight.withValues(alpha: 0.08),
+    );
+    // Layer 2 (중간): 초록 토큰의 중간 opacity
     canvas.drawCircle(
       c,
       radius * 0.65,
-      Paint()..color = const Color(0xFF1A3B1A),
+      Paint()..color = AppTheme.primaryLight.withValues(alpha: 0.20),
     );
     // Layer 3 (중심): 밝은 녹색
     canvas.drawCircle(c, radius * 0.32, Paint()..color = bright);
@@ -1726,7 +1721,7 @@ class _OcrCaptureScreenState extends ConsumerState<_OcrCaptureScreen>
     return Theme(
       data: AppTheme.dark,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.darkBg,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -1777,7 +1772,7 @@ class _CameraWarmupOverlay extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.72),
               size: 40,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppTheme.spaceLG),
             const SizedBox(
               width: 24,
               height: 24,
@@ -1978,12 +1973,13 @@ class _CameraPreparingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
+      // 카메라 준비 전체화면 vignette — 카드가 아닌 몰입 배경(§5 예외).
       decoration: const BoxDecoration(
         color: Colors.black,
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF050805), Colors.black],
+          colors: [AppTheme.darkCard, Colors.black],
         ),
       ),
       child: Center(
@@ -1997,7 +1993,7 @@ class _CameraPreparingView extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.72),
               size: 40,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppTheme.spaceLG),
             if (initializing)
               const SizedBox(
                 width: 24,
@@ -2012,7 +2008,7 @@ class _CameraPreparingView extends StatelessWidget {
                 message ?? '카메라를 준비하지 못했어요',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   fontFamily: _kFont,
                 ),
               ),
@@ -2057,7 +2053,7 @@ class _QuoteCameraOverlay extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.68),
-                          fontSize: 15,
+                          fontSize: AppTheme.fsBody, // 15→14 스냅(§3)
                           fontWeight: FontWeight.w400,
                           fontFamily: _kFont,
                         ),
@@ -2083,6 +2079,7 @@ class _QuoteGuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final fullRect = Offset.zero & size;
+    // 카메라 crop 가이드 프레임 cutout — 촬영 정렬용 물리 프레임으로 카드가 아니다(§5 예외).
     final cutout = RRect.fromRectAndRadius(frameRect, const Radius.circular(8));
     final overlayPath = Path()
       ..addRect(fullRect)
@@ -2252,13 +2249,13 @@ class _CaptureBottomBar extends StatelessWidget {
                     color: message == null
                         ? Colors.white.withValues(alpha: 0.68)
                         : _kGreen.withValues(alpha: 0.9),
-                    fontSize: 12,
+                    fontSize: AppTheme.fsSupporting,
                     fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spaceLG),
             ],
             GestureDetector(
               onTap: canCapture ? onCapture : null,
@@ -2271,7 +2268,7 @@ class _CaptureBottomBar extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusInner),
                   ),
                   child: Icon(
                     Icons.camera_alt_rounded,
@@ -2299,20 +2296,19 @@ class _OcrLoadingOverlay extends StatelessWidget {
           color: Colors.black.withValues(alpha: 0.6),
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            spacing: AppTheme.spaceLG,
             children: [
               Icon(
                 Icons.document_scanner_outlined,
                 color: Colors.white,
                 size: 48,
               ),
-              SizedBox(height: 16),
               CircularProgressIndicator(color: _kGreen, strokeWidth: 2),
-              SizedBox(height: 16),
               Text(
                 '텍스트 인식 중...',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   fontFamily: _kFont,
                 ),
               ),
@@ -2371,7 +2367,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                 '눌러서 중지',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   fontWeight: FontWeight.w400,
                   fontFamily: _kFont,
                 ),
@@ -2381,7 +2377,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                 '듣는 중...',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 12,
+                  fontSize: AppTheme.fsSupporting,
                   fontFamily: _kFont,
                 ),
               ),
@@ -2391,12 +2387,12 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
+                      horizontal: AppTheme.spaceLG,
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.08),
                       ),
@@ -2406,7 +2402,7 @@ class _RecordingOverlayState extends State<_RecordingOverlay>
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: AppTheme.fsRowText,
                         height: 1.6,
                         fontFamily: _kFont,
                       ),
@@ -2538,17 +2534,17 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                       padding: const EdgeInsets.symmetric(horizontal: 40),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        spacing: AppTheme.spaceLG,
                         children: [
                           Text(
                             '스와이프 하여 독서를 종료',
                             style: TextStyle(
                               color: _kGreen.withValues(alpha: 0.85),
-                              fontSize: 16,
+                              fontSize: AppTheme.fsRowText,
                               fontFamily: _kFont,
                               letterSpacing: 0.5,
                             ),
                           ),
-                          const SizedBox(height: 16),
                           LayoutBuilder(
                             builder: (context, constraints) {
                               _maxDrag =
@@ -2561,7 +2557,9 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                               return Container(
                                 height: _trackHeight,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusOuter,
+                                  ),
                                   border: Border.all(
                                     color: _kGreen.withValues(alpha: 0.5),
                                     width: 1.5,
@@ -2579,7 +2577,7 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                                         height: _thumbSize * 0.25,
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(
-                                            4,
+                                            AppTheme.radiusInner,
                                           ),
                                           color: _kGreen.withValues(
                                             alpha: progress * 0.3,
@@ -2598,7 +2596,7 @@ class _SlideToStopOverlayState extends State<_SlideToStopOverlay> {
                                           height: _thumbSize,
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              AppTheme.radiusOuter,
                                             ),
                                             color: _kGreen,
                                           ),
@@ -2694,7 +2692,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
           widget.onStart();
         },
         child: ColoredBox(
-          color: Colors.black,
+          color: AppTheme.darkBg,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -2703,7 +2701,9 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                   builder: (context, constraints) {
                     final maxWidth = math.min(constraints.maxWidth, 430.0);
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.sectionGap,
+                      ),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           minHeight: math.max(0, constraints.maxHeight),
@@ -2713,7 +2713,7 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                           child: Padding(
                             padding: EdgeInsets.only(
                               top: constraints.maxHeight * 0.165,
-                              bottom: 40,
+                              bottom: AppTheme.sectionGap,
                             ),
                             child: ConstrainedBox(
                               constraints: BoxConstraints(maxWidth: maxWidth),
@@ -2730,46 +2730,38 @@ class _TodaysTopicOverlayState extends State<_TodaysTopicOverlay>
                                     ),
                                     accentColor: widget.accentColor,
                                   ),
-                                  const SizedBox(height: 34),
+                                  const SizedBox(height: AppTheme.sectionGap),
                                   BookCover(
                                     coverUrl: widget.coverUrl,
                                     gradientIndex: widget.bookTitle.hashCode
                                         .abs(),
                                     width: 160,
                                     height: 244,
-                                    radius: 8,
+                                    radius: AppTheme.radiusInner,
                                   ),
-                                  const SizedBox(height: 26),
+                                  const SizedBox(height: AppTheme.spaceXL),
                                   const _SessionEntryBadge(label: '6번째 세션'),
-                                  const SizedBox(height: 14),
+                                  const SizedBox(height: AppTheme.spaceMD),
                                   Text(
                                     widget.bookTitle,
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 17,
-                                      height: 1.18,
-                                      fontWeight: FontWeight.w400,
-                                      fontFamily: _kFont,
+                                    style: AppTheme.rowText.copyWith(
+                                      color: AppTheme.textPrimary,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: AppTheme.spaceSM),
                                   Text(
                                     _sessionEntryBookMeta(widget.bookAuthor),
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
+                                    style: AppTheme.supportingText.copyWith(
+                                      color: AppTheme.textSecondary.withValues(
                                         alpha: 0.34,
                                       ),
-                                      fontSize: 12,
-                                      height: 1.2,
-                                      fontWeight: FontWeight.w400,
-                                      fontFamily: _kFont,
                                     ),
                                   ),
-                                  const SizedBox(height: 43),
+                                  const SizedBox(height: AppTheme.sectionGap),
                                   _SessionEntryStats(
                                     activeReaderCount: widget.activeReaderCount,
                                     nearbyReaderCount: widget.nearbyReaderCount,
@@ -2806,21 +2798,17 @@ class _SessionEntryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2FFF0),
-        borderRadius: BorderRadius.circular(5),
+    return ChorokCard(
+      inner: true,
+      showBorder: false,
+      backgroundColor: context.appPrimaryAccent,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceSM,
+        vertical: AppTheme.spaceXS,
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Color(0xFF07101C),
-          fontSize: 12,
-          height: 1,
-          fontWeight: FontWeight.w500,
-          fontFamily: _kFont,
-        ),
+        style: AppTheme.supportingText.copyWith(color: AppTheme.darkBg),
       ),
     );
   }
@@ -2837,23 +2825,18 @@ class _SessionEntryQuestionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return ChorokCard(
       key: const ValueKey('session-entry-question-button'),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
-      decoration: BoxDecoration(
-        color: const Color(0xFF151816),
-        borderRadius: BorderRadius.circular(9),
+      showBorder: false,
+      backgroundColor: context.appCard,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceMD,
       ),
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          color: accentColor,
-          fontSize: 16,
-          height: 1.15,
-          fontWeight: FontWeight.w400,
-          fontFamily: _kFont,
-        ),
+        style: AppTheme.rowText.copyWith(color: accentColor),
       ),
     );
   }
@@ -2880,11 +2863,11 @@ class _SessionEntryStats extends StatelessWidget {
           dotColor: accentColor,
           textColor: accentColor,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppTheme.spaceSM),
         _SessionEntryStatChip(
           value: nearbyReaderCount,
-          dotColor: const Color(0xFF6D756D),
-          textColor: const Color(0xFF5F685F),
+          dotColor: context.appTextTertiary,
+          textColor: context.appTextSecondary,
         ),
       ],
     );
@@ -2904,33 +2887,30 @@ class _SessionEntryStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 36,
       height: 56,
-      decoration: BoxDecoration(
-        color: const Color(0xFF151816),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$value',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 15,
-              height: 1,
-              fontWeight: FontWeight.w400,
-              fontFamily: _kFont,
+      child: ChorokCard(
+        inner: true,
+        showBorder: false,
+        backgroundColor: context.appCard,
+        padding: EdgeInsets.zero,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 상태 dot은 true circle이라 radius 규칙 예외다.
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppTheme.spaceSM),
+            Text('$value', style: AppTheme.rowText.copyWith(color: textColor)),
+          ],
+        ),
       ),
     );
   }
@@ -3010,7 +2990,8 @@ class _RevealedView extends StatelessWidget {
         // 배경 디밍 — 반딧불은 살리면서 살짝만 어둡게
         Positioned.fill(
           child: IgnorePointer(
-            child: Container(color: Colors.black.withValues(alpha: 0.55)),
+            // 전체 화면 scrim은 카드가 아닌 몰입 레이어 렌더링 예외다.
+            child: ColoredBox(color: AppTheme.darkBg.withValues(alpha: 0.55)),
           ),
         ),
 
@@ -3019,7 +3000,12 @@ class _RevealedView extends StatelessWidget {
           alignment: Alignment.topCenter,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceXL,
+                AppTheme.spaceLG,
+                AppTheme.spaceXL,
+                0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -3027,18 +3013,17 @@ class _RevealedView extends StatelessWidget {
                     isPaused: timer.isPaused,
                     onLongPress: onLockLongPress,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppTheme.spaceLG),
                   Text(
                     timer.formattedTime,
-                    style: TextStyle(
+                    // 세션 타이머는 design.md의 display 예외(60px대)다.
+                    style: AppTheme.displayMedium.copyWith(
                       color: _kGreen.withValues(
                         alpha: timer.isPaused ? 0.55 : 1.0,
                       ),
-                      fontSize: 64,
+                      fontSize: 64, // display 예외: 세션 타이머 대형 수치(§3)
                       height: 1.0,
-                      fontWeight: FontWeight.w400,
                       letterSpacing: -1,
-                      fontFamily: _kFont,
                       fontFeatures: const [FontFeature.tabularFigures()],
                       shadows: [
                         Shadow(
@@ -3048,15 +3033,12 @@ class _RevealedView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppTheme.spaceSM),
                   Text(
                     streakDays > 0 ? '$_dateLabel +$streakDays일' : _dateLabel,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.55),
-                      fontSize: 12,
+                    style: AppTheme.supportingText.copyWith(
+                      color: AppTheme.textPrimary.withValues(alpha: 0.55),
                       letterSpacing: 0.4,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: _kFont,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
@@ -3070,40 +3052,40 @@ class _RevealedView extends StatelessWidget {
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 36),
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.spaceXL,
+              0,
+              AppTheme.spaceXL,
+              bottom + AppTheme.sectionGap,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _PlusButton(onTap: onPlusTap),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppTheme.spaceMD),
                 if (sentenceCount > 0) ...[
                   _SentenceBadge(count: sentenceCount, onTap: onSentencesTap),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppTheme.spaceMD),
                 ] else
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   bookTitle,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
-                    fontFamily: _kFont,
+                  style: AppTheme.sectionTitle.copyWith(
+                    color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   bookAuthor,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: AppTheme.supportingText.copyWith(
                     color: _kGreen.withValues(alpha: 0.80),
-                    fontSize: 12,
                     letterSpacing: 0.3,
-                    fontFamily: _kFont,
                   ),
                 ),
               ],
@@ -3131,22 +3113,20 @@ class _LockBadge extends StatelessWidget {
         HapticFeedback.mediumImpact();
         onLongPress();
       },
-      child: Container(
+      child: SizedBox(
         width: 40,
         height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _kGreen.withValues(alpha: alpha),
-            width: 1.4,
+        child: ChorokCard(
+          backgroundColor: AppTheme.darkBg.withValues(alpha: 0.18),
+          borderColor: _kGreen.withValues(alpha: alpha),
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: Icon(
+              Icons.lock_outline_rounded,
+              color: _kGreen.withValues(alpha: alpha),
+              size: 20,
+            ),
           ),
-          color: Colors.black.withValues(alpha: 0.18),
-        ),
-        child: Icon(
-          Icons.lock_outline_rounded,
-          color: _kGreen.withValues(alpha: alpha),
-          size: 20,
         ),
       ),
     );
@@ -3163,22 +3143,20 @@ class _PlusButton extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 40,
         height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _kGreen.withValues(alpha: 0.85),
-            width: 1.4,
+        child: ChorokCard(
+          backgroundColor: AppTheme.darkBg.withValues(alpha: 0.18),
+          borderColor: _kGreen.withValues(alpha: 0.85),
+          padding: EdgeInsets.zero,
+          child: Center(
+            child: Icon(
+              Icons.add_rounded,
+              color: _kGreen.withValues(alpha: 0.95),
+              size: 22,
+            ),
           ),
-          color: Colors.black.withValues(alpha: 0.18),
-        ),
-        child: Icon(
-          Icons.add_rounded,
-          color: _kGreen.withValues(alpha: 0.95),
-          size: 22,
         ),
       ),
     );
@@ -3198,25 +3176,21 @@ class _SentenceBadge extends StatelessWidget {
         HapticFeedback.selectionClick();
         onTap();
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: _kGreen,
-          borderRadius: BorderRadius.circular(10),
+      child: ChorokCard(
+        showBorder: false,
+        backgroundColor: _kGreen,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceLG,
+          vertical: AppTheme.spaceMD,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.edit_rounded, color: Colors.black, size: 15),
-            const SizedBox(width: 6),
+            const Icon(Icons.edit_rounded, color: AppTheme.darkBg, size: 15),
+            const SizedBox(width: AppTheme.spaceSM),
             Text(
               '+$count',
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                fontFamily: _kFont,
-              ),
+              style: AppTheme.rowText.copyWith(color: AppTheme.darkBg),
             ),
           ],
         ),
@@ -3358,12 +3332,12 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
+                  horizontal: AppTheme.spaceLG,
                   vertical: 11,
                 ),
                 decoration: BoxDecoration(
                   color: _kGreen,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -3373,12 +3347,12 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                       color: Colors.black,
                       size: 19,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       '이 책에서 모은 문장 ${_items.length}개',
                       style: const TextStyle(
                         color: Colors.black,
-                        fontSize: 16,
+                        fontSize: AppTheme.fsRowText,
                         fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
                       ),
@@ -3386,7 +3360,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: AppTheme.space2XL),
               Expanded(
                 child: Stack(
                   children: [
@@ -3396,7 +3370,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                           '아직 모은 문장이 없어요',
                           style: TextStyle(
                             color: _kGreen.withValues(alpha: 0.45),
-                            fontSize: 16,
+                            fontSize: AppTheme.fsRowText,
                             fontFamily: _kFont,
                           ),
                         ),
@@ -3468,13 +3442,13 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: _kGreen,
-                        fontSize: 24,
+                        fontSize: AppTheme.fsSectionTitle, // 24→18 스냅(§3)
                         fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
                       ),
                     ),
                     if (widget.bookAuthor.isNotEmpty) ...[
-                      const SizedBox(height: 9),
+                      const SizedBox(height: AppTheme.spaceSM),
                       Text(
                         widget.bookAuthor,
                         textAlign: TextAlign.center,
@@ -3482,7 +3456,7 @@ class _SentencesReviewSheetState extends ConsumerState<_SentencesReviewSheet> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: _kGreen.withValues(alpha: 0.86),
-                          fontSize: 16,
+                          fontSize: AppTheme.fsRowText,
                           letterSpacing: 0,
                           fontFamily: _kFont,
                         ),
@@ -3524,7 +3498,7 @@ class _SentenceSheetDismissControl extends StatelessWidget {
                   height: 5,
                   decoration: BoxDecoration(
                     color: _kGreen.withValues(alpha: 0.62),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -3596,8 +3570,8 @@ class _SwipeableSentenceReviewCardState
                 width: 92,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF4B4F),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppTheme.warningColor,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                 ),
                 child: const Icon(
                   Icons.delete_outline_rounded,
@@ -3654,18 +3628,18 @@ class _SwipeableSentenceReviewCardState
               margin: const EdgeInsets.only(bottom: 12),
               padding: EdgeInsets.fromLTRB(
                 20,
-                widget.expanded ? 22 : 18,
+                widget.expanded ? AppTheme.space2XL : AppTheme.spaceLG,
                 20,
-                widget.expanded ? 22 : 18,
+                widget.expanded ? AppTheme.space2XL : AppTheme.spaceLG,
               ),
               decoration: BoxDecoration(
-                color: const Color(
-                  0xFF111211,
-                ).withValues(alpha: _deleting ? 0.78 : 0.94),
-                borderRadius: BorderRadius.circular(10),
+                color: AppTheme.darkCard.withValues(
+                  alpha: _deleting ? 0.78 : 0.94,
+                ),
+                borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                 border: Border.all(
                   color: _deleting
-                      ? const Color(0xFFFF4B4F)
+                      ? AppTheme.warningColor
                       : widget.expanded
                       ? _kGreen.withValues(alpha: 0.92)
                       : Colors.white.withValues(alpha: 0.14),
@@ -3704,7 +3678,7 @@ class _SentenceReviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = deleting ? const Color(0xFFFF4B4F) : _kGreen;
+    final color = deleting ? AppTheme.warningColor : _kGreen;
     final pageLabel = sentence.pageNumber == null
         ? ''
         : 'p. ${sentence.pageNumber}';
@@ -3720,7 +3694,7 @@ class _SentenceReviewRow extends StatelessWidget {
             pageLabel,
             style: TextStyle(
               color: color.withValues(alpha: deleting ? 1.0 : 0.95),
-              fontSize: 16,
+              fontSize: AppTheme.fsRowText,
               height: 1.55,
               fontWeight: FontWeight.w400,
               letterSpacing: 0,
@@ -3729,7 +3703,7 @@ class _SentenceReviewRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppTheme.spaceMD),
         Expanded(
           child: AnimatedSize(
             duration: const Duration(milliseconds: 220),
@@ -3743,7 +3717,7 @@ class _SentenceReviewRow extends StatelessWidget {
                         sentence.content,
                         style: TextStyle(
                           color: color,
-                          fontSize: 16,
+                          fontSize: AppTheme.fsRowText,
                           height: 1.72,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0,
@@ -3751,24 +3725,24 @@ class _SentenceReviewRow extends StatelessWidget {
                         ),
                       ),
                       if (sentence.thought.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceMD),
                         Text(
                           sentence.thought,
                           style: TextStyle(
                             color: color.withValues(alpha: 0.78),
-                            fontSize: 16,
+                            fontSize: AppTheme.fsRowText,
                             height: 1.6,
                             letterSpacing: 0,
                             fontFamily: _kFont,
                           ),
                         ),
                       ] else ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppTheme.spaceMD),
                         Text(
                           '아직 이 문장에 대한 생각이 없어요',
                           style: TextStyle(
                             color: color.withValues(alpha: 0.48),
-                            fontSize: 16,
+                            fontSize: AppTheme.fsRowText,
                             height: 1.6,
                             letterSpacing: 0,
                             fontFamily: _kFont,
@@ -3797,7 +3771,7 @@ class _SentenceReviewRow extends StatelessWidget {
                                         : '쪽 수정',
                                     style: TextStyle(
                                       color: color,
-                                      fontSize: 16,
+                                      fontSize: AppTheme.fsRowText,
                                       fontWeight: FontWeight.w400,
                                       letterSpacing: 0,
                                       fontFamily: _kFont,
@@ -3816,7 +3790,7 @@ class _SentenceReviewRow extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppTheme.spaceSM),
                           Flexible(
                             child: Align(
                               alignment: Alignment.centerRight,
@@ -3835,7 +3809,7 @@ class _SentenceReviewRow extends StatelessWidget {
                                         : '생각 수정',
                                     style: TextStyle(
                                       color: color,
-                                      fontSize: 16,
+                                      fontSize: AppTheme.fsRowText,
                                       fontWeight: FontWeight.w400,
                                       letterSpacing: 0,
                                       fontFamily: _kFont,
@@ -3864,7 +3838,7 @@ class _SentenceReviewRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: color,
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       height: 1.55,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0,
@@ -3929,13 +3903,20 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
         constraints: BoxConstraints(maxHeight: maxHeight),
         decoration: const BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusOuter),
+          ),
         ),
         child: SafeArea(
           top: false,
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(22, 14, 22, bottomPadding),
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space2XL,
+              14,
+              AppTheme.space2XL,
+              bottomPadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -3945,11 +3926,11 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                     ),
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: AppTheme.space2XL),
                 Row(
                   children: [
                     const Icon(
@@ -3957,12 +3938,12 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                       color: _kGreen,
                       size: 22,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       '문장에 대한 생각',
                       style: TextStyle(
                         color: _kGreen,
-                        fontSize: 24,
+                        fontSize: AppTheme.fsSectionTitle, // 24→18 스냅(§3)
                         fontWeight: FontWeight.w400,
                         letterSpacing: 0,
                         fontFamily: _kFont,
@@ -3970,16 +3951,18 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: AppTheme.spaceLG),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxHeight * 0.32),
                   child: SingleChildScrollView(
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppTheme.spaceLG),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF111211),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppTheme.darkCard,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.14),
                         ),
@@ -3988,7 +3971,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                         widget.sentence.content,
                         style: const TextStyle(
                           color: _kGreen,
-                          fontSize: 16,
+                          fontSize: AppTheme.fsRowText,
                           height: 1.72,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0,
@@ -4012,7 +3995,7 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                     cursorColor: _kGreen,
                     style: const TextStyle(
                       color: _kGreen,
-                      fontSize: 16,
+                      fontSize: AppTheme.fsRowText,
                       height: 1.62,
                       letterSpacing: 0,
                       fontFamily: _kFont,
@@ -4021,39 +4004,45 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                       hintText: '이 문장을 보며 든 생각을 적어보세요',
                       hintStyle: TextStyle(
                         color: _kGreen.withValues(alpha: 0.42),
-                        fontSize: 16,
+                        fontSize: AppTheme.fsRowText,
                         letterSpacing: 0,
                         fontFamily: _kFont,
                       ),
                       filled: true,
-                      fillColor: const Color(0xFF111211),
+                      fillColor: AppTheme.darkCard,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                         borderSide: BorderSide(
                           color: _kGreen.withValues(alpha: 0.45),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                         borderSide: BorderSide(
                           color: _kGreen.withValues(alpha: 0.45),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                         borderSide: const BorderSide(
                           color: _kGreen,
                           width: 1.4,
                         ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 15,
+                        horizontal: AppTheme.spaceLG,
+                        vertical: AppTheme.spaceLG,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.spaceLG),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -4065,13 +4054,15 @@ class _SentenceThoughtSheetState extends State<_SentenceThoughtSheet> {
                       backgroundColor: _kGreen,
                       foregroundColor: Colors.black,
                       textStyle: const TextStyle(
-                        fontSize: 16,
+                        fontSize: AppTheme.fsRowText,
                         fontWeight: FontWeight.w400,
                         letterSpacing: 0,
                         fontFamily: _kFont,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.radiusOuter,
+                        ),
                       ),
                     ),
                   ),
@@ -4115,13 +4106,15 @@ class _PageEditDialogState extends State<_PageEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF111211),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: AppTheme.darkCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
+      ),
       title: const Text(
         '몇 쪽에서 모은 문장인가요?',
         style: TextStyle(
           color: _kGreen,
-          fontSize: 18,
+          fontSize: AppTheme.fsSectionTitle,
           fontWeight: FontWeight.w400,
           letterSpacing: 0,
           fontFamily: _kFont,
@@ -4136,7 +4129,7 @@ class _PageEditDialogState extends State<_PageEditDialog> {
         onSubmitted: (_) => _save(),
         style: const TextStyle(
           color: _kGreen,
-          fontSize: 16,
+          fontSize: AppTheme.fsRowText,
           letterSpacing: 0,
           fontFamily: _kFont,
         ),
@@ -4147,13 +4140,13 @@ class _PageEditDialogState extends State<_PageEditDialog> {
             fontFamily: _kFont,
           ),
           filled: true,
-          fillColor: const Color(0xFF1A1B1A),
+          fillColor: AppTheme.darkCard,
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             borderSide: BorderSide(color: _kGreen.withValues(alpha: 0.45)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             borderSide: const BorderSide(color: _kGreen, width: 1.4),
           ),
         ),
@@ -4177,7 +4170,7 @@ class _PageEditDialogState extends State<_PageEditDialog> {
             backgroundColor: _kGreen,
             foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
             ),
           ),
           child: const Text(
@@ -4215,6 +4208,7 @@ class _SentenceReviewBackgroundPainter extends CustomPainter {
     _drawReaderLight(canvas, size.width * 0.84, size.height * 0.88, 20);
 
     final fade = Paint()
+      // 전체화면 scrim vignette — CustomPainter 몰입 페이드로 카드가 아니다(§5 예외).
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -4276,15 +4270,16 @@ class _ActionsView extends StatelessWidget {
         // 비네트 디밍
         Positioned.fill(
           child: IgnorePointer(
-            child: Container(
-              decoration: const BoxDecoration(
+            // 비네트는 전체 화면 몰입 오버레이 예외다.
+            child: DecoratedBox(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xB8000000),
-                    Colors.transparent,
-                    Color(0xCC000000),
+                    AppTheme.darkBg.withValues(alpha: 0.72),
+                    AppTheme.darkBg.withValues(alpha: 0),
+                    AppTheme.darkBg.withValues(alpha: 0.80),
                   ],
                   stops: [0.0, 0.35, 1.0],
                 ),
@@ -4294,7 +4289,10 @@ class _ActionsView extends StatelessWidget {
         ),
         SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(0, 14, 0, bottom + 24),
+            padding: EdgeInsets.only(
+              top: AppTheme.spaceMD,
+              bottom: bottom + AppTheme.spaceXL,
+            ),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final gridWidth = math.min(constraints.maxWidth - 112, 288.0);
@@ -4306,19 +4304,16 @@ class _ActionsView extends StatelessWidget {
                     const Spacer(flex: 52),
                     Text(
                       '문장을 가져올게요',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        fontFamily: _kFont,
+                      style: AppTheme.rowText.copyWith(
+                        color: AppTheme.textPrimary.withValues(alpha: 0.55),
                       ),
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: AppTheme.spaceXL),
                     SizedBox(
                       width: gridWidth,
                       child: Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
+                        spacing: AppTheme.spaceSM,
+                        runSpacing: AppTheme.spaceSM,
                         children: [
                           SizedBox(
                             width: cardWidth,
@@ -4360,33 +4355,29 @@ class _ActionsView extends StatelessWidget {
                     ),
                     const Spacer(flex: 48),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 56),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.sectionGap,
+                      ),
                       child: Text(
                         bookTitle,
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _kGreen,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: _kFont,
-                        ),
+                        style: AppTheme.sectionTitle.copyWith(color: _kGreen),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppTheme.spaceSM),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 64),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.sectionGap,
+                      ),
                       child: Text(
                         bookAuthor,
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.36),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: _kFont,
+                        style: AppTheme.supportingText.copyWith(
+                          color: AppTheme.textPrimary.withValues(alpha: 0.36),
                         ),
                       ),
                     ),
@@ -4408,24 +4399,19 @@ class _PillTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: _kGreen.withValues(alpha: timer.isPaused ? 0.30 : 0.95),
-          width: 1,
-        ),
-        color: Colors.black.withValues(alpha: 0.32),
+    return ChorokCard(
+      inner: true,
+      backgroundColor: AppTheme.darkBg.withValues(alpha: 0.32),
+      borderColor: _kGreen.withValues(alpha: timer.isPaused ? 0.30 : 0.95),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceSM,
       ),
       child: Text(
         timer.formattedTime,
-        style: TextStyle(
-          fontSize: 17,
+        style: AppTheme.rowText.copyWith(
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontWeight: FontWeight.w400,
           letterSpacing: 0,
-          fontFamily: _kFont,
           fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
@@ -4448,9 +4434,11 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isActive ? Colors.red : _kGreen.withValues(alpha: 0.95);
+    final iconColor = isActive
+        ? AppTheme.warningColor
+        : _kGreen.withValues(alpha: 0.95);
     final labelColor = isActive
-        ? Colors.red.withValues(alpha: 0.95)
+        ? AppTheme.warningColor.withValues(alpha: 0.95)
         : _kGreen.withValues(alpha: 0.95);
 
     return GestureDetector(
@@ -4461,25 +4449,21 @@ class _ActionCard extends StatelessWidget {
       },
       child: SizedBox(
         height: 132,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            color: AppTheme.darkCard,
-          ),
+        child: ChorokCard(
+          showBorder: false,
+          backgroundColor: AppTheme.darkCard,
+          padding: EdgeInsets.zero,
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 20, color: iconColor),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppTheme.spaceSM),
                 Text(
                   label,
-                  style: TextStyle(
+                  style: AppTheme.rowText.copyWith(
                     color: labelColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
                     letterSpacing: 0,
-                    fontFamily: _kFont,
                   ),
                 ),
               ],
@@ -4513,15 +4497,16 @@ class _SocialView extends StatelessWidget {
         // 비네트 디밍: 상단·하단 어둡고 중앙 투명
         Positioned.fill(
           child: IgnorePointer(
-            child: Container(
-              decoration: const BoxDecoration(
+            // 비네트는 전체 화면 몰입 오버레이 예외다.
+            child: DecoratedBox(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xB8000000), // alpha ~0.72 top
-                    Colors.transparent,
-                    Color(0xF5000000), // alpha ~0.96 bottom
+                    AppTheme.darkBg.withValues(alpha: 0.72),
+                    AppTheme.darkBg.withValues(alpha: 0),
+                    AppTheme.darkBg.withValues(alpha: 0.96),
                   ],
                   stops: [0.0, 0.30, 1.0],
                 ),
@@ -4536,14 +4521,16 @@ class _SocialView extends StatelessWidget {
               Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.only(top: AppTheme.spaceMD),
                   child: _PillTimer(timer: timer),
                 ),
               ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: bottom + 32),
+                  padding: EdgeInsets.only(
+                    bottom: bottom + AppTheme.sectionGap,
+                  ),
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
@@ -4558,17 +4545,14 @@ class _SocialView extends StatelessWidget {
                           color: _kGreen.withValues(alpha: 0.85),
                           size: 28,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppTheme.spaceXS),
                         Text(
                           readersCount > 0
                               ? '함께 읽는 $readersCount명의 초록 확인'
                               : '함께 읽는 초록 확인',
-                          style: TextStyle(
+                          style: AppTheme.rowText.copyWith(
                             color: _kGreen.withValues(alpha: 0.85),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
                             letterSpacing: 0.3,
-                            fontFamily: _kFont,
                           ),
                         ),
                       ],
@@ -4703,9 +4687,9 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
             height: panelHeight,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF020403).withValues(alpha: 0.98),
+                color: AppTheme.darkCard.withValues(alpha: 0.98),
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(22),
+                  top: Radius.circular(AppTheme.radiusOuter),
                 ),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.12),
@@ -4720,12 +4704,14 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                     height: 3,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.50),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: AppTheme.spaceLG),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceLG,
+                    ),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -4733,7 +4719,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                           '함께 읽는 친구',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: AppTheme.fsSectionTitle, // 20→18 스냅(§3)
                             height: 1,
                             fontWeight: FontWeight.w400,
                             fontFamily: _kFont,
@@ -4749,7 +4735,7 @@ class _ReadersSheetState extends ConsumerState<_ReadersSheet> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppTheme.spaceLG),
                   Expanded(
                     child: fireflyAsync.isLoading && !fireflyAsync.hasValue
                         ? const Center(
@@ -4786,18 +4772,18 @@ class _SheetTopTimer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 9),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSM),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.black,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppTheme.radiusInner),
         border: Border.all(color: _kGreen, width: 1),
       ),
       child: Text(
         timer.formattedTime,
         style: TextStyle(
           color: _kGreen.withValues(alpha: timer.isPaused ? 0.55 : 0.95),
-          fontSize: 16,
+          fontSize: AppTheme.fsRowText,
           fontFamily: _kFont,
           letterSpacing: 0.6,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -4827,7 +4813,7 @@ class _TabToggle extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 6),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(AppTheme.radiusInner),
           color: Colors.white.withValues(alpha: 0.08),
         ),
         child: Icon(
@@ -4864,9 +4850,9 @@ class _PeopleTab extends StatelessWidget {
             active: true,
           ),
         if (kUseMock) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: AppTheme.spaceLG),
           const _ReaderSectionTitle('함께 읽는 이웃'),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppTheme.spaceLG),
           for (final neighbor in _kMockNeighbors)
             _PersonReaderRow(
               name: neighbor.name,
@@ -4903,7 +4889,7 @@ class _PersonReaderRow extends StatelessWidget {
       child: Row(
         children: [
           _SheetOrb(seed: seed, active: active),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           SizedBox(
             width: 104,
             child: Text(
@@ -4912,7 +4898,7 @@ class _PersonReaderRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: textColor,
-                fontSize: 15,
+                fontSize: AppTheme.fsBody, // 15→14 스냅(§3)
                 fontWeight: FontWeight.w400,
                 fontFamily: _kFont,
               ),
@@ -4925,7 +4911,7 @@ class _PersonReaderRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: active ? 0.34 : 0.30),
-                fontSize: 11,
+                fontSize: AppTheme.fsCaption, // 11→10 스냅(§3)
                 fontWeight: FontWeight.w400,
                 fontFamily: _kFont,
               ),
@@ -4941,7 +4927,7 @@ class _PersonReaderRow extends StatelessWidget {
             time,
             style: TextStyle(
               color: active ? _kGreen : Colors.white.withValues(alpha: 0.86),
-              fontSize: 14,
+              fontSize: AppTheme.fsBody,
               fontWeight: FontWeight.w400,
               fontFamily: _kFont,
               fontFeatures: const [FontFeature.tabularFigures()],
@@ -4976,9 +4962,9 @@ class _BooksTab extends StatelessWidget {
             active: true,
           ),
         if (kUseMock) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: AppTheme.spaceLG),
           const _ReaderSectionTitle('함께 읽는 이웃'),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppTheme.spaceLG),
           for (var i = 0; i < _kMockNeighbors.length; i++)
             _BookReaderRow(
               book: (
@@ -5005,7 +4991,7 @@ class _ReadersEmptyState extends StatelessWidget {
         '지금 함께 읽는 친구가 없어요',
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.5),
-          fontSize: 14,
+          fontSize: AppTheme.fsBody,
           fontFamily: _kFont,
         ),
       ),
@@ -5033,7 +5019,7 @@ class _BookReaderRow extends StatelessWidget {
       child: Row(
         children: [
           _SheetOrb(seed: seed, active: active),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -5045,20 +5031,20 @@ class _BookReaderRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: titleColor,
-                    fontSize: 15,
+                    fontSize: AppTheme.fsBody, // 15→14 스냅(§3)
                     height: 1.05,
                     fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   book.author,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: active ? 0.36 : 0.34),
-                    fontSize: 12,
+                    fontSize: AppTheme.fsSupporting,
                     height: 1,
                     fontWeight: FontWeight.w400,
                     fontFamily: _kFont,
@@ -5072,13 +5058,13 @@ class _BookReaderRow extends StatelessWidget {
             color: active ? _kGreen : Colors.white.withValues(alpha: 0.86),
             size: 18,
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: AppTheme.space2XL),
           BookCover(
             coverUrl: coverUrl,
             gradientIndex: book.title.hashCode.abs(),
             width: 36,
             height: 56,
-            radius: 5,
+            radius: AppTheme.radiusInner,
           ),
         ],
       ),
@@ -5096,10 +5082,10 @@ class _ReaderRowFrame extends StatelessWidget {
     return Container(
       height: 69,
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.075),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppTheme.radiusInner),
       ),
       child: child,
     );
@@ -5118,7 +5104,7 @@ class _ReaderSectionTitle extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         color: Colors.white.withValues(alpha: 0.42),
-        fontSize: 19,
+        fontSize: AppTheme.fsSectionTitle, // 19→18 스냅(§3)
         fontWeight: FontWeight.w400,
         fontFamily: _kFont,
       ),
@@ -5232,8 +5218,8 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
     final editColor = isActive
         ? _kGreen.withValues(alpha: 0.92)
         : Colors.white.withValues(alpha: 0.18);
-    final trackColor = isActive ? _kGreen : const Color(0xFF3D3D3D);
-    final buttonBg = isActive ? _kGreen : const Color(0xFF262626);
+    final trackColor = isActive ? _kGreen : AppTheme.darkNested;
+    final buttonBg = isActive ? _kGreen : AppTheme.darkNested;
     final buttonFg = isActive
         ? Colors.black
         : Colors.white.withValues(alpha: 0.35);
@@ -5267,7 +5253,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       widget.timeText,
                       style: TextStyle(
                         color: _kGreen.withValues(alpha: 0.22),
-                        fontSize: 64,
+                        fontSize: 64, // display 예외: 세션 타이머 대형 수치(§3)
                         height: 1.0,
                         fontWeight: FontWeight.w400,
                         letterSpacing: -1,
@@ -5280,7 +5266,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       _sessionDateLabel(widget.sessionStartedAt),
                       style: TextStyle(
                         color: _kGreen.withValues(alpha: 0.20),
-                        fontSize: 12,
+                        fontSize: AppTheme.fsSupporting,
                         letterSpacing: 0.3,
                         fontWeight: FontWeight.w400,
                         fontFamily: _kFont,
@@ -5291,17 +5277,17 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       '오늘 몇 페이지까지 읽었나요?',
                       style: TextStyle(
                         fontFamily: _kFont,
-                        fontSize: 15,
+                        fontSize: AppTheme.fsBody, // 15→14 스냅(§3)
                         color: promptColor,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: AppTheme.space2XL),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         _StepButton(icon: Icons.remove, onTap: _decrement),
-                        const SizedBox(width: 22),
+                        const SizedBox(width: AppTheme.space2XL),
                         _PageBox(
                           page: _page,
                           totalPages: widget.totalPages,
@@ -5313,11 +5299,11 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                             _hasRecordedPage = true;
                           }),
                         ),
-                        const SizedBox(width: 22),
+                        const SizedBox(width: AppTheme.space2XL),
                         _StepButton(icon: Icons.add, onTap: _increment),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppTheme.spaceLG),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 346),
                       child: SizedBox(
@@ -5325,7 +5311,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             activeTrackColor: trackColor,
-                            inactiveTrackColor: const Color(0xFF2A2A2A),
+                            inactiveTrackColor: AppTheme.darkNested,
                             thumbColor: trackColor,
                             overlayColor: trackColor.withValues(alpha: 0.14),
                             trackHeight: 3,
@@ -5346,7 +5332,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: AppTheme.space2XL),
                     GestureDetector(
                       onTap: isActive
                           ? () {
@@ -5358,12 +5344,14 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                         duration: const Duration(milliseconds: 180),
                         curve: Curves.easeOutCubic,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
+                          horizontal: AppTheme.spaceLG,
+                          vertical: AppTheme.spaceMD,
                         ),
                         decoration: BoxDecoration(
                           color: buttonBg,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusOuter,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -5378,7 +5366,7 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                               '기록 및 독서종료',
                               style: TextStyle(
                                 fontFamily: _kFont,
-                                fontSize: 15,
+                                fontSize: AppTheme.fsBody, // 15→14 스냅(§3)
                                 color: buttonFg,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -5395,13 +5383,15 @@ class _PageInputOverlayState extends State<_PageInputOverlay> {
                       },
                       behavior: HitTestBehavior.opaque,
                       child: Padding(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(AppTheme.spaceXS),
                         child: Container(
                           width: 36,
                           height: 36,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusOuter,
+                            ),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.82),
                               width: 1.2,
@@ -5452,7 +5442,7 @@ class _PageInputLockBadge extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
         color: bg,
         border: Border.all(color: _kGreen.withValues(alpha: 0.24)),
       ),
@@ -5479,9 +5469,9 @@ class _StepButton extends StatelessWidget {
         height: 28,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFF202020),
+          color: AppTheme.darkNested,
         ),
-        child: Icon(icon, size: 16, color: const Color(0xFF9B9B9B)),
+        child: Icon(icon, size: 16, color: AppTheme.textSecondary),
       ),
     );
   }
@@ -5558,19 +5548,19 @@ class _PageBoxState extends State<_PageBox> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: _kFont,
-            fontSize: 40,
+            fontSize: 40, // display 예외: 페이지 대형 수치(§3)
             color: widget.pageColor,
             fontWeight: FontWeight.w300,
           ),
           decoration: InputDecoration(
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
               borderSide: BorderSide(
                 color: widget.pageColor.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
               borderSide: BorderSide(color: widget.pageColor),
             ),
             contentPadding: EdgeInsets.zero,
@@ -5597,9 +5587,9 @@ class _PageBoxState extends State<_PageBox> {
         height: 60,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusOuter),
           border: Border.all(color: widget.borderColor),
-          color: const Color(0xFF171A17),
+          color: AppTheme.darkCard,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -5614,7 +5604,7 @@ class _PageBoxState extends State<_PageBox> {
                   maxLines: 1,
                   style: TextStyle(
                     fontFamily: _kFont,
-                    fontSize: 40,
+                    fontSize: 40, // display 예외: 페이지 대형 수치(§3)
                     color: widget.pageColor,
                     fontWeight: FontWeight.w300,
                   ),
@@ -5622,12 +5612,12 @@ class _PageBoxState extends State<_PageBox> {
               ),
             ),
             if (widget.totalPages > 0) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceSM),
               Text(
                 '/ ${widget.totalPages}',
                 style: TextStyle(
                   fontFamily: _kFont,
-                  fontSize: 16,
+                  fontSize: AppTheme.fsRowText,
                   color: Colors.white.withValues(alpha: 0.12),
                   fontWeight: FontWeight.w400,
                 ),
