@@ -265,6 +265,15 @@ class AppTheme {
   static const double touchTarget = 48.0;
   static const double iconMD = 20.0;
 
+  /// 라이브 포레스트 반딧불 크기. 내 반딧불은 화면 폭에 비례해 이전 중앙
+  /// 오브보다 조금 작게 시작하고, 독서 시간에 따라 기존 최대 크기까지 자란다.
+  static const double fireflyRadiusStageOne = 10.0;
+  static const double fireflyRadiusStageTwo = 14.0;
+  static const double fireflyRadiusStageThree = 18.0;
+  static const double fireflyRadiusStageFour = 22.0;
+  static const double selfFireflyBaseRadiusRatio = 0.12;
+  static const double selfFireflyMaxRadiusRatio = 0.14;
+
   /// 책 정보 화면 히어로 표지. 접힌 헤더 안에서 크기와 위치를 보간한다.
   static const Size bookInfoCoverExpandedSize = Size(168, 244);
   static const Size bookInfoCoverCollapsedSize = Size(28, 40);

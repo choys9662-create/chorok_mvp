@@ -54,15 +54,31 @@ typedef FireflyVisual = ({double radius, int layers, double pulseAmplitude});
 @visibleForTesting
 FireflyVisual fireflyVisualForElapsed(Duration elapsed) {
   if (elapsed < _fireflyStageOneEnd) {
-    return (radius: 10, layers: 1, pulseAmplitude: 0);
+    return (
+      radius: AppTheme.fireflyRadiusStageOne,
+      layers: 1,
+      pulseAmplitude: 0,
+    );
   }
   if (elapsed < _fireflyStageTwoEnd) {
-    return (radius: 14, layers: 2, pulseAmplitude: 0);
+    return (
+      radius: AppTheme.fireflyRadiusStageTwo,
+      layers: 2,
+      pulseAmplitude: 0,
+    );
   }
   if (elapsed < _fireflyStageThreeEnd) {
-    return (radius: 18, layers: 3, pulseAmplitude: 0.04);
+    return (
+      radius: AppTheme.fireflyRadiusStageThree,
+      layers: 3,
+      pulseAmplitude: 0.04,
+    );
   }
-  return (radius: 22, layers: 3, pulseAmplitude: 0.06);
+  return (
+    radius: AppTheme.fireflyRadiusStageFour,
+    layers: 3,
+    pulseAmplitude: 0.06,
+  );
 }
 
 /// 동시 접속자가 많을 때 겹침을 줄이는 숲 밀도 규칙.
@@ -183,8 +199,6 @@ class _SessionBookMeta {
 
 class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
-  late final AnimationController _pulseCtrl;
-  late final Animation<double> _pulseAnim;
   late final AnimationController _moveCtrl;
 
   UiVisibility _uiState = UiVisibility.hidden;
@@ -681,14 +695,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       ),
     );
 
-    _pulseCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(
-      begin: 0.88,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
     _moveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 120),
@@ -870,7 +876,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     WakelockPlus.disable();
     _brightnessIdleTimer?.cancel();
     ScreenBrightness().resetApplicationScreenBrightness().catchError((_) {});
-    _pulseCtrl.dispose();
     _moveCtrl.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
@@ -1100,6 +1105,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     // 함께 읽는 독자 CTA — 시트(_PeopleTab)·오브와 동일하게 '지금 읽는 맞팔' 수.
     // nearbyCount(전체 active, 본인 포함)를 더하면 시트 목록과 안 맞아서 제외.
     final readersCount = firefly?.mutualCount ?? 0;
+    final selfVisual = fireflyVisualForElapsed(
+      Duration(seconds: math.max(0, timer.seconds)),
+    );
 
     if (timer.goalReached && !_goalReachedNotified) {
       _goalReachedNotified = true;
@@ -1139,7 +1147,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
                 // ② 실제 독자 오브 + 중심 오브
                 AnimatedBuilder(
-                  animation: Listenable.merge([_pulseAnim, _moveCtrl]),
+                  animation: _moveCtrl,
                   builder: (_, _) => Stack(
                     fit: StackFit.expand,
                     children: [
@@ -1152,7 +1160,8 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                       ),
                       Center(
                         child: _GlowOrb(
-                          scale: _pulseAnim.value,
+                          visual: selfVisual,
+                          time: _moveCtrl.value,
                           isPaused: timer.isPaused,
                         ),
                       ),
@@ -1455,6 +1464,7 @@ class _SingleNamedOrb extends StatelessWidget {
   final int layers;
 
   const _SingleNamedOrb({
+    super.key,
     required this.radius,
     this.color = _kGreen,
     this.alpha = 1.0,
@@ -1544,62 +1554,41 @@ class _SessionBackground extends StatelessWidget {
   }
 }
 
-// ─── 나 — 중심 3단 링 오브 ────────────────────────────────────────────────
-// true circle CustomPainter 예외: Live Forest의 pulse와 3단 링을 유지한다.
+// ─── 나 — 중심 반딧불 ────────────────────────────────────────────────────
+// 주변 독자와 같은 링 위젯·성장 규칙을 사용하되, 위치만 화면 중앙에 고정한다.
 class _GlowOrb extends StatelessWidget {
-  final double scale;
+  final FireflyVisual visual;
+  final double time;
   final bool isPaused;
 
-  const _GlowOrb({required this.scale, required this.isPaused});
+  const _GlowOrb({
+    required this.visual,
+    required this.time,
+    required this.isPaused,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    final radius = screenW * 0.14;
-    final d = radius * 2;
-    final bright = isPaused ? _kGreen.withValues(alpha: 0.25) : _kGreen;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final baseRadius = screenWidth * AppTheme.selfFireflyBaseRadiusRatio;
+    final maxRadius = screenWidth * AppTheme.selfFireflyMaxRadiusRatio;
+    final growth = visual.radius - AppTheme.fireflyRadiusStageOne;
+    final radius = math.min(baseRadius + growth, maxRadius);
+    final pulseScale = isPaused
+        ? 1.0
+        : 1 + visual.pulseAmplitude * math.sin(time * 2 * math.pi);
 
     return Transform.scale(
-      scale: scale,
-      child: SizedBox(
-        width: d,
-        height: d,
-        child: CustomPaint(
-          painter: _CenterOrbPainter(radius: radius, bright: bright),
-        ),
+      scale: pulseScale,
+      child: _SingleNamedOrb(
+        key: const ValueKey('self-firefly'),
+        radius: radius,
+        color: _kGreen,
+        alpha: isPaused ? 0.25 : 1,
+        layers: visual.layers,
       ),
     );
   }
-}
-
-class _CenterOrbPainter extends CustomPainter {
-  final double radius;
-  final Color bright;
-
-  const _CenterOrbPainter({required this.radius, required this.bright});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = Offset(size.width / 2, size.height / 2);
-    // Layer 1 (외곽): 초록 토큰의 낮은 opacity
-    canvas.drawCircle(
-      c,
-      radius,
-      Paint()..color = AppTheme.primaryLight.withValues(alpha: 0.08),
-    );
-    // Layer 2 (중간): 초록 토큰의 중간 opacity
-    canvas.drawCircle(
-      c,
-      radius * 0.65,
-      Paint()..color = AppTheme.primaryLight.withValues(alpha: 0.20),
-    );
-    // Layer 3 (중심): 밝은 녹색
-    canvas.drawCircle(c, radius * 0.32, Paint()..color = bright);
-  }
-
-  @override
-  bool shouldRepaint(_CenterOrbPainter old) =>
-      old.bright != bright || old.radius != radius;
 }
 
 // ─── OCR 촬영 화면 ───────────────────────────────────────────────────────

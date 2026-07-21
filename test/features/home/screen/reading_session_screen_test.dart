@@ -161,22 +161,22 @@ Widget _buildScreen({
 void main() {
   test('반딧불이는 독서 시간에 따라 최대 3단까지 성장한다', () {
     expect(fireflyVisualForElapsed(Duration.zero), (
-      radius: 10,
+      radius: AppTheme.fireflyRadiusStageOne,
       layers: 1,
       pulseAmplitude: 0,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 10)), (
-      radius: 14,
+      radius: AppTheme.fireflyRadiusStageTwo,
       layers: 2,
       pulseAmplitude: 0,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 30)), (
-      radius: 18,
+      radius: AppTheme.fireflyRadiusStageThree,
       layers: 3,
       pulseAmplitude: 0.04,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 60)), (
-      radius: 22,
+      radius: AppTheme.fireflyRadiusStageFour,
       layers: 3,
       pulseAmplitude: 0.06,
     ));
@@ -211,6 +211,26 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     expect(presence.heartbeatCount, 1);
+  });
+
+  testWidgets('내 반딧불도 세션 시작 단계의 성장 규칙을 사용한다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump();
+
+    final expectedDiameter = 402 * AppTheme.selfFireflyBaseRadiusRatio * 2;
+    final size = tester.getSize(find.byKey(const ValueKey('self-firefly')));
+    expect(size.width, closeTo(expectedDiameter, 0.1));
+    expect(size.height, closeTo(expectedDiameter, 0.1));
   });
 
   testWidgets('앱 복귀 직후 presence heartbeat와 숲 갱신을 시작한다', (tester) async {
