@@ -41,7 +41,7 @@ void main() {
           libraryProvider.overrideWith(() => _FakeLibraryNotifier([book])),
         ],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           home: const BookDetailScreen(bookId: 'book-1'),
@@ -156,7 +156,7 @@ void main() {
           }),
         ],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           home: const BookDetailScreen(bookId: 'book-1'),
@@ -259,7 +259,7 @@ void main() {
           }),
         ],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           home: const BookDetailScreen(bookId: 'book-narrow'),

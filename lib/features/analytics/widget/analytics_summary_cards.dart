@@ -17,12 +17,9 @@ class SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ChorokCard(
       backgroundColor: context.appBg,
-      borderColor: isDark
-          ? context.appPrimaryAccent
-          : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45),
+      borderColor: context.appPrimaryAccent,
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

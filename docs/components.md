@@ -58,10 +58,10 @@ design.md가 **규칙과 값**(왜 이 색, 왜 이 간격)을 정한다면, 이
 | `MainScaffold` | 하단 네비 + center orb 뼈대 | — |
 | `ChorokBackButton` | 앱바 뒤로가기 | — |
 | `ChorokSnackbar` (함수) | 스낵바 | — |
-| `ChorokSliverRefreshControl` / `ChorokShimmer` | 당겨서 새로고침 · 로딩 shimmer. 고정 헤더는 scroll 밖에 두고, 새로고침 sliver는 그 아래 콘텐츠 scroll의 첫 항목으로 둔다 | `onRefresh` |
+| `ChorokSliverRefreshControl` / `ChorokShimmer` | 당겨서 새로고침 · 로딩 shimmer. 일반 고정 헤더는 scroll 밖에 두고 새로고침 sliver를 콘텐츠 첫 항목으로 둔다. 당김 확대가 있는 책 정보 히어로는 아래 예외 규칙을 따른다 | `onRefresh` |
 | `PageSliderCard` | 페이지 입력 슬라이더 (세션 전용) | — |
 
-책 정보 화면의 히어로 표지는 `AppTheme.bookInfoCoverExpandedSize`에서 `AppTheme.bookInfoCoverCollapsedSize`로 축소한다. 접힌 고정 헤더의 높이는 제목·저자 두 줄과 48pt 터치 영역에 맞춘다. 표지는 우상단, 제목·저자는 상단 중앙에 정렬한다.
+책 정보 화면의 히어로 표지는 `AppTheme.bookInfoCoverExpandedSize`에서 `AppTheme.bookInfoCoverCollapsedSize`로 축소한다. 접힌 고정 헤더의 높이는 제목·저자 두 줄과 48pt 터치 영역에 맞춘다. 표지는 우상단, 제목·저자는 상단 중앙에 정렬한다. 최상단에서 아래로 당기면 `bookInfoCoverPulledSize`까지 먼저 확대되고, 더 당기면 `ChorokSliverRefreshControl`이 새로고침한다.
 
 ## 화면 조립 규칙
 

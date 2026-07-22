@@ -18,7 +18,6 @@ class WeeklyStatusCard extends ConsumerWidget {
     final timer = ref.watch(timerProvider);
     final weeklyAsync = ref.watch(weeklyMinutesProvider);
     final dbWeekly = weeklyAsync.valueOrNull ?? List.filled(7, 0);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // 오늘 요일 (월=0)
     final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
@@ -49,9 +48,7 @@ class WeeklyStatusCard extends ConsumerWidget {
 
     return ChorokCard(
       backgroundColor: context.appBg,
-      borderColor: isDark
-          ? context.appPrimaryAccent
-          : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45),
+      borderColor: context.appPrimaryAccent,
       padding: const EdgeInsets.all(AppTheme.cardPaddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,13 +144,7 @@ class WeeklyStatusCard extends ConsumerWidget {
                                             end: Alignment.topCenter,
                                             colors: achieved
                                                 ? [
-                                                    isDark
-                                                        ? AppTheme.primary
-                                                        : context
-                                                              .appPrimaryAccent
-                                                              .withValues(
-                                                                alpha: 0.50,
-                                                              ),
+                                                    AppTheme.primary,
                                                     context.appPrimaryAccent,
                                                   ]
                                                 : [

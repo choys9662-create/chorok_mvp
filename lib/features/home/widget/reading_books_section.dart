@@ -143,7 +143,6 @@ class EmptyBooksState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: ChorokCard(
@@ -198,26 +197,20 @@ class EmptyBooksState extends StatelessWidget {
                     inner: true,
                     showBorder: false,
                     padding: EdgeInsets.zero,
-                    backgroundColor: isDark
-                        ? AppTheme.primary.withValues(alpha: 0.5)
-                        : AppTheme.lightPrimaryAccent,
+                    backgroundColor: AppTheme.primary.withValues(alpha: 0.5),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.search_rounded,
                           size: AppTheme.sectionTitle.fontSize,
-                          color: isDark
-                              ? context.appPrimaryAccent
-                              : Theme.of(context).colorScheme.onPrimary,
+                          color: context.appPrimaryAccent,
                         ),
                         const SizedBox(width: AppTheme.spaceSM),
                         Text(
                           '책 검색해서 추가하기',
                           style: AppTheme.supportingText.copyWith(
-                            color: isDark
-                                ? context.appPrimaryAccent
-                                : Theme.of(context).colorScheme.onPrimary,
+                            color: context.appPrimaryAccent,
                           ),
                         ),
                       ],

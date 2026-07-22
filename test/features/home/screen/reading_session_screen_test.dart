@@ -8,6 +8,7 @@ import 'package:chorok_app/core/services/db_service.dart';
 import 'package:chorok_app/core/theme/app_theme.dart';
 import 'package:chorok_app/features/home/controller/session_firefly_provider.dart';
 import 'package:chorok_app/features/home/screen/reading_session_screen.dart';
+import 'package:chorok_app/features/home/widget/session_fireflies.dart';
 import 'package:chorok_app/features/timer/controller/timer_controller.dart';
 import 'package:chorok_app/shared/models/reading_session.dart';
 import 'package:chorok_app/shared/models/user_profile.dart';
@@ -144,7 +145,7 @@ Widget _buildScreen({
       ...overrides,
     ],
     child: MaterialApp(
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       home: const ReadingSessionScreen(
@@ -161,22 +162,22 @@ Widget _buildScreen({
 void main() {
   test('반딧불이는 독서 시간에 따라 최대 3단까지 성장한다', () {
     expect(fireflyVisualForElapsed(Duration.zero), (
-      radius: AppTheme.fireflyRadiusStageOne,
-      layers: 1,
+      growthScale: 1.0,
+      layers: 2,
       pulseAmplitude: 0,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 10)), (
-      radius: AppTheme.fireflyRadiusStageTwo,
+      growthScale: 1.2,
       layers: 2,
       pulseAmplitude: 0,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 30)), (
-      radius: AppTheme.fireflyRadiusStageThree,
+      growthScale: 1.4,
       layers: 3,
       pulseAmplitude: 0.04,
     ));
     expect(fireflyVisualForElapsed(const Duration(minutes: 60)), (
-      radius: AppTheme.fireflyRadiusStageFour,
+      growthScale: 1.6,
       layers: 3,
       pulseAmplitude: 0.06,
     ));
@@ -227,7 +228,8 @@ void main() {
     );
     await tester.pump();
 
-    final expectedDiameter = 402 * AppTheme.selfFireflyBaseRadiusRatio * 2;
+    // 나 orb = 절대 base × 성장배율(시작 단계 1.0), 화면폭 무관.
+    final expectedDiameter = AppTheme.orbSelfBaseRadius * 1.0 * 2;
     final size = tester.getSize(find.byKey(const ValueKey('self-firefly')));
     expect(size.width, closeTo(expectedDiameter, 0.1));
     expect(size.height, closeTo(expectedDiameter, 0.1));

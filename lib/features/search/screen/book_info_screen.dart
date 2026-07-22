@@ -21,6 +21,7 @@ import '../../../shared/widgets/chorok_stat_box.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 import '../../../shared/widgets/chorok_snackbar.dart';
+import '../../../shared/widgets/chorok_refresh.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../feed/screen/sentence_detail_screen.dart';
 import '../model/aladin_book.dart';
@@ -547,6 +548,62 @@ class BookInfoScreen extends ConsumerStatefulWidget {
 }
 
 class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
+  final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<double> _pullExtent = ValueNotifier(0);
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updatePullExtent);
+  }
+
+  void _updatePullExtent() {
+    if (!_scrollController.hasClients) return;
+    final next = (-_scrollController.offset)
+        .clamp(0.0, AppTheme.bookInfoCoverStretchDistance)
+        .toDouble();
+    if ((_pullExtent.value - next).abs() < 0.5) return;
+    _pullExtent.value = next;
+  }
+
+  Future<void> _refresh({
+    required String isbn,
+    required Book? libraryBook,
+    required String? globalBookId,
+  }) async {
+    final futures = <Future<void>>[ref.read(libraryProvider.notifier).reload()];
+
+    if (isbn.isNotEmpty) {
+      ref.invalidate(_bookInfoCommunityProvider(isbn));
+      ref.invalidate(_bookStatsProvider(isbn));
+      futures.addAll([
+        ref.read(_bookInfoCommunityProvider(isbn).future),
+        ref.read(_bookStatsProvider(isbn).future),
+      ]);
+    }
+
+    final recordQuery = (
+      bookId: libraryBook?.id,
+      title: widget.book.title,
+      author: widget.book.author,
+      isbn: widget.book.isbn13,
+      globalBookId: globalBookId,
+    );
+    ref.invalidate(_myRecordCountsProvider(recordQuery));
+    futures.add(ref.read(_myRecordCountsProvider(recordQuery).future));
+
+    await Future.wait(futures);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_updatePullExtent)
+      ..dispose();
+    _pullExtent.dispose();
+    super.dispose();
+  }
+
   Future<void> _onAddTap() async {
     final lib = ref.read(libraryProvider);
     final book = widget.book;
@@ -649,16 +706,32 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     return Scaffold(
       backgroundColor: context.appBg,
       body: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         slivers: [
+          ChorokSliverRefreshControl(
+            onRefresh: () => _refresh(
+              isbn: isbn,
+              libraryBook: libraryBook,
+              globalBookId: globalBookId,
+            ),
+          ),
+
           // ── 히어로: 뒤로가기 + 표지 + 제목 + 저자 ─────────────────────
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _BookInfoHeroDelegate(
-              book: book,
-              gradientIndex: gradientIndex,
-              topPadding: topPad,
-              showBackButton: showBackButton,
-              titleHeight: heroTitleHeight,
+          ValueListenableBuilder<double>(
+            valueListenable: _pullExtent,
+            builder: (context, pullExtent, _) => SliverPersistentHeader(
+              pinned: true,
+              delegate: _BookInfoHeroDelegate(
+                book: book,
+                gradientIndex: gradientIndex,
+                topPadding: topPad,
+                showBackButton: showBackButton,
+                titleHeight: heroTitleHeight,
+                pullExtent: pullExtent,
+              ),
             ),
           ),
 
@@ -893,6 +966,7 @@ class _BookInfoHeroDelegate extends SliverPersistentHeaderDelegate {
   final double topPadding;
   final bool showBackButton;
   final double titleHeight;
+  final double pullExtent;
 
   const _BookInfoHeroDelegate({
     required this.book,
@@ -900,6 +974,7 @@ class _BookInfoHeroDelegate extends SliverPersistentHeaderDelegate {
     required this.topPadding,
     required this.showBackButton,
     required this.titleHeight,
+    required this.pullExtent,
   });
 
   double get _authorHeight => AppTheme.body.fontSize! * AppTheme.body.height!;
@@ -941,13 +1016,26 @@ class _BookInfoHeroDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final collapseProgress = _clamp01(shrinkOffset / (maxExtent - minExtent));
-    final coverWidth = _lerp(
+    final pullProgress = _clamp01(
+      pullExtent / AppTheme.bookInfoCoverStretchDistance,
+    );
+    final pulledCoverWidth = _lerp(
       _expandedCoverSize.width,
+      AppTheme.bookInfoCoverPulledSize.width,
+      pullProgress,
+    );
+    final pulledCoverHeight = _lerp(
+      _expandedCoverSize.height,
+      AppTheme.bookInfoCoverPulledSize.height,
+      pullProgress,
+    );
+    final coverWidth = _lerp(
+      pulledCoverWidth,
       _collapsedCoverSize.width,
       collapseProgress,
     );
     final coverHeight = _lerp(
-      _expandedCoverSize.height,
+      pulledCoverHeight,
       _collapsedCoverSize.height,
       collapseProgress,
     );
@@ -1124,7 +1212,8 @@ class _BookInfoHeroDelegate extends SliverPersistentHeaderDelegate {
         oldDelegate.gradientIndex != gradientIndex ||
         oldDelegate.topPadding != topPadding ||
         oldDelegate.showBackButton != showBackButton ||
-        oldDelegate.titleHeight != titleHeight;
+        oldDelegate.titleHeight != titleHeight ||
+        oldDelegate.pullExtent != pullExtent;
   }
 
   static double _clamp01(double value) => value.clamp(0.0, 1.0).toDouble();

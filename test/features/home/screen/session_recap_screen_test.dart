@@ -82,7 +82,7 @@ Widget _buildRecapScreen({
       libraryProvider.overrideWith(() => _FakeLibraryNotifier([book])),
     ],
     child: MaterialApp(
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       home: SessionRecapScreen(

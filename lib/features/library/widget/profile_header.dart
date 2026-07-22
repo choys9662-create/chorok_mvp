@@ -211,15 +211,15 @@ class _ProfileHeaderState extends ConsumerState<ProfileHeader> {
             ),
           ),
           _StatItem(
-            label: '팔로잉',
-            count: _following,
-            onTap: () => _showFollowList(context, isFollower: false),
-          ),
-          const SizedBox(width: AppTheme.space2XL),
-          _StatItem(
             label: '팔로워',
             count: _followers,
             onTap: () => _showFollowList(context, isFollower: true),
+          ),
+          const SizedBox(width: AppTheme.space2XL),
+          _StatItem(
+            label: '팔로잉',
+            count: _following,
+            onTap: () => _showFollowList(context, isFollower: false),
           ),
         ],
       ),

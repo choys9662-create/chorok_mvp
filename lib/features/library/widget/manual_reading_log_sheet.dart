@@ -162,7 +162,6 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
@@ -438,31 +437,25 @@ class _ManualReadingLogSheetState extends ConsumerState<ManualReadingLogSheet> {
                     onPressed: _isSaving ? null : () => _save(context),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.primary,
-                      foregroundColor: isDark
-                          ? AppTheme.primaryLight
-                          : AppTheme.lightSurface,
+                      foregroundColor: AppTheme.primaryLight,
                       disabledBackgroundColor: AppTheme.primary.withValues(
                         alpha: 0.5,
                       ),
                       shape: AppTheme.smoothShape(radius: AppTheme.radiusMD),
                     ),
                     child: _isSaving
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: isDark
-                                  ? AppTheme.primaryLight
-                                  : AppTheme.lightSurface,
+                              color: AppTheme.primaryLight,
                             ),
                           )
                         : Text(
                             '기록 추가하기',
                             style: AppTheme.bodyLarge.copyWith(
-                              color: isDark
-                                  ? AppTheme.primaryLight
-                                  : AppTheme.lightSurface,
+                              color: AppTheme.primaryLight,
                             ),
                           ),
                   ),

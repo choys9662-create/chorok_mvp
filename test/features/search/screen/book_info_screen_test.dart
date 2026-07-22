@@ -14,11 +14,15 @@ import 'package:go_router/go_router.dart';
 
 class _FakeLibraryNotifier extends LibraryNotifier {
   final List<Book> _books;
+  final VoidCallback? onReload;
 
-  _FakeLibraryNotifier(this._books);
+  _FakeLibraryNotifier(this._books, {this.onReload});
 
   @override
   List<Book> build() => _books;
+
+  @override
+  Future<void> reload() async => onReload?.call();
 }
 
 class _PendingDbService extends DbService {
@@ -130,6 +134,64 @@ void main() {
           .dx,
       closeTo(viewportWidth / 2, 0.01),
     );
+  });
+
+  testWidgets('아래로 당기면 표지가 커지고 더 당기면 새로고침한다', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var refreshCount = 0;
+    const book = AladinBook(
+      title: '린 고객 개발',
+      author: '신디 앨버레즈',
+      publisher: '한빛미디어',
+    );
+    const libraryBook = Book(
+      id: 'lean-customer-development',
+      title: '린 고객 개발',
+      author: '신디 앨버레즈',
+      status: ReadingStatus.reading,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          libraryProvider.overrideWith(
+            () => _FakeLibraryNotifier([
+              libraryBook,
+            ], onReload: () => refreshCount++),
+          ),
+          dbServiceProvider.overrideWithValue(_PendingDbService()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.dark,
+          home: const BookInfoScreen(book: book),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final scrollView = find.byType(CustomScrollView);
+    final cover = find.byKey(const ValueKey('book-info-cover'));
+    final initialSize = tester.getSize(cover);
+    final gesture = await tester.startGesture(tester.getCenter(scrollView));
+
+    await gesture.moveBy(const Offset(0, 60));
+    await tester.pump();
+
+    final pulledSize = tester.getSize(cover);
+    expect(pulledSize.width, greaterThan(initialSize.width));
+    expect(pulledSize.height, greaterThan(initialSize.height));
+
+    await gesture.moveBy(const Offset(0, 240));
+    await tester.pump();
+    expect(tester.getSize(cover), AppTheme.bookInfoCoverPulledSize);
+
+    await gesture.up();
+    await tester.pump();
+    expect(refreshCount, 1);
   });
 
   testWidgets('나의 문장 카드는 overflow 없이 표시된다', (tester) async {

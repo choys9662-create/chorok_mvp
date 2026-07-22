@@ -23,7 +23,7 @@ void main() {
           readingLogsProvider.overrideWith((ref) async => const []),
         ],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           home: const ReadingHistoryScreen(),

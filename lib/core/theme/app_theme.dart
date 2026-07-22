@@ -1,80 +1,49 @@
 import 'package:smooth_corner/smooth_corner.dart';
 import 'package:flutter/material.dart';
 
-// ─── 테마 컨텍스트 확장 — 다크/라이트 자동 분기 ────────────────────────────
+// ─── 테마 컨텍스트 확장 ─────────────────────────────────────────────
+// 라이트 테마 색상은 추후 확정 예정 — 현재는 다크 고정(ThemeMode.dark).
 extension AppThemeExt on BuildContext {
-  bool get _isDark => Theme.of(this).brightness == Brightness.dark;
-  Color get appBg => _isDark ? AppTheme.darkBg : AppTheme.lightBg;
-  Color get appSurface =>
-      _isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
-  Color get appCard => _isDark ? AppTheme.darkCard : AppTheme.lightCard;
-  Color get appCardElevated =>
-      _isDark ? AppTheme.darkCardElevated : AppTheme.lightCardElevated;
-  Color get appBorder =>
-      _isDark ? AppTheme.darkBorder : AppTheme.lightBorderColor;
-  Color get appDivider =>
-      _isDark ? AppTheme.darkDivider : AppTheme.lightDivider;
-  Color get appTextPrimary =>
-      _isDark ? AppTheme.textPrimary : AppTheme.lightTextPrimary;
-  Color get appTextSecondary =>
-      _isDark ? AppTheme.textSecondary : AppTheme.lightTextSecondary;
-  Color get appTextTertiary =>
-      _isDark ? AppTheme.textTertiary : AppTheme.lightTextTertiary;
+  Color get appBg => AppTheme.darkBg;
+  Color get appSurface => AppTheme.darkSurface;
+  Color get appCard => AppTheme.darkCard;
+  Color get appCardElevated => AppTheme.darkCardElevated;
+  Color get appBorder => AppTheme.darkBorder;
+  Color get appDivider => AppTheme.darkDivider;
+  Color get appTextPrimary => AppTheme.textPrimary;
+  Color get appTextSecondary => AppTheme.textSecondary;
+  Color get appTextTertiary => AppTheme.textTertiary;
 
-  // 브랜드 초록 — 다크: 라이브 포레스트 네온, 라이트: 같은 hue를 낮춘 포레스트 라임
-  Color get appPrimaryAccent =>
-      _isDark ? AppTheme.primaryLight : AppTheme.lightPrimaryAccent;
-  // accent 계열 — 다크: 메인 그린, 라이트: lightPrimaryAccent와 동일 톤
-  Color get appAccentColor =>
-      _isDark ? AppTheme.accent : AppTheme.lightPrimaryAccent;
+  Color get appPrimaryAccent => AppTheme.primaryLight;
+  Color get appAccentColor => AppTheme.accent;
 
   // 진행 바 트랙 색상 (비어 있는 구간 배경)
-  Color get appProgressTrack =>
-      _isDark ? AppTheme.darkCardElevated : const Color(0xFFD7E4D0);
+  Color get appProgressTrack => AppTheme.darkCardElevated;
 
-  // 비활성 액션 버튼 fill (다크: #222422 / 라이트: #EAEEF2)
-  Color get appActionBg =>
-      _isDark ? AppTheme.darkActionBg : AppTheme.lightActionBg;
+  // 비활성 액션 버튼 fill
+  Color get appActionBg => AppTheme.darkActionBg;
 
-  // 비활성 컨트롤 테두리 (다크: #222422 / 라이트: #191F28 10%)
-  Color get appBorderSubtle => _isDark
-      ? AppTheme.darkBorder
-      : const Color(0xFF191F28).withValues(alpha: 0.12);
+  // 비활성 컨트롤 테두리
+  Color get appBorderSubtle => AppTheme.darkBorder;
 
-  // 활성 버튼 배경 fill (다크: 네온그린 15% / 라이트: 포레스트 라임 12%)
-  Color get appActiveFill => _isDark
-      ? AppTheme.primaryLight.withValues(alpha: 0.15)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.12);
+  // 활성 버튼 배경 fill (네온그린 15%)
+  Color get appActiveFill => AppTheme.primaryLight.withValues(alpha: 0.15);
 
-  // pill 활성 보더 (다크: 네온그린 45% / 라이트: 포레스트 라임 45%)
-  Color get appPillBorderActive => _isDark
-      ? AppTheme.primaryLight.withValues(alpha: 0.45)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.45);
+  // pill 활성 보더 (네온그린 45%)
+  Color get appPillBorderActive =>
+      AppTheme.primaryLight.withValues(alpha: 0.45);
 
-  // pill 뮤트 보더 — 일시정지 상태 (다크: 네온그린 25% / 라이트: 포레스트 라임 24%)
-  Color get appPillBorderMuted => _isDark
-      ? AppTheme.primaryLight.withValues(alpha: 0.25)
-      : AppTheme.lightPrimaryAccent.withValues(alpha: 0.24);
+  // pill 뮤트 보더 — 일시정지 상태 (네온그린 25%)
+  Color get appPillBorderMuted => AppTheme.primaryLight.withValues(alpha: 0.25);
 
-  // 카드 내 컨트롤(칩·입력) 배경 — 다크: nested 카드(#222422), 라이트: 배경색 recessed(#F2F4F6)
-  Color get appControlBg =>
-      _isDark ? AppTheme.darkCardElevated : AppTheme.lightBg;
+  // 카드 내 컨트롤(칩·입력) 배경
+  Color get appControlBg => AppTheme.darkCardElevated;
 
-  // 읽기 관련 배경 틴트 — 라이트 모드는 흰 카드 위에서도 보이도록 1.5배 보상
-  Color primaryBg(double alpha) => _isDark
-      ? AppTheme.primaryLight.withValues(alpha: alpha)
-      : AppTheme.lightPrimaryAccent.withValues(
-          alpha: (alpha * 1.5).clamp(0, 1),
-        );
+  Color primaryBg(double alpha) =>
+      AppTheme.primaryLight.withValues(alpha: alpha);
 
   // 읽기 관련 진행 그라디언트 — 라이브 포레스트 키 컬러 기반
-  Gradient get appReadingGradient => _isDark
-      ? AppTheme.greenGradient
-      : const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [AppTheme.lightPrimaryAccent, AppTheme.accent],
-        );
+  Gradient get appReadingGradient => AppTheme.greenGradient;
 }
 
 /// 초록 앱 테마 정의
@@ -145,34 +114,12 @@ class AppTheme {
   static const Color darkPrimaryContainer = darkNested;
   static const Color primaryPaused = Color(0x408DFF54); // 메인 그린 25% opacity
 
-  // ─── 라이트 배경 (Toss 스타일 — DESIGN.md §1) ────────────────────
-  static const Color lightBg = Color(0xFFEEF3EC);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFFFFFFF);
-  static const Color lightCardElevated = Color(0xFFF7FAF5);
-  static const Color lightActionBg = Color(0xFFEAEEF2); // 비활성 액션 버튼 fill (라이트)
-  static const Color lightPrimaryContainer = Color(0xFFE7F4DE);
   static const Color receiptBg = Color(0xFFF9F7F1); // 공유 카드/영수증 배경 (모드 무관)
 
-  // ─── 다크 텍스트 색상 토큰 ──────────────────────────────────────
+  // ─── 텍스트 색상 토큰 ──────────────────────────────────────────
   static const Color textPrimary = Color(0xFFF1FFF2);
   static const Color textSecondary = Color(0xFF7B847C);
   static const Color textTertiary = Color(0xFF7B847C);
-
-  // ─── 라이트 텍스트 색상 토큰 ─────────────────────────────────────
-  static const Color lightTextPrimary = Color(0xFF1A1A1A);
-  static const Color lightTextSecondary = Color(0xFF3F4D38);
-  static const Color lightTextTertiary = Color(0xFF5F6D5A);
-  static const Color lightBorderColor = Color(0xFFC5D8BD);
-  static const Color lightDivider = Color(0xFFD8E7D2);
-
-  // 라이트 모드 전용 브랜드 초록 — #8DFF54/#6DE034와 같은 라임 hue를 접근성 대비까지 낮춘 값
-  static const Color lightPrimaryAccent = Color(0xFF347A12);
-
-  // 라이트 모드 카드 그림자
-  static const List<BoxShadow> lightCardShadows = [
-    BoxShadow(blurRadius: 18, offset: Offset(0, 8), color: Color(0x14000000)),
-  ];
 
   // ─── Smooth Corner — 바깥 10 / 중첩 6, smoothing 0.6 ──────────────
   //   기존 토큰명은 호환을 위해 유지한다.
@@ -267,16 +214,19 @@ class AppTheme {
 
   /// 라이브 포레스트 반딧불 크기. 내 반딧불은 화면 폭에 비례해 이전 중앙
   /// 오브보다 조금 작게 시작하고, 독서 시간에 따라 기존 최대 크기까지 자란다.
-  static const double fireflyRadiusStageOne = 10.0;
-  static const double fireflyRadiusStageTwo = 14.0;
-  static const double fireflyRadiusStageThree = 18.0;
-  static const double fireflyRadiusStageFour = 22.0;
-  static const double selfFireflyBaseRadiusRatio = 0.12;
-  static const double selfFireflyMaxRadiusRatio = 0.14;
+  /// 중앙 '나' orb만 절대값(성장 전 기본 반경, px). 나머지는 전부 이 값의 비례.
+  static const double orbSelfBaseRadius = 24.0;
+
+  /// 나 대비 비율. 친구 = 나의 75%, 이웃(익명) = 나의 60%.
+  /// 친구는 여기에 독서시간 성장배율(growthScale)이 더 곱해지고, 이웃은 성장 없음.
+  static const double orbFriendRatio = 0.75;
+  static const double orbNeighborRatio = 0.60;
 
   /// 책 정보 화면 히어로 표지. 접힌 헤더 안에서 크기와 위치를 보간한다.
   static const Size bookInfoCoverExpandedSize = Size(168, 244);
+  static const Size bookInfoCoverPulledSize = Size(184, 268);
   static const Size bookInfoCoverCollapsedSize = Size(28, 40);
+  static const double bookInfoCoverStretchDistance = 72;
 
   // ─── 타이포그래피 토큰 ───────────────────────────────────────────
   // 일반 타입 스케일은 30 / 18 / 16 / 14 / 12 / 10의 여섯 단계다.
@@ -454,112 +404,6 @@ class AppTheme {
       color: darkDivider,
       thickness: 1,
       space: 1,
-    ),
-  );
-
-  // ─── 라이트 테마 ─────────────────────────────────────────────────
-  static ThemeData get light => ThemeData(
-    fontFamily: fontFamily,
-    useMaterial3: true,
-    brightness: Brightness.light,
-    colorScheme: const ColorScheme(
-      brightness: Brightness.light,
-      primary: lightPrimaryAccent,
-      onPrimary: Colors.white,
-      primaryContainer: lightPrimaryContainer,
-      onPrimaryContainer: Color(0xFF1B5E20),
-      secondary: lightPrimaryAccent,
-      onSecondary: Colors.white,
-      tertiary: lightPrimaryAccent,
-      onTertiary: Colors.white,
-      error: Color(0xFFB00020),
-      onError: Colors.white,
-      surface: lightSurface,
-      onSurface: lightTextPrimary,
-      surfaceContainerHighest: lightCard,
-      outline: lightBorderColor,
-    ),
-    scaffoldBackgroundColor: lightBg,
-    cardTheme: CardThemeData(
-      color: lightSurface,
-      elevation: 0,
-      shape: smoothShape(
-        radius: radiusOuter,
-        side: const BorderSide(color: lightBorderColor, width: 1),
-      ),
-    ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: lightSurface,
-      indicatorColor: Colors.transparent,
-      height: 60,
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return labelStyle.copyWith(color: lightPrimaryAccent);
-        }
-        return captionSmall.copyWith(color: lightTextTertiary);
-      }),
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: lightPrimaryAccent);
-        }
-        return const IconThemeData(color: lightTextTertiary);
-      }),
-      elevation: 0,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: lightBg,
-      foregroundColor: lightTextPrimary,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      titleTextStyle: TextStyle(
-        fontFamily: fontFamily,
-        fontSize: 24,
-        fontWeight: FontWeight.w400,
-        color: lightTextPrimary,
-      ),
-    ),
-    dividerColor: lightDivider,
-    dividerTheme: const DividerThemeData(
-      color: lightDivider,
-      thickness: 1,
-      space: 1,
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: lightSurface,
-      hintStyle: captionLarge.copyWith(color: lightTextTertiary),
-      labelStyle: captionLarge.copyWith(color: lightTextSecondary),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMD),
-        borderSide: const BorderSide(color: lightBorderColor),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMD),
-        borderSide: const BorderSide(color: lightBorderColor),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMD),
-        borderSide: const BorderSide(color: lightPrimaryAccent, width: 1.4),
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: lightPrimaryAccent,
-        foregroundColor: Colors.white,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
-        shape: smoothShape(radius: radiusMD),
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: lightPrimaryAccent,
-        textStyle: captionLarge.copyWith(fontWeight: FontWeight.w400),
-      ),
-    ),
-    chipTheme: ChipThemeData(
-      backgroundColor: lightCard,
-      labelStyle: captionLarge.copyWith(color: lightTextSecondary),
-      shape: smoothShape(radius: radiusMD),
     ),
   );
 }

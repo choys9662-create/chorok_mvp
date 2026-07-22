@@ -30,7 +30,7 @@ Widget _wrap(Widget child, {List<Override> overrides = const []}) {
   return ProviderScope(
     overrides: overrides,
     child: MaterialApp(
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       home: Scaffold(body: child),
@@ -174,7 +174,7 @@ void main() {
           ),
         ],
         child: MaterialApp.router(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           routerConfig: router,

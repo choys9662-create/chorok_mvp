@@ -79,7 +79,7 @@ void main() {
       ProviderScope(
         overrides: [libraryProvider.overrideWith(_FakeLibraryNotifier.new)],
         child: MaterialApp(
-          theme: AppTheme.light,
+          theme: AppTheme.dark,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.dark,
           home: const TasteAnalysisScreen(),

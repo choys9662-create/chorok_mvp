@@ -124,9 +124,7 @@ class ChorokApp extends ConsumerWidget {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            systemNavigationBarColor: isDark
-                ? AppTheme.darkSurface
-                : AppTheme.lightSurface,
+            systemNavigationBarColor: AppTheme.darkSurface,
             statusBarIconBrightness: isDark
                 ? Brightness.light
                 : Brightness.dark,

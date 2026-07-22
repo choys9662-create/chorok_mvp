@@ -387,9 +387,7 @@ class _BookDetailSheetState extends ConsumerState<BookDetailSheet> {
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.primary,
-                    foregroundColor: isDark
-                        ? AppTheme.primaryLight
-                        : AppTheme.lightSurface,
+                    foregroundColor: AppTheme.primaryLight,
                     padding: const EdgeInsets.symmetric(
                       vertical: AppTheme.spaceMD,
                     ),

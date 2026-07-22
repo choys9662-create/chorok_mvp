@@ -23,7 +23,6 @@ class TodayGoalBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = todayMinutes >= goalMinutes;
     final progress = (todayMinutes / goalMinutes).clamp(0.0, 1.0);
 
@@ -81,15 +80,11 @@ class TodayGoalBanner extends StatelessWidget {
                 horizontal: AppTheme.spaceSM,
                 vertical: AppTheme.spaceXS,
               ),
-              backgroundColor: isDark
-                  ? AppTheme.primary.withValues(alpha: 0.5)
-                  : AppTheme.lightPrimaryAccent,
+              backgroundColor: AppTheme.primary.withValues(alpha: 0.5),
               child: Text(
                 '완료',
                 style: AppTheme.caption.copyWith(
-                  color: isDark
-                      ? AppTheme.primaryLight
-                      : Theme.of(context).colorScheme.onPrimary,
+                  color: AppTheme.primaryLight,
                 ),
               ),
             ),

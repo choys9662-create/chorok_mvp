@@ -2146,8 +2146,6 @@ class _LibraryTabState extends State<_LibraryTab> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     // books 1회 순회: 상태별 카운트 합산
     final statusCounts = <ReadingStatus, int>{
       for (final s in ReadingStatus.values) s: 0,
@@ -2223,9 +2221,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                             Icons.sort_rounded,
                             size: 16,
                             color: _sortOption != _SortOption.recent
-                                ? (isDark
-                                      ? AppTheme.primaryLight
-                                      : AppTheme.lightPrimaryAccent)
+                                ? AppTheme.primaryLight
                                 : context.appTextTertiary,
                           ),
                         ),
@@ -2312,9 +2308,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                 _statusIcon(status),
                                 size: 14,
                                 color: isSelected
-                                    ? (isDark
-                                          ? context.appTextPrimary
-                                          : AppTheme.lightSurface)
+                                    ? context.appTextPrimary
                                     : context.appTextTertiary,
                               ),
                               const SizedBox(width: AppTheme.spaceXS),
@@ -2322,9 +2316,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                 '${status.label} $count',
                                 style: AppTheme.caption.copyWith(
                                   color: isSelected
-                                      ? (isDark
-                                            ? context.appTextPrimary
-                                            : AppTheme.lightSurface)
+                                      ? context.appTextPrimary
                                       : context.appTextTertiary,
                                 ),
                               ),
@@ -2540,7 +2532,6 @@ class _BookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCompleted = book.status == ReadingStatus.completed;
     return GestureDetector(
       onTap: () {
@@ -2706,17 +2697,15 @@ class _BookCard extends StatelessWidget {
                             child: ChorokCard(
                               inner: true,
                               showBorder: false,
-                              backgroundColor: isDark
-                                  ? AppTheme.primary.withValues(alpha: 0.5)
-                                  : AppTheme.lightPrimaryAccent,
+                              backgroundColor: AppTheme.primary.withValues(
+                                alpha: 0.5,
+                              ),
                               padding: EdgeInsets.zero,
                               child: Center(
                                 child: Text(
                                   '이어 읽기  ${(book.readingProgress * 100).toInt()}%',
                                   style: AppTheme.rowText.copyWith(
-                                    color: isDark
-                                        ? AppTheme.primaryLight
-                                        : AppTheme.lightSurface,
+                                    color: AppTheme.primaryLight,
                                   ),
                                 ),
                               ),
@@ -2823,7 +2812,6 @@ class _BookListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isReading = book.status == ReadingStatus.reading;
     final isCompleted = book.status == ReadingStatus.completed;
 
@@ -2997,16 +2985,14 @@ class _BookListTile extends StatelessWidget {
                       child: ChorokCard(
                         inner: true,
                         showBorder: false,
-                        backgroundColor: isDark
-                            ? AppTheme.primary.withValues(alpha: 0.5)
-                            : AppTheme.lightPrimaryAccent,
+                        backgroundColor: AppTheme.primary.withValues(
+                          alpha: 0.5,
+                        ),
                         padding: EdgeInsets.zero,
-                        child: Icon(
+                        child: const Icon(
                           Icons.play_arrow_rounded,
                           size: 18,
-                          color: isDark
-                              ? AppTheme.primaryLight
-                              : AppTheme.lightSurface,
+                          color: AppTheme.primaryLight,
                         ),
                       ),
                     ),
@@ -3030,7 +3016,6 @@ class _SortSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(
         bottom: AppTheme.spaceXL + AppTheme.spaceLG,
@@ -3081,12 +3066,10 @@ class _SortSheet extends StatelessWidget {
                                   ),
                                 ),
                                 if (opt == current)
-                                  Icon(
+                                  const Icon(
                                     Icons.check_rounded,
                                     size: 18,
-                                    color: isDark
-                                        ? AppTheme.primaryLight
-                                        : AppTheme.lightPrimaryAccent,
+                                    color: AppTheme.primaryLight,
                                   ),
                               ],
                             ),

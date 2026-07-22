@@ -206,9 +206,9 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                       height: 34,
                       alignment: Alignment.center,
                       decoration: AppTheme.smoothPill(
-                        color: isDark
-                            ? context.appPrimaryAccent.withValues(alpha: 0.15)
-                            : AppTheme.lightPrimaryAccent,
+                        color: context.appPrimaryAccent.withValues(
+                          alpha: 0.15,
+                        ),
                         side: BorderSide.none,
                       ),
                       child: Row(
@@ -217,17 +217,13 @@ class WishlistBookCardState extends State<WishlistBookCard> {
                           Icon(
                             Icons.play_arrow_rounded,
                             size: 14,
-                            color: isDark
-                                ? context.appPrimaryAccent
-                                : Colors.white,
+                            color: context.appPrimaryAccent,
                           ),
                           const SizedBox(width: AppTheme.spaceXS),
                           Text(
                             '읽기',
                             style: AppTheme.captionLarge.copyWith(
-                              color: isDark
-                                  ? context.appPrimaryAccent
-                                  : Colors.white,
+                              color: context.appPrimaryAccent,
                               fontWeight: FontWeight.w400,
                             ),
                           ),

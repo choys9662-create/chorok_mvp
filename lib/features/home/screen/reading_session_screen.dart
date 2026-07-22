@@ -34,6 +34,7 @@ import '../controller/session_firefly_provider.dart';
 import '../widget/chosu_sheet.dart';
 import '../widget/home_helpers.dart';
 import '../widget/sentence_organizer_sheet.dart';
+import '../widget/session_fireflies.dart';
 import 'ocr_capture_crop.dart';
 import 'ocr_web_camera_stub.dart'
     if (dart.library.js_interop) 'ocr_web_camera_web.dart';
@@ -43,51 +44,6 @@ import 'session_recap_screen.dart';
 const _kGreen = AppTheme.primaryLight;
 const _kFont = AppTheme.fontFamily;
 const _captureTimeout = Duration(seconds: 8);
-
-const _fireflyStageOneEnd = Duration(minutes: 10);
-const _fireflyStageTwoEnd = Duration(minutes: 30);
-const _fireflyStageThreeEnd = Duration(minutes: 60);
-
-typedef FireflyVisual = ({double radius, int layers, double pulseAmplitude});
-
-/// 현재 라이브 세션의 연속 독서 시간에 따른 반딧불이 성장 규칙.
-@visibleForTesting
-FireflyVisual fireflyVisualForElapsed(Duration elapsed) {
-  if (elapsed < _fireflyStageOneEnd) {
-    return (
-      radius: AppTheme.fireflyRadiusStageOne,
-      layers: 1,
-      pulseAmplitude: 0,
-    );
-  }
-  if (elapsed < _fireflyStageTwoEnd) {
-    return (
-      radius: AppTheme.fireflyRadiusStageTwo,
-      layers: 2,
-      pulseAmplitude: 0,
-    );
-  }
-  if (elapsed < _fireflyStageThreeEnd) {
-    return (
-      radius: AppTheme.fireflyRadiusStageThree,
-      layers: 3,
-      pulseAmplitude: 0.04,
-    );
-  }
-  return (
-    radius: AppTheme.fireflyRadiusStageFour,
-    layers: 3,
-    pulseAmplitude: 0.06,
-  );
-}
-
-/// 동시 접속자가 많을 때 겹침을 줄이는 숲 밀도 규칙.
-@visibleForTesting
-double fireflyDensityScale(int activeReaderCount) {
-  if (activeReaderCount <= 5) return 1;
-  if (activeReaderCount <= 10) return 0.9;
-  return 0.8;
-}
 
 /// 독서 세션 화면
 class ReadingSessionScreen extends ConsumerStatefulWidget {
@@ -697,7 +653,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     _moveCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 120),
+      duration: const Duration(seconds: 240),
     )..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1151,7 +1107,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                   builder: (_, _) => Stack(
                     fit: StackFit.expand,
                     children: [
-                      _NamedReaderOrbs(
+                      NamedReaderOrbs(
                         mutuals: mutuals,
                         presences: readerPresences,
                         neighborCount: neighborCount,
@@ -1159,7 +1115,7 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
                         showNames: _uiState == UiVisibility.social,
                       ),
                       Center(
-                        child: _GlowOrb(
+                        child: GlowOrb(
                           visual: selfVisual,
                           time: _moveCtrl.value,
                           isPaused: timer.isPaused,
@@ -1302,239 +1258,6 @@ class _PillTimerOnly extends StatelessWidget {
 
 // ─── 함께 읽는 독자 CTA ────────────────────────────────────────────────────
 
-// ─── 이름 있는 독자 오브 레이어 ──────────────────────────────────────────
-// 캔버스 기반 오브/반딧불 렌더링은 세션의 몰입 레이어이므로 카드 규칙 적용 예외다.
-class _NamedReaderOrbs extends StatelessWidget {
-  final List<UserProfile> mutuals;
-  final Map<String, ReadingPresenceInfo> presences;
-  final int neighborCount;
-  final double time;
-  final bool showNames;
-
-  const _NamedReaderOrbs({
-    required this.mutuals,
-    required this.presences,
-    required this.neighborCount,
-    required this.time,
-    this.showNames = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (mutuals.isEmpty && neighborCount == 0) return const SizedBox.shrink();
-    final size = MediaQuery.of(context).size;
-    final tp = time * 2 * math.pi;
-
-    final widgets = <Widget>[];
-    final densityScale = fireflyDensityScale(mutuals.length);
-    final neighborLimit = math.min(neighborCount, 12);
-    for (int i = 0; i < neighborLimit; i++) {
-      _addOrb(
-        widgets: widgets,
-        size: size,
-        tp: tp,
-        seed: Object.hash('neighbor', i).abs(),
-        radiusBase: 4.0,
-        radiusRange: 8.0,
-        layers: 1,
-        label: '이웃',
-        labelColor: context.appTextSecondary.withValues(alpha: 0.62),
-        orbColor: context.appTextSecondary,
-        orbAlpha: 0.35,
-      );
-    }
-
-    for (int i = 0; i < math.min(mutuals.length, 12); i++) {
-      final user = mutuals[i];
-      final startedAt = presences[user.id]?.startedAt;
-      final elapsed = startedAt == null
-          ? Duration.zero
-          : DateTime.now().difference(startedAt);
-      final visual = fireflyVisualForElapsed(
-        elapsed.isNegative ? Duration.zero : elapsed,
-      );
-      _addOrb(
-        widgets: widgets,
-        size: size,
-        tp: tp,
-        seed: user.username.hashCode.abs(),
-        radiusBase: visual.radius,
-        radiusRange: 0,
-        layers: visual.layers,
-        pulseAmplitude: visual.pulseAmplitude,
-        sizeScale: densityScale,
-        label: user.displayName,
-        labelColor: _kGreen.withValues(alpha: 0.90),
-        orbColor: _kGreen,
-        orbAlpha: 1.0,
-      );
-    }
-
-    return Stack(fit: StackFit.expand, children: widgets);
-  }
-
-  void _addOrb({
-    required List<Widget> widgets,
-    required Size size,
-    required double tp,
-    required int seed,
-    required double radiusBase,
-    required double radiusRange,
-    int layers = 3,
-    double pulseAmplitude = 0,
-    double sizeScale = 1,
-    required String label,
-    required Color labelColor,
-    required Color orbColor,
-    required double orbAlpha,
-  }) {
-    final rng = math.Random(seed);
-
-    final pulsePhase = (seed % 360) * math.pi / 180;
-    final pulseScale = 1 + pulseAmplitude * math.sin(tp + pulsePhase);
-    final orbR =
-        (radiusBase + rng.nextDouble() * radiusRange) * sizeScale * pulseScale;
-
-    // 서로 다른 정수 주파수 사인의 합 → 궤도처럼 안 보이고 무작위하게 떠돈다.
-    // 정수 주파수라 40초 루프 이음새(1→0)에서 위치가 안 튄다.
-    // span: 가장자리 여백만 남기고(위 타이머·아래 CTA 침범 방지) 전 영역을 훑는다.
-    double wander(int axisSalt, double span) {
-      final r = math.Random(seed ^ axisSalt);
-      double sum = 0, ampTotal = 0;
-      for (int h = 0; h < 3; h++) {
-        final freq = 1 + r.nextInt(4); // 1~4
-        final amp = 1.0 / (h + 1); // 1, 0.5, 0.33 — 저주파가 큰 흐름을 만든다
-        final ph = r.nextDouble() * 2 * math.pi;
-        sum += amp * math.sin(tp * freq + ph);
-        ampTotal += amp;
-      }
-      return 0.5 + span * (sum / ampTotal);
-    }
-
-    final nx = wander(0x9e3779b9, 0.45);
-    final ny = wander(0x85ebca6b, 0.40);
-    final cx = nx * size.width;
-    final cy = ny * size.height;
-
-    final top = (cy - orbR).clamp(0.0, size.height - orbR * 2);
-    final left = cx - orbR;
-
-    widgets.add(
-      Positioned(
-        left: left,
-        top: top,
-        child: _SingleNamedOrb(
-          radius: orbR,
-          color: orbColor,
-          alpha: orbAlpha,
-          layers: layers,
-        ),
-      ),
-    );
-
-    widgets.add(
-      Positioned(
-        left: cx - 36,
-        top: top + orbR * 2 + 5,
-        width: 72,
-        child: AnimatedOpacity(
-          opacity: showNames ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.supportingText.copyWith(
-              color: labelColor,
-              letterSpacing: 0,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SingleNamedOrb extends StatelessWidget {
-  final double radius;
-  final Color color;
-  final double alpha;
-  final int layers;
-
-  const _SingleNamedOrb({
-    super.key,
-    required this.radius,
-    this.color = _kGreen,
-    this.alpha = 1.0,
-    this.layers = 3,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final d = radius * 2;
-    return SizedBox(
-      width: d,
-      height: d,
-      child: CustomPaint(
-        painter: _OrbRingPainter(
-          radius: radius,
-          color: color,
-          alpha: alpha,
-          layers: layers,
-        ),
-      ),
-    );
-  }
-}
-
-class _OrbRingPainter extends CustomPainter {
-  final double radius;
-  final Color color;
-  final double alpha;
-  final int layers;
-
-  const _OrbRingPainter({
-    required this.radius,
-    this.color = _kGreen,
-    this.alpha = 1.0,
-    this.layers = 3,
-  }) : assert(layers >= 1 && layers <= 3);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = Offset(size.width / 2, size.height / 2);
-    // 시간이 지날수록 중심에서 바깥쪽으로 최대 3단까지 성장한다.
-    if (layers >= 3) {
-      canvas.drawCircle(
-        c,
-        radius,
-        Paint()..color = color.withValues(alpha: 0.08 * alpha),
-      );
-    }
-    if (layers >= 2) {
-      canvas.drawCircle(
-        c,
-        radius * 0.65,
-        Paint()..color = color.withValues(alpha: 0.20 * alpha),
-      );
-    }
-    canvas.drawCircle(
-      c,
-      radius * 0.32,
-      Paint()..color = color.withValues(alpha: alpha),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_OrbRingPainter old) =>
-      old.radius != radius ||
-      old.color != color ||
-      old.alpha != alpha ||
-      old.layers != layers;
-}
-
 // ─── 배경 (순수 블랙) ──────────────────────────────────────────────────────
 // 오브와 함께 한 장의 캔버스처럼 동작하는 배경이라 일반 카드가 아닌 렌더링 예외다.
 class _SessionBackground extends StatelessWidget {
@@ -1549,43 +1272,6 @@ class _SessionBackground extends StatelessWidget {
           radius: 0.9,
           colors: [AppTheme.darkBg, AppTheme.darkBg],
         ),
-      ),
-    );
-  }
-}
-
-// ─── 나 — 중심 반딧불 ────────────────────────────────────────────────────
-// 주변 독자와 같은 링 위젯·성장 규칙을 사용하되, 위치만 화면 중앙에 고정한다.
-class _GlowOrb extends StatelessWidget {
-  final FireflyVisual visual;
-  final double time;
-  final bool isPaused;
-
-  const _GlowOrb({
-    required this.visual,
-    required this.time,
-    required this.isPaused,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final baseRadius = screenWidth * AppTheme.selfFireflyBaseRadiusRatio;
-    final maxRadius = screenWidth * AppTheme.selfFireflyMaxRadiusRatio;
-    final growth = visual.radius - AppTheme.fireflyRadiusStageOne;
-    final radius = math.min(baseRadius + growth, maxRadius);
-    final pulseScale = isPaused
-        ? 1.0
-        : 1 + visual.pulseAmplitude * math.sin(time * 2 * math.pi);
-
-    return Transform.scale(
-      scale: pulseScale,
-      child: _SingleNamedOrb(
-        key: const ValueKey('self-firefly'),
-        radius: radius,
-        color: _kGreen,
-        alpha: isPaused ? 0.25 : 1,
-        layers: visual.layers,
       ),
     );
   }
@@ -5247,7 +4933,7 @@ class _SheetOrb extends StatelessWidget {
       width: r * 2,
       height: r * 2,
       child: CustomPaint(
-        painter: _OrbRingPainter(
+        painter: OrbRingPainter(
           radius: r,
           color: active ? _kGreen : Colors.white,
           alpha: active ? 1 : 0.72,
