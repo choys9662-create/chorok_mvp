@@ -3,14 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../../shared/models/reading_session.dart';
 import '../../shared/widgets/chorok_card.dart';
 import '../../shared/widgets/chorok_snackbar.dart';
 import '../search/controller/book_search_controller.dart';
 import '../search/util/add_book_flow.dart';
 import '../search/widget/add_to_library_sheet.dart';
+import '../search/widget/barcode_scanner_status.dart';
 
 // ─── 스캐너 화면 ──────────────────────────────────────────────────────────────
 
@@ -29,8 +33,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     formats: [BarcodeFormat.ean13],
   );
 
-  bool _processing = false;
-  String? _statusMessage;
+  BarcodeScannerStatus _status = const BarcodeScannerStatus.idle();
   bool _torchOn = false;
 
   // 스캔 안내선 펄스 애니메이션
@@ -57,7 +60,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   // ── 스캔 감지 처리 ──────────────────────────────────────────────────────────
 
   Future<void> _onDetect(BarcodeCapture capture) async {
-    if (_processing) return;
+    if (_status.processing) return;
 
     final raw = capture.barcodes
         .where((b) => b.rawValue != null && b.rawValue!.length == 13)
@@ -69,10 +72,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     // ISBN-13 형식 검증 (978 / 979 시작)
     if (!raw.startsWith('978') && !raw.startsWith('979')) return;
 
-    setState(() {
-      _processing = true;
-      _statusMessage = 'ISBN $raw 조회 중…';
-    });
+    setState(() => _status = BarcodeScannerStatus.loading('ISBN $raw 조회 중…'));
     HapticFeedback.mediumImpact();
     await _scannerCtrl.stop();
 
@@ -82,7 +82,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       if (!mounted) return;
 
       if (books.isEmpty) {
-        _resetWithMessage('책 정보를 찾을 수 없어요. 다시 스캔해보세요.');
+        _resetWithFailure('책 정보를 찾을 수 없어요. 다시 스캔해보세요.');
         return;
       }
 
@@ -105,20 +105,37 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           Navigator.of(context).pop();
         }
       } else {
-        _resetWithMessage(null);
+        _reset();
       }
     } catch (e) {
       if (!mounted) return;
-      _resetWithMessage('조회 중 오류가 발생했어요. 다시 시도해보세요.');
+      _resetWithFailure('조회 중 오류가 발생했어요. 다시 시도해보세요.');
     }
   }
 
-  void _resetWithMessage(String? msg) {
-    setState(() {
-      _processing = false;
-      _statusMessage = msg;
-    });
+  void _reset() {
+    setState(() => _status = const BarcodeScannerStatus.idle());
     _scannerCtrl.start();
+  }
+
+  void _resetWithFailure(String message) {
+    setState(() => _status = BarcodeScannerStatus.failure(message));
+    _scannerCtrl.start();
+  }
+
+  Future<void> _openManualEntry() async {
+    await _scannerCtrl.stop();
+    if (!mounted) return;
+    final book = await context.push<Book>(AppConstants.routeManualBookEntry);
+    if (!mounted) return;
+    if (book == null) {
+      await _scannerCtrl.start();
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(_buildSnackBar('"${book.title}"을(를) 서재에 추가했어요', true));
+    Navigator.of(context).pop();
   }
 
   void _toggleTorch() {
@@ -167,9 +184,9 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             left: 0,
             right: 0,
             child: SafeArea(
-              child: _BottomStatus(
-                processing: _processing,
-                statusMessage: _statusMessage,
+              child: BarcodeScannerStatusCard(
+                status: _status,
+                onManualEntry: _openManualEntry,
               ),
             ),
           ),
@@ -429,78 +446,6 @@ class _TopBar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─── 하단 상태 영역 ───────────────────────────────────────────────────────────
-
-class _BottomStatus extends StatelessWidget {
-  final bool processing;
-  final String? statusMessage;
-
-  const _BottomStatus({required this.processing, this.statusMessage});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      transitionBuilder: (child, anim) => FadeTransition(
-        opacity: anim,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.2),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-      ),
-      child: processing || statusMessage != null
-          ? Padding(
-              key: const ValueKey('status'),
-              padding: const EdgeInsets.only(
-                left: AppTheme.spaceXL,
-                right: AppTheme.spaceXL,
-                bottom: AppTheme.sectionGap,
-              ),
-              child: ChorokCard(
-                showBorder: false,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spaceXL,
-                  vertical: AppTheme.spaceLG,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (processing)
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: context.appPrimaryAccent,
-                        ),
-                      )
-                    else
-                      Icon(
-                        Icons.info_outline_rounded,
-                        size: 18,
-                        color: context.appTextSecondary,
-                      ),
-                    const SizedBox(width: AppTheme.spaceMD),
-                    Flexible(
-                      child: Text(
-                        statusMessage ?? '잠시 기다려주세요…',
-                        style: AppTheme.rowText.copyWith(
-                          color: context.appTextPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : const SizedBox.shrink(key: ValueKey('empty')),
     );
   }
 }
