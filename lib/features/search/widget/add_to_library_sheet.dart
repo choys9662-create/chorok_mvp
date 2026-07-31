@@ -13,19 +13,25 @@ import '../model/aladin_book.dart';
 Future<ReadingStatus?> showAddToLibrarySheet(
   BuildContext context,
   AladinBook book,
+) => showReadingStatusSheet(context, book.title);
+
+/// 검색 결과 모델이 없는 직접 입력 책도 같은 독서 상태 시트를 사용한다.
+Future<ReadingStatus?> showReadingStatusSheet(
+  BuildContext context,
+  String title,
 ) {
   return showModalBottomSheet<ReadingStatus>(
     context: context,
     backgroundColor: context.appBg.withValues(alpha: 0),
     isScrollControlled: true,
-    builder: (_) => _AddToLibrarySheet(book: book),
+    builder: (_) => _AddToLibrarySheet(title: title),
   );
 }
 
 class _AddToLibrarySheet extends StatelessWidget {
-  final AladinBook book;
+  final String title;
 
-  const _AddToLibrarySheet({required this.book});
+  const _AddToLibrarySheet({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +64,7 @@ class _AddToLibrarySheet extends StatelessWidget {
               ),
               const SizedBox(height: AppTheme.spaceXS),
               Text(
-                book.title,
+                title,
                 style: AppTheme.rowText.copyWith(
                   color: context.appTextSecondary,
                 ),

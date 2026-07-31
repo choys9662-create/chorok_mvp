@@ -281,7 +281,13 @@ class LibraryNotifier extends Notifier<List<Book>> {
   }
 
   bool containsByTitleAuthor(String title, String author) {
-    return state.any((b) => b.title == title && b.author == author);
+    final normalizedTitle = title.trim().toLowerCase();
+    final normalizedAuthor = author.trim().toLowerCase();
+    return state.any(
+      (b) =>
+          b.title.trim().toLowerCase() == normalizedTitle &&
+          b.author.trim().toLowerCase() == normalizedAuthor,
+    );
   }
 
   /// 수동 독서 기록 추가

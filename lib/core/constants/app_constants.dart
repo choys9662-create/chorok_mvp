@@ -18,6 +18,7 @@ class AppConstants {
   static const String routeSearch = '/search';
   static const String routeReflection = '/reflection';
   static const String routeBarcode = '/barcode';
+  static const String routeManualBookEntry = '/manual-book-entry';
   static const String routeChoseoList = '/choseo-list';
   static const String routeBookSentences = '/book-sentences';
   static const String routeOnboarding = '/onboarding';

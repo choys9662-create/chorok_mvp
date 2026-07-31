@@ -16,6 +16,7 @@ import '../../features/feed/screen/feed_screen.dart';
 import '../../features/forest/widget/forest_lock_layer.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/screen/search_screen.dart';
+import '../../features/search/screen/manual_book_entry_screen.dart';
 import '../../shared/models/session_goal.dart';
 import '../../features/library/screen/book_detail_screen.dart';
 import '../../features/library/screen/book_sentences_screen.dart';
@@ -161,6 +162,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppConstants.routeSearch,
         builder: (context, state) =>
             SearchScreen(replacingBook: state.extra as Book?),
+      ),
+
+      GoRoute(
+        path: AppConstants.routeManualBookEntry,
+        builder: (context, state) => const ManualBookEntryScreen(),
       ),
 
       // 책 상세 — 쉘 밖에서 전체 화면으로 표시
