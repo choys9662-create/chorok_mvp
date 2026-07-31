@@ -69,6 +69,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onChanged(String value) {
+    setState(() {});
     _debounce?.cancel();
     if (value.trim().isEmpty) {
       _clearActive();
@@ -130,8 +131,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _onClear() {
     _controller.clear();
+    setState(() {});
     _clearActive();
     _focusNode.requestFocus();
+  }
+
+  Future<void> _openManualEntry() async {
+    HapticFeedback.selectionClick();
+    final book = await context.push<Book>(AppConstants.routeManualBookEntry);
+    if (!mounted || book == null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(chorokSnackBar(context, '"${book.title}"을(를) 서재에 추가했어요'));
   }
 
   Future<void> _onBookAdd(AladinBook book) async {
@@ -271,6 +282,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     query: _controller.text,
                     onAdd: _onBookAdd,
                     onNavigate: _onBookNavigate,
+                    onManualEntry: widget.replacingBook == null
+                        ? _openManualEntry
+                        : null,
                   ),
           ),
         ],
@@ -394,11 +408,13 @@ class _BookResultArea extends ConsumerWidget {
   final String query;
   final Future<void> Function(AladinBook) onAdd;
   final void Function(AladinBook) onNavigate;
+  final VoidCallback? onManualEntry;
 
   const _BookResultArea({
     required this.query,
     required this.onAdd,
     required this.onNavigate,
+    required this.onManualEntry,
   });
 
   @override
@@ -409,10 +425,16 @@ class _BookResultArea extends ConsumerWidget {
       error: (_, _) => _ErrorView(
         message: _searchErrorMessage,
         onRetry: () => ref.read(bookSearchProvider.notifier).search(query),
+        onManualEntry: onManualEntry,
       ),
       data: (books) {
         if (query.trim().isEmpty) return const _IdlePrompt();
-        if (books.isEmpty) return _EmptyResult(query: query.trim());
+        if (books.isEmpty) {
+          return _EmptyResult(
+            query: query.trim(),
+            onManualEntry: onManualEntry,
+          );
+        }
         return _ResultList(books: books, onAdd: onAdd, onNavigate: onNavigate);
       },
     );
@@ -880,7 +902,7 @@ class _SearchBar extends StatelessWidget {
                     child: Center(
                       child: Icon(
                         Icons.qr_code_scanner_rounded,
-                        color: context.appTextSecondary,
+                        color: context.appPrimaryAccent,
                         size: 22,
                       ),
                     ),
@@ -1305,8 +1327,9 @@ class _IdlePrompt extends StatelessWidget {
 
 class _EmptyResult extends StatelessWidget {
   final String query;
+  final VoidCallback? onManualEntry;
 
-  const _EmptyResult({required this.query});
+  const _EmptyResult({required this.query, required this.onManualEntry});
 
   @override
   Widget build(BuildContext context) {
@@ -1333,6 +1356,16 @@ class _EmptyResult extends StatelessWidget {
               style: AppTheme.rowText.copyWith(color: context.appTextSecondary),
               textAlign: TextAlign.center,
             ),
+            if (onManualEntry != null) ...[
+              const SizedBox(height: AppTheme.spaceXL),
+              Text(
+                '그래도 책을 찾을 수 없나요?',
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+              _ManualEntryLink(onTap: onManualEntry!),
+            ],
           ],
         ),
       ),
@@ -1345,8 +1378,13 @@ class _EmptyResult extends StatelessWidget {
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback? onManualEntry;
 
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ErrorView({
+    required this.message,
+    required this.onRetry,
+    this.onManualEntry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1405,7 +1443,40 @@ class _ErrorView extends StatelessWidget {
                 ),
               ),
             ),
+            if (onManualEntry != null) ...[
+              const SizedBox(height: AppTheme.spaceLG),
+              Text(
+                '그래도 책을 찾을 수 없나요?',
+                style: AppTheme.supportingText.copyWith(
+                  color: context.appTextTertiary,
+                ),
+              ),
+              _ManualEntryLink(onTap: onManualEntry!),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManualEntryLink extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ManualEntryLink({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '책 정보 직접 입력',
+      child: TextButton(
+        onPressed: onTap,
+        child: Text(
+          '직접 입력',
+          style: AppTheme.supportingText.copyWith(
+            color: context.appTextSecondary,
+          ),
         ),
       ),
     );
