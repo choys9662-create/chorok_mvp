@@ -104,6 +104,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 - 저장소가 이미 대규모 미완료 리팩터로 uncommitted 상태다. `git diff <file>`은 이번 세션 변경분이 아니라 누적 전체를 보여준다 — 세션 범위 확인 시 착각 주의.
 - 서브에이전트에게 좁은 범위(리터럴 치환 등)를 위임할 때는 "발견한 TODO/ponytail 주석·미완성 기능에 손대지 말 것"을 매번 명시한다. 명시하지 않으면 무관한 기능을 임의로 "복원"하는 사고가 난 적 있다.
-- Flutter 3.41.9 사용 중 — `Column(spacing:)`/`Row(spacing:)` 사용 가능(3.27+). design.md가 언급하는 `ChorokColumn(gap:)`은 만들어진 적 없고 필요 없다 — 네이티브 `spacing:`으로 충분.
+- Flutter 3.44.8 사용 중 — `Column(spacing:)`/`Row(spacing:)` 사용 가능(3.27+). design.md가 언급하는 `ChorokColumn(gap:)`은 만들어진 적 없고 필요 없다 — 네이티브 `spacing:`으로 충분.
 - **AGENTS.md는 CLAUDE.md의 사본이다** (코덱스가 읽음). CLAUDE.md를 고치면 AGENTS.md에도 그대로 반영한다 — 안 하면 코덱스와 규칙이 어긋난다.
 - 코드 구현은 코덱스, 검증은 Claude 분업. 코덱스의 "완료" 보고는 그대로 믿지 말고 `flutter analyze`·`flutter test`를 직접 재실행해 확인한다.

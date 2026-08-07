@@ -13,6 +13,7 @@ class _FakeDbService extends DbService {
   final Map<String, List<Map<String, dynamic>>> overlaps;
   int? savedPagesRead;
   String? savedClientSessionId;
+  List<String?>? savedSentenceIds;
 
   _FakeDbService({this.overlaps = const {}});
 
@@ -21,6 +22,7 @@ class _FakeDbService extends DbService {
     String? bookId,
     required int durationSeconds,
     required List<String> sentences,
+    List<String?>? sentenceIds,
     List<String?>? thoughts,
     List<int?>? pageNumbers,
     int? sentenceCount,
@@ -34,6 +36,7 @@ class _FakeDbService extends DbService {
   }) async {
     savedPagesRead = pagesRead;
     savedClientSessionId = clientSessionId;
+    savedSentenceIds = sentenceIds;
     return clientSessionId ?? 'session-id';
   }
 
@@ -173,6 +176,22 @@ void main() {
     expect(find.text('211 / 267'), findsOneWidget);
     expect(dbService.savedPagesRead, 15);
     expect(dbService.savedClientSessionId, isNotNull);
+  });
+
+  testWidgets('이미 저장된 문장 ID를 세션 저장에 전달한다', (tester) async {
+    final dbService = _FakeDbService();
+
+    await tester.pumpWidget(
+      _buildRecapScreen(
+        dbService: dbService,
+        sentences: const [
+          CollectedSentence(id: 'persisted-sentence-id', content: '이미 저장된 문장'),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(dbService.savedSentenceIds, ['persisted-sentence-id']);
   });
 
   testWidgets('겹문장이 있으면 리캡에 대표 생각을 노출하고 상세 시트를 연다', (tester) async {

@@ -265,6 +265,11 @@ function renderSentences(selector, sentences) {
       const book = sentence.books;
       return `
         <article class="sentence-card">
+          ${
+            sentence.page_number
+              ? `<p class="sentence-page">${sentence.page_number}쪽</p>`
+              : ''
+          }
           <blockquote>${escapeHtml(sentence.content)}</blockquote>
           ${
             sentence.thought
@@ -273,7 +278,6 @@ function renderSentences(selector, sentences) {
           }
           <footer>
             ${escapeHtml(book?.title ?? '알 수 없는 책')}
-            ${sentence.page_number ? ` · ${sentence.page_number}쪽` : ''}
             · ${formatDate(sentence.created_at)}
           </footer>
         </article>

@@ -13,6 +13,7 @@ import '../../shared/widgets/chorok_card.dart';
 import '../../shared/widgets/chorok_snackbar.dart';
 import '../search/controller/book_search_controller.dart';
 import '../search/util/add_book_flow.dart';
+import '../search/util/barcode_add_navigation.dart';
 import '../search/widget/add_to_library_sheet.dart';
 import '../search/widget/barcode_scanner_status.dart';
 
@@ -102,7 +103,11 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(_buildSnackBar(msg, added));
-          Navigator.of(context).pop();
+          if (added) {
+            navigateHomeAfterBarcodeAdd(context);
+          } else {
+            Navigator.of(context).pop();
+          }
         }
       } else {
         _reset();

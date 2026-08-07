@@ -14,6 +14,7 @@ import '../../../shared/providers/follow_overlap_provider.dart';
 import '../../../shared/providers/tab_scroll_controllers.dart';
 import '../../../shared/widgets/chorok_card.dart';
 import '../../../shared/widgets/chorok_list_row.dart';
+import '../../../shared/widgets/chorok_sort_sheet.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/sheet_handle.dart';
 import '../../analytics/controller/analytics_provider.dart';
@@ -703,43 +704,17 @@ class _CompletedBooksScreenState extends ConsumerState<CompletedBooksScreen> {
   _LibraryViewMode _viewMode = _LibraryViewMode.list;
   CompletedSort _sort = CompletedSort.recent;
 
-  void _showSortSheet() {
-    HapticFeedback.selectionClick();
-    showModalBottomSheet<void>(
+  Future<void> _showSortSheet() async {
+    final picked = await showChorokSortSheet<CompletedSort>(
       context: context,
-      backgroundColor: context.appCard,
-      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final sort in CompletedSort.values)
-              ListTile(
-                title: Text(
-                  sort.label,
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: sort == _sort
-                        ? sheetContext.appTextPrimary
-                        : sheetContext.appTextSecondary,
-                  ),
-                ),
-                trailing: sort == _sort
-                    ? Icon(
-                        Icons.check_rounded,
-                        size: 20,
-                        color: sheetContext.appPrimaryAccent,
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  setState(() => _sort = sort);
-                },
-              ),
-          ],
-        ),
-      ),
+      title: '정렬',
+      selected: _sort,
+      options: [
+        for (final sort in CompletedSort.values)
+          ChorokSortOption(sort, sort.label),
+      ],
     );
+    if (picked != null && mounted) setState(() => _sort = picked);
   }
 
   @override
@@ -2129,19 +2104,17 @@ class _LibraryTabState extends State<_LibraryTab> {
     };
   }
 
-  void _showSortSheet(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showSortSheet(BuildContext context) async {
+    final picked = await showChorokSortSheet<_SortOption>(
       context: context,
-      backgroundColor: context.appCard,
-      shape: AppTheme.smoothShape(radius: AppTheme.radiusOuter),
-      builder: (_) => _SortSheet(
-        current: _sortOption,
-        onSelected: (opt) {
-          setState(() => _sortOption = opt);
-          Navigator.pop(context);
-        },
-      ),
+      title: '정렬',
+      selected: _sortOption,
+      options: [
+        for (final opt in _SortOption.values)
+          ChorokSortOption(opt, opt.label),
+      ],
     );
+    if (picked != null && mounted) setState(() => _sortOption = picked);
   }
 
   @override
@@ -3002,86 +2975,6 @@ class _BookListTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── 정렬 바텀시트 ────────────────────────────────────────────────────────
-class _SortSheet extends StatelessWidget {
-  final _SortOption current;
-  final ValueChanged<_SortOption> onSelected;
-
-  const _SortSheet({required this.current, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        bottom: AppTheme.spaceXL + AppTheme.spaceLG,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ChorokSheetHeader(title: '정렬'),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.screenPadding,
-            ),
-            child: Column(
-              children: _SortOption.values
-                  .map(
-                    (opt) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-                      child: Semantics(
-                        label: opt.label,
-                        button: true,
-                        selected: opt == current,
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            onSelected(opt);
-                          },
-                          child: ChorokCard(
-                            inner: true,
-                            showBorder: false,
-                            backgroundColor: opt == current
-                                ? AppTheme.primary.withValues(alpha: 0.15)
-                                : context.appCardElevated,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.spaceLG,
-                              vertical: AppTheme.spaceMD,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    opt.label,
-                                    style: AppTheme.body.copyWith(
-                                      color: opt == current
-                                          ? context.appPrimaryAccent
-                                          : context.appTextPrimary,
-                                    ),
-                                  ),
-                                ),
-                                if (opt == current)
-                                  const Icon(
-                                    Icons.check_rounded,
-                                    size: 18,
-                                    color: AppTheme.primaryLight,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
       ),
     );
   }

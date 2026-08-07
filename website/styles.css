@@ -483,6 +483,13 @@ select:focus {
   padding: 18px;
 }
 
+.sentence-card .sentence-page {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .sentence-card blockquote {
   margin: 0;
   font-family: "Gowun Batang", serif;

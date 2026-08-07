@@ -14,24 +14,27 @@ import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_section_header.dart';
 import '../../../shared/widgets/chorok_shimmer.dart';
 
-/// 최근에 읽은(라이브 포레스트를 켰거나 페이지가 갱신된) 책이 먼저 오고, 그다음은 추가한 순서대로.
+/// 최근에 추가하거나 읽은 책부터 보여준다.
 int compareReadingBooks(Book a, Book b) {
-  final aStarted = a.lastSessionStartedAt;
-  final bStarted = b.lastSessionStartedAt;
-  if (aStarted != null || bStarted != null) {
-    if (aStarted == null) return 1;
-    if (bStarted == null) return -1;
-    return bStarted.compareTo(aStarted);
+  DateTime? latestActivity(Book book) {
+    final addedAt = book.addedAt;
+    final startedAt = book.lastSessionStartedAt;
+    if (addedAt == null) return startedAt;
+    if (startedAt == null) return addedAt;
+    return addedAt.isAfter(startedAt) ? addedAt : startedAt;
   }
-  final aAdded = a.addedAt;
-  final bAdded = b.addedAt;
-  if (aAdded == null || bAdded == null) return 0;
-  return bAdded.compareTo(aAdded);
+
+  final aActivity = latestActivity(a);
+  final bActivity = latestActivity(b);
+  if (aActivity == null && bActivity == null) return 0;
+  if (aActivity == null) return 1;
+  if (bActivity == null) return -1;
+  return bActivity.compareTo(aActivity);
 }
 
-const _readingBookCardWidth = 118.0;
-const _readingBookCardHeight = 180.0;
-const _readingBookCardGap = AppTheme.spaceSM;
+const readingBookCardWidth = 118.0;
+const readingBookCardHeight = 180.0;
+const readingBookCardGap = AppTheme.spaceSM;
 
 class ReadingBooksSection extends ConsumerWidget {
   const ReadingBooksSection({super.key});
@@ -82,7 +85,7 @@ class ReadingBooksSection extends ConsumerWidget {
         if (isLoading) ...[
           const SizedBox(height: AppTheme.spaceMD),
           SizedBox(
-            height: _readingBookCardHeight,
+            height: readingBookCardHeight,
             child: ListView(
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
@@ -91,14 +94,14 @@ class ReadingBooksSection extends ConsumerWidget {
               ),
               children: const [
                 ChorokShimmer(
-                  width: _readingBookCardWidth,
-                  height: _readingBookCardHeight,
+                  width: readingBookCardWidth,
+                  height: readingBookCardHeight,
                   radius: AppTheme.radiusOuter,
                 ),
-                SizedBox(width: _readingBookCardGap),
+                SizedBox(width: readingBookCardGap),
                 ChorokShimmer(
-                  width: _readingBookCardWidth,
-                  height: _readingBookCardHeight,
+                  width: readingBookCardWidth,
+                  height: readingBookCardHeight,
                   radius: AppTheme.radiusOuter,
                 ),
               ],
@@ -112,7 +115,7 @@ class ReadingBooksSection extends ConsumerWidget {
           const SizedBox(height: AppTheme.spaceMD),
           // 가로 스크롤 카드 (마지막에 + 추가 카드)
           SizedBox(
-            height: _readingBookCardHeight,
+            height: readingBookCardHeight,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -125,7 +128,7 @@ class ReadingBooksSection extends ConsumerWidget {
                   padding: EdgeInsets.only(
                     right: index == readingBooks.length - 1
                         ? 0
-                        : _readingBookCardGap,
+                        : readingBookCardGap,
                   ),
                   child: ReadingBookCard(book: readingBooks[index]),
                 );
@@ -376,8 +379,8 @@ class ReadingBookCardState extends ConsumerState<ReadingBookCard> {
           coverUrl: b.coverUrl,
           gradientIndex:
               b.title.hashCode.abs() % AppTheme.coverGradients.length,
-          width: _readingBookCardWidth,
-          height: _readingBookCardHeight,
+          width: readingBookCardWidth,
+          height: readingBookCardHeight,
           radius: AppTheme.radiusOuter,
           fallbackIcon: Positioned(
             right: -12,
@@ -529,8 +532,8 @@ class AddBookCard extends StatelessWidget {
           context.push(AppConstants.routeExplore);
         },
         child: SizedBox(
-          width: _readingBookCardWidth,
-          height: _readingBookCardHeight,
+          width: readingBookCardWidth,
+          height: readingBookCardHeight,
           child: ChorokCard(
             padding: EdgeInsets.zero,
             child: Center(

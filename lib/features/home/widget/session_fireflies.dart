@@ -31,9 +31,9 @@ FireflyVisual fireflyVisualForElapsed(Duration elapsed) {
     return (growthScale: 1.2, layers: 2, pulseAmplitude: 0);
   }
   if (elapsed < _fireflyStageThreeEnd) {
-    return (growthScale: 1.4, layers: 3, pulseAmplitude: 0.04);
+    return (growthScale: 1.4, layers: 3, pulseAmplitude: 0.08);
   }
-  return (growthScale: 1.6, layers: 3, pulseAmplitude: 0.06);
+  return (growthScale: 1.6, layers: 3, pulseAmplitude: 0.12);
 }
 
 /// 동시 접속자가 많을 때 겹침을 줄이는 숲 밀도 규칙.
@@ -306,7 +306,7 @@ class OrbRingPainter extends CustomPainter {
     }
     canvas.drawCircle(
       c,
-      radius * 0.4,
+      radius / 3, // 코어: base 반지름 24 기준 지름 16px
       Paint()..color = color.withValues(alpha: alpha),
     );
   }

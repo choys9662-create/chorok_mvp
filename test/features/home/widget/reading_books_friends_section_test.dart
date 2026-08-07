@@ -39,6 +39,41 @@ Widget _wrap(Widget child, {List<Override> overrides = const []}) {
 }
 
 void main() {
+  testWidgets('방금 읽는 중에 추가한 책은 최근 읽은 기존 책보다 먼저 표시된다', (tester) async {
+    final books = [
+      Book(
+        id: 'recently-read',
+        title: '최근 읽은 기존 책',
+        author: '작가 A',
+        status: ReadingStatus.reading,
+        addedAt: DateTime(2026, 7, 1),
+        lastSessionStartedAt: DateTime(2026, 8, 4, 18),
+      ),
+      Book(
+        id: 'just-added',
+        title: '방금 추가한 책',
+        author: '작가 B',
+        status: ReadingStatus.reading,
+        addedAt: DateTime(2026, 8, 4, 19),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      _wrap(
+        const ReadingBooksSection(),
+        overrides: [
+          libraryProvider.overrideWith(() => _FakeLibraryNotifier(books)),
+        ],
+      ),
+    );
+
+    final cards = tester
+        .widgetList<ReadingBookCard>(find.byType(ReadingBookCard))
+        .map((card) => card.book.id)
+        .toList();
+    expect(cards, ['just-added', 'recently-read']);
+  });
+
   testWidgets('읽고 있는 책 카드는 118x180 크기로 렌더링된다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;

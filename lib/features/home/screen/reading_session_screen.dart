@@ -269,7 +269,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
         onDelete: (index) {
           final offset = _preExistingSentences.length;
           if (index >= offset) {
+            final removed = _collectedSentences[index - offset];
             setState(() => _collectedSentences.removeAt(index - offset));
+            final sentenceId = removed.id;
+            if (sentenceId != null && sentenceId.isNotEmpty) {
+              ref.read(dbServiceProvider).deleteSentence(sentenceId);
+            }
           } else {
             final removed = _preExistingSentences[index];
             setState(() => _preExistingSentences.removeAt(index));
@@ -322,9 +327,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       if (book.id != null && book.id!.isNotEmpty) {
         ref.read(libraryProvider.notifier).markSessionStarted(book.id!);
       }
-      if (detoxStatus == DetoxStartStatus.unsupported) {
-        _showSoftDetoxNotice();
-      }
       _beginPresenceTracking(includeLocation: true);
     }
     setState(() => _showTopic = false);
@@ -348,20 +350,6 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       );
   }
 
-  void _showSoftDetoxNotice() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text(
-            '앱 내 집중 모드로 시작했어요. Screen Time 지원 빌드에서는 선택한 다른 앱도 제한돼요.',
-            style: TextStyle(fontFamily: _kFont),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
-
   final List<CollectedSentence> _collectedSentences = [];
   late final DateTime _sessionStartedAt;
   List<CollectedSentence> _preExistingSentences = [];
@@ -371,6 +359,9 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
   int _exitCount = 0;
   int _exitDurationSeconds = 0;
   DateTime? _exitStartedAt;
+  // 백그라운드 진입 때문에 타이머를 멈췄는지 표시 — OCR/녹음 등 다른 pause와 구분해
+  // 복귀 시 이 경우에만 resume한다.
+  bool _pausedForBackground = false;
 
   bool _isRecording = false;
   bool _showTopic = true;
@@ -801,6 +792,11 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
             .inSeconds;
         _exitStartedAt = null;
       }
+      // 백그라운드 동안 멈춰둔 타이머를 재개 — 이탈 시간은 카운트에 포함되지 않는다.
+      if (_pausedForBackground) {
+        _pausedForBackground = false;
+        ref.read(timerProvider.notifier).resume();
+      }
       ref.read(timerProvider.notifier).syncFromWallClock();
       WakelockPlus.enable();
       unawaited(_heartbeatPresence());
@@ -812,6 +808,12 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
       // 앱 내 기능(OCR/녹음/문장작성)은 타이머를 pause하므로 제외된다.
       if (_exitStartedAt == null && ref.read(timerProvider).isRunning) {
         _exitStartedAt = DateTime.now();
+      }
+      // 이탈 시간이 독서시간으로 더해지지 않도록 타이머를 멈춘다. 벽시계 기반이라
+      // pause하지 않으면 복귀 시 백그라운드 경과분까지 합산된다.
+      if (ref.read(timerProvider).isRunning) {
+        _pausedForBackground = true;
+        ref.read(timerProvider.notifier).pause();
       }
       // 홈 화면으로 나갈 때도 명시적으로 복원한다 — resume 때와 대칭으로, 플러그인 자체
       // auto-reset(백그라운드 전환 시 기본 복원 동작)에만 기대지 않는다.
@@ -919,7 +921,33 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
     );
     if (!mounted) return;
     if (result != null && result.content.isNotEmpty) {
-      setState(() => _collectedSentences.add(result));
+      var savedSentence = result;
+      final bookId = book.id;
+      if (bookId != null && !kUseMock) {
+        try {
+          final sentenceId = await ref
+              .read(dbServiceProvider)
+              .saveSentenceStandalone(
+                bookId: bookId,
+                content: result.content,
+                thought: result.thought,
+                pageNumber: result.pageNumber,
+              );
+          savedSentence = result.copyWith(id: sentenceId);
+        } catch (e) {
+          debugPrint('Sentence immediate save failed: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('문장을 저장하지 못했어요. 세션 종료 전에 다시 시도해주세요.'),
+              ),
+            );
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _collectedSentences.add(savedSentence));
+      }
     }
     ref.read(timerProvider.notifier).resume();
     // 닫힌 뒤에는 타이머가 보이는 상태로 복귀했다가 자동으로 어두워진다.
@@ -947,9 +975,16 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     final localIndex = index - offset;
     if (localIndex < 0 || localIndex >= _collectedSentences.length) return;
+    final current = _collectedSentences[localIndex];
+    final sentenceId = current.id;
+    if (sentenceId != null && sentenceId.isNotEmpty) {
+      await ref
+          .read(dbServiceProvider)
+          .updateSentenceThought(sentenceId, normalized);
+    }
+    if (!mounted) return;
     setState(() {
-      _collectedSentences[localIndex] = _collectedSentences[localIndex]
-          .copyWith(thought: normalized);
+      _collectedSentences[localIndex] = current.copyWith(thought: normalized);
     });
   }
 
@@ -979,10 +1014,14 @@ class _ReadingSessionScreenState extends ConsumerState<ReadingSessionScreen>
 
     final localIndex = index - offset;
     if (localIndex < 0 || localIndex >= _collectedSentences.length) return;
+    final current = _collectedSentences[localIndex];
+    final sentenceId = current.id;
+    if (sentenceId != null && sentenceId.isNotEmpty) {
+      await ref.read(dbServiceProvider).updateSentencePage(sentenceId, page);
+    }
+    if (!mounted) return;
     setState(() {
-      _collectedSentences[localIndex] = withPage(
-        _collectedSentences[localIndex],
-      );
+      _collectedSentences[localIndex] = withPage(current);
     });
   }
 
@@ -3470,14 +3509,13 @@ class _SentenceReviewRow extends StatelessWidget {
         : 'p. ${sentence.pageNumber}';
 
     return Row(
-      crossAxisAlignment: expanded
-          ? CrossAxisAlignment.start
-          : CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 72,
           child: Text(
             pageLabel,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: color.withValues(alpha: deleting ? 1.0 : 0.95),
               fontSize: AppTheme.fsRowText,

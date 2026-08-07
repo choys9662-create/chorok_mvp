@@ -261,6 +261,7 @@ class _SessionRecapScreenState extends ConsumerState<SessionRecapScreen>
         bookId: bookId,
         durationSeconds: widget.data.seconds,
         sentences: sentences.map((e) => e.content).toList(),
+        sentenceIds: sentences.map((e) => e.id).toList(),
         thoughts: sentences
             .map((e) => e.thought.isNotEmpty ? e.thought : null)
             .toList(),

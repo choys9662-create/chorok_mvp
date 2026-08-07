@@ -111,6 +111,7 @@ class DbService {
     String? bookId,
     required int durationSeconds,
     required List<String> sentences,
+    List<String?>? sentenceIds,
     List<String?>? thoughts, // 추가 — nullable, 기존 호출부 변경 불필요
     List<int?>? pageNumbers, // 추가 — sentences와 같은 순서, nullable
     int? sentenceCount,
@@ -176,14 +177,31 @@ class DbService {
 
     final sessionId = session['id'] as String;
 
-    // 2) 문장들 일괄 insert
-    if (sentences.isNotEmpty) {
+    // 2) 세션 중 즉시 저장한 문장은 새 세션에 연결하고, 아직 저장하지 않은
+    // 문장만 새로 insert한다.
+    final persistedIds = sentenceIds
+        ?.whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+    if (persistedIds != null && persistedIds.isNotEmpty) {
+      await supabase
+          .from('sentences')
+          .update({'session_id': sessionId})
+          .eq('user_id', _uid)
+          .inFilter('id', persistedIds);
+    }
+
+    final pendingSentences = sentences.asMap().entries.where((entry) {
+      if (sentenceIds == null || entry.key >= sentenceIds.length) return true;
+      final id = sentenceIds[entry.key];
+      return id == null || id.isEmpty;
+    }).toList();
+    if (pendingSentences.isNotEmpty) {
       await supabase
           .from('sentences')
           .insert(
-            sentences
-                .asMap()
-                .entries
+            pendingSentences
                 .map(
                   (e) => {
                     'user_id': _uid,
@@ -214,7 +232,7 @@ class DbService {
   // ────────────────────────────────────────────────────────────────────
 
   /// 세션 없이 단독으로 문장 저장 (서재 화면에서 직접 추가 시 사용)
-  Future<void> saveSentenceStandalone({
+  Future<String> saveSentenceStandalone({
     required String bookId,
     required String content,
     String? thought,
@@ -223,17 +241,24 @@ class DbService {
     final ids = await _resolveBookIds(bookId);
     final trimmedContent = content.trim();
     final trimmedThought = thought?.trim();
-    await supabase.from('sentences').insert({
-      'user_id': _uid,
-      'book_id': ?ids.bookUuid,
-      'global_book_id': ?ids.globalBookId,
-      'content': trimmedContent,
-      'page_number': ?pageNumber,
-      'normalized_sentences': SentenceNormalizer.tokenizeAndNormalize(
-        trimmedContent,
-      ),
-      'thought': (trimmedThought?.isNotEmpty == true) ? trimmedThought : null,
-    });
+    final row = await supabase
+        .from('sentences')
+        .insert({
+          'user_id': _uid,
+          'book_id': ?ids.bookUuid,
+          'global_book_id': ?ids.globalBookId,
+          'content': trimmedContent,
+          'page_number': ?pageNumber,
+          'normalized_sentences': SentenceNormalizer.tokenizeAndNormalize(
+            trimmedContent,
+          ),
+          'thought': (trimmedThought?.isNotEmpty == true)
+              ? trimmedThought
+              : null,
+        })
+        .select('id')
+        .single();
+    return row['id'] as String;
   }
 
   Future<List<Map<String, dynamic>>> fetchMySentencesForBook(

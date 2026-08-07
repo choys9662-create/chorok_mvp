@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 
 import '../widget/home_stat_cards.dart';
 import '../widget/reading_books_section.dart';
+import '../widget/wishlist_section.dart';
 import '../widget/recommended_books_section.dart';
 import '../widget/reading_friends_section.dart';
 import '../widget/friends_read_today_section.dart';
@@ -53,6 +54,7 @@ class HomeScreen extends ConsumerWidget {
                   child: SizedBox(height: AppTheme.sectionGap),
                 ),
                 const SliverToBoxAdapter(child: ReadingBooksSection()),
+                const SliverToBoxAdapter(child: WishlistSection()),
                 const SliverToBoxAdapter(child: RecommendedBooksSection()),
                 // ponytail: 아래 세 섹션은 비면 통째로 숨는다. 간격을 각 섹션이
                 // 직접 들고 있어야 숨을 때 여백도 같이 사라진다.

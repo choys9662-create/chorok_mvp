@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../search/model/aladin_book.dart';
 import '../../../shared/providers/profile_provider.dart';
 import '../../../shared/widgets/book_cover.dart';
 import '../../../shared/widgets/chorok_card.dart';
@@ -231,20 +233,21 @@ class RecommendedBookCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         HapticFeedback.selectionClick();
-        final query = Uri.encodeQueryComponent('${book.title} ${book.author}');
-        final url = Uri.parse(
-          'https://www.aladin.co.kr/search/wsearchresult.aspx'
-          '?SearchTarget=Book&SearchWord=$query',
+        context.push(
+          AppConstants.routeBookInfo,
+          extra: AladinBook(
+            title: book.title,
+            author: book.author,
+            publisher: '',
+            coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
+          ),
         );
-        if (await canLaunchUrl(url)) {
-          await launchUrl(url, mode: LaunchMode.externalApplication);
-        }
       },
       child: Semantics(
         button: true,
-        label: '${book.title} 알라딘에서 보기',
+        label: '${book.title} 정보 보기',
         child: BookCover(
           coverUrl: book.coverUrl.isEmpty ? null : book.coverUrl,
           gradientIndex: book.gradientIndex,

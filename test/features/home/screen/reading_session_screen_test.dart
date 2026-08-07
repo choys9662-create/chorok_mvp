@@ -18,8 +18,12 @@ import 'package:chorok_app/shared/repositories/reading_presence_repository.dart'
 
 class _FakeDbService extends DbService {
   final List<Map<String, dynamic>> promptCandidates;
+  final int? sentencePageNumber;
+  int standaloneSaveCount = 0;
+  String? standaloneBookId;
+  String? standaloneContent;
 
-  _FakeDbService({this.promptCandidates = const []});
+  _FakeDbService({this.promptCandidates = const [], this.sentencePageNumber});
 
   @override
   Future<List<Map<String, dynamic>>> fetchMySentencesForBook(
@@ -28,15 +32,28 @@ class _FakeDbService extends DbService {
     String? author,
     String? isbn,
   }) async {
-    return const [
+    return [
       {
         'id': 'sentence-1',
         'content':
             '그러므로 다른 요소들이 모두 동등하다고 가정했을 때 기술이 가장 빠르게 발달할 수 있는 곳은 생산성이 높고 면적이 넓으며 인구가 많은 지역이다.',
         'thought': '',
-        'page_number': null,
+        'page_number': sentencePageNumber,
       },
     ];
+  }
+
+  @override
+  Future<String> saveSentenceStandalone({
+    required String bookId,
+    required String content,
+    String? thought,
+    int? pageNumber,
+  }) async {
+    standaloneSaveCount++;
+    standaloneBookId = bookId;
+    standaloneContent = content;
+    return 'persisted-sentence-id';
   }
 
   @override
@@ -101,6 +118,8 @@ class _FakePresenceRepository implements ReadingPresenceRepository {
 
 Widget _buildScreen({
   List<Map<String, dynamic>> promptCandidates = const [],
+  int? sentencePageNumber,
+  _FakeDbService? dbService,
   ReadingPresenceRepository? presenceRepository,
   List<Override> overrides = const [],
 }) {
@@ -124,7 +143,11 @@ Widget _buildScreen({
   return ProviderScope(
     overrides: [
       dbServiceProvider.overrideWithValue(
-        _FakeDbService(promptCandidates: promptCandidates),
+        dbService ??
+            _FakeDbService(
+              promptCandidates: promptCandidates,
+              sentencePageNumber: sentencePageNumber,
+            ),
       ),
       libraryProvider.overrideWith(
         () => _FakeLibraryNotifier([firstReadingBook, selectedBook]),
@@ -372,6 +395,46 @@ void main() {
     expect(find.textContaining('앱 내 집중 모드로 시작했어요'), findsOneWidget);
   });
 
+  testWidgets('문장을 저장하면 세션 종료 전 즉시 DB에 보관한다', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final dbService = _FakeDbService();
+    await tester.pumpWidget(_buildScreen(dbService: dbService));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tapAt(const Offset(196, 150));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.text('직접적기'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final sentenceField = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          widget.decoration?.hintText == '' &&
+          widget.keyboardType == TextInputType.multiline,
+    );
+    await tester.enterText(sentenceField, '재시작해도 남아야 하는 문장');
+    await tester.pump();
+    await tester.tap(find.byTooltip('문장만 저장'));
+    await tester.pump(const Duration(milliseconds: 900));
+
+    expect(dbService.standaloneSaveCount, 1);
+    expect(dbService.standaloneBookId, 'guns-germs-steel');
+    expect(dbService.standaloneContent, '재시작해도 남아야 하는 문장');
+  });
+
   testWidgets('라이브 포레스트는 지금 같이 읽는(active) 맞팔만 반딧불로 띄운다', (tester) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1;
@@ -542,6 +605,53 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('문장 모아보기 페이지 표시는 카드 왼쪽 여백 중앙에 놓인다', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildScreen(sentencePageNumber: 19));
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey('session-entry-question-button')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tapAt(const Offset(196, 150));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.tap(find.text('+1'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+
+    final sentenceFinder = find.textContaining('그러므로 다른 요소들이');
+    await tester.ensureVisible(sentenceFinder);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(sentenceFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final pageFinder = find.text('p. 19');
+    final cardFinder = find.ancestor(
+      of: pageFinder,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is AnimatedContainer &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).border != null,
+      ),
+    );
+    final pageRect = tester.getRect(pageFinder);
+    final cardRect = tester.getRect(
+      find.descendant(of: cardFinder, matching: find.byType(DecoratedBox)),
+    );
+
+    expect(pageRect.center.dy, closeTo(cardRect.center.dy, 1));
+    expect(pageRect.center.dx, closeTo(cardRect.left + 56, 2));
   });
 
   testWidgets('종료 페이지 슬라이더를 끝까지 밀어도 페이지 박스가 overflow 하지 않는다', (tester) async {

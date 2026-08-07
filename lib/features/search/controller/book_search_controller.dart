@@ -26,9 +26,25 @@ class BookSearchNotifier extends AsyncNotifier<List<AladinBook>> {
       return;
     }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
-      () => invoke({'query': q, 'queryType': _typeParam(_type)}),
-    );
+    final searchType = _type;
+    state = await AsyncValue.guard(() async {
+      final books = await invoke({
+        'query': q,
+        'queryType': _typeParam(searchType),
+      });
+      // 알라딘 ItemSearch는 QueryType(Title/Author/Keyword)을 사실상 무시하고
+      // 항상 keyword 검색으로 동작한다. '작가' 탭이 의미를 가지려면 저자명으로
+      // 클라이언트에서 걸러야 한다.
+      // ponytail: 첫 저자(지은이) 기준 매칭. 공동저자 2순위/옮긴이는 제외 —
+      //   정밀 매칭 필요하면 model에 rawAuthor 보존 후 그걸로 검색.
+      if (searchType == BookSearchType.author) {
+        final needle = q.toLowerCase();
+        return books
+            .where((b) => b.author.toLowerCase().contains(needle))
+            .toList();
+      }
+      return books;
+    });
   }
 
   void setType(BookSearchType type) {
